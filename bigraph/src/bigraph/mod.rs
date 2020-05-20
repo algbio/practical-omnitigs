@@ -3,11 +3,9 @@ use std::convert::{TryInto, TryFrom};
 use std::fmt;
 
 mod petgraph_impl;
+pub mod bigraph_wrapper;
 
-pub trait StaticGraph<NodeData, EdgeData, IndexType> {
-    type OutNeighbors: IntoIterator<Item = NodeIndex<IndexType>>;
-    type InNeighbors: IntoIterator<Item = NodeIndex<IndexType>>;
-
+pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType> {
     fn node_indices(&self) -> NodeIndices<IndexType>;
 
     fn edge_indices(&self) -> EdgeIndices<IndexType>;
@@ -19,14 +17,9 @@ pub trait StaticGraph<NodeData, EdgeData, IndexType> {
     fn node_data_mut(&mut self, node_id: NodeIndex<IndexType>) -> Option<&mut NodeData>;
 
     fn edge_data_mut(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<&mut EdgeData>;
-
-    // TODO This does not work as neighbors need a lifetime.
-    fn out_neighbors(&self, node_id: NodeIndex<IndexType>) -> Option<Self::OutNeighbors>;
-
-    fn in_neighbors(&self, node_id: NodeIndex<IndexType>) -> Option<Self::InNeighbors>;
 }
 
-pub trait DynamicGraph<NodeData, EdgeData, IndexType>: StaticGraph<NodeData, EdgeData, IndexType> {
+pub trait MutableGraphContainer<NodeData, EdgeData, IndexType> {
     fn add_node(&mut self, node_data: NodeData) -> NodeIndex<IndexType>;
 
     fn add_edge(&mut self, edge_data: EdgeData) -> EdgeIndex<IndexType>;
@@ -36,11 +29,35 @@ pub trait DynamicGraph<NodeData, EdgeData, IndexType>: StaticGraph<NodeData, Edg
     fn remove_edge(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<EdgeData>;
 }
 
-pub trait Bigraph<NodeData, EdgeData, IndexType>: StaticGraph<NodeData, EdgeData, IndexType> {
+pub trait NavigableGraph<NodeData, EdgeData, IndexType> {
+    type OutNeighbors: IntoIterator<Item = NodeIndex<IndexType>>;
+    type InNeighbors: IntoIterator<Item = NodeIndex<IndexType>>;
+
+    fn out_neighbors(self, node_id: NodeIndex<IndexType>) -> Option<Self::OutNeighbors>;
+
+    fn in_neighbors(self, node_id: NodeIndex<IndexType>) -> Option<Self::InNeighbors>;
+}
+
+pub trait Bigraph<NodeData, EdgeData, IndexType> {
     fn reverse_complement_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>>;
 
     fn reverse_complement_edge(&self, edge_id: EdgeIndex<IndexType>) -> Option<EdgeIndex<IndexType>>;
 }
+
+pub trait StaticGraph<NodeData, EdgeData, IndexType> {}
+impl<'a, NodeData, EdgeData, IndexType, T: 'a> StaticGraph<NodeData, EdgeData, IndexType> for T where
+    T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>,
+    &'a T: NavigableGraph<NodeData, EdgeData, IndexType> {}
+
+pub trait DynamicGraph<NodeData, EdgeData, IndexType> {}
+impl<NodeData, EdgeData, IndexType, T> DynamicGraph<NodeData, EdgeData, IndexType> for T where
+    T: StaticGraph<NodeData, EdgeData, IndexType>,
+    T: MutableGraphContainer<NodeData, EdgeData, IndexType> {}
+
+pub trait StaticBigraph<NodeData, EdgeData, IndexType> {}
+impl<NodeData, EdgeData, IndexType, T> StaticBigraph<NodeData, EdgeData, IndexType> for T where
+    T: StaticGraph<NodeData, EdgeData, IndexType>,
+    T: Bigraph<NodeData, EdgeData, IndexType> {}
 
 #[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
 #[opaque_typedef(derive(Display))]
