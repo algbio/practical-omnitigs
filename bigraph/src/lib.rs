@@ -1,13 +1,17 @@
 #[macro_use]
 extern crate opaque_typedef_macros;
 
-mod bigraph;
+mod interface;
+mod implementation;
+mod index;
 
-pub use bigraph::{EdgeIndex, NodeIndex, ImmutableGraphContainer, MutableGraphContainer, Bigraph};
+pub use interface::*;
+pub use implementation::*;
+pub use index::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::bigraph::StaticGraph;
+    use crate::StaticGraph;
 
     #[test]
     fn it_works() {
@@ -21,7 +25,10 @@ mod tests {
         let n2 = graph.add_node(5);
         graph.add_edge(n1, n2, 6);
 
-        let graph_box = Box::new(graph);
-        let _static_graph_box: Box<dyn StaticGraph<i32, i32, usize>> = graph_box;
+        fn print_graph<G: StaticGraph<i32, i32, usize> + std::fmt::Debug>(graph: &G) {
+            println!("{:?}", graph);
+        }
+
+        print_graph(&graph);
     }
 }

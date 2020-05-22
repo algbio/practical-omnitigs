@@ -1,5 +1,5 @@
 [package]
-name = "bigraph"
+name = "compact-genome"
 version = "0.1.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
@@ -7,7 +7,3 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-opaque_typedef = "0.0.5"
-opaque_typedef_macros = "0.0.5"
-petgraph = "0.5"
-num-traits = "0.2"
