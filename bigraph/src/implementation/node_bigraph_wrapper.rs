@@ -22,7 +22,7 @@ use std::fmt::Debug;
 *   let n2 = graph.add_node(1);
 *   graph.add_edge(n1.clone(), n2.clone(), ());
 *   graph.add_edge(n2.clone(), n1.clone(), ());
-*   let bigraph = NodeBigraphWrapper::new(graph, |n| 1 - n % 2);
+*   let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
 *   assert_eq!(Some(n2.clone()), bigraph.reverse_complement_node(n1.clone()));
 *   assert_eq!(Some(n1.clone()), bigraph.reverse_complement_node(n2.clone()));
 *   ```
@@ -112,5 +112,27 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, 
 
     fn edge_data_mut(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<&mut EdgeData> {
         self.topology.edge_data_mut(edge_id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{petgraph_impl, NodeBigraph, MutableGraphContainer};
+    use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+
+    #[test]
+    fn test_bigraph_creation() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+
+        assert_eq!(Some(n2), bigraph.reverse_complement_node(n1));
+        assert_eq!(Some(n1), bigraph.reverse_complement_node(n2));
+        assert_eq!(Some(n4), bigraph.reverse_complement_node(n3));
+        assert_eq!(Some(n3), bigraph.reverse_complement_node(n4));
     }
 }

@@ -8,7 +8,3 @@ mod index;
 pub use interface::*;
 pub use implementation::*;
 pub use index::*;
-
-#[cfg(test)]
-mod tests {
-}
