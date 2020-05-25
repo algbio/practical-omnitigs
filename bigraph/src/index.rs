@@ -28,7 +28,7 @@ impl<IndexType: PrimInt> EdgeIndex<IndexType> {
     }
 }
 
-impl<IndexType: PrimInt> From<NodeIndex<IndexType>> for usize {
+/*impl<IndexType: PrimInt> From<NodeIndex<IndexType>> for usize {
     fn from(node_index: NodeIndex<IndexType>) -> Self {
         NumCast::from(node_index.0).unwrap()
     }
@@ -38,13 +38,13 @@ impl<IndexType: PrimInt> From<EdgeIndex<IndexType>> for usize {
     fn from(node_index: EdgeIndex<IndexType>) -> Self {
         NumCast::from(node_index.0).unwrap()
     }
-}
+}*/
 
 impl<T, IndexType: PrimInt> Index<NodeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: NodeIndex<IndexType>) -> &Self::Output {
-        &self[usize::from(index.0)]
+        &self[<usize as NumCast>::from(index.0).unwrap()]
     }
 }
 
@@ -52,19 +52,19 @@ impl<T, IndexType: PrimInt> Index<EdgeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: EdgeIndex<IndexType>) -> &Self::Output {
-        &self[usize::from(index.0)]
+        &self[<usize as NumCast>::from(index.0).unwrap()]
     }
 }
 
 impl<T, IndexType: PrimInt> IndexMut<NodeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: NodeIndex<IndexType>) -> &mut Self::Output {
-        &mut self[usize::from(index.0)]
+        &mut self[<usize as NumCast>::from(index.0).unwrap()]
     }
 }
 
 impl<T, IndexType: PrimInt> IndexMut<EdgeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: EdgeIndex<IndexType>) -> &mut Self::Output {
-        &mut self[usize::from(index.0)]
+        &mut self[<usize as NumCast>::from(index.0).unwrap()]
     }
 }
 

@@ -1,9 +1,14 @@
 use petgraph::{Graph, Directed, Direction};
-use crate::{ImmutableGraphContainer, EdgeIndex, NodeIndex};
+use crate::{ImmutableGraphContainer, EdgeIndex, NodeIndex, Neighbor, MutableGraphContainer, DynamicGraph};
 use crate::{NodeIndices, EdgeIndices, NavigableGraph};
-use petgraph::graph::Neighbors;
+use petgraph::graph::Edges;
 use std::iter::Map;
 use num_traits::{PrimInt, ToPrimitive};
+use petgraph::visit::EdgeRef;
+
+pub fn new<NodeData: 'static, EdgeData: 'static>() -> impl DynamicGraph<NodeData, EdgeData, usize> {
+    Graph::<NodeData, EdgeData, Directed, usize>::default()
+}
 
 impl<NodeData, EdgeData> ImmutableGraphContainer<NodeData, EdgeData, usize> for Graph<NodeData, EdgeData, Directed, usize> {
     fn node_indices(&self) -> NodeIndices<usize> {
@@ -39,14 +44,32 @@ impl<NodeData, EdgeData> ImmutableGraphContainer<NodeData, EdgeData, usize> for 
     }
 }
 
+impl<NodeData, EdgeData> MutableGraphContainer<NodeData, EdgeData, usize> for Graph<NodeData, EdgeData, Directed, usize> {
+    fn add_node(&mut self, node_data: NodeData) -> NodeIndex<usize> {
+        self.add_node(node_data).index().into()
+    }
+
+    fn add_edge(&mut self, from: NodeIndex<usize>, to: NodeIndex<usize>, edge_data: EdgeData) -> EdgeIndex<usize> {
+        self.add_edge(from.into(), to.into(), edge_data).index().into()
+    }
+
+    fn remove_node(&mut self, node_id: NodeIndex<usize>) -> Option<NodeData> {
+        self.remove_node(node_id.into())
+    }
+
+    fn remove_edge(&mut self, edge_id: EdgeIndex<usize>) -> Option<EdgeData> {
+        self.remove_edge(edge_id.into())
+    }
+}
+
 impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a, NodeData, EdgeData, usize> for Graph<NodeData, EdgeData, Directed, usize> {
-    type OutNeighbors = Map<Neighbors<'a, EdgeData, usize>, fn(petgraph::graph::NodeIndex<usize>) -> NodeIndex<usize>>;
-    //type OutNeighbors = Neighbors<'a, EdgeData, usize>;
-    type InNeighbors = Map<Neighbors<'a, EdgeData, usize>, fn(petgraph::graph::NodeIndex<usize>) -> NodeIndex<usize>>;
+    type OutNeighbors = Map<Edges<'a, EdgeData, Directed, usize>, fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<usize>>;
+    type InNeighbors = Map<Edges<'a, EdgeData, Directed, usize>, fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<usize>>;
 
     fn out_neighbors(&'a self, node_id: NodeIndex<usize>) -> Option<Self::OutNeighbors> {
         if node_id < self.node_count().into() {
-            Some(self.neighbors_directed(node_id.into(), Direction::Outgoing).map(|n| NodeIndex::from(n.index())))
+            Some(self.edges_directed(node_id.into(), Direction::Outgoing).map(|edge| Neighbor {edge_id: EdgeIndex::from(edge.id().index()), node_id: NodeIndex::from(edge.target().index())}))
+            //Some(self.neighbors_directed(node_id.into(), Direction::Outgoing).map(|n| NodeIndex::from(n.index())))
         } else {
             None
         }
@@ -54,7 +77,8 @@ impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a, NodeData, EdgeData, usize> f
 
     fn in_neighbors(&'a self, node_id: NodeIndex<usize>) -> Option<Self::InNeighbors> {
         if node_id < self.node_count().into() {
-            Some(self.neighbors_directed(node_id.into(), Direction::Incoming).map(|n| NodeIndex::from(n.index())))
+            Some(self.edges_directed(node_id.into(), Direction::Incoming).map(|edge| Neighbor {edge_id: EdgeIndex::from(edge.id().index()), node_id: NodeIndex::from(edge.target().index())}))
+            //Some(self.neighbors_directed(node_id.into(), Direction::Incoming).map(|n| NodeIndex::from(n.index())))
         } else {
             None
         }
