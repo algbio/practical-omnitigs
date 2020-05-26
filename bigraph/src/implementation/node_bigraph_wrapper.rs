@@ -182,6 +182,33 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_bigraph_creation_self_mapped_node_without_partner() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_node(4);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new(graph, |n| if *n == 4 {4} else {if n % 2 == 0 {n + 1} else {n - 1}});
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_bigraph_creation_self_mapped_node_with_partner() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_node(4);
+        graph.add_node(5);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new(graph, |n| if *n == 4 {4} else {if n % 2 == 0 {n + 1} else {n - 1}});
+    }
+
+    #[test]
     fn test_bigraph_verification() {
         let mut graph = petgraph_impl::new();
         let n1 = graph.add_node(0);
