@@ -57,6 +57,7 @@ impl<NodeData: Hash + Eq + Debug, EdgeData, IndexType: PrimInt + Debug, T: Stati
             }
         }
 
+        assert!(data_map.is_empty());
         Self {topology, binode_map, _p1: Default::default(), _p2: Default::default()}
 
         /*for edge_index in topology.edge_indices() {
@@ -134,5 +135,31 @@ mod tests {
         assert_eq!(Some(n1), bigraph.reverse_complement_node(n2));
         assert_eq!(Some(n4), bigraph.reverse_complement_node(n3));
         assert_eq!(Some(n3), bigraph.reverse_complement_node(n4));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_bigraph_creation_unmapped_node() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        let n5 = graph.add_node(4);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_bigraph_creation_wrongly_mapped_node() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        let n5 = graph.add_node(4);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if *n == 4 {3} else {if n % 2 == 0 {n + 1} else {n - 1}});
     }
 }
