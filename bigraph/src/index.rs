@@ -1,6 +1,5 @@
 use num_traits::{PrimInt, NumCast, ToPrimitive};
 use std::ops::{Index, IndexMut};
-use std::slice::SliceIndex;
 
 #[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
 #[opaque_typedef(derive(Display, FromInner))]
