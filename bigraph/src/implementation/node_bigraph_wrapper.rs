@@ -3,7 +3,7 @@ use crate::NodeIndex;
 use std::marker::PhantomData;
 use std::hash::Hash;
 use std::collections::HashMap;
-use num_traits::{PrimInt, NumCast};
+use num_traits::{PrimInt, NumCast, ToPrimitive};
 use std::fmt::Debug;
 
 /**
@@ -74,6 +74,24 @@ impl<NodeData: Hash + Eq + Debug, EdgeData, IndexType: PrimInt + Debug, T: Stati
         unimplemented!()
         */
     }
+
+    pub fn verify_node_pairing(&self) -> bool {
+        if self.binode_map.len() != self.topology.node_count() {
+            return false;
+        }
+
+        for (node_index, partner_index) in self.binode_map.iter().enumerate() {
+            let node_index_inner = if let Some(node_index_inner) = IndexType::from(node_index) {node_index_inner} else {return false;};
+            let node_index = NodeIndex::from(node_index_inner);
+            let partner_index_inner = if let Some(parner_index_inner) = partner_index.to_usize() {parner_index_inner} else {return false;};
+            let reverse_mapping = if let Some(reverse_mapping) = self.binode_map.get(partner_index_inner).cloned() {reverse_mapping} else {return false;};
+            if reverse_mapping != node_index || node_index == *partner_index || reverse_mapping.is_invalid() || partner_index.is_invalid() || node_index.is_invalid() {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>> NodeBigraph<NodeData, EdgeData, IndexType> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T> {
@@ -118,7 +136,7 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, 
 
 #[cfg(test)]
 mod tests {
-    use crate::{petgraph_impl, NodeBigraph, MutableGraphContainer};
+    use crate::{petgraph_impl, NodeBigraph, MutableGraphContainer, NodeIndex};
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
 
     #[test]
@@ -147,7 +165,7 @@ mod tests {
         let n4 = graph.add_node(3);
         let n5 = graph.add_node(4);
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+        NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
     }
 
     #[test]
@@ -160,6 +178,60 @@ mod tests {
         let n4 = graph.add_node(3);
         let n5 = graph.add_node(4);
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if *n == 4 {3} else {if n % 2 == 0 {n + 1} else {n - 1}});
+        NodeBigraphWrapper::new(graph, |n| if *n == 4 {3} else {if n % 2 == 0 {n + 1} else {n - 1}});
+    }
+
+    #[test]
+    fn test_bigraph_verification() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+        assert!(bigraph.verify_node_pairing());
+    }
+
+    #[test]
+    fn test_bigraph_verification_self_mapped_node() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        let mut bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+        bigraph.topology.add_node(4);
+        bigraph.binode_map.push(NodeIndex::from(4usize));
+        assert!(!bigraph.verify_node_pairing());
+    }
+
+    #[test]
+    fn test_bigraph_verification_self_unmapped_node() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        let mut bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+        bigraph.topology.add_node(4);
+        bigraph.binode_map.push(NodeIndex::invalid());
+        assert!(!bigraph.verify_node_pairing());
+    }
+
+    #[test]
+    fn test_bigraph_verification_wrongly_mapped_node() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        let mut bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+        bigraph.topology.add_node(4);
+        bigraph.binode_map.push(NodeIndex::from(3usize));
+        assert!(!bigraph.verify_node_pairing());
     }
 }
