@@ -17,7 +17,7 @@ impl std::fmt::Display for VectorGenome {
 
 impl From<&[u8]> for VectorGenome {
     fn from(slice: &[u8]) -> Self {
-        Self (slice.into())
+        Self(slice.into())
     }
 }
 

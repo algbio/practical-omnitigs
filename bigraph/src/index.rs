@@ -1,4 +1,4 @@
-use num_traits::{PrimInt, NumCast, ToPrimitive};
+use num_traits::{NumCast, PrimInt, ToPrimitive};
 use std::ops::{Index, IndexMut};
 
 #[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
@@ -174,7 +174,7 @@ impl<IndexType: PrimInt> Iterator for NodeIndices<IndexType> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
-            let result = Some(NodeIndex(self.start.clone()));
+            let result = Some(NodeIndex(self.start));
             self.start = self.start + NumCast::from(1).unwrap();
             result
         } else {
@@ -188,7 +188,7 @@ impl<IndexType: PrimInt> Iterator for EdgeIndices<IndexType> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
-            let result = Some(EdgeIndex(self.start.clone()));
+            let result = Some(EdgeIndex(self.start));
             self.start = self.start + NumCast::from(1).unwrap();
             result
         } else {
