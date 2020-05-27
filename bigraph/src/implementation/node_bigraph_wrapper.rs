@@ -1,10 +1,12 @@
-use crate::{StaticGraph, EdgeIndex, NodeBigraph, ImmutableGraphContainer, NodeIndices, EdgeIndices};
 use crate::NodeIndex;
-use std::marker::PhantomData;
-use std::hash::Hash;
+use crate::{
+    EdgeIndex, EdgeIndices, ImmutableGraphContainer, NodeBigraph, NodeIndices, StaticGraph,
+};
+use num_traits::{NumCast, PrimInt};
 use std::collections::HashMap;
-use num_traits::{PrimInt, NumCast};
 use std::fmt::Debug;
+use std::hash::Hash;
+use std::marker::PhantomData;
 
 /**
 *   Wrapper for a static graph that adds a binode mapping function.
@@ -27,7 +29,12 @@ use std::fmt::Debug;
 *   assert_eq!(Some(n1.clone()), bigraph.reverse_complement_node(n2.clone()));
 *   ```
 */
-pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>> {
+pub struct NodeBigraphWrapper<
+    NodeData,
+    EdgeData,
+    IndexType: PrimInt,
+    T: StaticGraph<NodeData, EdgeData, IndexType>,
+> {
     pub topology: T,
     binode_map: Vec<NodeIndex<IndexType>>,
     // biedge_map: Vec<EdgeIndex<IndexType>>,
@@ -35,7 +42,13 @@ pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, T: StaticG
     _p2: PhantomData<EdgeData>,
 }
 
-impl<NodeData: Hash + Eq + Debug, EdgeData, IndexType: PrimInt + Debug, T: StaticGraph<NodeData, EdgeData, IndexType>> NodeBigraphWrapper<NodeData, EdgeData, IndexType, T> {
+impl<
+        NodeData: Hash + Eq + Debug,
+        EdgeData,
+        IndexType: PrimInt + Debug,
+        T: StaticGraph<NodeData, EdgeData, IndexType>,
+    > NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
     pub fn new(topology: T, binode_mapping_function: fn(&NodeData) -> NodeData) -> Self {
         let mut data_map: HashMap<NodeData, NodeIndex<IndexType>> = HashMap::new();
         let mut binode_map = vec![NodeIndex::<IndexType>::invalid(); topology.node_count()];
@@ -47,7 +60,10 @@ impl<NodeData: Hash + Eq + Debug, EdgeData, IndexType: PrimInt + Debug, T: Stati
             if let Some(partner_index) = data_map.get(node_data).cloned() {
                 assert_eq!(NodeIndex::<IndexType>::invalid(), binode_map[node_index]);
                 assert_eq!(NodeIndex::<IndexType>::invalid(), binode_map[partner_index]);
-                assert_eq!(node_data, &binode_mapping_function(topology.node_data(partner_index).unwrap()));
+                assert_eq!(
+                    node_data,
+                    &binode_mapping_function(topology.node_data(partner_index).unwrap())
+                );
                 binode_map[node_index] = partner_index;
                 binode_map[partner_index] = node_index;
                 data_map.remove(node_data);
@@ -58,7 +74,12 @@ impl<NodeData: Hash + Eq + Debug, EdgeData, IndexType: PrimInt + Debug, T: Stati
         }
 
         assert!(data_map.is_empty());
-        Self {topology, binode_map, _p1: Default::default(), _p2: Default::default()}
+        Self {
+            topology,
+            binode_map,
+            _p1: Default::default(),
+            _p2: Default::default(),
+        }
 
         /*for edge_index in topology.edge_indices() {
             let edge = topology.edge(edge_index);
@@ -76,13 +97,24 @@ impl<NodeData: Hash + Eq + Debug, EdgeData, IndexType: PrimInt + Debug, T: Stati
     }
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>> NodeBigraph<NodeData, EdgeData, IndexType> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T> {
-    fn reverse_complement_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
-        self.binode_map.get(<usize as NumCast>::from(node_id).unwrap()).cloned()
+impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>>
+    NodeBigraph<NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
+    fn reverse_complement_node(
+        &self,
+        node_id: NodeIndex<IndexType>,
+    ) -> Option<NodeIndex<IndexType>> {
+        self.binode_map
+            .get(<usize as NumCast>::from(node_id).unwrap())
+            .cloned()
     }
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>> ImmutableGraphContainer<NodeData, EdgeData, IndexType> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T> {
+impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>>
+    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
     fn node_indices(&self) -> NodeIndices<IndexType> {
         self.topology.node_indices()
     }
@@ -118,8 +150,8 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, 
 
 #[cfg(test)]
 mod tests {
-    use crate::{petgraph_impl, NodeBigraph, MutableGraphContainer};
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+    use crate::{petgraph_impl, MutableGraphContainer, NodeBigraph};
 
     #[test]
     fn test_bigraph_creation() {
@@ -129,7 +161,7 @@ mod tests {
         let n3 = graph.add_node(2);
         let n4 = graph.add_node(3);
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
 
         assert_eq!(Some(n2), bigraph.reverse_complement_node(n1));
         assert_eq!(Some(n1), bigraph.reverse_complement_node(n2));
@@ -143,11 +175,11 @@ mod tests {
         let mut graph = petgraph_impl::new();
         let n1 = graph.add_node(0);
         let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
-        let n5 = graph.add_node(4);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_node(4);
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
+        NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
     }
 
     #[test]
@@ -156,10 +188,18 @@ mod tests {
         let mut graph = petgraph_impl::new();
         let n1 = graph.add_node(0);
         let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
-        let n5 = graph.add_node(4);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_node(4);
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if *n == 4 {3} else {if n % 2 == 0 {n + 1} else {n - 1}});
+        NodeBigraphWrapper::new(graph, |n| {
+            if *n == 4 {
+                3
+            } else if n % 2 == 0 {
+                n + 1
+            } else {
+                n - 1
+            }
+        });
     }
 }

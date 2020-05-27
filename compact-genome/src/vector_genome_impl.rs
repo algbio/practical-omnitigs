@@ -10,14 +10,14 @@ impl Genome<'_> for VectorGenome {
 }
 
 impl std::fmt::Display for VectorGenome {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         unimplemented!()
     }
 }
 
 impl From<&[u8]> for VectorGenome {
     fn from(slice: &[u8]) -> Self {
-        Self (slice.into())
+        Self(slice.into())
     }
 }
 
