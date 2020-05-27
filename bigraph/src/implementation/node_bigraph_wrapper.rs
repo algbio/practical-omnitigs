@@ -96,6 +96,9 @@ impl<
         */
     }
 
+    /**
+     * Returns true if each node has exactly one partner, and this relation is symmetric.
+     */
     pub fn verify_node_pairing(&self) -> bool {
         if self.binode_map.len() != self.topology.node_count() {
             return false;
@@ -130,6 +133,21 @@ impl<
         }
 
         true
+    }
+
+    /**
+     * Returns true if the mirror property of edges is fulfilled.
+     * Assumes that the node pairing is correct (See [verify_node_pairing()](NodeBigraphWrapper::verify_node_pairing))
+     */
+    pub fn verify_mirror_property(&self) -> bool {
+        unimplemented!()
+    }
+
+    /**
+     * Returns true if all unitigs in the graph have length of at most one node.
+     */
+    pub fn verify_unitig_length_is_zero(&self) -> bool {
+        unimplemented!()
     }
 }
 
