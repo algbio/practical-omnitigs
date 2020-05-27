@@ -1,4 +1,4 @@
-use num_traits::{PrimInt, NumCast, ToPrimitive};
+use num_traits::{NumCast, PrimInt, ToPrimitive};
 use std::ops::{Index, IndexMut};
 
 #[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
