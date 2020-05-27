@@ -175,11 +175,11 @@ mod tests {
         let mut graph = petgraph_impl::new();
         let n1 = graph.add_node(0);
         let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
-        let n5 = graph.add_node(4);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_node(4);
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
     }
 
     #[test]
@@ -188,19 +188,17 @@ mod tests {
         let mut graph = petgraph_impl::new();
         let n1 = graph.add_node(0);
         let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
-        let n5 = graph.add_node(4);
+        graph.add_node(2);
+        graph.add_node(3);
+        graph.add_node(4);
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| {
+        NodeBigraphWrapper::new(graph, |n| {
             if *n == 4 {
                 3
+            } else if n % 2 == 0 {
+                n + 1
             } else {
-                if n % 2 == 0 {
-                    n + 1
-                } else {
-                    n - 1
-                }
+                n - 1
             }
         });
     }

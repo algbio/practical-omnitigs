@@ -75,17 +75,16 @@ impl<NodeData, EdgeData> MutableGraphContainer<NodeData, EdgeData, usize>
     }
 }
 
+type PetgraphNeighborTranslator<'a, EdgeData> =
+    fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<usize>;
+
 impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a, NodeData, EdgeData, usize>
     for Graph<NodeData, EdgeData, Directed, usize>
 {
-    type OutNeighbors = Map<
-        Edges<'a, EdgeData, Directed, usize>,
-        fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<usize>,
-    >;
-    type InNeighbors = Map<
-        Edges<'a, EdgeData, Directed, usize>,
-        fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<usize>,
-    >;
+    type OutNeighbors =
+        Map<Edges<'a, EdgeData, Directed, usize>, PetgraphNeighborTranslator<'a, EdgeData>>;
+    type InNeighbors =
+        Map<Edges<'a, EdgeData, Directed, usize>, PetgraphNeighborTranslator<'a, EdgeData>>;
 
     fn out_neighbors(&'a self, node_id: NodeIndex<usize>) -> Option<Self::OutNeighbors> {
         if node_id < self.node_count().into() {
