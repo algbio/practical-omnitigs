@@ -1,10 +1,10 @@
 use crate::{ImmutableGraphContainer, NavigableGraph, NodeBigraph};
-use num_traits::{PrimInt};
+use num_traits::PrimInt;
 
 pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-+ for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-+ NodeBigraph<NodeData, EdgeData, IndexType>
+    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+    + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
+    + NodeBigraph<NodeData, EdgeData, IndexType>
 {
     /**
      * Returns true if the [mirror property] of edges is fulfilled.
@@ -18,7 +18,7 @@ ImmutableGraphContainer<NodeData, EdgeData, IndexType>
                 let from_node_partner = self.partner_node(from_node).unwrap();
                 let to_node_partner = self.partner_node(to_node.node_id).unwrap();
                 if !self.contains_edge(to_node_partner, from_node_partner) {
-                    return false
+                    return false;
                 }
             }
         }
@@ -33,13 +33,14 @@ ImmutableGraphContainer<NodeData, EdgeData, IndexType>
         unimplemented!()
     }
 }
+
 impl<
-    NodeData,
-    EdgeData,
-    IndexType: PrimInt,
-    T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-    + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-    + NodeBigraph<NodeData, EdgeData, IndexType>,
-> StaticBigraph<NodeData, EdgeData, IndexType> for T
+        NodeData,
+        EdgeData,
+        IndexType: PrimInt,
+        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+            + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
+            + NodeBigraph<NodeData, EdgeData, IndexType>,
+    > StaticBigraph<NodeData, EdgeData, IndexType> for T
 {
 }

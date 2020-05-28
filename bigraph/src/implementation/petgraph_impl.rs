@@ -48,7 +48,9 @@ impl<NodeData, EdgeData> ImmutableGraphContainer<NodeData, EdgeData, usize>
     }
 
     fn contains_edge(&self, from: NodeIndex<usize>, to: NodeIndex<usize>) -> bool {
-        self.edges_connecting(from.into(), to.into()).next().is_some()
+        self.edges_connecting(from.into(), to.into())
+            .next()
+            .is_some()
     }
 }
 

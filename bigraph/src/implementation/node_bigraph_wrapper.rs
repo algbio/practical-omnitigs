@@ -1,6 +1,6 @@
-use crate::{NodeIndex, NavigableGraph};
 use crate::{
-    EdgeIndex, EdgeIndices, ImmutableGraphContainer, NodeBigraph, NodeIndices, StaticGraph,
+    EdgeIndex, EdgeIndices, ImmutableGraphContainer, NavigableGraph, NodeBigraph, NodeIndex,
+    NodeIndices, StaticGraph,
 };
 use num_traits::{NumCast, PrimInt, ToPrimitive};
 use std::collections::HashMap;
@@ -29,12 +29,7 @@ use std::marker::PhantomData;
 *   assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
 *   ```
 */
-pub struct NodeBigraphWrapper<
-    NodeData,
-    EdgeData,
-    IndexType: PrimInt,
-    T,
-> {
+pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, T> {
     pub topology: T,
     binode_map: Vec<NodeIndex<IndexType>>,
     // biedge_map: Vec<EdgeIndex<IndexType>>,
@@ -136,22 +131,22 @@ impl<
     }
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T>
-    NodeBigraph<NodeData, EdgeData, IndexType>
+impl<NodeData, EdgeData, IndexType: PrimInt, T> NodeBigraph<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    fn partner_node(
-        &self,
-        node_id: NodeIndex<IndexType>,
-    ) -> Option<NodeIndex<IndexType>> {
+    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
         self.binode_map
             .get(<usize as NumCast>::from(node_id).unwrap())
             .cloned()
     }
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>>
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+impl<
+        NodeData,
+        EdgeData,
+        IndexType: PrimInt,
+        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>,
+    > ImmutableGraphContainer<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn node_indices(&self) -> NodeIndices<IndexType> {
@@ -191,9 +186,15 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: ImmutableGraphContainer<NodeData
     }
 }
 
-impl<'a, NodeData, EdgeData, IndexType: PrimInt, T: NavigableGraph<'a, NodeData, EdgeData, IndexType>>
-NavigableGraph<'a, NodeData, EdgeData, IndexType>
-for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T> {
+impl<
+        'a,
+        NodeData,
+        EdgeData,
+        IndexType: PrimInt,
+        T: NavigableGraph<'a, NodeData, EdgeData, IndexType>,
+    > NavigableGraph<'a, NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
     type OutNeighbors = <T as NavigableGraph<'a, NodeData, EdgeData, IndexType>>::OutNeighbors;
     type InNeighbors = <T as NavigableGraph<'a, NodeData, EdgeData, IndexType>>::InNeighbors;
 

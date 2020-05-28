@@ -55,10 +55,7 @@ pub trait NodeBigraph<NodeData, EdgeData, IndexType> {
     /**
      * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
      */
-    fn partner_node(
-        &self,
-        node_id: NodeIndex<IndexType>,
-    ) -> Option<NodeIndex<IndexType>>;
+    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>>;
 }
 
 pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:
