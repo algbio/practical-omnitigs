@@ -33,7 +33,7 @@ pub struct NodeBigraphWrapper<
     NodeData,
     EdgeData,
     IndexType: PrimInt,
-    T: StaticGraph<NodeData, EdgeData, IndexType>,
+    T,
 > {
     pub topology: T,
     binode_map: Vec<NodeIndex<IndexType>>,
@@ -151,7 +151,7 @@ impl<
     }
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>>
+impl<NodeData, EdgeData, IndexType: PrimInt, T>
     NodeBigraph<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
@@ -165,7 +165,7 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, 
     }
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>>
+impl<NodeData, EdgeData, IndexType: PrimInt, T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>>
     ImmutableGraphContainer<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
