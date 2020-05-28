@@ -45,8 +45,15 @@ pub trait NavigableGraph<'a, NodeData, EdgeData, IndexType> {
     fn in_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::InNeighbors>;
 }
 
+/**
+ * A node-centric bidirected graph.
+ * That is a graph in which each node has a unique partner, and this relation is symmetric.
+ */
 pub trait NodeBigraph<NodeData, EdgeData, IndexType> {
-    fn reverse_complement_node(
+    /**
+     * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
+     */
+    fn partner_node(
         &self,
         node_id: NodeIndex<IndexType>,
     ) -> Option<NodeIndex<IndexType>>;

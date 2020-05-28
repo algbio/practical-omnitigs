@@ -144,8 +144,8 @@ impl<
     pub fn verify_mirror_property(&self) -> bool {
         for from_node in self.node_indices() {
             for to_node in self.out_neighbors(from_node) {
-                let from_node_partner = self.reverse_complement_node(from_node).unwrap();
-                let to_node_partner = self.reverse_complement_node(to_node).unwrap();
+                let from_node_partner = self.partner_node(from_node).unwrap();
+                let to_node_partner = self.partner_node(to_node).unwrap();
                 if !self.contains_edge(to_node_partner, from_node_partner) {
                     return false
                 }
@@ -167,7 +167,7 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T>
     NodeBigraph<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    fn reverse_complement_node(
+    fn partner_node(
         &self,
         node_id: NodeIndex<IndexType>,
     ) -> Option<NodeIndex<IndexType>> {
@@ -248,10 +248,10 @@ mod tests {
         graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
 
-        assert_eq!(Some(n2), bigraph.reverse_complement_node(n1));
-        assert_eq!(Some(n1), bigraph.reverse_complement_node(n2));
-        assert_eq!(Some(n4), bigraph.reverse_complement_node(n3));
-        assert_eq!(Some(n3), bigraph.reverse_complement_node(n4));
+        assert_eq!(Some(n2), bigraph.partner_node(n1));
+        assert_eq!(Some(n1), bigraph.partner_node(n2));
+        assert_eq!(Some(n4), bigraph.partner_node(n3));
+        assert_eq!(Some(n3), bigraph.partner_node(n4));
     }
 
     #[test]
