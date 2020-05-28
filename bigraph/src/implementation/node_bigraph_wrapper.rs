@@ -1,4 +1,4 @@
-use crate::NodeIndex;
+use crate::{NodeIndex, NavigableGraph};
 use crate::{
     EdgeIndex, EdgeIndices, ImmutableGraphContainer, NodeBigraph, NodeIndices, StaticGraph,
 };
@@ -203,6 +203,21 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: ImmutableGraphContainer<NodeData
 
     fn contains_edge(&self, from: NodeIndex<IndexType>, to: NodeIndex<IndexType>) -> bool {
         self.topology.contains_edge(from, to)
+    }
+}
+
+impl<'a, NodeData, EdgeData, IndexType: PrimInt, T: NavigableGraph<'a, NodeData, EdgeData, IndexType>>
+NavigableGraph<'a, NodeData, EdgeData, IndexType>
+for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T> {
+    type OutNeighbors = <T as NavigableGraph<'a, NodeData, EdgeData, IndexType>>::OutNeighbors;
+    type InNeighbors = <T as NavigableGraph<'a, NodeData, EdgeData, IndexType>>::InNeighbors;
+
+    fn out_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::OutNeighbors> {
+        self.topology.out_neighbors(node_id)
+    }
+
+    fn in_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::InNeighbors> {
+        self.topology.in_neighbors(node_id)
     }
 }
 
