@@ -1,6 +1,8 @@
 use crate::{EdgeIndex, EdgeIndices, NodeIndex, NodeIndices};
 use num_traits::PrimInt;
 
+pub mod static_bigraph;
+
 pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
     fn node_indices(&self) -> NodeIndices<IndexType>;
 
@@ -88,23 +90,6 @@ impl<
             + MutableGraphContainer<NodeData, EdgeData, IndexType>
             + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>,
     > DynamicGraph<NodeData, EdgeData, IndexType> for T
-{
-}
-
-pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-    + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-    + NodeBigraph<NodeData, EdgeData, IndexType>
-{
-}
-impl<
-        NodeData,
-        EdgeData,
-        IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-            + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-            + NodeBigraph<NodeData, EdgeData, IndexType>,
-    > StaticBigraph<NodeData, EdgeData, IndexType> for T
 {
 }
 
