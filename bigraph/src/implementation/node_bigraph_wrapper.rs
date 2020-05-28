@@ -200,6 +200,10 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, 
     fn edge_data_mut(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<&mut EdgeData> {
         self.topology.edge_data_mut(edge_id)
     }
+
+    fn contains_edge(&self, from: NodeIndex<IndexType>, to: NodeIndex<IndexType>) -> bool {
+        self.topology.contains_edge(from, to)
+    }
 }
 
 #[cfg(test)]

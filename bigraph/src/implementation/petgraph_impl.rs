@@ -46,6 +46,10 @@ impl<NodeData, EdgeData> ImmutableGraphContainer<NodeData, EdgeData, usize>
     fn edge_data_mut(&mut self, edge_id: EdgeIndex<usize>) -> Option<&mut EdgeData> {
         self.edge_weight_mut(edge_id.into())
     }
+
+    fn contains_edge(&self, from: NodeIndex<usize>, to: NodeIndex<usize>) -> bool {
+        self.edges_connecting(from.into(), to.into()).next().is_some()
+    }
 }
 
 impl<NodeData, EdgeData> MutableGraphContainer<NodeData, EdgeData, usize>

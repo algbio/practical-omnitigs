@@ -17,6 +17,8 @@ pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
     fn node_data_mut(&mut self, node_id: NodeIndex<IndexType>) -> Option<&mut NodeData>;
 
     fn edge_data_mut(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<&mut EdgeData>;
+
+    fn contains_edge(&self, from: NodeIndex<IndexType>, to: NodeIndex<IndexType>) -> bool;
 }
 
 pub trait MutableGraphContainer<NodeData, EdgeData, IndexType> {
