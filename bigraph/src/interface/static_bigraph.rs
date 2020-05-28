@@ -66,4 +66,18 @@ mod test {
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         assert!(bigraph.verify_mirror_property());
     }
+
+    #[test]
+    fn test_verify_mirror_property_unpaired() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        graph.add_edge(n1, n3, 10);
+        graph.add_edge(n4, n2, 11);
+        graph.add_edge(n3, n1, 12);
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(!bigraph.verify_mirror_property());
+    }
 }
