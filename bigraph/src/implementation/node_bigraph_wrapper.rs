@@ -136,11 +136,23 @@ impl<
     }
 
     /**
-     * Returns true if the mirror property of edges is fulfilled.
+     * Returns true if the [mirror property] of edges is fulfilled.
      * Assumes that the node pairing is correct (See [verify_node_pairing()](NodeBigraphWrapper::verify_node_pairing))
+     *
+     * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
     pub fn verify_mirror_property(&self) -> bool {
-        unimplemented!()
+        for from_node in self.node_indices() {
+            for to_node in self.out_neighbors(from_node) {
+                let from_node_partner = self.reverse_complement_node(from_node).unwrap();
+                let to_node_partner = self.reverse_complement_node(to_node).unwrap();
+                if !self.contains_edge(to_node_partner, from_node_partner) {
+                    return false
+                }
+            }
+        }
+
+        true
     }
 
     /**
