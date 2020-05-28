@@ -25,8 +25,8 @@ use std::marker::PhantomData;
 *   graph.add_edge(n1.clone(), n2.clone(), ());
 *   graph.add_edge(n2.clone(), n1.clone(), ());
 *   let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
-*   assert_eq!(Some(n2.clone()), bigraph.reverse_complement_node(n1.clone()));
-*   assert_eq!(Some(n1.clone()), bigraph.reverse_complement_node(n2.clone()));
+*   assert_eq!(Some(n2.clone()), bigraph.partner_node(n1.clone()));
+*   assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
 *   ```
 */
 pub struct NodeBigraphWrapper<
