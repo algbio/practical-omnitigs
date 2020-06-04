@@ -1,6 +1,8 @@
 [package]
 name = "compact-genome"
 description = "Representation of genomes"
+categories = ["data-structures", "science"]
+keywords = ["genome", "representation", "compact", "string", "bioinformatics"]
 version = "0.1.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
