@@ -1,8 +1,13 @@
 [package]
 name = "bigraph"
-version = "0.1.0"
+description = "Different representations with implemented operations on bigraphs"
+version = "0.1.0-dev"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
+homepage = "https://github.com/algbio/practical-omnitigs/tree/master/bigraph"
+documentation = "https://docs.rs/bigraph"
+repository = "https://github.com/algbio/practical-omnitigs"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
