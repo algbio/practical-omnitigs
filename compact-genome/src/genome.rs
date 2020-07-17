@@ -1,6 +1,6 @@
 use std::iter::FromIterator;
 
-pub trait Genome: FromIterator<u8> + std::fmt::Display
+pub trait Genome: for<'a> FromIterator<&'a u8> + FromIterator<u8> + std::fmt::Display + Eq
 where
     for<'a> &'a Self: IntoIterator<Item = u8>,
 {
@@ -17,7 +17,7 @@ where
      * Valid characters are defined by [is_valid_ascii_genome_character()](is_valid_ascii_genome_character)
      */
     fn is_valid(&self) -> bool {
-        self.into_iter().all(|c| is_valid_ascii_genome_character(c))
+        self.into_iter().all(is_valid_ascii_genome_character)
     }
 }
 
