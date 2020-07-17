@@ -8,7 +8,7 @@ checksum = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
 
 [[package]]
 name = "bigraph"
-version = "0.1.0-dev"
+version = "0.1.0-alpha.1"
 dependencies = [
  "num-traits",
  "opaque_typedef",
