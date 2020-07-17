@@ -1,4 +1,4 @@
-# Practical Omnitigs
+# Practical [Omnitigs](https://www.liebertpub.com/doi/full/10.1089/cmb.2016.0141)
 
 ![](https://github.com/algbio/practical-omnitigs/workflows/Tests%20%26%20Lints/badge.svg?branch=master)
 
