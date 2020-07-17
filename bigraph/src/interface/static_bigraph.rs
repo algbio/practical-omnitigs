@@ -1,11 +1,44 @@
-use crate::{ImmutableGraphContainer, NavigableGraph, NodeBigraph};
+use crate::{NodeIndex, StaticGraph};
 use num_traits::PrimInt;
 
+/**
+ * A node-centric bidirected graph.
+ * That is a graph in which each node has a unique partner, and this relation is symmetric.
+ */
 pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-    + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-    + NodeBigraph<NodeData, EdgeData, IndexType>
+    StaticGraph<NodeData, EdgeData, IndexType> + Sized
 {
+    /**
+     * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
+     */
+    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>>;
+
+    /**
+     * Returns true if each node has exactly one partner, and this relation is symmetric.
+     */
+    fn verify_node_pairing(&self) -> bool {
+        for node_index in self.node_indices() {
+            let partner_index = if let Some(partner_node) = self.partner_node(node_index) {
+                partner_node
+            } else {
+                return false;
+            };
+            let partner_partner_index =
+                if let Some(partner_partner_node) = self.partner_node(partner_index) {
+                    partner_partner_node
+                } else {
+                    return false;
+                };
+
+            assert!(!node_index.is_invalid() && !partner_index.is_invalid() && !partner_partner_index.is_invalid());
+            if node_index != partner_partner_index || node_index == partner_index {
+                return false;
+            }
+        }
+
+        true
+    }
+
     /**
      * Returns true if the [mirror property] of edges is fulfilled.
      * Assumes that the node pairing is correct (See [verify_node_pairing()](NodeBigraphWrapper::verify_node_pairing))
@@ -34,15 +67,31 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
     }
 }
 
-impl<
-        NodeData,
-        EdgeData,
-        IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-            + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-            + NodeBigraph<NodeData, EdgeData, IndexType>,
-    > StaticBigraph<NodeData, EdgeData, IndexType> for T
+/**
+ * A static bigraph that can be created from a static digraph.
+ * Since the graph is static, the resulting topology will be the input topology, only the
+ * bigraph node mapping function will be computed on top.
+ */
+pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
+    StaticBigraph<NodeData, EdgeData, IndexType> + Sized
 {
+    /** The type of directed topology the bigraph is created from. */
+    type Topology: StaticGraph<NodeData, EdgeData, IndexType>;
+
+    /**
+     * Converts the given topology into a bigraph with the given mapping function.
+     * If the resulting graph has wrongly mapped nodes, the method panics.
+     */
+    fn new(_topology: Self::Topology, _binode_mapping_function: fn(&NodeData) -> NodeData) -> Self;
+
+    /**
+     * Converts the given topology into a bigraph with the given mapping function.
+     * Wrongly mapped nodes are stored without mapping.
+     */
+    fn new_unchecked(
+        _topology: Self::Topology,
+        _binode_mapping_function: fn(&NodeData) -> NodeData,
+    ) -> Self;
 }
 
 #[cfg(test)]
@@ -50,7 +99,7 @@ mod test {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
     use crate::interface::static_bigraph::StaticBigraph;
     use crate::interface::MutableGraphContainer;
-    use crate::petgraph_impl;
+    use crate::{petgraph_impl, StaticBigraphFromDigraph};
 
     #[test]
     fn test_verify_mirror_property_positive() {
@@ -80,4 +129,7 @@ mod test {
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         assert!(!bigraph.verify_mirror_property());
     }
+
+    #[test]
+    fn test_verify_unitig_length_is_zero_positive() {}
 }

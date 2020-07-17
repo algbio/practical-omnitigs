@@ -1,7 +1,11 @@
 use crate::{EdgeIndex, EdgeIndices, NodeIndex, NodeIndices};
 use num_traits::PrimInt;
 
-pub mod static_bigraph;
+mod dynamic_bigraph;
+mod static_bigraph;
+
+pub use dynamic_bigraph::*;
+pub use static_bigraph::*;
 
 pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
     fn node_indices(&self) -> NodeIndices<IndexType>;
@@ -45,17 +49,6 @@ pub trait NavigableGraph<'a, NodeData, EdgeData, IndexType> {
     fn out_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::OutNeighbors>;
 
     fn in_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::InNeighbors>;
-}
-
-/**
- * A node-centric bidirected graph.
- * That is a graph in which each node has a unique partner, and this relation is symmetric.
- */
-pub trait NodeBigraph<NodeData, EdgeData, IndexType> {
-    /**
-     * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
-     */
-    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>>;
 }
 
 pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:

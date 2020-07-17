@@ -1,8 +1,8 @@
 use crate::{
-    EdgeIndex, EdgeIndices, ImmutableGraphContainer, NavigableGraph, NodeBigraph, NodeIndex,
-    NodeIndices, StaticGraph,
+    EdgeIndex, EdgeIndices, ImmutableGraphContainer, NavigableGraph, NodeIndex, NodeIndices,
+    StaticBigraph, StaticBigraphFromDigraph, StaticGraph,
 };
-use num_traits::{NumCast, PrimInt, ToPrimitive};
+use num_traits::{NumCast, PrimInt};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -16,7 +16,7 @@ use std::marker::PhantomData;
 *
 *   ```rust
 *   use bigraph::node_bigraph_wrapper::NodeBigraphWrapper;
-*   use bigraph::{NodeBigraph, MutableGraphContainer};
+*   use bigraph::{StaticBigraph, MutableGraphContainer, StaticBigraphFromDigraph};
 *   use bigraph::petgraph_impl;
 *
 *   let mut graph = petgraph_impl::new();
@@ -42,9 +42,27 @@ impl<
         EdgeData,
         IndexType: PrimInt + Debug,
         T: StaticGraph<NodeData, EdgeData, IndexType>,
-    > NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+    > StaticBigraph<NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    pub fn new(topology: T, binode_mapping_function: fn(&NodeData) -> NodeData) -> Self {
+    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
+        self.binode_map
+            .get(<usize as NumCast>::from(node_id).unwrap())
+            .cloned()
+    }
+}
+
+impl<
+        NodeData: Eq + Hash + Debug,
+        EdgeData,
+        IndexType: PrimInt + Debug,
+        T: StaticGraph<NodeData, EdgeData, IndexType>,
+    > StaticBigraphFromDigraph<NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
+    type Topology = T;
+
+    fn new(topology: Self::Topology, binode_mapping_function: fn(&NodeData) -> NodeData) -> Self {
         let mut data_map: HashMap<NodeData, NodeIndex<IndexType>> = HashMap::new();
         let mut binode_map = vec![NodeIndex::<IndexType>::invalid(); topology.node_count()];
         // let mut biedge_map = vec![NodeIndex::<IndexType>::invalid(); topology.node_count()];
@@ -75,69 +93,13 @@ impl<
             _p1: Default::default(),
             _p2: Default::default(),
         }
+    }
 
-        /*for edge_index in topology.edge_indices() {
-            let edge = topology.edge(edge_index);
-
-            // Search reverse edge
-            let partner_from = binode_mapping_function(topology.node_data(edge.to).unwrap());
-            let partner_to = binode_mapping_function(topology.node_data(edge.from).unwrap());
-
-            for neighbor_node in topology.out_neighbors(partner_from) {
-
-            }
-        }
+    fn new_unchecked(
+        _topology: Self::Topology,
+        _binode_mapping_function: fn(&NodeData) -> NodeData,
+    ) -> Self {
         unimplemented!()
-        */
-    }
-
-    /**
-     * Returns true if each node has exactly one partner, and this relation is symmetric.
-     */
-    pub fn verify_node_pairing(&self) -> bool {
-        if self.binode_map.len() != self.topology.node_count() {
-            return false;
-        }
-
-        for (node_index, partner_index) in self.binode_map.iter().enumerate() {
-            let node_index_inner = if let Some(node_index_inner) = IndexType::from(node_index) {
-                node_index_inner
-            } else {
-                return false;
-            };
-            let node_index = NodeIndex::from(node_index_inner);
-            let partner_index_inner = if let Some(parner_index_inner) = partner_index.to_usize() {
-                parner_index_inner
-            } else {
-                return false;
-            };
-            let reverse_mapping =
-                if let Some(reverse_mapping) = self.binode_map.get(partner_index_inner).cloned() {
-                    reverse_mapping
-                } else {
-                    return false;
-                };
-            if reverse_mapping != node_index
-                || node_index == *partner_index
-                || reverse_mapping.is_invalid()
-                || partner_index.is_invalid()
-                || node_index.is_invalid()
-            {
-                return false;
-            }
-        }
-
-        true
-    }
-}
-
-impl<NodeData, EdgeData, IndexType: PrimInt, T> NodeBigraph<NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
-{
-    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
-        self.binode_map
-            .get(<usize as NumCast>::from(node_id).unwrap())
-            .cloned()
     }
 }
 
@@ -210,7 +172,9 @@ impl<
 #[cfg(test)]
 mod tests {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
-    use crate::{petgraph_impl, MutableGraphContainer, NodeBigraph, NodeIndex};
+    use crate::{
+        petgraph_impl, MutableGraphContainer, NodeIndex, StaticBigraph, StaticBigraphFromDigraph,
+    };
 
     #[test]
     fn test_bigraph_creation() {
