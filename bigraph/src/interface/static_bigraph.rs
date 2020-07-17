@@ -30,7 +30,11 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
                     return false;
                 };
 
-            assert!(!node_index.is_invalid() && !partner_index.is_invalid() && !partner_partner_index.is_invalid());
+            assert!(
+                !node_index.is_invalid()
+                    && !partner_index.is_invalid()
+                    && !partner_partner_index.is_invalid()
+            );
             if node_index != partner_partner_index || node_index == partner_index {
                 return false;
             }
@@ -63,7 +67,15 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
      * Returns true if all unitigs in the graph have length of at most one node.
      */
     fn verify_unitig_length_is_zero(&self) -> bool {
-        unimplemented!()
+        for node in self.node_indices() {
+            if self.out_neighbors(node).unwrap().into_iter().count() == 1
+                && self.in_neighbors(node).unwrap().into_iter().count() == 1
+            {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
@@ -113,6 +125,7 @@ mod test {
         graph.add_edge(n3, n1, 12);
         graph.add_edge(n2, n4, 13);
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_mirror_property());
     }
 
@@ -127,9 +140,63 @@ mod test {
         graph.add_edge(n4, n2, 11);
         graph.add_edge(n3, n1, 12);
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing());
         assert!(!bigraph.verify_mirror_property());
     }
 
     #[test]
-    fn test_verify_unitig_length_is_zero_positive() {}
+    fn test_verify_unitig_length_is_zero_positive() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        let n5 = graph.add_node(4);
+        let n6 = graph.add_node(5);
+        let n7 = graph.add_node(6);
+        let n8 = graph.add_node(7);
+        graph.add_edge(n1, n3, 10);
+        graph.add_edge(n4, n2, 11);
+        graph.add_edge(n3, n5, 12);
+        graph.add_edge(n6, n4, 13);
+        graph.add_edge(n5, n7, 14);
+        graph.add_edge(n8, n6, 15);
+        graph.add_edge(n7, n1, 16);
+        graph.add_edge(n2, n8, 17);
+        graph.add_edge(n1, n5, 18);
+        graph.add_edge(n6, n2, 19);
+        graph.add_edge(n3, n7, 20);
+        graph.add_edge(n8, n4, 21);
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing());
+        assert!(bigraph.verify_mirror_property());
+        assert!(bigraph.verify_unitig_length_is_zero());
+    }
+
+    #[test]
+    fn test_verify_unitig_length_is_zero_negative() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        let n5 = graph.add_node(4);
+        let n6 = graph.add_node(5);
+        let n7 = graph.add_node(6);
+        let n8 = graph.add_node(7);
+        graph.add_edge(n1, n3, 10);
+        graph.add_edge(n4, n2, 11);
+        graph.add_edge(n3, n5, 12);
+        graph.add_edge(n6, n4, 13);
+        graph.add_edge(n5, n7, 14);
+        graph.add_edge(n8, n6, 15);
+        graph.add_edge(n7, n1, 16);
+        graph.add_edge(n2, n8, 17);
+        graph.add_edge(n1, n5, 18);
+        graph.add_edge(n6, n2, 19);
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing());
+        assert!(bigraph.verify_mirror_property());
+        assert!(!bigraph.verify_unitig_length_is_zero());
+    }
 }
