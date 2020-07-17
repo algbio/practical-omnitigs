@@ -1,28 +1,44 @@
+use crate::ascii_complement;
 use crate::genome::Genome;
-use std::fmt::Formatter;
+use std::iter::{Cloned, FromIterator};
 
 pub struct VectorGenome(Vec<u8>);
 
-impl Genome<'_> for VectorGenome {
+impl Genome for VectorGenome {
     fn reverse_complement(&self) -> Self {
-        unimplemented!()
+        self.0
+            .iter()
+            .rev()
+            .cloned()
+            .map(|c| {
+                ascii_complement(c)
+                    .expect("Reverse complement can only be computed from valid genome strings")
+            })
+            .collect()
     }
 }
 
 impl std::fmt::Display for VectorGenome {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
-        unimplemented!()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for c in self {
+            write!(f, "{}", c as char)?;
+        }
+
+        Ok(())
     }
 }
 
-impl From<&[u8]> for VectorGenome {
-    fn from(slice: &[u8]) -> Self {
-        Self(slice.into())
+impl<'a> IntoIterator for &'a VectorGenome {
+    type Item = u8;
+    type IntoIter = Cloned<std::slice::Iter<'a, u8>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter().cloned()
     }
 }
 
-impl From<VectorGenome> for Vec<u8> {
-    fn from(genome: VectorGenome) -> Self {
-        genome.0
+impl FromIterator<u8> for VectorGenome {
+    fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
+        Self(iter.into_iter().collect())
     }
 }
