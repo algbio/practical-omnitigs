@@ -68,6 +68,35 @@ impl<T, IndexType: PrimInt> IndexMut<EdgeIndex<IndexType>> for Vec<T> {
     }
 }
 
+// Unstable as of now (slice_index_methods)
+/*impl<IndexType: PrimInt> SliceIndex<[NodeIndex<IndexType>]> for NodeIndex<IndexType> {
+    type Output = NodeIndex<IndexType>;
+
+    fn get(self, slice: &[NodeIndex<IndexType>]) -> Option<&Self::Output> {
+        slice.get(self.0)
+    }
+
+    fn get_mut(self, slice: &mut [NodeIndex<IndexType>]) -> Option<&mut Self::Output> {
+        slice.get_mut(self.0)
+    }
+
+    unsafe fn get_unchecked(self, slice: &[NodeIndex<IndexType>]) -> &Self::Output {
+        slice.get_unchecked(self.0)
+    }
+
+    unsafe fn get_unchecked_mut(self, slice: &mut [NodeIndex<IndexType>]) -> &mut Self::Output {
+        slice.get_unchecked_mut(self.0)
+    }
+
+    fn index(self, slice: &[NodeIndex<IndexType>]) -> &Self::Output {
+        slice.index(self.0)
+    }
+
+    fn index_mut(self, slice: &mut [NodeIndex<IndexType>]) -> &mut Self::Output {
+        slice.index_mut(self.0)
+    }
+}*/
+
 impl<IndexType: ToPrimitive> ToPrimitive for NodeIndex<IndexType> {
     fn to_i64(&self) -> Option<i64> {
         self.0.to_i64()

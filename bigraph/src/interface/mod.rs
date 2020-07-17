@@ -1,6 +1,12 @@
 use crate::{EdgeIndex, EdgeIndices, NodeIndex, NodeIndices};
 use num_traits::PrimInt;
 
+mod dynamic_bigraph;
+mod static_bigraph;
+
+pub use dynamic_bigraph::*;
+pub use static_bigraph::*;
+
 pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
     fn node_indices(&self) -> NodeIndices<IndexType>;
 
@@ -17,6 +23,8 @@ pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
     fn node_data_mut(&mut self, node_id: NodeIndex<IndexType>) -> Option<&mut NodeData>;
 
     fn edge_data_mut(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<&mut EdgeData>;
+
+    fn contains_edge(&self, from: NodeIndex<IndexType>, to: NodeIndex<IndexType>) -> bool;
 }
 
 pub trait MutableGraphContainer<NodeData, EdgeData, IndexType> {
@@ -41,13 +49,6 @@ pub trait NavigableGraph<'a, NodeData, EdgeData, IndexType> {
     fn out_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::OutNeighbors>;
 
     fn in_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::InNeighbors>;
-}
-
-pub trait NodeBigraph<NodeData, EdgeData, IndexType> {
-    fn reverse_complement_node(
-        &self,
-        node_id: NodeIndex<IndexType>,
-    ) -> Option<NodeIndex<IndexType>>;
 }
 
 pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:
@@ -79,23 +80,6 @@ impl<
             + MutableGraphContainer<NodeData, EdgeData, IndexType>
             + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>,
     > DynamicGraph<NodeData, EdgeData, IndexType> for T
-{
-}
-
-pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-    + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-    + NodeBigraph<NodeData, EdgeData, IndexType>
-{
-}
-impl<
-        NodeData,
-        EdgeData,
-        IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-            + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
-            + NodeBigraph<NodeData, EdgeData, IndexType>,
-    > StaticBigraph<NodeData, EdgeData, IndexType> for T
 {
 }
 
