@@ -46,6 +46,16 @@ fn verify(options: &CliOptions) {
         options.output.as_ref().unwrap_or(&"None".to_owned())
     );
 
-    let genome_graph: NodeBigraphWrapper<genome_graph::BCalm2NodeData, (), usize, genome_graph::bigraph::petgraph::Graph<genome_graph::BCalm2NodeData, (), genome_graph::bigraph::petgraph::Directed, usize>> = genome_graph::load_bigraph_from_bcalm2(&options.input).unwrap();
+    let genome_graph: NodeBigraphWrapper<
+        genome_graph::BCalm2NodeData,
+        (),
+        usize,
+        genome_graph::bigraph::petgraph::Graph<
+            genome_graph::BCalm2NodeData,
+            (),
+            genome_graph::bigraph::petgraph::Directed,
+            usize,
+        >,
+    > = genome_graph::load_bigraph_from_bcalm2(&options.input).unwrap();
     println!("{:?}", genome_graph);
 }
