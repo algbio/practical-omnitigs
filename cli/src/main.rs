@@ -1,4 +1,5 @@
 use clap::Clap;
+use genome_graph::bigraph::*;
 
 #[derive(Clap)]
 #[clap(name = "Practical Omnitigs", version = env!("CARGO_PKG_VERSION"), author = "Sebastian Schmidt <sebastian.schmidt@helsinki.fi>")]
@@ -44,4 +45,7 @@ fn verify(options: &CliOptions) {
         options.input,
         options.output.as_ref().unwrap_or(&"None".to_owned())
     );
+
+    let genome_graph: NodeBigraphWrapper<genome_graph::BCalm2NodeData, (), usize, genome_graph::bigraph::petgraph::Graph<genome_graph::BCalm2NodeData, (), genome_graph::bigraph::petgraph::Directed, usize>> = genome_graph::load_bigraph_from_bcalm2(&options.input).unwrap();
+    println!("{:?}", genome_graph);
 }

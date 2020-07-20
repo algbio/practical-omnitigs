@@ -4,6 +4,7 @@ use num_traits::PrimInt;
 use std::path::Path;
 use crate::io::util::open_input_text_file;
 
+#[derive(Eq, PartialEq, Debug, Hash)]
 pub struct BCalm2NodeData {
     // TODO
 }

@@ -3,6 +3,7 @@ mod io;
 
 pub use error::*;
 pub use io::*;
+pub use bigraph;
 
 #[cfg(test)]
 mod tests {

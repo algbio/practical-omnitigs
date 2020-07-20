@@ -29,6 +29,7 @@ use std::marker::PhantomData;
 *   assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
 *   ```
 */
+#[derive(Debug)]
 pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, T> {
     pub topology: T,
     binode_map: Vec<NodeIndex<IndexType>>,
