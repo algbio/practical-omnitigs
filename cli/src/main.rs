@@ -1,5 +1,16 @@
+#![recursion_limit = "1024"]
+#[macro_use]
+extern crate error_chain;
+
 use clap::Clap;
+use error_chain::{ChainedError, ExitCode};
 use genome_graph::bigraph::*;
+
+error_chain! {
+    links {
+        GenomeGraph(genome_graph::Error, genome_graph::ErrorKind);
+    }
+}
 
 #[derive(Clap)]
 #[clap(name = "Practical Omnitigs", version = env!("CARGO_PKG_VERSION"), author = "Sebastian Schmidt <sebastian.schmidt@helsinki.fi>")]
@@ -28,18 +39,37 @@ enum Command {
 }
 
 fn main() {
+    use std::io::Write;
+
+    ::std::process::exit(match run() {
+        Ok(()) => ExitCode::code(()),
+        Err(ref e) => {
+            write!(
+                &mut ::std::io::stderr(),
+                "{}",
+                ChainedError::display_chain(e)
+            )
+            .expect("Error writing to stderr");
+
+            1
+        }
+    });
+}
+
+fn run() -> Result<()> {
     let options = &CliOptions::parse();
 
     println!("Hello");
 
     match &options.subcommand {
         Command::Verify => verify(options),
-    }
+    }?;
 
     println!("Goodbye");
+    Ok(())
 }
 
-fn verify(options: &CliOptions) {
+fn verify(options: &CliOptions) -> Result<()> {
     println!(
         "Input file: {}\nOutput file: {}",
         options.input,
@@ -47,15 +77,16 @@ fn verify(options: &CliOptions) {
     );
 
     let genome_graph: NodeBigraphWrapper<
-        genome_graph::BCalm2NodeData,
+        genome_graph::io::bcalm2::PlainBCalm2NodeData,
         (),
         usize,
         genome_graph::bigraph::petgraph::Graph<
-            genome_graph::BCalm2NodeData,
+            genome_graph::io::bcalm2::PlainBCalm2NodeData,
             (),
             genome_graph::bigraph::petgraph::Directed,
             usize,
         >,
-    > = genome_graph::load_bigraph_from_bcalm2(&options.input).unwrap();
+    > = genome_graph::io::bcalm2::load_bigraph_from_bcalm2(&options.input)?;
     println!("{:?}", genome_graph);
+    Ok(())
 }

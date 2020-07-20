@@ -17,3 +17,5 @@ license = "BSD-2-Clause"
 [dependencies]
 bigraph = {path = "../bigraph"}
 num-traits = "0.2"
+bio = "0.31"
+error-chain = "0.12"

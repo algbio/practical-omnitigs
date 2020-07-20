@@ -14,3 +14,4 @@ publish = false
 [dependencies]
 clap = "3.0.0-beta.1"
 genome-graph = {path = "../genome-graph"}
+error-chain = "0.12"

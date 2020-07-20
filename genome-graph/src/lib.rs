@@ -1,9 +1,12 @@
+#![recursion_limit = "1024"]
+#[macro_use]
+extern crate error_chain;
+
 mod error;
-mod io;
+pub mod io;
 
 pub use bigraph;
 pub use error::*;
-pub use io::*;
 
 #[cfg(test)]
 mod tests {

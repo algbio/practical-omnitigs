@@ -38,12 +38,8 @@ pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, T> {
     _p2: PhantomData<EdgeData>,
 }
 
-impl<
-        NodeData: Hash + Eq + Debug,
-        EdgeData,
-        IndexType: PrimInt + Debug,
-        T: StaticGraph<NodeData, EdgeData, IndexType>,
-    > StaticBigraph<NodeData, EdgeData, IndexType>
+impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>>
+    StaticBigraph<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
