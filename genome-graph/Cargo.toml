@@ -1,0 +1,19 @@
+[package]
+name = "genome-graph"
+description = "Representation of genome graphs"
+version = "0.1.0-dev"
+authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
+edition = "2018"
+categories = ["data-structures", "science"]
+keywords = ["genome", "representation", "graph", "bioinformatics"]
+homepage = "https://github.com/algbio/practical-omnitigs/tree/master/genome-graph"
+documentation = "https://docs.rs/genome-graph"
+repository = "https://github.com/algbio/practical-omnitigs"
+readme = "README.md"
+license = "BSD-2-Clause"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bigraph = {path = "../bigraph"}
+num-traits = "0.2"
