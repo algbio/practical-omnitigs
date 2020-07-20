@@ -98,7 +98,8 @@ pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
 
     /**
      * Converts the given topology into a bigraph with the given mapping function.
-     * Wrongly mapped nodes are stored without mapping.
+     * Unmapped nodes are stored without mapping.
+     * If a node maps to another node, but the other node does not map back, then this method panics.
      */
     fn new_unchecked(
         _topology: Self::Topology,

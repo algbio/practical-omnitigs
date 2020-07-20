@@ -15,10 +15,9 @@ pub trait DynamicBigraph<NodeData, EdgeData, IndexType: PrimInt>:
     }
     /**
      * Adds nodes such that the graph becomes a valid bigraph.
+     * The indices of existing nodes are not altered.
      */
-    fn add_partner_nodes(&mut self) {
-        unimplemented!()
-    }
+    fn add_partner_nodes(&mut self);
 }
 
 pub trait DynamicBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:

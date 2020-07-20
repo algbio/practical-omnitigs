@@ -1,5 +1,6 @@
 use crate::{
-    EdgeIndex, EdgeIndices, ImmutableGraphContainer, NavigableGraph, NodeIndex, NodeIndices,
+    BidirectedNodeData, DynamicBigraph, DynamicGraph, EdgeIndex, EdgeIndices,
+    ImmutableGraphContainer, MutableGraphContainer, NavigableGraph, NodeIndex, NodeIndices,
     StaticBigraph, StaticBigraphFromDigraph, StaticGraph,
 };
 use num_traits::{NumCast, PrimInt};
@@ -101,6 +102,26 @@ impl<
 }
 
 impl<
+        NodeData: BidirectedNodeData,
+        EdgeData,
+        IndexType: PrimInt,
+        T: DynamicGraph<NodeData, EdgeData, IndexType>,
+    > DynamicBigraph<NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
+    fn add_partner_nodes(&mut self) {
+        for node_id in self.node_indices() {
+            if self.partner_node(node_id).unwrap() == NodeIndex::invalid() {
+                let partner_index =
+                    self.add_node(self.node_data(node_id).unwrap().reverse_complement());
+                self.binode_map[node_id] = partner_index;
+                self.binode_map.push(node_id);
+            }
+        }
+    }
+}
+
+impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
@@ -146,6 +167,36 @@ impl<
 }
 
 impl<
+        NodeData,
+        EdgeData,
+        IndexType: PrimInt,
+        T: MutableGraphContainer<NodeData, EdgeData, IndexType>,
+    > MutableGraphContainer<NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
+    fn add_node(&mut self, node_data: NodeData) -> NodeIndex<IndexType> {
+        self.topology.add_node(node_data)
+    }
+
+    fn add_edge(
+        &mut self,
+        from: NodeIndex<IndexType>,
+        to: NodeIndex<IndexType>,
+        edge_data: EdgeData,
+    ) -> EdgeIndex<IndexType> {
+        self.topology.add_edge(from, to, edge_data)
+    }
+
+    fn remove_node(&mut self, node_id: NodeIndex<IndexType>) -> Option<NodeData> {
+        self.topology.remove_node(node_id)
+    }
+
+    fn remove_edge(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<EdgeData> {
+        self.topology.remove_edge(edge_id)
+    }
+}
+
+impl<
         'a,
         NodeData,
         EdgeData,
@@ -166,11 +217,25 @@ impl<
     }
 }
 
+impl<NodeData, EdgeData, IndexType: PrimInt, T: Default> Default
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+{
+    fn default() -> Self {
+        Self {
+            topology: T::default(),
+            binode_map: vec![],
+            _p1: Default::default(),
+            _p2: Default::default(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
     use crate::{
-        petgraph_impl, MutableGraphContainer, NodeIndex, StaticBigraph, StaticBigraphFromDigraph,
+        petgraph_impl, BidirectedNodeData, DynamicBigraph, ImmutableGraphContainer,
+        MutableGraphContainer, NodeIndex, StaticBigraph, StaticBigraphFromDigraph,
     };
 
     #[test]
@@ -321,5 +386,28 @@ mod tests {
         bigraph.topology.add_node(4);
         bigraph.binode_map.push(NodeIndex::from(3usize));
         assert!(!bigraph.verify_node_pairing());
+    }
+
+    #[test]
+    fn test_bigraph_add_partner_nodes() {
+        let mut graph = petgraph_impl::new();
+        #[derive(Eq, PartialEq, Debug, Hash, Clone)]
+        struct NodeData(u32);
+        impl BidirectedNodeData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(1000 - self.0)
+            }
+        }
+        let n0 = graph.add_node(NodeData(0));
+        let n1 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(997));
+        graph.add_edge(n0, n1, ());
+        let mut graph = NodeBigraphWrapper::new_unchecked(graph, NodeData::reverse_complement);
+        assert!(!graph.verify_node_pairing());
+        graph.add_partner_nodes();
+        assert!(graph.verify_node_pairing());
+        assert_eq!(graph.node_count(), 8);
     }
 }
