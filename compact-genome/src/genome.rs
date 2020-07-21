@@ -28,6 +28,11 @@ where
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Copies this genome string into a `Vec`.
+    fn into_vec(&self) -> Vec<u8> {
+        self.into_iter().collect()
+    }
 }
 
 /**

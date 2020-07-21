@@ -38,6 +38,9 @@ enum Command {
     Verify,
 }
 
+// The main is unpacked from an error-chain macro.
+// Using just the macro makes IntelliJ complain that there would be no main.
+// The real main (programmed manually) is run, below this method.
 fn main() {
     use std::io::Write;
 
@@ -77,7 +80,7 @@ fn verify(options: &CliOptions) -> Result<()> {
     );
 
     let genome_graph: PetBCalm2Graph =
-        genome_graph::io::bcalm2::load_bigraph_from_bcalm2(&options.input)?;
+        genome_graph::io::bcalm2::read_bigraph_from_bcalm2(&options.input)?;
     println!("{:?}", genome_graph);
     Ok(())
 }

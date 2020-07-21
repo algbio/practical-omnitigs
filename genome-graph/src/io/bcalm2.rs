@@ -1,9 +1,9 @@
-use bigraph::{BidirectedNodeData, DynamicBigraph};
+use bigraph::{BidirectedNodeData, DynamicBigraph, NodeIndex};
 use bio::io::fasta::Record;
 use compact_genome::{Genome, VectorGenome};
-use num_traits::PrimInt;
+use num_traits::{NumCast, PrimInt};
 use std::convert::{TryFrom, TryInto};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Write};
 use std::iter::FromIterator;
 use std::path::Path;
 use std::str::FromStr;
@@ -11,6 +11,7 @@ use std::str::FromStr;
 error_chain! {
     foreign_links {
         Io(std::io::Error);
+        Fmt(std::fmt::Error);
     }
 
     errors {
@@ -42,6 +43,21 @@ error_chain! {
         BCalm2MissingParameterError(parameter: String) {
             description("missing parameter")
             display("missing parameter: '{:?}'", parameter)
+        }
+
+        BCalm2NodeIdOutOfPrintingRange {
+            description("node id is out of range (usize) for displaying")
+            display("node id is out of range (usize) for displaying")
+        }
+
+        BCalm2NodeIdOutOfRange {
+            description("node id is out of range (usize)")
+            display("node id is out of range (usize)")
+        }
+
+        BCalm2NodeWithoutPartner {
+            description("node has no partner")
+            display("node has no partner")
         }
     }
 }
@@ -216,7 +232,7 @@ where
     }
 }
 
-pub fn load_bigraph_from_bcalm2<
+pub fn read_bigraph_from_bcalm2<
     P: AsRef<Path>,
     NodeData: From<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
@@ -272,4 +288,91 @@ where
     bigraph.add_mirror_edges();
     assert!(bigraph.verify_mirror_property());
     Ok(bigraph)
+}
+
+fn write_binode_to_bcalm2<IndexType: PrimInt + Debug>(
+    node: &PlainBCalm2NodeData<IndexType>,
+    out_neighbors: Vec<(NodeIndex<IndexType>, bool)>,
+) -> crate::Result<String> {
+    let mut result = String::new();
+    write!(
+        result,
+        "LN:i:{} KC:i:{} km:f:{}",
+        node.length, node.total_abundance, node.mean_abundance
+    )
+    .map_err(Error::from)?;
+    for (neighbor_id, neighbor_type) in out_neighbors {
+        write!(
+            result,
+            " L:+:{}:{}",
+            <usize as NumCast>::from(neighbor_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfPrintingRange))?,
+            if neighbor_type { "+" } else { "-" }
+        )
+        .map_err(Error::from)?;
+    }
+    Ok(result)
+}
+
+pub fn write_bigraph_to_bcalm2<
+    P: AsRef<Path>,
+    NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
+    EdgeData: Default + Clone,
+    IndexType: PrimInt + Debug + Display,
+    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+>(
+    graph: &T,
+    path: P,
+) -> crate::Result<()>
+where
+    PlainBCalm2NodeData<IndexType>: for<'a> From<&'a NodeData>,
+{
+    let mut output_nodes = vec![false; graph.node_count()];
+    let mut writer = bio::io::fasta::Writer::to_file(path).map_err(Error::from)?;
+
+    for node_id in graph.node_indices() {
+        if !output_nodes[<usize as NumCast>::from(
+            graph
+                .partner_node(node_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutPartner))?,
+        )
+        .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?]
+        {
+            output_nodes[<usize as NumCast>::from(node_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?] = true;
+        }
+    }
+
+    for node_id in graph.node_indices() {
+        if output_nodes[<usize as NumCast>::from(node_id)
+            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?]
+        {
+            let node_data = PlainBCalm2NodeData::<IndexType>::from(
+                graph
+                    .node_data(node_id)
+                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?,
+            );
+            let mut out_neighbors = Vec::new();
+            for neighbor in graph
+                .out_neighbors(node_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+            {
+                out_neighbors.push((
+                    neighbor.node_id,
+                    output_nodes[<usize as NumCast>::from(neighbor.node_id)
+                        .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?],
+                ));
+            }
+            let mut printed_node_id = String::new();
+            write!(printed_node_id, "{}", node_data.id).map_err(Error::from)?;
+            let node_description = write_binode_to_bcalm2(&node_data, out_neighbors)?;
+            let node_sequence = node_data.sequence.into_vec();
+
+            writer
+                .write(&printed_node_id, Some(&node_description), &node_sequence)
+                .map_err(Error::from)?;
+        }
+    }
+
+    Ok(())
 }
