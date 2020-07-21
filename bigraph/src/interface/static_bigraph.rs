@@ -5,8 +5,8 @@ use num_traits::PrimInt;
  * A node-centric bidirected graph.
  * That is a graph in which each node has a unique partner, and this relation is symmetric.
  */
-pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    StaticGraph<NodeData, EdgeData, IndexType> + Sized
+pub trait StaticBigraph<'a, NodeData, EdgeData: 'a, IndexType: PrimInt>:
+    StaticGraph<'a, NodeData, EdgeData, IndexType> + Sized
 {
     /**
      * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
@@ -21,6 +21,7 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
             let partner_index = if let Some(partner_node) = self.partner_node(node_index) {
                 partner_node
             } else {
+                println!("No partner node");
                 return false;
             };
             let partner_partner_index =
@@ -84,11 +85,11 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
  * Since the graph is static, the resulting topology will be the input topology, only the
  * bigraph node mapping function will be computed on top.
  */
-pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    StaticBigraph<NodeData, EdgeData, IndexType> + Sized
+pub trait StaticBigraphFromDigraph<'a, NodeData, EdgeData: 'a, IndexType: PrimInt>:
+    StaticBigraph<'a, NodeData, EdgeData, IndexType> + Sized
 {
     /** The type of directed topology the bigraph is created from. */
-    type Topology: StaticGraph<NodeData, EdgeData, IndexType>;
+    type Topology: StaticGraph<'a, NodeData, EdgeData, IndexType>;
 
     /**
      * Converts the given topology into a bigraph with the given mapping function.

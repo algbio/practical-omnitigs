@@ -39,11 +39,20 @@ pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, Topology> 
     _p2: PhantomData<EdgeData>,
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>>
-    StaticBigraph<NodeData, EdgeData, IndexType>
+impl<
+        'a,
+        NodeData,
+        EdgeData: 'a,
+        IndexType: PrimInt,
+        T: StaticGraph<'a, NodeData, EdgeData, IndexType>,
+    > StaticBigraph<'a, NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
+        if node_id.is_invalid() {
+            return None;
+        }
+
         if let Some(partner_node) = self
             .binode_map
             .get(<usize as NumCast>::from(node_id).unwrap())
@@ -60,10 +69,11 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, 
 }
 
 impl<
+        'a,
         NodeData: Eq + Hash + Debug,
-        EdgeData,
+        EdgeData: 'a,
         IndexType: PrimInt + Debug,
-        Topology: StaticGraph<NodeData, EdgeData, IndexType>,
+        Topology: StaticGraph<'a, NodeData, EdgeData, IndexType>,
     > NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
 {
     fn new_internal(
@@ -114,11 +124,12 @@ impl<
 }
 
 impl<
+        'a,
         NodeData: Eq + Hash + Debug,
-        EdgeData,
+        EdgeData: 'a,
         IndexType: PrimInt + Debug,
-        Topology: StaticGraph<NodeData, EdgeData, IndexType>,
-    > StaticBigraphFromDigraph<NodeData, EdgeData, IndexType>
+        Topology: StaticGraph<'a, NodeData, EdgeData, IndexType>,
+    > StaticBigraphFromDigraph<'a, NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
 {
     type Topology = Topology;
@@ -136,11 +147,12 @@ impl<
 }
 
 impl<
+        'a,
         NodeData: BidirectedNodeData,
-        EdgeData,
-        IndexType: PrimInt,
-        T: DynamicGraph<NodeData, EdgeData, IndexType>,
-    > DynamicBigraph<NodeData, EdgeData, IndexType>
+        EdgeData: 'a,
+        IndexType: PrimInt + Debug,
+        T: DynamicGraph<'a, NodeData, EdgeData, IndexType>,
+    > DynamicBigraph<'a, NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn add_partner_nodes(&mut self) {
@@ -149,26 +161,33 @@ impl<
                 let partner_index =
                     self.add_node(self.node_data(node_id).unwrap().reverse_complement());
                 self.binode_map[node_id] = partner_index;
-                self.binode_map.push(node_id);
+                self.binode_map[<usize as NumCast>::from(partner_index).unwrap()] = node_id;
             }
         }
     }
 }
 
 impl<
+        'a,
         NodeData,
-        EdgeData,
+        EdgeData: 'a,
         IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>,
-    > ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+        Topology: ImmutableGraphContainer<'a, NodeData, EdgeData, IndexType>,
+    > ImmutableGraphContainer<'a, NodeData, EdgeData, IndexType>
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
 {
+    type EdgeIterator = Topology::EdgeIterator;
+
     fn node_indices(&self) -> NodeIndices<IndexType> {
         self.topology.node_indices()
     }
 
     fn edge_indices(&self) -> EdgeIndices<IndexType> {
         self.topology.edge_indices()
+    }
+
+    fn edges(&'a self) -> Self::EdgeIterator {
+        self.topology.edges()
     }
 
     fn node_count(&self) -> usize {
@@ -209,6 +228,7 @@ impl<
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn add_node(&mut self, node_data: NodeData) -> NodeIndex<IndexType> {
+        self.binode_map.push(NodeIndex::invalid());
         self.topology.add_node(node_data)
     }
 

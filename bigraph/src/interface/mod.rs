@@ -7,10 +7,20 @@ mod static_bigraph;
 pub use dynamic_bigraph::*;
 pub use static_bigraph::*;
 
-pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
+pub struct Edge<'a, EdgeData, IndexType: PrimInt> {
+    pub from_node: NodeIndex<IndexType>,
+    pub to_node: NodeIndex<IndexType>,
+    pub edge_data: &'a EdgeData,
+}
+
+pub trait ImmutableGraphContainer<'a, NodeData, EdgeData: 'a, IndexType: PrimInt> {
+    type EdgeIterator: IntoIterator<Item = Edge<'a, EdgeData, IndexType>>;
+
     fn node_indices(&self) -> NodeIndices<IndexType>;
 
     fn edge_indices(&self) -> EdgeIndices<IndexType>;
+
+    fn edges(&'a self) -> Self::EdgeIterator;
 
     fn node_count(&self) -> usize;
 
@@ -55,35 +65,35 @@ pub trait BidirectedNodeData {
     fn reverse_complement(&self) -> Self;
 }
 
-pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-    + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
+pub trait StaticGraph<'a, NodeData, EdgeData: 'a, IndexType: PrimInt>:
+    ImmutableGraphContainer<'a, NodeData, EdgeData, IndexType>
+    + for<'b> NavigableGraph<'b, NodeData, EdgeData, IndexType>
 {
 }
 impl<
+        'a,
         NodeData,
-        EdgeData,
+        EdgeData: 'a,
         IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-            + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>,
-    > StaticGraph<NodeData, EdgeData, IndexType> for T
+        T: ImmutableGraphContainer<'a, NodeData, EdgeData, IndexType>
+            + for<'b> NavigableGraph<'b, NodeData, EdgeData, IndexType>,
+    > StaticGraph<'a, NodeData, EdgeData, IndexType> for T
 {
 }
 
-pub trait DynamicGraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+pub trait DynamicGraph<'a, NodeData, EdgeData: 'a, IndexType: PrimInt>:
+    StaticGraph<'a, NodeData, EdgeData, IndexType>
     + MutableGraphContainer<NodeData, EdgeData, IndexType>
-    + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
 {
 }
 impl<
+        'a,
         NodeData,
-        EdgeData,
+        EdgeData: 'a,
         IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-            + MutableGraphContainer<NodeData, EdgeData, IndexType>
-            + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>,
-    > DynamicGraph<NodeData, EdgeData, IndexType> for T
+        T: StaticGraph<'a, NodeData, EdgeData, IndexType>
+            + MutableGraphContainer<NodeData, EdgeData, IndexType>,
+    > DynamicGraph<'a, NodeData, EdgeData, IndexType> for T
 {
 }
 

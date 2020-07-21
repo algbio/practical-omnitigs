@@ -1,28 +1,45 @@
 use crate::{
-    DynamicGraph, EdgeIndex, ImmutableGraphContainer, MutableGraphContainer, Neighbor, NodeIndex,
+    DynamicGraph, Edge, EdgeIndex, ImmutableGraphContainer, MutableGraphContainer, Neighbor,
+    NodeIndex,
 };
 use crate::{EdgeIndices, NavigableGraph, NodeIndices};
 use num_traits::{PrimInt, ToPrimitive};
-use petgraph::graph::Edges;
+use petgraph::graph::{DiGraph, EdgeReferences, Edges};
 use petgraph::visit::EdgeRef;
 use petgraph::{Directed, Direction, Graph};
 use std::iter::Map;
 
 pub use petgraph;
 
-pub fn new<NodeData: 'static, EdgeData: 'static>() -> impl DynamicGraph<NodeData, EdgeData, usize> {
-    Graph::<NodeData, EdgeData, Directed, usize>::default()
+pub fn new<'a, NodeData: 'static, EdgeData: 'static>(
+) -> impl DynamicGraph<'a, NodeData, EdgeData, usize> {
+    //Graph::<NodeData, EdgeData, Directed, usize>::default()
+    DiGraph::default()
 }
 
-impl<NodeData, EdgeData> ImmutableGraphContainer<NodeData, EdgeData, usize>
+type PetgraphEdgeTranslator<'a, EdgeData> =
+    fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Edge<'a, EdgeData, usize>;
+
+impl<'a, NodeData, EdgeData: 'a> ImmutableGraphContainer<'a, NodeData, EdgeData, usize>
     for Graph<NodeData, EdgeData, Directed, usize>
 {
+    type EdgeIterator =
+        Map<EdgeReferences<'a, EdgeData, usize>, PetgraphEdgeTranslator<'a, EdgeData>>;
+
     fn node_indices(&self) -> NodeIndices<usize> {
         NodeIndices::from((0, self.node_count()))
     }
 
     fn edge_indices(&self) -> EdgeIndices<usize> {
         EdgeIndices::from((0, self.edge_count()))
+    }
+
+    fn edges(&'a self) -> Self::EdgeIterator {
+        self.edge_references().map(|e| Edge {
+            from_node: e.source().index().into(),
+            to_node: e.target().index().into(),
+            edge_data: e.weight(),
+        })
     }
 
     fn node_count(&self) -> usize {

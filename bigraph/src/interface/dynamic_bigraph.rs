@@ -2,8 +2,8 @@ use crate::interface::static_bigraph::StaticBigraph;
 use crate::{DynamicGraph, StaticBigraphFromDigraph};
 use num_traits::PrimInt;
 
-pub trait DynamicBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    DynamicGraph<NodeData, EdgeData, IndexType> + StaticBigraph<NodeData, EdgeData, IndexType>
+pub trait DynamicBigraph<'a, NodeData, EdgeData: 'a, IndexType: PrimInt>:
+    DynamicGraph<'a, NodeData, EdgeData, IndexType> + StaticBigraph<'a, NodeData, EdgeData, IndexType>
 {
     /**
      * Adds edges such that the graph fulfils the [mirror property].
@@ -11,6 +11,22 @@ pub trait DynamicBigraph<NodeData, EdgeData, IndexType: PrimInt>:
      * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
     fn add_mirror_edges(&mut self) {
+        let mut edges = Vec::new();
+        for from_id in self.node_indices() {
+            for neighbor in self.out_neighbors(from_id).unwrap() {
+                let to_id = neighbor.node_id;
+                let mirror_from_id = self.partner_node(to_id).unwrap();
+                let mirror_to_id = self.partner_node(from_id).unwrap();
+                if !self.contains_edge(mirror_from_id, mirror_to_id) {
+                    edges.push((
+                        mirror_from_id,
+                        self.edge_data(neighbor.edge_id),
+                        mirror_to_id,
+                    ));
+                }
+            }
+        }
+
         unimplemented!()
     }
     /**
@@ -20,11 +36,11 @@ pub trait DynamicBigraph<NodeData, EdgeData, IndexType: PrimInt>:
     fn add_partner_nodes(&mut self);
 }
 
-pub trait DynamicBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    DynamicBigraph<NodeData, EdgeData, IndexType>
-    + StaticBigraphFromDigraph<NodeData, EdgeData, IndexType>
+pub trait DynamicBigraphFromDigraph<'a, NodeData, EdgeData: 'a, IndexType: PrimInt>:
+    DynamicBigraph<'a, NodeData, EdgeData, IndexType>
+    + StaticBigraphFromDigraph<'a, NodeData, EdgeData, IndexType>
 where
-    Self::Topology: DynamicGraph<NodeData, EdgeData, IndexType>,
+    Self::Topology: DynamicGraph<'a, NodeData, EdgeData, IndexType>,
 {
     /**
      * Converts the given topology into a bigraph.
