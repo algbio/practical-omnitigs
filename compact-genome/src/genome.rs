@@ -1,7 +1,8 @@
 use std::iter::FromIterator;
 
 /// A genome string.
-pub trait Genome: for<'a> FromIterator<&'a u8> + FromIterator<u8> + Eq + Clone
+/// It should be lexically ordered.
+pub trait Genome: for<'a> FromIterator<&'a u8> + FromIterator<u8> + Eq + Clone + Ord
 where
     for<'a> &'a Self: IntoIterator<Item = u8>,
 {

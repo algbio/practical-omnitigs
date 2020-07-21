@@ -232,7 +232,9 @@ where
     }
 }
 
-impl<'a, IndexType: PrimInt> From<&'a PlainBCalm2NodeData<IndexType>> for PlainBCalm2NodeData<IndexType> {
+impl<'a, IndexType: PrimInt> From<&'a PlainBCalm2NodeData<IndexType>>
+    for PlainBCalm2NodeData<IndexType>
+{
     fn from(data: &'a PlainBCalm2NodeData<IndexType>) -> Self {
         data.clone()
     }
@@ -298,19 +300,20 @@ where
 
 fn write_binode_to_bcalm2<IndexType: PrimInt + Debug>(
     node: &PlainBCalm2NodeData<IndexType>,
-    out_neighbors: Vec<(NodeIndex<IndexType>, bool)>,
+    out_neighbors: Vec<(bool, NodeIndex<IndexType>, bool)>,
 ) -> crate::Result<String> {
     let mut result = String::new();
     write!(
         result,
-        "LN:i:{} KC:i:{} km:f:{}",
+        "LN:i:{} KC:i:{} km:f:{:.1}",
         node.length, node.total_abundance, node.mean_abundance
     )
     .map_err(Error::from)?;
-    for (neighbor_id, neighbor_type) in out_neighbors {
+    for (node_type, neighbor_id, neighbor_type) in out_neighbors {
         write!(
             result,
-            " L:+:{}:{}",
+            " L:{}:{}:{}",
+            if node_type { "+" } else { "-" },
             <usize as NumCast>::from(neighbor_id)
                 .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfPrintingRange))?,
             if neighbor_type { "+" } else { "-" }
@@ -358,17 +361,61 @@ where
                     .node_data(node_id)
                     .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?,
             );
-            let mut out_neighbors = Vec::new();
+            let partner_node_id = graph
+                .partner_node(node_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutPartner))?;
+            /*let partner_node_data = PlainBCalm2NodeData::<IndexType>::from(
+                graph
+                    .node_data(partner_node_id)
+                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?,
+            );*/
+            let mut out_neighbors_plus = Vec::new();
+            let mut out_neighbors_minus = Vec::new();
+
             for neighbor in graph
                 .out_neighbors(node_id)
                 .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
             {
-                out_neighbors.push((
-                    neighbor.node_id,
-                    output_nodes[<usize as NumCast>::from(neighbor.node_id)
-                        .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?],
+                let neighbor_node_id = <usize as NumCast>::from(neighbor.node_id)
+                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?;
+
+                out_neighbors_plus.push((
+                    true,
+                    if output_nodes[neighbor_node_id] {
+                        neighbor.node_id
+                    } else {
+                        graph
+                            .partner_node(neighbor.node_id)
+                            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+                    },
+                    output_nodes[neighbor_node_id],
                 ));
             }
+            for neighbor in graph
+                .out_neighbors(partner_node_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+            {
+                let neighbor_node_id = <usize as NumCast>::from(neighbor.node_id)
+                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?;
+
+                out_neighbors_minus.push((
+                    false,
+                    if output_nodes[neighbor_node_id] {
+                        neighbor.node_id
+                    } else {
+                        graph
+                            .partner_node(neighbor.node_id)
+                            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+                    },
+                    output_nodes[neighbor_node_id],
+                ));
+            }
+
+            out_neighbors_plus.sort();
+            out_neighbors_minus.sort();
+            out_neighbors_plus.append(&mut out_neighbors_minus);
+            let out_neighbors = out_neighbors_plus;
+
             let mut printed_node_id = String::new();
             write!(printed_node_id, "{}", node_data.id).map_err(Error::from)?;
             let node_description = write_binode_to_bcalm2(&node_data, out_neighbors)?;

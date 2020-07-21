@@ -81,7 +81,6 @@ fn verify(options: &CliOptions) -> Result<()> {
 
     let genome_graph: PetBCalm2Graph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2(&options.input)?;
-    println!("{:?}", genome_graph);
     if let Some(output) = &options.output {
         genome_graph::io::bcalm2::write_bigraph_to_bcalm2(&genome_graph, output)?;
     }
