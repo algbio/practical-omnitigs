@@ -74,7 +74,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{petgraph_impl, BidirectedNodeData, NodeBigraphWrapper, StaticBigraphFromDigraph, StaticBigraph, DynamicBigraph, ImmutableGraphContainer, MutableGraphContainer};
+    use crate::{
+        petgraph_impl, BidirectedNodeData, DynamicBigraph, ImmutableGraphContainer,
+        MutableGraphContainer, NodeBigraphWrapper, StaticBigraph, StaticBigraphFromDigraph,
+    };
 
     #[test]
     fn test_bigraph_add_mirror_edges() {

@@ -4,7 +4,7 @@ extern crate error_chain;
 
 use clap::Clap;
 use error_chain::{ChainedError, ExitCode};
-use genome_graph::bigraph::*;
+use genome_graph::types::PetBCalm2Graph;
 
 error_chain! {
     links {
@@ -76,17 +76,8 @@ fn verify(options: &CliOptions) -> Result<()> {
         options.output.as_ref().unwrap_or(&"None".to_owned())
     );
 
-    let genome_graph: NodeBigraphWrapper<
-        genome_graph::io::bcalm2::PlainBCalm2NodeData<usize>,
-        (),
-        usize,
-        genome_graph::bigraph::petgraph::Graph<
-            genome_graph::io::bcalm2::PlainBCalm2NodeData<usize>,
-            (),
-            genome_graph::bigraph::petgraph::Directed,
-            usize,
-        >,
-    > = genome_graph::io::bcalm2::load_bigraph_from_bcalm2(&options.input)?;
+    let genome_graph: PetBCalm2Graph =
+        genome_graph::io::bcalm2::load_bigraph_from_bcalm2(&options.input)?;
     println!("{:?}", genome_graph);
     Ok(())
 }

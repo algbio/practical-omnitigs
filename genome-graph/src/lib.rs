@@ -4,6 +4,7 @@ extern crate error_chain;
 
 mod error;
 pub mod io;
+pub mod types;
 
 pub use bigraph;
 pub use error::*;
