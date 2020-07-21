@@ -26,6 +26,9 @@ done < "$in_file" > "$clean_in_file"
 
 diff=`diff "$clean_in_file" "$out_file"`
 if [ -n "$diff" ]; then
+	echo "Our output does not match the output from bcalm2!"
 	echo "$diff"
 	exit 1
+else
+	echo "Bigraph read and written successfully."
 fi
