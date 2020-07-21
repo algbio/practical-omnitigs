@@ -219,7 +219,7 @@ where
 pub fn load_bigraph_from_bcalm2<
     P: AsRef<Path>,
     NodeData: From<PlainBCalm2NodeData<IndexType>>,
-    EdgeData: Default,
+    EdgeData: Default + Clone,
     IndexType: PrimInt + FromStr + Debug,
     T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
 >(

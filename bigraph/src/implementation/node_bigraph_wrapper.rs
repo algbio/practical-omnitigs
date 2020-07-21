@@ -141,7 +141,7 @@ impl<
 
 impl<
         NodeData: BidirectedNodeData,
-        EdgeData,
+        EdgeData: Clone,
         IndexType: PrimInt,
         T: DynamicGraph<NodeData, EdgeData, IndexType>,
     > DynamicBigraph<NodeData, EdgeData, IndexType>
