@@ -7,3 +7,4 @@ This is a repository to conduct experiments with omnitig-related models in the c
 Included crates:
  * [bigraph](https://github.com/algbio/practical-omnitigs/tree/master/bigraph) [![](http://meritbadge.herokuapp.com/bigraph)](https://crates.io/crates/bigraph) [![](https://docs.rs/bigraph/badge.svg)](https://docs.rs/bigraph)
  * [compact-genome](https://github.com/algbio/practical-omnitigs/tree/master/compact-genome) [![](http://meritbadge.herokuapp.com/compact-genome)](https://crates.io/crates/compact-genome) [![](https://docs.rs/compact-genome/badge.svg)](https://docs.rs/compact-genome)
+ * [genome-graph](https://github.com/algbio/practical-omnitigs/tree/master/genome-graph) [![](http://meritbadge.herokuapp.com/genome-graph)](https://crates.io/crates/genome-graph) [![](https://docs.rs/genome-graph/badge.svg)](https://docs.rs/genome-graph)
