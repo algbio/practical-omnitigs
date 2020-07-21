@@ -77,11 +77,11 @@ fn verify(options: &CliOptions) -> Result<()> {
     );
 
     let genome_graph: NodeBigraphWrapper<
-        genome_graph::io::bcalm2::PlainBCalm2NodeData,
+        genome_graph::io::bcalm2::PlainBCalm2NodeData<usize>,
         (),
         usize,
         genome_graph::bigraph::petgraph::Graph<
-            genome_graph::io::bcalm2::PlainBCalm2NodeData,
+            genome_graph::io::bcalm2::PlainBCalm2NodeData<usize>,
             (),
             genome_graph::bigraph::petgraph::Directed,
             usize,

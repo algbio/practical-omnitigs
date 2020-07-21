@@ -1,8 +1,10 @@
-use bigraph::StaticBigraph;
+use bigraph::{BidirectedNodeData, DynamicBigraph};
 use bio::io::fasta::Record;
 use num_traits::PrimInt;
 use std::convert::{TryFrom, TryInto};
+use std::fmt::Debug;
 use std::path::Path;
+use std::str::FromStr;
 
 error_chain! {
     foreign_links {
@@ -48,27 +50,38 @@ pub struct BCalm2NodeData {
 }
 
 /// The raw node data of a bcalm2 node, including edge information and redundant information (sequence length).
-#[derive(Debug)]
-pub struct PlainBCalm2NodeData {
-    id: usize,
+#[derive(Debug, Clone)]
+pub struct PlainBCalm2NodeData<IndexType> {
+    id: IndexType,
     sequence: Vec<u8>,
     length: usize,
     total_abundance: usize,
     mean_abundance: f64,
-    edges: Vec<PlainBCalm2Edge>,
+    edges: Vec<PlainBCalm2Edge<IndexType>>,
 }
 
 /// The raw edge information of a bcalm2 node.
-#[derive(Debug, Eq, PartialEq)]
-pub struct PlainBCalm2Edge {
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct PlainBCalm2Edge<IndexType> {
     /// `true` means `+`, `false` means `-´
     from_side: bool,
-    to_node: usize,
+    to_node: IndexType,
     /// `true` means `+`, `false` means `-´
     to_side: bool,
 }
 
-impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
+impl<IndexType> BidirectedNodeData for PlainBCalm2NodeData<IndexType> {
+    fn reverse_complement(&self) -> Self {
+        // let mut result = self.clone();
+        // result.sequence = // TODO bio reverse complement
+        unimplemented!()
+    }
+}
+
+impl<IndexType: FromStr> TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData<IndexType>
+where
+    <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
+{
     type Error = crate::Error;
 
     fn try_from(value: Record) -> crate::Result<Self> {
@@ -202,21 +215,41 @@ impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
 
 pub fn load_bigraph_from_bcalm2<
     P: AsRef<Path>,
-    NodeData: From<PlainBCalm2NodeData>,
+    NodeData: From<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default,
-    IndexType: PrimInt,
-    T: StaticBigraph<NodeData, EdgeData, IndexType>,
+    IndexType: PrimInt + FromStr + Debug,
+    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
 >(
     path: P,
-) -> crate::Result<T> {
-    //let mut digraph = bigraph::petgraph::Graph::default();
+) -> crate::Result<T>
+where
+    <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
+{
+    struct BiEdge<IndexType> {
+        _from_node: IndexType,
+        _plain_edge: PlainBCalm2Edge<IndexType>,
+    }
+
+    let mut digraph = T::default();
+    let mut edges = Vec::new();
+
     for record in bio::io::fasta::Reader::from_file(path)
         .map_err(Error::from)?
         .records()
     {
-        let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
-        println!("{:?}", record);
-        //digraph
+        let record: PlainBCalm2NodeData<IndexType> = record.map_err(Error::from)?.try_into()?;
+        edges.extend(record.edges.iter().map(|e| BiEdge {
+            _from_node: record.id,
+            _plain_edge: e.clone(),
+        }));
+        let record_id = record.id;
+        let id = digraph.add_node(record.into());
+        assert_eq!(id, record_id.into());
+    }
+
+    for _edge in edges {
+        unimplemented!()
+        // TODO digraph.add_edge()
     }
 
     unimplemented!()
