@@ -1,8 +1,10 @@
 use bigraph::{BidirectedNodeData, DynamicBigraph};
 use bio::io::fasta::Record;
+use compact_genome::{Genome, VectorGenome};
 use num_traits::PrimInt;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::Debug;
+use std::iter::FromIterator;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -51,9 +53,9 @@ pub struct BCalm2NodeData {
 
 /// The raw node data of a bcalm2 node, including edge information and redundant information (sequence length).
 #[derive(Debug, Clone)]
-pub struct PlainBCalm2NodeData<IndexType> {
+pub struct PlainBCalm2NodeData<IndexType: PrimInt> {
     id: IndexType,
-    sequence: Vec<u8>,
+    sequence: VectorGenome,
     length: usize,
     total_abundance: usize,
     mean_abundance: f64,
@@ -62,7 +64,7 @@ pub struct PlainBCalm2NodeData<IndexType> {
 
 /// The raw edge information of a bcalm2 node.
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct PlainBCalm2Edge<IndexType> {
+pub struct PlainBCalm2Edge<IndexType: PrimInt> {
     /// `true` means `+`, `false` means `-´
     from_side: bool,
     to_node: IndexType,
@@ -70,15 +72,16 @@ pub struct PlainBCalm2Edge<IndexType> {
     to_side: bool,
 }
 
-impl<IndexType> BidirectedNodeData for PlainBCalm2NodeData<IndexType> {
+impl<IndexType: PrimInt> BidirectedNodeData for PlainBCalm2NodeData<IndexType> {
     fn reverse_complement(&self) -> Self {
-        // let mut result = self.clone();
-        // result.sequence = // TODO bio reverse complement
-        unimplemented!()
+        let mut result = self.clone();
+        result.sequence = result.sequence.reverse_complement();
+        result
     }
 }
 
-impl<IndexType: FromStr> TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData<IndexType>
+impl<IndexType: FromStr + PrimInt> TryFrom<bio::io::fasta::Record>
+    for PlainBCalm2NodeData<IndexType>
 where
     <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
 {
@@ -89,7 +92,7 @@ where
             .id()
             .parse()
             .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IDError(value.id().to_owned())))?;
-        let sequence = value.seq().to_owned(); // TODO store with bio
+        let sequence = VectorGenome::from_iter(value.seq()); // TODO store with bio
 
         let mut length = None;
         let mut total_abundance = None;
@@ -225,12 +228,12 @@ pub fn load_bigraph_from_bcalm2<
 where
     <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
 {
-    struct BiEdge<IndexType> {
-        _from_node: IndexType,
-        _plain_edge: PlainBCalm2Edge<IndexType>,
+    struct BiEdge<IndexType: PrimInt> {
+        from_node: IndexType,
+        plain_edge: PlainBCalm2Edge<IndexType>,
     }
 
-    let mut digraph = T::default();
+    let mut bigraph = T::default();
     let mut edges = Vec::new();
 
     for record in bio::io::fasta::Reader::from_file(path)
@@ -239,18 +242,34 @@ where
     {
         let record: PlainBCalm2NodeData<IndexType> = record.map_err(Error::from)?.try_into()?;
         edges.extend(record.edges.iter().map(|e| BiEdge {
-            _from_node: record.id,
-            _plain_edge: e.clone(),
+            from_node: record.id,
+            plain_edge: e.clone(),
         }));
         let record_id = record.id;
-        let id = digraph.add_node(record.into());
+        let id = bigraph.add_node(record.into());
         assert_eq!(id, record_id.into());
     }
 
-    for _edge in edges {
-        unimplemented!()
-        // TODO digraph.add_edge()
+    bigraph.add_partner_nodes();
+    assert!(bigraph.verify_node_pairing());
+
+    for edge in edges {
+        let from_node = if edge.plain_edge.from_side {
+            edge.from_node.into()
+        } else {
+            bigraph.partner_node(edge.from_node.into()).unwrap()
+        };
+        let to_node = if edge.plain_edge.to_side {
+            edge.plain_edge.to_node.into()
+        } else {
+            bigraph
+                .partner_node(edge.plain_edge.to_node.into())
+                .unwrap()
+        };
+        bigraph.add_edge(from_node, to_node, EdgeData::default());
     }
 
-    unimplemented!()
+    bigraph.add_mirror_edges();
+    assert!(bigraph.verify_mirror_property());
+    Ok(bigraph)
 }

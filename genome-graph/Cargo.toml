@@ -16,6 +16,7 @@ license = "BSD-2-Clause"
 
 [dependencies]
 bigraph = {path = "../bigraph"}
+compact-genome = {path = "../compact-genome"}
 num-traits = "0.2"
 bio = "0.31"
 error-chain = "0.12"

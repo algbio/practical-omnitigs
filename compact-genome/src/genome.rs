@@ -1,6 +1,7 @@
 use std::iter::FromIterator;
 
-pub trait Genome: for<'a> FromIterator<&'a u8> + FromIterator<u8> + std::fmt::Display + Eq
+/// A genome string.
+pub trait Genome: for<'a> FromIterator<&'a u8> + FromIterator<u8> + Eq + Clone
 where
     for<'a> &'a Self: IntoIterator<Item = u8>,
 {
@@ -18,6 +19,14 @@ where
      */
     fn is_valid(&self) -> bool {
         self.into_iter().all(is_valid_ascii_genome_character)
+    }
+
+    /// Returns the amount of bases in this genome string.
+    fn len(&self) -> usize;
+
+    /// Returns true if this genome string is empty.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

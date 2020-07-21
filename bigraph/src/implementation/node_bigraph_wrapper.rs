@@ -44,6 +44,10 @@ impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, 
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
+        if node_id.is_invalid() {
+            return None;
+        }
+
         if let Some(partner_node) = self
             .binode_map
             .get(<usize as NumCast>::from(node_id).unwrap())
@@ -149,7 +153,7 @@ impl<
                 let partner_index =
                     self.add_node(self.node_data(node_id).unwrap().reverse_complement());
                 self.binode_map[node_id] = partner_index;
-                self.binode_map.push(node_id);
+                self.binode_map[<usize as NumCast>::from(partner_index).unwrap()] = node_id;
             }
         }
     }
@@ -209,6 +213,7 @@ impl<
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn add_node(&mut self, node_data: NodeData) -> NodeIndex<IndexType> {
+        self.binode_map.push(NodeIndex::invalid());
         self.topology.add_node(node_data)
     }
 

@@ -11,7 +11,21 @@ pub trait DynamicBigraph<NodeData, EdgeData, IndexType: PrimInt>:
      * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
     fn add_mirror_edges(&mut self) {
-        unimplemented!()
+        let mut edges = Vec::new();
+        for from_id in self.node_indices() {
+            for neighbor in self.out_neighbors(from_id).unwrap() {
+                let to_id = neighbor.node_id;
+                let mirror_from_id = self.partner_node(to_id).unwrap();
+                let mirror_to_id = self.partner_node(from_id).unwrap();
+                if !self.contains_edge(mirror_from_id, mirror_to_id) {
+                    edges.push((
+                        mirror_from_id,
+                        self.edge_data(neighbor.edge_id),
+                        mirror_to_id,
+                    ));
+                }
+            }
+        }
     }
     /**
      * Adds nodes such that the graph becomes a valid bigraph.

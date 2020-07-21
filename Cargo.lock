@@ -331,6 +331,7 @@ version = "0.1.0-dev"
 dependencies = [
  "bigraph",
  "bio",
+ "compact-genome",
  "error-chain",
  "num-traits",
 ]

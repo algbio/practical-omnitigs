@@ -1,5 +1,5 @@
 use num_traits::{NumCast, PrimInt, ToPrimitive};
-use std::ops::{Index, IndexMut};
+use std::ops;
 
 #[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
 #[opaque_typedef(derive(Display, FromInner))]
@@ -7,6 +7,8 @@ pub struct NodeIndex<IndexType: Sized>(IndexType);
 #[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
 #[opaque_typedef(derive(Display, FromInner))]
 pub struct EdgeIndex<IndexType: Sized>(IndexType);
+
+//pub trait Index: Default + std::fmt::Debug + Eq + Copy + Sized {}
 
 impl<IndexType: PrimInt> NodeIndex<IndexType> {
     pub fn invalid() -> Self {
@@ -40,7 +42,7 @@ impl<IndexType: PrimInt> From<EdgeIndex<IndexType>> for usize {
     }
 }*/
 
-impl<T, IndexType: PrimInt> Index<NodeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> ops::Index<NodeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: NodeIndex<IndexType>) -> &Self::Output {
@@ -48,7 +50,7 @@ impl<T, IndexType: PrimInt> Index<NodeIndex<IndexType>> for Vec<T> {
     }
 }
 
-impl<T, IndexType: PrimInt> Index<EdgeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> ops::Index<EdgeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: EdgeIndex<IndexType>) -> &Self::Output {
@@ -56,13 +58,13 @@ impl<T, IndexType: PrimInt> Index<EdgeIndex<IndexType>> for Vec<T> {
     }
 }
 
-impl<T, IndexType: PrimInt> IndexMut<NodeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> ops::IndexMut<NodeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: NodeIndex<IndexType>) -> &mut Self::Output {
         &mut self[<usize as NumCast>::from(index.0).unwrap()]
     }
 }
 
-impl<T, IndexType: PrimInt> IndexMut<EdgeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> ops::IndexMut<EdgeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: EdgeIndex<IndexType>) -> &mut Self::Output {
         &mut self[<usize as NumCast>::from(index.0).unwrap()]
     }

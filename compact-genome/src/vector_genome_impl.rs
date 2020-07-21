@@ -2,7 +2,7 @@ use crate::ascii_complement;
 use crate::genome::Genome;
 use std::iter::{Cloned, FromIterator};
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct VectorGenome(Vec<u8>);
 
 impl Genome for VectorGenome {
@@ -16,6 +16,10 @@ impl Genome for VectorGenome {
                     .expect("Reverse complement can only be computed from valid genome strings")
             })
             .collect()
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
