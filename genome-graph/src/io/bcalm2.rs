@@ -232,6 +232,12 @@ where
     }
 }
 
+impl<'a, IndexType: PrimInt> From<&'a PlainBCalm2NodeData<IndexType>> for PlainBCalm2NodeData<IndexType> {
+    fn from(data: &'a PlainBCalm2NodeData<IndexType>) -> Self {
+        data.clone()
+    }
+}
+
 pub fn read_bigraph_from_bcalm2<
     P: AsRef<Path>,
     NodeData: From<PlainBCalm2NodeData<IndexType>>,
