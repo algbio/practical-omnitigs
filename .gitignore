@@ -1,3 +1,7 @@
 /target/
 /.idea/
 **/*.rs.bk
+
+*.fa
+*.fa.clean
+*.fa.verify
