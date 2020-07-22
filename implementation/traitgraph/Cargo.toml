@@ -1,13 +1,13 @@
 [package]
-name = "bigraph"
-description = "Different representations with implemented operations on bigraphs"
+name = "traitgraph"
+description = "Different representations with implemented operations on graphs"
 categories = ["data-structures", "mathematics", "science"]
-keywords = ["bigraph", "graph", "bidirected", "abstract", "implementation"]
-version = "0.1.0-alpha.5"
+keywords = ["graph", "trait", "abstract", "implementation", "algorithm"]
+version = "0.1.0-dev"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
-homepage = "https://github.com/algbio/practical-omnitigs/tree/master/bigraph"
-documentation = "https://docs.rs/bigraph"
+homepage = "https://github.com/algbio/practical-omnitigs/tree/master/implementation/traitgraph"
+documentation = "https://docs.rs/traitgraph"
 repository = "https://github.com/algbio/practical-omnitigs"
 readme = "README.md"
 license = "BSD-2-Clause"
@@ -15,7 +15,6 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-traitgraph = {path = "../traitgraph", version = "0.1.0-dev"}
 opaque_typedef = "0.0.5"
 opaque_typedef_macros = "0.0.5"
 petgraph = "0.5"

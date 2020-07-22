@@ -1,13 +1,13 @@
-use crate::{
-    BidirectedNodeData, DynamicBigraph, DynamicGraph, EdgeIndex, EdgeIndices,
-    ImmutableGraphContainer, MutableGraphContainer, NavigableGraph, NodeIndex, NodeIndices,
-    StaticBigraph, StaticBigraphFromDigraph, StaticGraph,
-};
+use crate::{BidirectedNodeData, DynamicBigraph, StaticBigraph, StaticBigraphFromDigraph};
 use num_traits::{NumCast, PrimInt};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use traitgraph::{
+    DynamicGraph, EdgeIndex, EdgeIndices, ImmutableGraphContainer, MutableGraphContainer,
+    NavigableGraph, NodeIndex, NodeIndices, StaticGraph,
+};
 
 /**
 *   Wrapper for a static graph that adds a binode mapping function.
