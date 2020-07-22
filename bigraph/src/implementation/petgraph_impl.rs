@@ -8,6 +8,8 @@ use petgraph::visit::EdgeRef;
 use petgraph::{Directed, Direction, Graph};
 use std::iter::Map;
 
+pub use petgraph;
+
 pub fn new<NodeData: 'static, EdgeData: 'static>() -> impl DynamicGraph<NodeData, EdgeData, usize> {
     Graph::<NodeData, EdgeData, Directed, usize>::default()
 }

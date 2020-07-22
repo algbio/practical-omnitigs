@@ -51,6 +51,10 @@ pub trait NavigableGraph<'a, NodeData, EdgeData, IndexType> {
     fn in_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::InNeighbors>;
 }
 
+pub trait BidirectedNodeData {
+    fn reverse_complement(&self) -> Self;
+}
+
 pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:
     ImmutableGraphContainer<NodeData, EdgeData, IndexType>
     + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>

@@ -3,9 +3,15 @@ name = "cli"
 version = "0.1.0-dev"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
+readme = "README.md"
+license = "BSD-2-Clause"
+
+# NEVER SET TO TRUE!
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = "3.0.0-beta.1"
+genome-graph = {path = "../genome-graph"}
+error-chain = "0.12"
