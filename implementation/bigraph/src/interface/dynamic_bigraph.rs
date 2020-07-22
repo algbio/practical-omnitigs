@@ -1,6 +1,7 @@
 use crate::interface::static_bigraph::StaticBigraph;
-use crate::{DynamicGraph, StaticBigraphFromDigraph};
+use crate::StaticBigraphFromDigraph;
 use num_traits::PrimInt;
+use traitgraph::DynamicGraph;
 
 pub trait DynamicBigraph<NodeData, EdgeData: Clone, IndexType: PrimInt>:
     DynamicGraph<NodeData, EdgeData, IndexType> + StaticBigraph<NodeData, EdgeData, IndexType>

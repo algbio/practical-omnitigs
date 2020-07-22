@@ -72,6 +72,7 @@ dependencies = [
  "opaque_typedef",
  "opaque_typedef_macros",
  "petgraph 0.5.1",
+ "traitgraph",
 ]
 
 [[package]]

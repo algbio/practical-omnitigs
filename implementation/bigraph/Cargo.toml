@@ -15,6 +15,7 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+traitgraph = {path = "../traitgraph", version = "0.1.0-dev"}
 opaque_typedef = "0.0.5"
 opaque_typedef_macros = "0.0.5"
 petgraph = "0.5"

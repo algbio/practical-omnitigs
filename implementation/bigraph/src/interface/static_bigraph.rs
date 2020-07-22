@@ -1,5 +1,5 @@
-use crate::{NodeIndex, StaticGraph};
 use num_traits::PrimInt;
+use traitgraph::{NodeIndex, StaticGraph};
 
 /**
  * A node-centric bidirected graph.
@@ -111,8 +111,8 @@ pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
 mod test {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
     use crate::interface::static_bigraph::StaticBigraph;
-    use crate::interface::MutableGraphContainer;
     use crate::{petgraph_impl, StaticBigraphFromDigraph};
+    use traitgraph::MutableGraphContainer;
 
     #[test]
     fn test_verify_mirror_property_positive() {

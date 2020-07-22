@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Format" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
     <option name="channel" value="STABLE" />
-    <option name="command" value="fmt" />
+    <option name="command" value="fmt --all" />
     <option name="allFeatures" value="false" />
     <option name="emulateTerminal" value="false" />
     <option name="backtrace" value="SHORT" />
