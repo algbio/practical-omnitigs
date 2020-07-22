@@ -1,3 +1,5 @@
+/.idea/
+
 *.fa
 *.fa.verify
 *.fa.clean
