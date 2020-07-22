@@ -18,9 +18,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: actions-rs/cargo@v1
-        working-directory: implementation
         with:
           command: check
+          args: --manifest-path implementation/Cargo.toml
 
   test:
     name: Test Suite
@@ -37,9 +37,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: actions-rs/cargo@v1
-        working-directory: implementation
         with:
           command: test
+          args: --manifest-path implementation/Cargo.toml
 
   fmt:
     name: Rustfmt
@@ -57,10 +57,9 @@ jobs:
           override: true
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
-        working-directory: implementation
         with:
           command: fmt
-          args: --all -- --check
+          args: --all --manifest-path implementation/Cargo.toml -- --check
 
   clippy:
     name: Clippy
@@ -78,7 +77,6 @@ jobs:
           override: true
       - run: rustup component add clippy
       - uses: actions-rs/cargo@v1
-        working-directory: implementation
         with:
           command: clippy
-          args: --all --all-targets -- -D warnings
+          args: --all --all-targets --manifest-path implementation/Cargo.toml -- -D warnings
