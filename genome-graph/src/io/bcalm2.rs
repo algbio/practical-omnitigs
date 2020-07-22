@@ -240,7 +240,7 @@ impl<'a, IndexType: PrimInt> From<&'a PlainBCalm2NodeData<IndexType>>
     }
 }
 
-pub fn read_bigraph_from_bcalm2<
+pub fn read_bigraph_from_bcalm2_file<
     P: AsRef<Path>,
     NodeData: From<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
@@ -248,6 +248,21 @@ pub fn read_bigraph_from_bcalm2<
     T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
 >(
     path: P,
+) -> crate::Result<T>
+where
+    <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
+{
+    read_bigraph_from_bcalm2(bio::io::fasta::Reader::from_file(path).map_err(Error::from)?)
+}
+
+pub fn read_bigraph_from_bcalm2<
+    R: std::io::Read,
+    NodeData: From<PlainBCalm2NodeData<IndexType>>,
+    EdgeData: Default + Clone,
+    IndexType: PrimInt + FromStr + Debug,
+    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+>(
+    reader: bio::io::fasta::Reader<R>,
 ) -> crate::Result<T>
 where
     <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
@@ -260,10 +275,7 @@ where
     let mut bigraph = T::default();
     let mut edges = Vec::new();
 
-    for record in bio::io::fasta::Reader::from_file(path)
-        .map_err(Error::from)?
-        .records()
-    {
+    for record in reader.records() {
         let record: PlainBCalm2NodeData<IndexType> = record.map_err(Error::from)?.try_into()?;
         edges.extend(record.edges.iter().map(|e| BiEdge {
             from_node: record.id,
@@ -323,7 +335,7 @@ fn write_binode_to_bcalm2<IndexType: PrimInt + Debug>(
     Ok(result)
 }
 
-pub fn write_bigraph_to_bcalm2<
+pub fn write_bigraph_to_bcalm2_file<
     P: AsRef<Path>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
@@ -336,8 +348,26 @@ pub fn write_bigraph_to_bcalm2<
 where
     PlainBCalm2NodeData<IndexType>: for<'a> From<&'a NodeData>,
 {
+    write_bigraph_to_bcalm2(
+        graph,
+        bio::io::fasta::Writer::to_file(path).map_err(Error::from)?,
+    )
+}
+
+pub fn write_bigraph_to_bcalm2<
+    W: std::io::Write,
+    NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
+    EdgeData: Default + Clone,
+    IndexType: PrimInt + Debug + Display,
+    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+>(
+    graph: &T,
+    mut writer: bio::io::fasta::Writer<W>,
+) -> crate::Result<()>
+where
+    PlainBCalm2NodeData<IndexType>: for<'a> From<&'a NodeData>,
+{
     let mut output_nodes = vec![false; graph.node_count()];
-    let mut writer = bio::io::fasta::Writer::to_file(path).map_err(Error::from)?;
 
     for node_id in graph.node_indices() {
         if !output_nodes[<usize as NumCast>::from(
@@ -428,4 +458,34 @@ where
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::io::bcalm2::{read_bigraph_from_bcalm2, write_bigraph_to_bcalm2};
+    use crate::types::PetBCalm2Graph;
+
+    #[test]
+    fn test_read_write() {
+        let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:1:-\n\
+            AGT\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:2:+\n\
+            GGTCTCGGGTAAGT\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:-:1:-\n\
+            ATGATG\n";
+        let input = Vec::from(test_file);
+
+        let graph: PetBCalm2Graph =
+            read_bigraph_from_bcalm2(bio::io::fasta::Reader::new(test_file)).unwrap();
+        let mut output = Vec::new();
+        write_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output)).unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
 }
