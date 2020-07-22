@@ -1,3 +1,3 @@
 [workspace]
 
-members = ["bigraph", "compact-genome", "cli", "genome-graph"]
+members = ["bigraph", "compact-genome", "cli", "genome-graph", "traitgraph"]

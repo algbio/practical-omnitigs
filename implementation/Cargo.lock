@@ -906,6 +906,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "traitgraph"
+version = "0.1.0-dev"
+dependencies = [
+ "num-traits",
+ "opaque_typedef",
+ "opaque_typedef_macros",
+ "petgraph 0.5.1",
+]
+
+[[package]]
 name = "unicode-segmentation"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
