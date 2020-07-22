@@ -15,8 +15,8 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bigraph = {path = "../bigraph"}
-compact-genome = {path = "../compact-genome"}
+bigraph = {path = "../bigraph", version = "0.1.0-alpha.4"}
+compact-genome = {path = "../compact-genome", version = "0.1.0-alpha.4"}
 num-traits = "0.2"
 bio = "0.31"
 error-chain = "0.12"
