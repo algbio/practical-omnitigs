@@ -1,4 +1,7 @@
-/.idea/
+/.idea/workspace.xml
+/.idea/shelf/
+
+/target/
 
 *.fa
 *.fa.verify
