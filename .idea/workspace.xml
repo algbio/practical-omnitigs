@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="cc1044af-d05c-4863-9d2c-45c5af527896" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="qrm4lpna" />
+  </component>
+  <component name="ProjectId" id="1f2D5tJwgydR0p7jbkmHKkpOAVu" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="settings.editor.selected.configurable" value="language.rust" />
+  </component>
+  <component name="RunManager" selected="Cargo Command.Test">
+    <configuration name="Clippy" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="channel" value="DEFAULT" />
+      <option name="command" value="clippy" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Format" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="channel" value="DEFAULT" />
+      <option name="command" value="fmt" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="channel" value="STABLE" />
+      <option name="command" value="test" />
+      <option name="allFeatures" value="false" />
+      <option name="emulateTerminal" value="false" />
+      <option name="backtrace" value="SHORT" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Cargo Command.Test" />
+      <item itemvalue="Cargo Command.Format" />
+      <item itemvalue="Cargo Command.Clippy" />
+    </list>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="685" y="444" width="1180" height="585" key="#build" timestamp="1595407141296">
+      <screen x="0" y="27" width="2560" height="1413" />
+    </state>
+    <state x="685" y="444" width="1180" height="585" key="#build/0.27.2560.1413@0.27.2560.1413" timestamp="1595407141296" />
+    <state x="738" y="391" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1595407240538">
+      <screen x="0" y="27" width="2560" height="1413" />
+    </state>
+    <state x="738" y="391" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.27.2560.1413@0.27.2560.1413" timestamp="1595407240538" />
+    <state x="685" y="444" width="1180" height="585" key="#test" timestamp="1595407146839">
+      <screen x="0" y="27" width="2560" height="1413" />
+    </state>
+    <state x="685" y="444" width="1180" height="585" key="#test/0.27.2560.1413@0.27.2560.1413" timestamp="1595407146839" />
+    <state x="776" y="368" width="1007" height="737" key="SettingsEditor" timestamp="1595407160384">
+      <screen x="0" y="27" width="2560" height="1413" />
+    </state>
+    <state x="776" y="368" width="1007" height="737" key="SettingsEditor/0.27.2560.1413@0.27.2560.1413" timestamp="1595407160384" />
+  </component>
+</project>
