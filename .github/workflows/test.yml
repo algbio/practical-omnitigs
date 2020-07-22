@@ -59,7 +59,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check --manifest-path implementation/Cargo.toml
+          args: --all --manifest-path implementation/Cargo.toml -- --check
 
   clippy:
     name: Clippy
@@ -79,4 +79,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all --all-targets -- -D warnings --manifest-path implementation/Cargo.toml
+          args: --all --all-targets --manifest-path implementation/Cargo.toml -- -D warnings
