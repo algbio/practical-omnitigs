@@ -246,12 +246,14 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        T: NavigableGraph<'a, NodeData, EdgeData, IndexType>,
-    > NavigableGraph<'a, NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+        T: NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+    > NavigableGraph<'a> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    type OutNeighbors = <T as NavigableGraph<'a, NodeData, EdgeData, IndexType>>::OutNeighbors;
-    type InNeighbors = <T as NavigableGraph<'a, NodeData, EdgeData, IndexType>>::InNeighbors;
+    type NodeData = NodeData;
+    type EdgeData = EdgeData;
+    type IndexType = IndexType;
+    type OutNeighbors = <T as NavigableGraph<'a>>::OutNeighbors;
+    type InNeighbors = <T as NavigableGraph<'a>>::InNeighbors;
 
     fn out_neighbors(&'a self, node_id: NodeIndex<IndexType>) -> Option<Self::OutNeighbors> {
         self.topology.out_neighbors(node_id)

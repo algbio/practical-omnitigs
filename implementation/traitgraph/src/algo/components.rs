@@ -12,7 +12,7 @@ pub fn decompose_weakly_connected_components<
     Graph: Default
         + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
         + ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-        + NavigableGraph<'a, NodeData, EdgeData, IndexType>,
+        + NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
 >(
     graph: &'a Graph,
 ) -> Vec<Graph> {
@@ -29,7 +29,7 @@ pub fn decompose_weakly_connected_components<
             continue;
         }
 
-        let mut bfs = UndirectedBfs::new(graph, start);
+        let mut bfs: UndirectedBfs<NodeData, EdgeData, _, _> = UndirectedBfs::new(graph, start);
         let mut subgraph = Graph::default();
 
         while let Some(node) = bfs.next(graph) {

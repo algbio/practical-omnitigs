@@ -90,7 +90,7 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        Graph: ImmutableGraphContainer + NavigableGraph<'a, NodeData, EdgeData, IndexType>,
+        Graph: ImmutableGraphContainer + NavigableGraph<'a, IndexType = IndexType>,
         NeighborStrategy: TraversalNeighborStrategy<'a, NodeData, EdgeData, IndexType, Graph>,
         QueueStrategy: TraversalQueueStrategy<IndexType, Queue>,
         Queue: BidirectedQueue<NodeIndex<IndexType>>,
@@ -163,7 +163,7 @@ impl<
         NodeData,
         EdgeData,
         IndexType: 'a + PrimInt,
-        Graph: NavigableGraph<'a, NodeData, EdgeData, IndexType>,
+        Graph: NavigableGraph<'a, IndexType = IndexType>,
     > TraversalNeighborStrategy<'a, NodeData, EdgeData, IndexType, Graph>
     for ForwardNeighborStrategy
 {
@@ -185,7 +185,7 @@ impl<
         IndexType: 'a + PrimInt,
         NodeData,
         EdgeData,
-        Graph: NavigableGraph<'a, NodeData, EdgeData, IndexType>,
+        Graph: NavigableGraph<'a, IndexType = IndexType>,
     > TraversalNeighborStrategy<'a, NodeData, EdgeData, IndexType, Graph>
     for BackwardNeighborStrategy
 {
@@ -214,7 +214,7 @@ impl<
         IndexType: 'a + PrimInt,
         NodeData,
         EdgeData,
-        Graph: NavigableGraph<'a, NodeData, EdgeData, IndexType>,
+        Graph: NavigableGraph<'a, IndexType = IndexType>,
     > TraversalNeighborStrategy<'a, NodeData, EdgeData, IndexType, Graph>
     for UndirectedNeighborStrategy
 {
