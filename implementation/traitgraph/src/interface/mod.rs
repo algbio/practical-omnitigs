@@ -6,12 +6,22 @@ pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
 
     fn edge_indices(&self) -> EdgeIndices<IndexType>;
 
+    fn contains_node_index(&self, node_id: NodeIndex<IndexType>) -> bool {
+        self.node_data(node_id).is_some()
+    }
+
+    fn contains_edge_index(&self, edge_id: EdgeIndex<IndexType>) -> bool {
+        self.edge_data(edge_id).is_some()
+    }
+
     fn node_count(&self) -> usize;
 
     fn edge_count(&self) -> usize;
 
+    /// Returns the node data associated with the given node id, or None if there is no such node.
     fn node_data(&self, node_id: NodeIndex<IndexType>) -> Option<&NodeData>;
 
+    /// Returns the edge data associated with the given edge id, or None if there is no such edge.
     fn edge_data(&self, edge_id: EdgeIndex<IndexType>) -> Option<&EdgeData>;
 
     fn node_data_mut(&mut self, node_id: NodeIndex<IndexType>) -> Option<&mut NodeData>;
