@@ -211,10 +211,13 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        T: MutableGraphContainer<NodeData, EdgeData, IndexType>,
-    > MutableGraphContainer<NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+        T: MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+    > MutableGraphContainer for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
+    type NodeData = NodeData;
+    type EdgeData = EdgeData;
+    type IndexType = IndexType;
+
     fn add_node(&mut self, node_data: NodeData) -> NodeIndex<IndexType> {
         self.binode_map.push(NodeIndex::invalid());
         self.topology.add_node(node_data)

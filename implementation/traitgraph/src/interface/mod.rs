@@ -41,19 +41,23 @@ pub trait ImmutableGraphContainer {
     ) -> bool;
 }
 
-pub trait MutableGraphContainer<NodeData, EdgeData, IndexType> {
-    fn add_node(&mut self, node_data: NodeData) -> NodeIndex<IndexType>;
+pub trait MutableGraphContainer {
+    type NodeData;
+    type EdgeData;
+    type IndexType;
+
+    fn add_node(&mut self, node_data: Self::NodeData) -> NodeIndex<Self::IndexType>;
 
     fn add_edge(
         &mut self,
-        from: NodeIndex<IndexType>,
-        to: NodeIndex<IndexType>,
-        edge_data: EdgeData,
-    ) -> EdgeIndex<IndexType>;
+        from: NodeIndex<Self::IndexType>,
+        to: NodeIndex<Self::IndexType>,
+        edge_data: Self::EdgeData,
+    ) -> EdgeIndex<Self::IndexType>;
 
-    fn remove_node(&mut self, node_id: NodeIndex<IndexType>) -> Option<NodeData>;
+    fn remove_node(&mut self, node_id: NodeIndex<Self::IndexType>) -> Option<Self::NodeData>;
 
-    fn remove_edge(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<EdgeData>;
+    fn remove_edge(&mut self, edge_id: EdgeIndex<Self::IndexType>) -> Option<Self::EdgeData>;
 }
 
 pub trait NavigableGraph<'a, NodeData, EdgeData, IndexType> {
@@ -82,7 +86,7 @@ impl<
 
 pub trait DynamicGraph<NodeData, EdgeData, IndexType: PrimInt>:
     ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-    + MutableGraphContainer<NodeData, EdgeData, IndexType>
+    + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
     + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
 {
 }
@@ -91,7 +95,7 @@ impl<
         EdgeData,
         IndexType: PrimInt,
         T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-            + MutableGraphContainer<NodeData, EdgeData, IndexType>
+            + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
             + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>,
     > DynamicGraph<NodeData, EdgeData, IndexType> for T
 {

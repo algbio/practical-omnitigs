@@ -59,9 +59,11 @@ impl<NodeData, EdgeData> ImmutableGraphContainer for Graph<NodeData, EdgeData, D
     }
 }
 
-impl<NodeData, EdgeData> MutableGraphContainer<NodeData, EdgeData, usize>
-    for Graph<NodeData, EdgeData, Directed, usize>
-{
+impl<NodeData, EdgeData> MutableGraphContainer for Graph<NodeData, EdgeData, Directed, usize> {
+    type NodeData = NodeData;
+    type EdgeData = EdgeData;
+    type IndexType = usize;
+
     fn add_node(&mut self, node_data: NodeData) -> NodeIndex<usize> {
         self.add_node(node_data).index().into()
     }
