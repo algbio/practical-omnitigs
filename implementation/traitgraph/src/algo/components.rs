@@ -11,7 +11,7 @@ pub fn decompose_weakly_connected_components<
     IndexType: 'a + PrimInt + Debug,
     Graph: Default
         + MutableGraphContainer<NodeData, EdgeData, IndexType>
-        + ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+        + ImmutableGraphContainer<IndexType = IndexType, NodeData = NodeData, EdgeData = EdgeData>
         + NavigableGraph<'a, NodeData, EdgeData, IndexType>,
 >(
     graph: &'a Graph,

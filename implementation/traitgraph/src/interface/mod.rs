@@ -1,16 +1,20 @@
 use crate::{EdgeIndex, EdgeIndices, NodeIndex, NodeIndices};
 use num_traits::PrimInt;
 
-pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
-    fn node_indices(&self) -> NodeIndices<IndexType>;
+pub trait ImmutableGraphContainer {
+    type NodeData;
+    type EdgeData;
+    type IndexType;
 
-    fn edge_indices(&self) -> EdgeIndices<IndexType>;
+    fn node_indices(&self) -> NodeIndices<Self::IndexType>;
 
-    fn contains_node_index(&self, node_id: NodeIndex<IndexType>) -> bool {
+    fn edge_indices(&self) -> EdgeIndices<Self::IndexType>;
+
+    fn contains_node_index(&self, node_id: NodeIndex<Self::IndexType>) -> bool {
         self.node_data(node_id).is_some()
     }
 
-    fn contains_edge_index(&self, edge_id: EdgeIndex<IndexType>) -> bool {
+    fn contains_edge_index(&self, edge_id: EdgeIndex<Self::IndexType>) -> bool {
         self.edge_data(edge_id).is_some()
     }
 
@@ -19,16 +23,22 @@ pub trait ImmutableGraphContainer<NodeData, EdgeData, IndexType: PrimInt> {
     fn edge_count(&self) -> usize;
 
     /// Returns the node data associated with the given node id, or None if there is no such node.
-    fn node_data(&self, node_id: NodeIndex<IndexType>) -> Option<&NodeData>;
+    fn node_data(&self, node_id: NodeIndex<Self::IndexType>) -> Option<&Self::NodeData>;
 
     /// Returns the edge data associated with the given edge id, or None if there is no such edge.
-    fn edge_data(&self, edge_id: EdgeIndex<IndexType>) -> Option<&EdgeData>;
+    fn edge_data(&self, edge_id: EdgeIndex<Self::IndexType>) -> Option<&Self::EdgeData>;
 
-    fn node_data_mut(&mut self, node_id: NodeIndex<IndexType>) -> Option<&mut NodeData>;
+    fn node_data_mut(&mut self, node_id: NodeIndex<Self::IndexType>)
+        -> Option<&mut Self::NodeData>;
 
-    fn edge_data_mut(&mut self, edge_id: EdgeIndex<IndexType>) -> Option<&mut EdgeData>;
+    fn edge_data_mut(&mut self, edge_id: EdgeIndex<Self::IndexType>)
+        -> Option<&mut Self::EdgeData>;
 
-    fn contains_edge(&self, from: NodeIndex<IndexType>, to: NodeIndex<IndexType>) -> bool;
+    fn contains_edge(
+        &self,
+        from: NodeIndex<Self::IndexType>,
+        to: NodeIndex<Self::IndexType>,
+    ) -> bool;
 }
 
 pub trait MutableGraphContainer<NodeData, EdgeData, IndexType> {
@@ -56,7 +66,7 @@ pub trait NavigableGraph<'a, NodeData, EdgeData, IndexType> {
 }
 
 pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+    ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
     + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
 {
 }
@@ -64,14 +74,14 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+        T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
             + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>,
     > StaticGraph<NodeData, EdgeData, IndexType> for T
 {
 }
 
 pub trait DynamicGraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+    ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
     + MutableGraphContainer<NodeData, EdgeData, IndexType>
     + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>
 {
@@ -80,7 +90,7 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
+        T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
             + MutableGraphContainer<NodeData, EdgeData, IndexType>
             + for<'a> NavigableGraph<'a, NodeData, EdgeData, IndexType>,
     > DynamicGraph<NodeData, EdgeData, IndexType> for T

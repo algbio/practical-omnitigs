@@ -90,8 +90,7 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        Graph: ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-            + NavigableGraph<'a, NodeData, EdgeData, IndexType>,
+        Graph: ImmutableGraphContainer + NavigableGraph<'a, NodeData, EdgeData, IndexType>,
         NeighborStrategy: TraversalNeighborStrategy<'a, NodeData, EdgeData, IndexType, Graph>,
         QueueStrategy: TraversalQueueStrategy<IndexType, Queue>,
         Queue: BidirectedQueue<NodeIndex<IndexType>>,

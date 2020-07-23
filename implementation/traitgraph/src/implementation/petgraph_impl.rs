@@ -15,9 +15,11 @@ pub fn new<NodeData: 'static + Clone, EdgeData: 'static + Clone>(
     Graph::<NodeData, EdgeData, Directed, usize>::default()
 }
 
-impl<NodeData, EdgeData> ImmutableGraphContainer<NodeData, EdgeData, usize>
-    for Graph<NodeData, EdgeData, Directed, usize>
-{
+impl<NodeData, EdgeData> ImmutableGraphContainer for Graph<NodeData, EdgeData, Directed, usize> {
+    type NodeData = NodeData;
+    type EdgeData = EdgeData;
+    type IndexType = usize;
+
     fn node_indices(&self) -> NodeIndices<usize> {
         NodeIndices::from((0, self.node_count()))
     }

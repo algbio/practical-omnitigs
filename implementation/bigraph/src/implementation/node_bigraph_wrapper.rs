@@ -163,10 +163,13 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData, EdgeData, IndexType>,
-    > ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+        T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+    > ImmutableGraphContainer for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
+    type NodeData = NodeData;
+    type EdgeData = EdgeData;
+    type IndexType = IndexType;
+
     fn node_indices(&self) -> NodeIndices<IndexType> {
         self.topology.node_indices()
     }

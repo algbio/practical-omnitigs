@@ -143,12 +143,12 @@ impl<IndexType: PrimInt> From<EdgeIndex<IndexType>> for IndexType {
     }
 }*/
 
-pub struct NodeIndices<IndexType: PrimInt> {
+pub struct NodeIndices<IndexType> {
     start: IndexType,
     end: IndexType,
 }
 
-pub struct EdgeIndices<IndexType: PrimInt> {
+pub struct EdgeIndices<IndexType> {
     start: IndexType,
     end: IndexType,
 }
