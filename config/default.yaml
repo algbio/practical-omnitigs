@@ -1,0 +1,3 @@
+use_conda: true
+experiment_files: ["GCF_000008865.2_ASM886v2_genomic.fna.unitigs.fa"]
+

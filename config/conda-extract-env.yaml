@@ -1,0 +1,4 @@
+channels:
+        - ostrokach
+dependencies:
+        - gzip==1.7
