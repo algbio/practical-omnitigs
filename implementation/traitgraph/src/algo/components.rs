@@ -1,5 +1,5 @@
 use crate::traversal::UndirectedBfs;
-use crate::{ImmutableGraphContainer, MutableGraphContainer, NavigableGraph};
+use crate::{MutableGraphContainer, StaticGraph};
 use num_traits::{NumCast, PrimInt};
 use std::collections::LinkedList;
 use std::fmt::Debug;
@@ -11,8 +11,7 @@ pub fn decompose_weakly_connected_components<
     IndexType: 'a + PrimInt + Debug,
     Graph: Default
         + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-        + ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-        + NavigableGraph<'a, IndexType = IndexType>,
+        + StaticGraph,
 >(
     graph: &'a Graph,
 ) -> Vec<Graph> {

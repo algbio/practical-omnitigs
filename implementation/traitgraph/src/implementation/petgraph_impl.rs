@@ -1,25 +1,28 @@
 use crate::{
-    DynamicGraph, EdgeIndex, ImmutableGraphContainer, MutableGraphContainer, Neighbor, NodeIndex,
+    DynamicGraph, EdgeIndex, GraphBase, ImmutableGraphContainer, MutableGraphContainer, Neighbor,
+    NodeIndex,
 };
 use crate::{EdgeIndices, NavigableGraph, NodeIndices};
 use num_traits::{PrimInt, ToPrimitive};
-use petgraph::graph::Edges;
+use petgraph::graph::{DiGraph, Edges};
 use petgraph::visit::EdgeRef;
-use petgraph::{Directed, Direction, Graph};
+use petgraph::{Directed, Direction};
 use std::iter::Map;
 
 pub use petgraph;
 
 pub fn new<NodeData: 'static + Clone, EdgeData: 'static + Clone>(
 ) -> impl DynamicGraph<NodeData, EdgeData, usize> + Default + Clone {
-    Graph::<NodeData, EdgeData, Directed, usize>::default()
+    DiGraph::<NodeData, EdgeData, usize>::default()
 }
 
-impl<NodeData, EdgeData> ImmutableGraphContainer for Graph<NodeData, EdgeData, Directed, usize> {
+impl<NodeData, EdgeData> GraphBase for DiGraph<NodeData, EdgeData, usize> {
     type NodeData = NodeData;
     type EdgeData = EdgeData;
     type IndexType = usize;
+}
 
+impl<NodeData, EdgeData> ImmutableGraphContainer for DiGraph<NodeData, EdgeData, usize> {
     fn node_indices(&self) -> NodeIndices<usize> {
         NodeIndices::from((0, self.node_count()))
     }
@@ -59,11 +62,7 @@ impl<NodeData, EdgeData> ImmutableGraphContainer for Graph<NodeData, EdgeData, D
     }
 }
 
-impl<NodeData, EdgeData> MutableGraphContainer for Graph<NodeData, EdgeData, Directed, usize> {
-    type NodeData = NodeData;
-    type EdgeData = EdgeData;
-    type IndexType = usize;
-
+impl<NodeData, EdgeData> MutableGraphContainer for DiGraph<NodeData, EdgeData, usize> {
     fn add_node(&mut self, node_data: NodeData) -> NodeIndex<usize> {
         self.add_node(node_data).index().into()
     }
@@ -91,14 +90,13 @@ impl<NodeData, EdgeData> MutableGraphContainer for Graph<NodeData, EdgeData, Dir
 type PetgraphNeighborTranslator<'a, EdgeData> =
     fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<usize>;
 
-impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for Graph<NodeData, EdgeData, Directed, usize> {
-    type IndexType = usize;
+impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for DiGraph<NodeData, EdgeData, usize> {
     type OutNeighbors =
         Map<Edges<'a, EdgeData, Directed, usize>, PetgraphNeighborTranslator<'a, EdgeData>>;
     type InNeighbors =
         Map<Edges<'a, EdgeData, Directed, usize>, PetgraphNeighborTranslator<'a, EdgeData>>;
 
-    fn out_neighbors(&'a self, node_id: NodeIndex<usize>) -> Option<Self::OutNeighbors> {
+    fn out_neighbors(&'a self, node_id: NodeIndex<usize>) -> Option<Self::OutNeighbors> where {
         if node_id < self.node_count().into() {
             Some(
                 self.edges_directed(node_id.into(), Direction::Outgoing)

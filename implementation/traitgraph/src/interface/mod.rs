@@ -1,11 +1,13 @@
 use crate::{EdgeIndex, EdgeIndices, NodeIndex, NodeIndices};
-use num_traits::PrimInt;
 
-pub trait ImmutableGraphContainer {
+/// Contains the associated types of a graph.
+pub trait GraphBase {
     type NodeData;
     type EdgeData;
     type IndexType;
+}
 
+pub trait ImmutableGraphContainer: GraphBase {
     fn node_indices(&self) -> NodeIndices<Self::IndexType>;
 
     fn edge_indices(&self) -> EdgeIndices<Self::IndexType>;
@@ -41,11 +43,7 @@ pub trait ImmutableGraphContainer {
     ) -> bool;
 }
 
-pub trait MutableGraphContainer {
-    type NodeData;
-    type EdgeData;
-    type IndexType;
-
+pub trait MutableGraphContainer: GraphBase {
     fn add_node(&mut self, node_data: Self::NodeData) -> NodeIndex<Self::IndexType>;
 
     fn add_edge(
@@ -60,45 +58,35 @@ pub trait MutableGraphContainer {
     fn remove_edge(&mut self, edge_id: EdgeIndex<Self::IndexType>) -> Option<Self::EdgeData>;
 }
 
-pub trait NavigableGraph<'a> {
-    type IndexType;
-
+pub trait NavigableGraph<'a>: GraphBase {
     type OutNeighbors: IntoIterator<Item = Neighbor<Self::IndexType>>;
     type InNeighbors: IntoIterator<Item = Neighbor<Self::IndexType>>;
 
     fn out_neighbors(&'a self, node_id: NodeIndex<Self::IndexType>) -> Option<Self::OutNeighbors>;
-
     fn in_neighbors(&'a self, node_id: NodeIndex<Self::IndexType>) -> Option<Self::InNeighbors>;
 }
 
-pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:
-    ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-    + for<'a> NavigableGraph<'a, IndexType = IndexType>
-{
-}
-impl<
-        NodeData,
-        EdgeData,
-        IndexType: PrimInt,
-        T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-            + for<'a> NavigableGraph<'a, IndexType = IndexType>,
-    > StaticGraph<NodeData, EdgeData, IndexType> for T
-{
-}
+pub trait StaticGraph: ImmutableGraphContainer + for<'a> NavigableGraph<'a> {}
+impl<T: ImmutableGraphContainer + for<'a> NavigableGraph<'a>> StaticGraph for T {}
 
-pub trait DynamicGraph<NodeData, EdgeData, IndexType: PrimInt>:
+pub trait DynamicGraph<NodeData, EdgeData, IndexType>:
     ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
     + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-    + for<'a> NavigableGraph<'a, IndexType = IndexType>
+    + for<'a> NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
 {
 }
 impl<
         NodeData,
         EdgeData,
-        IndexType: PrimInt,
+        IndexType,
         T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
             + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-            + for<'a> NavigableGraph<'a, IndexType = IndexType>,
+            + for<'a> NavigableGraph<
+                'a,
+                NodeData = NodeData,
+                EdgeData = EdgeData,
+                IndexType = IndexType,
+            >,
     > DynamicGraph<NodeData, EdgeData, IndexType> for T
 {
 }

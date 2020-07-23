@@ -1,5 +1,5 @@
 use crate::algo::queue::BidirectedQueue;
-use crate::{ImmutableGraphContainer, NavigableGraph, NodeIndex};
+use crate::{NavigableGraph, NodeIndex, StaticGraph};
 use num_traits::{NumCast, PrimInt};
 use std::collections::LinkedList;
 use std::marker::PhantomData;
@@ -90,7 +90,7 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        Graph: ImmutableGraphContainer + NavigableGraph<'a, IndexType = IndexType>,
+        Graph: StaticGraph<IndexType = IndexType>,
         NeighborStrategy: TraversalNeighborStrategy<'a, NodeData, EdgeData, IndexType, Graph>,
         QueueStrategy: TraversalQueueStrategy<IndexType, Queue>,
         Queue: BidirectedQueue<NodeIndex<IndexType>>,

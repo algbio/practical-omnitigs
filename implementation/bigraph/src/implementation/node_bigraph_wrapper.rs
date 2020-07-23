@@ -5,8 +5,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use traitgraph::{
-    DynamicGraph, EdgeIndex, EdgeIndices, ImmutableGraphContainer, MutableGraphContainer,
-    NavigableGraph, NodeIndex, NodeIndices, StaticGraph,
+    DynamicGraph, EdgeIndex, EdgeIndices, GraphBase, ImmutableGraphContainer,
+    MutableGraphContainer, NavigableGraph, NodeIndex, NodeIndices, StaticGraph,
 };
 
 /**
@@ -31,7 +31,7 @@ use traitgraph::{
 *   ```
 */
 #[derive(Debug)]
-pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, Topology> {
+pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology> {
     pub topology: Topology,
     binode_map: Vec<NodeIndex<IndexType>>,
     // biedge_map: Vec<EdgeIndex<IndexType>>,
@@ -39,8 +39,21 @@ pub struct NodeBigraphWrapper<NodeData, EdgeData, IndexType: PrimInt, Topology> 
     _p2: PhantomData<EdgeData>,
 }
 
-impl<NodeData, EdgeData, IndexType: PrimInt, T: StaticGraph<NodeData, EdgeData, IndexType>>
-    StaticBigraph<NodeData, EdgeData, IndexType>
+impl<'a, NodeData, EdgeData, IndexType, Topology> GraphBase
+    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
+{
+    type NodeData = NodeData;
+    type EdgeData = EdgeData;
+    type IndexType = IndexType;
+}
+
+impl<
+        'a,
+        NodeData,
+        EdgeData,
+        IndexType: PrimInt,
+        T: StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+    > StaticBigraph<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
     fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
@@ -67,7 +80,7 @@ impl<
         NodeData: Eq + Hash + Debug,
         EdgeData,
         IndexType: PrimInt + Debug,
-        Topology: StaticGraph<NodeData, EdgeData, IndexType>,
+        Topology: StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
     > NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
 {
     fn new_internal(
@@ -121,7 +134,7 @@ impl<
         NodeData: Eq + Hash + Debug,
         EdgeData,
         IndexType: PrimInt + Debug,
-        Topology: StaticGraph<NodeData, EdgeData, IndexType>,
+        Topology: StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
     > StaticBigraphFromDigraph<NodeData, EdgeData, IndexType>
     for NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
 {
@@ -166,10 +179,6 @@ impl<
         T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
     > ImmutableGraphContainer for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    type NodeData = NodeData;
-    type EdgeData = EdgeData;
-    type IndexType = IndexType;
-
     fn node_indices(&self) -> NodeIndices<IndexType> {
         self.topology.node_indices()
     }
@@ -211,13 +220,10 @@ impl<
         NodeData,
         EdgeData,
         IndexType: PrimInt,
-        T: MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+        T: MutableGraphContainer
+            + StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
     > MutableGraphContainer for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    type NodeData = NodeData;
-    type EdgeData = EdgeData;
-    type IndexType = IndexType;
-
     fn add_node(&mut self, node_data: NodeData) -> NodeIndex<IndexType> {
         self.binode_map.push(NodeIndex::invalid());
         self.topology.add_node(node_data)
@@ -241,10 +247,14 @@ impl<
     }
 }
 
-impl<'a, NodeData, EdgeData, IndexType: PrimInt, T: NavigableGraph<'a, IndexType = IndexType>>
-    NavigableGraph<'a> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+impl<
+        'a,
+        NodeData,
+        EdgeData,
+        IndexType: PrimInt,
+        T: NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+    > NavigableGraph<'a> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    type IndexType = IndexType;
     type OutNeighbors = <T as NavigableGraph<'a>>::OutNeighbors;
     type InNeighbors = <T as NavigableGraph<'a>>::InNeighbors;
 
