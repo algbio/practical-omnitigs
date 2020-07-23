@@ -1,4 +1,4 @@
-use crate::traversal::Bfs;
+use crate::traversal::UndirectedBfs;
 use crate::{ImmutableGraphContainer, MutableGraphContainer, NavigableGraph};
 use num_traits::{NumCast, PrimInt};
 use std::collections::LinkedList;
@@ -8,7 +8,7 @@ pub fn decompose_weakly_connected_components<
     'a,
     NodeData: Clone,
     EdgeData: Clone,
-    IndexType: PrimInt + Debug,
+    IndexType: 'a + PrimInt + Debug,
     Graph: Default
         + MutableGraphContainer<NodeData, EdgeData, IndexType>
         + ImmutableGraphContainer<NodeData, EdgeData, IndexType>
@@ -29,7 +29,7 @@ pub fn decompose_weakly_connected_components<
             continue;
         }
 
-        let mut bfs = Bfs::new(graph, start);
+        let mut bfs = UndirectedBfs::new(graph, start);
         let mut subgraph = Graph::default();
 
         while let Some(node) = bfs.next(graph) {
