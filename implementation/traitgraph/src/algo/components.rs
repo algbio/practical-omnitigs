@@ -57,6 +57,12 @@ pub fn decompose_weakly_connected_components<
             }
             for in_neighbor in graph.in_neighbors(node).unwrap() {
                 let neighbor_id = in_neighbor.node_id;
+
+                // Handle self loops only once in the forward case.
+                // Otherwise, two identical versions of the loop would be added to the subgraph.
+                if neighbor_id == node {
+                    continue;
+                }
                 debug_assert!(
                     graph.contains_edge(neighbor_id, node),
                     "r: Edge missing: ({:?}, {:?})",
@@ -64,6 +70,7 @@ pub fn decompose_weakly_connected_components<
                     node
                 );
                 let edge_id = in_neighbor.edge_id;
+
                 if let Some(subneighbor) = bfs.order_of(neighbor_id).map(Into::into) {
                     if subgraph.contains_node_index(subneighbor) {
                         let edge_data = graph.edge_data(edge_id).unwrap().clone();
@@ -104,6 +111,7 @@ mod tests {
         let e7 = graph.add_edge(n3, n2, 17);
         let e8 = graph.add_edge(n4, n3, 18);
         let e9 = graph.add_edge(n0, n4, 19);
+        let e10 = graph.add_edge(n2, n2, 20);
         let result = decompose_weakly_connected_components(&graph);
         assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
@@ -122,9 +130,10 @@ mod tests {
         assert_eq!(result.edge_data(e3), Some(&10));
         assert_eq!(result.edge_data(e4), Some(&13));
         assert_eq!(result.edge_data(e5), Some(&18));
-        assert_eq!(result.edge_data(e6), Some(&16));
-        assert_eq!(result.edge_data(e7), Some(&12));
-        assert_eq!(result.edge_data(e8), Some(&17));
-        assert_eq!(result.edge_data(e9), Some(&11));
+        assert_eq!(result.edge_data(e6), Some(&20));
+        assert_eq!(result.edge_data(e7), Some(&16));
+        assert_eq!(result.edge_data(e8), Some(&12));
+        assert_eq!(result.edge_data(e9), Some(&17));
+        assert_eq!(result.edge_data(e10), Some(&11));
     }
 }
