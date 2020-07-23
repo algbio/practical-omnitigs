@@ -10,7 +10,8 @@ use std::iter::Map;
 
 pub use petgraph;
 
-pub fn new<NodeData: 'static, EdgeData: 'static>() -> impl DynamicGraph<NodeData, EdgeData, usize> {
+pub fn new<NodeData: 'static + Clone, EdgeData: 'static + Clone>(
+) -> impl DynamicGraph<NodeData, EdgeData, usize> + Default + Clone {
     Graph::<NodeData, EdgeData, Directed, usize>::default()
 }
 
@@ -115,7 +116,7 @@ impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a, NodeData, EdgeData, usize>
                 self.edges_directed(node_id.into(), Direction::Incoming)
                     .map(|edge| Neighbor {
                         edge_id: EdgeIndex::from(edge.id().index()),
-                        node_id: NodeIndex::from(edge.target().index()),
+                        node_id: NodeIndex::from(edge.source().index()),
                     }),
             )
         //Some(self.neighbors_directed(node_id.into(), Direction::Incoming).map(|n| NodeIndex::from(n.index())))
