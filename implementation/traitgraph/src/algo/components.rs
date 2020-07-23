@@ -12,7 +12,7 @@ pub fn decompose_weakly_connected_components<
     Graph: Default
         + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
         + ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-        + NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+        + NavigableGraph<'a, IndexType = IndexType>,
 >(
     graph: &'a Graph,
 ) -> Vec<Graph> {

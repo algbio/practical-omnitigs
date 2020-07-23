@@ -241,16 +241,9 @@ impl<
     }
 }
 
-impl<
-        'a,
-        NodeData,
-        EdgeData,
-        IndexType: PrimInt,
-        T: NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
-    > NavigableGraph<'a> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+impl<'a, NodeData, EdgeData, IndexType: PrimInt, T: NavigableGraph<'a, IndexType = IndexType>>
+    NavigableGraph<'a> for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
 {
-    type NodeData = NodeData;
-    type EdgeData = EdgeData;
     type IndexType = IndexType;
     type OutNeighbors = <T as NavigableGraph<'a>>::OutNeighbors;
     type InNeighbors = <T as NavigableGraph<'a>>::InNeighbors;

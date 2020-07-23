@@ -92,8 +92,6 @@ type PetgraphNeighborTranslator<'a, EdgeData> =
     fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<usize>;
 
 impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for Graph<NodeData, EdgeData, Directed, usize> {
-    type NodeData = NodeData;
-    type EdgeData = EdgeData;
     type IndexType = usize;
     type OutNeighbors =
         Map<Edges<'a, EdgeData, Directed, usize>, PetgraphNeighborTranslator<'a, EdgeData>>;

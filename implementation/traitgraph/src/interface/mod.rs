@@ -61,8 +61,6 @@ pub trait MutableGraphContainer {
 }
 
 pub trait NavigableGraph<'a> {
-    type NodeData;
-    type EdgeData;
     type IndexType;
 
     type OutNeighbors: IntoIterator<Item = Neighbor<Self::IndexType>>;
@@ -75,7 +73,7 @@ pub trait NavigableGraph<'a> {
 
 pub trait StaticGraph<NodeData, EdgeData, IndexType: PrimInt>:
     ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-    + for<'a> NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
+    + for<'a> NavigableGraph<'a, IndexType = IndexType>
 {
 }
 impl<
@@ -83,12 +81,7 @@ impl<
         EdgeData,
         IndexType: PrimInt,
         T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-            + for<'a> NavigableGraph<
-                'a,
-                NodeData = NodeData,
-                EdgeData = EdgeData,
-                IndexType = IndexType,
-            >,
+            + for<'a> NavigableGraph<'a, IndexType = IndexType>,
     > StaticGraph<NodeData, EdgeData, IndexType> for T
 {
 }
@@ -96,7 +89,7 @@ impl<
 pub trait DynamicGraph<NodeData, EdgeData, IndexType: PrimInt>:
     ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
     + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-    + for<'a> NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
+    + for<'a> NavigableGraph<'a, IndexType = IndexType>
 {
 }
 impl<
@@ -105,12 +98,7 @@ impl<
         IndexType: PrimInt,
         T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
             + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-            + for<'a> NavigableGraph<
-                'a,
-                NodeData = NodeData,
-                EdgeData = EdgeData,
-                IndexType = IndexType,
-            >,
+            + for<'a> NavigableGraph<'a, IndexType = IndexType>,
     > DynamicGraph<NodeData, EdgeData, IndexType> for T
 {
 }
