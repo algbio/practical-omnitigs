@@ -9,4 +9,8 @@ Included crates:
  * [compact-genome](https://github.com/algbio/practical-omnitigs/tree/master/implementation/compact-genome) [![](http://meritbadge.herokuapp.com/compact-genome)](https://crates.io/crates/compact-genome) [![](https://docs.rs/compact-genome/badge.svg)](https://docs.rs/compact-genome)
  * [genome-graph](https://github.com/algbio/practical-omnitigs/tree/master/implementation/genome-graph) [![](http://meritbadge.herokuapp.com/genome-graph)](https://crates.io/crates/genome-graph) [![](https://docs.rs/genome-graph/badge.svg)](https://docs.rs/genome-graph)
  * [traitgraph](https://github.com/algbio/practical-omnitigs/tree/master/implementation/traitgraph) [![](http://meritbadge.herokuapp.com/traitgraph)](https://crates.io/crates/traitgraph) [![](https://docs.rs/traitgraph/badge.svg)](https://docs.rs/traitgraph)
+
+## Required Software
+
+ * snakemake >= 4.3.1
  
