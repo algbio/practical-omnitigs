@@ -144,7 +144,6 @@ impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
                         )
                     }));
                 }
-                // A bug in bcalm2 causes it to output the lower-case pattern, instead of the documented upper-case one.
                 "KM:f:" | "km:f:" => {
                     ensure!(
                         mean_abundance.is_none(),

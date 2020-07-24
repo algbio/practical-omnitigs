@@ -3,13 +3,13 @@ use crate::traversal::UndirectedBfs;
 use crate::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
-pub fn decompose_weakly_connected_components<
-    NodeData: Clone,
-    EdgeData: Clone,
-    Graph: Default + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData> + StaticGraph,
->(
+pub fn decompose_weakly_connected_components<Graph: Default + MutableGraphContainer + StaticGraph>(
     graph: &Graph,
-) -> Vec<Graph> {
+) -> Vec<Graph>
+where
+    Graph::NodeData: Clone,
+    Graph::EdgeData: Clone,
+{
     let mut result = Vec::new();
     let mut nodes: LinkedList<_> = graph.node_indices().collect();
     // TODO this is not optimal. The Bfs recreates a vector of all nodes all the time.
