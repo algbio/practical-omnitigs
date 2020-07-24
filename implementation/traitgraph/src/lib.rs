@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate opaque_typedef_macros;
-
 mod algo;
 mod implementation;
 mod index;

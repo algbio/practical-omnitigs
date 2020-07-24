@@ -1,12 +1,11 @@
-use bigraph::{BidirectedNodeData, DynamicBigraph, NodeIndex};
+use bigraph::{BidirectedNodeData, DynamicBigraph, GraphIndex};
 use bio::io::fasta::Record;
 use compact_genome::{Genome, VectorGenome};
-use num_traits::{NumCast, PrimInt};
+use num_traits::NumCast;
 use std::convert::{TryFrom, TryInto};
-use std::fmt::{Debug, Display, Write};
+use std::fmt::{Debug, Write};
 use std::iter::FromIterator;
 use std::path::Path;
-use std::str::FromStr;
 
 error_chain! {
     foreign_links {
@@ -69,26 +68,26 @@ pub struct BCalm2NodeData {
 
 /// The raw node data of a bcalm2 node, including edge information and redundant information (sequence length).
 #[derive(Debug, Clone)]
-pub struct PlainBCalm2NodeData<IndexType: PrimInt> {
-    id: IndexType,
+pub struct PlainBCalm2NodeData {
+    id: usize,
     sequence: VectorGenome,
     length: usize,
     total_abundance: usize,
     mean_abundance: f64,
-    edges: Vec<PlainBCalm2Edge<IndexType>>,
+    edges: Vec<PlainBCalm2Edge>,
 }
 
 /// The raw edge information of a bcalm2 node.
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct PlainBCalm2Edge<IndexType: PrimInt> {
+pub struct PlainBCalm2Edge {
     /// `true` means `+`, `false` means `-´
     from_side: bool,
-    to_node: IndexType,
+    to_node: usize,
     /// `true` means `+`, `false` means `-´
     to_side: bool,
 }
 
-impl<IndexType: PrimInt> BidirectedNodeData for PlainBCalm2NodeData<IndexType> {
+impl BidirectedNodeData for PlainBCalm2NodeData {
     fn reverse_complement(&self) -> Self {
         let mut result = self.clone();
         result.sequence = result.sequence.reverse_complement();
@@ -96,11 +95,7 @@ impl<IndexType: PrimInt> BidirectedNodeData for PlainBCalm2NodeData<IndexType> {
     }
 }
 
-impl<IndexType: FromStr + PrimInt> TryFrom<bio::io::fasta::Record>
-    for PlainBCalm2NodeData<IndexType>
-where
-    <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
-{
+impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
     type Error = crate::Error;
 
     fn try_from(value: Record) -> crate::Result<Self> {
@@ -149,7 +144,6 @@ where
                         )
                     }));
                 }
-                // A bug in bcalm2 causes it to output the lower-case pattern, instead of the documented upper-case one.
                 "KM:f:" | "km:f:" => {
                     ensure!(
                         mean_abundance.is_none(),
@@ -232,51 +226,41 @@ where
     }
 }
 
-impl<'a, IndexType: PrimInt> From<&'a PlainBCalm2NodeData<IndexType>>
-    for PlainBCalm2NodeData<IndexType>
-{
-    fn from(data: &'a PlainBCalm2NodeData<IndexType>) -> Self {
+impl<'a> From<&'a PlainBCalm2NodeData> for PlainBCalm2NodeData {
+    fn from(data: &'a PlainBCalm2NodeData) -> Self {
         data.clone()
     }
 }
 
 pub fn read_bigraph_from_bcalm2_file<
     P: AsRef<Path>,
-    NodeData: From<PlainBCalm2NodeData<IndexType>>,
+    NodeData: From<PlainBCalm2NodeData>,
     EdgeData: Default + Clone,
-    IndexType: PrimInt + FromStr + Debug,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     path: P,
-) -> crate::Result<T>
-where
-    <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
-{
+) -> crate::Result<Graph> {
     read_bigraph_from_bcalm2(bio::io::fasta::Reader::from_file(path).map_err(Error::from)?)
 }
 
 pub fn read_bigraph_from_bcalm2<
     R: std::io::Read,
-    NodeData: From<PlainBCalm2NodeData<IndexType>>,
+    NodeData: From<PlainBCalm2NodeData>,
     EdgeData: Default + Clone,
-    IndexType: PrimInt + FromStr + Debug,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     reader: bio::io::fasta::Reader<R>,
-) -> crate::Result<T>
-where
-    <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
-{
-    struct BiEdge<IndexType: PrimInt> {
-        from_node: IndexType,
-        plain_edge: PlainBCalm2Edge<IndexType>,
+) -> crate::Result<Graph> {
+    struct BiEdge {
+        from_node: usize,
+        plain_edge: PlainBCalm2Edge,
     }
 
-    let mut bigraph = T::default();
+    let mut bigraph = Graph::default();
     let mut edges = Vec::new();
 
     for record in reader.records() {
-        let record: PlainBCalm2NodeData<IndexType> = record.map_err(Error::from)?.try_into()?;
+        let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
         edges.extend(record.edges.iter().map(|e| BiEdge {
             from_node: record.id,
             plain_edge: e.clone(),
@@ -310,9 +294,9 @@ where
     Ok(bigraph)
 }
 
-fn write_binode_to_bcalm2<IndexType: PrimInt + Debug>(
-    node: &PlainBCalm2NodeData<IndexType>,
-    out_neighbors: Vec<(bool, NodeIndex<IndexType>, bool)>,
+fn write_binode_to_bcalm2(
+    node: &PlainBCalm2NodeData,
+    out_neighbors: Vec<(bool, usize, bool)>,
 ) -> crate::Result<String> {
     let mut result = String::new();
     write!(
@@ -339,14 +323,13 @@ pub fn write_bigraph_to_bcalm2_file<
     P: AsRef<Path>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
-    IndexType: PrimInt + Debug + Display,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
-    graph: &T,
+    graph: &Graph,
     path: P,
 ) -> crate::Result<()>
 where
-    PlainBCalm2NodeData<IndexType>: for<'a> From<&'a NodeData>,
+    for<'a> PlainBCalm2NodeData: From<&'a NodeData>,
 {
     write_bigraph_to_bcalm2(
         graph,
@@ -356,41 +339,31 @@ where
 
 pub fn write_bigraph_to_bcalm2<
     W: std::io::Write,
-    NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
+    NodeData,
     EdgeData: Default + Clone,
-    IndexType: PrimInt + Debug + Display,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
-    graph: &T,
+    graph: &Graph,
     mut writer: bio::io::fasta::Writer<W>,
 ) -> crate::Result<()>
 where
-    PlainBCalm2NodeData<IndexType>: for<'a> From<&'a NodeData>,
+    for<'a> PlainBCalm2NodeData: From<&'a NodeData>,
 {
     let mut output_nodes = vec![false; graph.node_count()];
 
     for node_id in graph.node_indices() {
-        if !output_nodes[<usize as NumCast>::from(
-            graph
-                .partner_node(node_id)
-                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutPartner))?,
-        )
-        .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?]
+        if !output_nodes[graph
+            .partner_node(node_id)
+            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutPartner))?
+            .as_usize()]
         {
-            output_nodes[<usize as NumCast>::from(node_id)
-                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?] = true;
+            output_nodes[node_id.as_usize()] = true;
         }
     }
 
     for node_id in graph.node_indices() {
-        if output_nodes[<usize as NumCast>::from(node_id)
-            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?]
-        {
-            let node_data = PlainBCalm2NodeData::<IndexType>::from(
-                graph
-                    .node_data(node_id)
-                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?,
-            );
+        if output_nodes[node_id.as_usize()] {
+            let node_data = PlainBCalm2NodeData::from(graph.node_data(node_id));
             let partner_node_id = graph
                 .partner_node(node_id)
                 .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutPartner))?;
@@ -402,40 +375,34 @@ where
             let mut out_neighbors_plus = Vec::new();
             let mut out_neighbors_minus = Vec::new();
 
-            for neighbor in graph
-                .out_neighbors(node_id)
-                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
-            {
-                let neighbor_node_id = <usize as NumCast>::from(neighbor.node_id)
-                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?;
+            for neighbor in graph.out_neighbors(node_id) {
+                let neighbor_node_id = neighbor.node_id.as_usize();
 
                 out_neighbors_plus.push((
                     true,
                     if output_nodes[neighbor_node_id] {
-                        neighbor.node_id
+                        neighbor.node_id.as_usize()
                     } else {
                         graph
                             .partner_node(neighbor.node_id)
                             .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+                            .as_usize()
                     },
                     output_nodes[neighbor_node_id],
                 ));
             }
-            for neighbor in graph
-                .out_neighbors(partner_node_id)
-                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
-            {
-                let neighbor_node_id = <usize as NumCast>::from(neighbor.node_id)
-                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?;
+            for neighbor in graph.out_neighbors(partner_node_id) {
+                let neighbor_node_id = neighbor.node_id.as_usize();
 
                 out_neighbors_minus.push((
                     false,
                     if output_nodes[neighbor_node_id] {
-                        neighbor.node_id
+                        neighbor.node_id.as_usize()
                     } else {
                         graph
                             .partner_node(neighbor.node_id)
                             .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+                            .as_usize()
                     },
                     output_nodes[neighbor_node_id],
                 ));

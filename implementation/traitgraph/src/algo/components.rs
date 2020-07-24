@@ -1,21 +1,15 @@
+use crate::index::GraphIndex;
 use crate::traversal::UndirectedBfs;
-use crate::{ImmutableGraphContainer, MutableGraphContainer, NavigableGraph};
-use num_traits::{NumCast, PrimInt};
+use crate::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
-use std::fmt::Debug;
 
-pub fn decompose_weakly_connected_components<
-    'a,
-    NodeData: Clone,
-    EdgeData: Clone,
-    IndexType: 'a + PrimInt + Debug,
-    Graph: Default
-        + MutableGraphContainer<NodeData, EdgeData, IndexType>
-        + ImmutableGraphContainer<NodeData, EdgeData, IndexType>
-        + NavigableGraph<'a, NodeData, EdgeData, IndexType>,
->(
-    graph: &'a Graph,
-) -> Vec<Graph> {
+pub fn decompose_weakly_connected_components<Graph: Default + MutableGraphContainer + StaticGraph>(
+    graph: &Graph,
+) -> Vec<Graph>
+where
+    Graph::NodeData: Clone,
+    Graph::EdgeData: Clone,
+{
     let mut result = Vec::new();
     let mut nodes: LinkedList<_> = graph.node_indices().collect();
     // TODO this is not optimal. The Bfs recreates a vector of all nodes all the time.
@@ -25,20 +19,20 @@ pub fn decompose_weakly_connected_components<
 
     while !nodes.is_empty() {
         let start = nodes.pop_front().unwrap();
-        if visited[<usize as NumCast>::from(start).unwrap()] {
+        if visited[start.as_usize()] {
             continue;
         }
 
-        let mut bfs = UndirectedBfs::new(graph, start);
+        let mut bfs: UndirectedBfs<Graph> = UndirectedBfs::new(graph, start);
         let mut subgraph = Graph::default();
 
         while let Some(node) = bfs.next(graph) {
-            visited[<usize as NumCast>::from(node).unwrap()] = true;
+            visited[node.as_usize()] = true;
             //println!("add_node: {:?}", node);
-            subgraph.add_node(graph.node_data(node).unwrap().clone());
-            let subnode = bfs.order_of(node).unwrap().into();
+            subgraph.add_node(graph.node_data(node).clone());
+            let subnode = bfs.order_of(node).unwrap();
 
-            for out_neighbor in graph.out_neighbors(node).unwrap() {
+            for out_neighbor in graph.out_neighbors(node) {
                 let neighbor_id = out_neighbor.node_id;
                 debug_assert!(
                     graph.contains_edge(node, neighbor_id),
@@ -47,15 +41,15 @@ pub fn decompose_weakly_connected_components<
                     neighbor_id
                 );
                 let edge_id = out_neighbor.edge_id;
-                if let Some(subneighbor) = bfs.order_of(neighbor_id).map(Into::into) {
+                if let Some(subneighbor) = bfs.order_of(neighbor_id) {
                     if subgraph.contains_node_index(subneighbor) {
-                        let edge_data = graph.edge_data(edge_id).unwrap().clone();
+                        let edge_data = graph.edge_data(edge_id).clone();
                         //println!("f: ({:?}, {:?}) becomes ({:?}, {:?})", node, neighbor_id, subnode, subneighbor);
                         subgraph.add_edge(subnode, subneighbor, edge_data);
                     }
                 }
             }
-            for in_neighbor in graph.in_neighbors(node).unwrap() {
+            for in_neighbor in graph.in_neighbors(node) {
                 let neighbor_id = in_neighbor.node_id;
 
                 // Handle self loops only once in the forward case.
@@ -71,9 +65,9 @@ pub fn decompose_weakly_connected_components<
                 );
                 let edge_id = in_neighbor.edge_id;
 
-                if let Some(subneighbor) = bfs.order_of(neighbor_id).map(Into::into) {
+                if let Some(subneighbor) = bfs.order_of(neighbor_id) {
                     if subgraph.contains_node_index(subneighbor) {
-                        let edge_data = graph.edge_data(edge_id).unwrap().clone();
+                        let edge_data = graph.edge_data(edge_id).clone();
                         //println!("r: ({:?}, {:?}) becomes ({:?}, {:?})", neighbor_id, node, subneighbor, subnode);
                         subgraph.add_edge(subneighbor, subnode, edge_data);
                     }
@@ -118,23 +112,23 @@ mod tests {
         assert_eq!(result.node_count(), graph.node_count());
         assert_eq!(result.edge_count(), graph.edge_count());
 
-        assert_eq!(result.node_data(n0), Some(&0));
-        assert_eq!(result.node_data(n1), Some(&4));
-        assert_eq!(result.node_data(n2), Some(&1));
-        assert_eq!(result.node_data(n3), Some(&3));
-        assert_eq!(result.node_data(n4), Some(&2));
+        assert_eq!(result.node_data(n0), &0);
+        assert_eq!(result.node_data(n1), &4);
+        assert_eq!(result.node_data(n2), &1);
+        assert_eq!(result.node_data(n3), &3);
+        assert_eq!(result.node_data(n4), &2);
 
-        assert_eq!(result.edge_data(e0), Some(&14));
-        assert_eq!(result.edge_data(e1), Some(&19));
-        assert_eq!(result.edge_data(e2), Some(&15));
-        assert_eq!(result.edge_data(e3), Some(&10));
-        assert_eq!(result.edge_data(e4), Some(&13));
-        assert_eq!(result.edge_data(e5), Some(&18));
-        assert_eq!(result.edge_data(e6), Some(&20));
-        assert_eq!(result.edge_data(e7), Some(&16));
-        assert_eq!(result.edge_data(e8), Some(&12));
-        assert_eq!(result.edge_data(e9), Some(&17));
-        assert_eq!(result.edge_data(e10), Some(&11));
+        assert_eq!(result.edge_data(e0), &14);
+        assert_eq!(result.edge_data(e1), &19);
+        assert_eq!(result.edge_data(e2), &15);
+        assert_eq!(result.edge_data(e3), &10);
+        assert_eq!(result.edge_data(e4), &13);
+        assert_eq!(result.edge_data(e5), &18);
+        assert_eq!(result.edge_data(e6), &20);
+        assert_eq!(result.edge_data(e7), &16);
+        assert_eq!(result.edge_data(e8), &12);
+        assert_eq!(result.edge_data(e9), &17);
+        assert_eq!(result.edge_data(e10), &11);
     }
 
     #[test]
@@ -159,19 +153,19 @@ mod tests {
         assert_eq!(result.node_count(), graph.node_count());
         assert_eq!(result.edge_count(), graph.edge_count());
 
-        assert_eq!(result.node_data(n0), Some(&0));
-        assert_eq!(result.node_data(n1), Some(&1));
-        assert_eq!(result.node_data(n2), Some(&2));
-        assert_eq!(result.node_data(n3), Some(&3));
-        assert_eq!(result.node_data(n4), Some(&4));
+        assert_eq!(result.node_data(n0), &0);
+        assert_eq!(result.node_data(n1), &1);
+        assert_eq!(result.node_data(n2), &2);
+        assert_eq!(result.node_data(n3), &3);
+        assert_eq!(result.node_data(n4), &4);
 
-        assert_eq!(result.edge_data(e0), Some(&15));
-        assert_eq!(result.edge_data(e1), Some(&10));
-        assert_eq!(result.edge_data(e2), Some(&20));
-        assert_eq!(result.edge_data(e3), Some(&11));
-        assert_eq!(result.edge_data(e4), Some(&17));
-        assert_eq!(result.edge_data(e5), Some(&12));
-        assert_eq!(result.edge_data(e6), Some(&18));
-        assert_eq!(result.edge_data(e7), Some(&13));
+        assert_eq!(result.edge_data(e0), &15);
+        assert_eq!(result.edge_data(e1), &10);
+        assert_eq!(result.edge_data(e2), &20);
+        assert_eq!(result.edge_data(e3), &11);
+        assert_eq!(result.edge_data(e4), &17);
+        assert_eq!(result.edge_data(e5), &12);
+        assert_eq!(result.edge_data(e6), &18);
+        assert_eq!(result.edge_data(e7), &13);
     }
 }

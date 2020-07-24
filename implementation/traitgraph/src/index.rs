@@ -1,16 +1,193 @@
 use num_traits::{NumCast, PrimInt, ToPrimitive};
-use std::ops;
+use std::marker::PhantomData;
 
-#[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
-#[opaque_typedef(derive(Display, FromInner))]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
+pub struct OptionalNodeIndex<IndexType: Sized>(IndexType);
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
+pub struct OptionalEdgeIndex<IndexType: Sized>(IndexType);
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub struct NodeIndex<IndexType: Sized>(IndexType);
-#[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, OpaqueTypedef)]
-#[opaque_typedef(derive(Display, FromInner))]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub struct EdgeIndex<IndexType: Sized>(IndexType);
 
-//pub trait Index: Default + std::fmt::Debug + Eq + Copy + Sized {}
+pub trait OptionalGraphIndex<PartnerGraphIndex: GraphIndex<Self>>:
+    Default
+    + std::fmt::Debug
+    + Eq
+    + Ord
+    + Copy
+    + Sized
+    + From<usize>
+    + From<Option<usize>>
+    + From<PartnerGraphIndex>
+    + From<Option<PartnerGraphIndex>>
+    + Into<Option<PartnerGraphIndex>>
+    + std::ops::Add<usize, Output = Self>
+{
+    // We don't wanna have OptionalGraphIndex: Into<usize>, to make this type strong, i.e. make it hard to accidentally convert it to a different type.
+    /// Get this index as `usize`, but return `None` if this index is marked as invalid.
+    fn as_usize(self) -> Option<usize>;
 
-impl<IndexType: PrimInt> NodeIndex<IndexType> {
+    /// A faster method to get the `usize` value of the index, which does not perform any validity checks.
+    fn as_usize_unchecked(self) -> usize;
+
+    /// Returns `true` if the index is valid, i.e. if it is not marked as invalid.
+    fn is_valid(self) -> bool {
+        self.as_usize().is_some()
+    }
+
+    /// Returns a new `OptionalGraphIndex` that is marked as invalid.
+    fn new_none() -> Self {
+        <Self as From<Option<usize>>>::from(None)
+    }
+}
+
+pub trait GraphIndex<PartnerOptionalGraphIndex: OptionalGraphIndex<Self>>:
+    std::fmt::Debug
+    + Eq
+    + Ord
+    + Copy
+    + Sized
+    + From<usize>
+    + Into<PartnerOptionalGraphIndex>
+    + std::ops::Add<usize, Output = Self>
+{
+    // We don't wanna have GraphIndex: Into<usize>, to make this type strong, i.e. make it hard to accidentally convert it to a different type.
+    /// Get this index as `usize`.
+    fn as_usize(self) -> usize;
+}
+
+macro_rules! impl_graph_index {
+    ($GraphIndexType:ident, $OptionalGraphIndexType:ident) => {
+        impl<IndexType: PrimInt> OptionalGraphIndex<$GraphIndexType<IndexType>>
+            for $OptionalGraphIndexType<IndexType>
+        {
+            fn as_usize(self) -> Option<usize> {
+                if self.0 != IndexType::max_value() {
+                    Some(<usize as NumCast>::from(self.0).unwrap())
+                } else {
+                    None
+                }
+            }
+
+            fn as_usize_unchecked(self) -> usize {
+                <usize as NumCast>::from(self.0).unwrap()
+            }
+        }
+
+        impl<IndexType: PrimInt> GraphIndex<$OptionalGraphIndexType<IndexType>>
+            for $GraphIndexType<IndexType>
+        {
+            fn as_usize(self) -> usize {
+                <usize as NumCast>::from(self.0).unwrap()
+            }
+        }
+
+        impl<IndexType: PrimInt> Default for $OptionalGraphIndexType<IndexType> {
+            fn default() -> Self {
+                Self(IndexType::max_value())
+            }
+        }
+
+        impl<IndexType: PrimInt> std::fmt::Debug for $OptionalGraphIndexType<IndexType> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                if let Some(value) = self.as_usize() {
+                    write!(f, "{}", value)
+                } else {
+                    write!(f, "None")
+                }
+            }
+        }
+
+        impl<IndexType: PrimInt> std::fmt::Debug for $GraphIndexType<IndexType> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                //debug_assert!(self.0 != IndexType::max_value());
+                write!(f, "{}", self.as_usize())
+            }
+        }
+
+        impl<IndexType: PrimInt> From<Option<usize>> for $OptionalGraphIndexType<IndexType> {
+            fn from(source: Option<usize>) -> Self {
+                if let Some(source) = source {
+                    let source = <IndexType as NumCast>::from(source).unwrap();
+                    assert!(source != IndexType::max_value());
+                    Self(source)
+                } else {
+                    Self(IndexType::max_value())
+                }
+            }
+        }
+
+        impl<IndexType: PrimInt> From<usize> for $OptionalGraphIndexType<IndexType> {
+            fn from(source: usize) -> Self {
+                let source = <IndexType as NumCast>::from(source).unwrap();
+                assert!(source != IndexType::max_value());
+                Self(source)
+            }
+        }
+
+        impl<IndexType: PrimInt> From<usize> for $GraphIndexType<IndexType> {
+            fn from(source: usize) -> Self {
+                let source = <IndexType as NumCast>::from(source).unwrap();
+                assert!(source != IndexType::max_value());
+                Self(source)
+            }
+        }
+
+        impl<IndexType: PrimInt> From<$GraphIndexType<IndexType>>
+            for $OptionalGraphIndexType<IndexType>
+        {
+            fn from(source: $GraphIndexType<IndexType>) -> Self {
+                Self::from(source.as_usize())
+            }
+        }
+
+        impl<IndexType: PrimInt> From<Option<$GraphIndexType<IndexType>>>
+            for $OptionalGraphIndexType<IndexType>
+        {
+            fn from(source: Option<$GraphIndexType<IndexType>>) -> Self {
+                if let Some(source) = source {
+                    Self::from(source.as_usize())
+                } else {
+                    Self::new_none()
+                }
+            }
+        }
+
+        impl<IndexType: PrimInt> From<$OptionalGraphIndexType<IndexType>>
+            for Option<$GraphIndexType<IndexType>>
+        {
+            fn from(source: $OptionalGraphIndexType<IndexType>) -> Self {
+                if let Some(source) = source.as_usize() {
+                    Some(source.into())
+                } else {
+                    None
+                }
+            }
+        }
+
+        impl<IndexType: PrimInt> std::ops::Add<usize> for $OptionalGraphIndexType<IndexType> {
+            type Output = Self;
+
+            fn add(self, rhs: usize) -> Self::Output {
+                Self::from(self.as_usize().unwrap() + Self::from(rhs).as_usize().unwrap())
+            }
+        }
+
+        impl<IndexType: PrimInt> std::ops::Add<usize> for $GraphIndexType<IndexType> {
+            type Output = Self;
+
+            fn add(self, rhs: usize) -> Self::Output {
+                Self::from(self.as_usize() + Self::from(rhs).as_usize())
+            }
+        }
+    };
+}
+
+impl_graph_index!(NodeIndex, OptionalNodeIndex);
+impl_graph_index!(EdgeIndex, OptionalEdgeIndex);
+
+/*impl<IndexType: PrimInt> NodeIndex<IndexType> {
     pub fn invalid() -> Self {
         NodeIndex(IndexType::max_value())
     }
@@ -28,7 +205,7 @@ impl<IndexType: PrimInt> EdgeIndex<IndexType> {
     pub fn is_invalid(&self) -> bool {
         *self == Self::invalid()
     }
-}
+}*/
 
 /*impl<IndexType: PrimInt> From<NodeIndex<IndexType>> for usize {
     fn from(node_index: NodeIndex<IndexType>) -> Self {
@@ -42,31 +219,31 @@ impl<IndexType: PrimInt> From<EdgeIndex<IndexType>> for usize {
     }
 }*/
 
-impl<T, IndexType: PrimInt> ops::Index<NodeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> std::ops::Index<NodeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: NodeIndex<IndexType>) -> &Self::Output {
-        &self[<usize as NumCast>::from(index.0).unwrap()]
+        &self[index.as_usize()]
     }
 }
 
-impl<T, IndexType: PrimInt> ops::Index<EdgeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> std::ops::Index<EdgeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: EdgeIndex<IndexType>) -> &Self::Output {
-        &self[<usize as NumCast>::from(index.0).unwrap()]
+        &self[index.as_usize()]
     }
 }
 
-impl<T, IndexType: PrimInt> ops::IndexMut<NodeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> std::ops::IndexMut<NodeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: NodeIndex<IndexType>) -> &mut Self::Output {
-        &mut self[<usize as NumCast>::from(index.0).unwrap()]
+        &mut self[index.as_usize()]
     }
 }
 
-impl<T, IndexType: PrimInt> ops::IndexMut<EdgeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt> std::ops::IndexMut<EdgeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: EdgeIndex<IndexType>) -> &mut Self::Output {
-        &mut self[<usize as NumCast>::from(index.0).unwrap()]
+        &mut self[index.as_usize()]
     }
 }
 
@@ -99,7 +276,7 @@ impl<T, IndexType: PrimInt> ops::IndexMut<EdgeIndex<IndexType>> for Vec<T> {
     }
 }*/
 
-impl<IndexType: ToPrimitive> ToPrimitive for NodeIndex<IndexType> {
+/*impl<IndexType: ToPrimitive> ToPrimitive for NodeIndex<IndexType> {
     fn to_i64(&self) -> Option<i64> {
         self.0.to_i64()
     }
@@ -117,7 +294,7 @@ impl<IndexType: ToPrimitive> ToPrimitive for EdgeIndex<IndexType> {
     fn to_u64(&self) -> Option<u64> {
         self.0.to_u64()
     }
-}
+}*/
 
 /*impl<IndexType: PrimInt> From<IndexType> for NodeIndex<IndexType> {
     fn from(index: IndexType) -> Self {
@@ -143,55 +320,38 @@ impl<IndexType: PrimInt> From<EdgeIndex<IndexType>> for IndexType {
     }
 }*/
 
-pub struct NodeIndices<IndexType: PrimInt> {
+pub struct GraphIndices<IndexType, OptionalIndexType> {
     start: IndexType,
     end: IndexType,
+    optional_index_type: PhantomData<OptionalIndexType>,
 }
 
-pub struct EdgeIndices<IndexType: PrimInt> {
-    start: IndexType,
-    end: IndexType,
-}
-
-impl<RawType: ToPrimitive, IndexType: PrimInt> From<(RawType, RawType)> for NodeIndices<IndexType> {
+impl<
+        RawType: ToPrimitive,
+        OptionalIndexType: OptionalGraphIndex<IndexType>,
+        IndexType: GraphIndex<OptionalIndexType>,
+    > From<(RawType, RawType)> for GraphIndices<IndexType, OptionalIndexType>
+{
     fn from(raw: (RawType, RawType)) -> Self {
         Self {
-            start: <IndexType as NumCast>::from(raw.0).unwrap(),
-            end: <IndexType as NumCast>::from(raw.1).unwrap(),
+            start: IndexType::from(raw.0.to_usize().unwrap()),
+            end: IndexType::from(raw.1.to_usize().unwrap()),
+            optional_index_type: Default::default(),
         }
     }
 }
 
-impl<RawType: PrimInt, IndexType: PrimInt> From<(RawType, RawType)> for EdgeIndices<IndexType> {
-    fn from(raw: (RawType, RawType)) -> Self {
-        Self {
-            start: <IndexType as NumCast>::from(raw.0).unwrap(),
-            end: <IndexType as NumCast>::from(raw.1).unwrap(),
-        }
-    }
-}
-
-impl<IndexType: PrimInt> Iterator for NodeIndices<IndexType> {
-    type Item = NodeIndex<IndexType>;
+impl<
+        OptionalIndexType: OptionalGraphIndex<IndexType>,
+        IndexType: GraphIndex<OptionalIndexType>,
+    > Iterator for GraphIndices<IndexType, OptionalIndexType>
+{
+    type Item = IndexType;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start < self.end {
-            let result = Some(NodeIndex(self.start));
-            self.start = self.start + NumCast::from(1).unwrap();
-            result
-        } else {
-            None
-        }
-    }
-}
-
-impl<IndexType: PrimInt> Iterator for EdgeIndices<IndexType> {
-    type Item = EdgeIndex<IndexType>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start < self.end {
-            let result = Some(EdgeIndex(self.start));
-            self.start = self.start + NumCast::from(1).unwrap();
+            let result = Some(self.start);
+            self.start = self.start + 1;
             result
         } else {
             None

@@ -1,17 +1,14 @@
-use num_traits::PrimInt;
-use traitgraph::{NodeIndex, StaticGraph};
+use traitgraph::StaticGraph;
 
 /**
  * A node-centric bidirected graph.
  * That is a graph in which each node has a unique partner, and this relation is symmetric.
  */
-pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    StaticGraph<NodeData, EdgeData, IndexType> + Sized
-{
+pub trait StaticBigraph: StaticGraph {
     /**
      * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
      */
-    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>>;
+    fn partner_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex>;
 
     /**
      * Returns true if each node has exactly one partner, and this relation is symmetric.
@@ -29,12 +26,6 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
                 } else {
                     return false;
                 };
-
-            assert!(
-                !node_index.is_invalid()
-                    && !partner_index.is_invalid()
-                    && !partner_partner_index.is_invalid()
-            );
             if node_index != partner_partner_index || node_index == partner_index {
                 return false;
             }
@@ -51,7 +42,7 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
      */
     fn verify_mirror_property(&self) -> bool {
         for from_node in self.node_indices() {
-            for to_node in self.out_neighbors(from_node).unwrap() {
+            for to_node in self.out_neighbors(from_node) {
                 let from_node_partner = self.partner_node(from_node).unwrap();
                 let to_node_partner = self.partner_node(to_node.node_id).unwrap();
                 if !self.contains_edge(to_node_partner, from_node_partner) {
@@ -68,8 +59,8 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
      */
     fn verify_unitig_length_is_zero(&self) -> bool {
         for node in self.node_indices() {
-            if self.out_neighbors(node).unwrap().into_iter().count() == 1
-                && self.in_neighbors(node).unwrap().into_iter().count() == 1
+            if self.out_neighbors(node).into_iter().count() == 1
+                && self.in_neighbors(node).into_iter().count() == 1
             {
                 return false;
             }
@@ -84,17 +75,18 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
  * Since the graph is static, the resulting topology will be the input topology, only the
  * bigraph node mapping function will be computed on top.
  */
-pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    StaticBigraph<NodeData, EdgeData, IndexType> + Sized
-{
+pub trait StaticBigraphFromDigraph: StaticBigraph {
     /** The type of directed topology the bigraph is created from. */
-    type Topology: StaticGraph<NodeData, EdgeData, IndexType>;
+    type Topology: StaticGraph<NodeData = Self::NodeData, EdgeData = Self::EdgeData>;
 
     /**
      * Converts the given topology into a bigraph with the given mapping function.
      * If the resulting graph has wrongly mapped nodes, the method panics.
      */
-    fn new(_topology: Self::Topology, _binode_mapping_function: fn(&NodeData) -> NodeData) -> Self;
+    fn new(
+        _topology: Self::Topology,
+        _binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
+    ) -> Self;
 
     /**
      * Converts the given topology into a bigraph with the given mapping function.
@@ -103,7 +95,7 @@ pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
      */
     fn new_unchecked(
         _topology: Self::Topology,
-        _binode_mapping_function: fn(&NodeData) -> NodeData,
+        _binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
     ) -> Self;
 }
 
