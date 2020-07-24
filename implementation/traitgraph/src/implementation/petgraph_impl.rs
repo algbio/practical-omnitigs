@@ -12,7 +12,8 @@ use std::iter::Map;
 pub use petgraph;
 
 pub fn new<NodeData: 'static + Clone, EdgeData: 'static + Clone>(
-) -> impl DynamicGraph<NodeData, EdgeData, usize> + Default + Clone {
+) -> impl DynamicGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = usize> + Default + Clone
+{
     DiGraph::<NodeData, EdgeData, usize>::default()
 }
 

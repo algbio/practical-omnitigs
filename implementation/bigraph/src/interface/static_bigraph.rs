@@ -5,13 +5,17 @@ use traitgraph::{NodeIndex, StaticGraph};
  * A node-centric bidirected graph.
  * That is a graph in which each node has a unique partner, and this relation is symmetric.
  */
-pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType> + Sized
+pub trait StaticBigraph: StaticGraph
+where
+    Self::IndexType: PrimInt,
 {
     /**
      * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
      */
-    fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>>;
+    fn partner_node(
+        &self,
+        node_id: NodeIndex<Self::IndexType>,
+    ) -> Option<NodeIndex<Self::IndexType>>;
 
     /**
      * Returns true if each node has exactly one partner, and this relation is symmetric.
@@ -84,17 +88,25 @@ pub trait StaticBigraph<NodeData, EdgeData, IndexType: PrimInt>:
  * Since the graph is static, the resulting topology will be the input topology, only the
  * bigraph node mapping function will be computed on top.
  */
-pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
-    StaticBigraph<NodeData, EdgeData, IndexType> + Sized
+pub trait StaticBigraphFromDigraph: StaticBigraph
+where
+    Self::IndexType: PrimInt,
 {
     /** The type of directed topology the bigraph is created from. */
-    type Topology: StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>;
+    type Topology: StaticGraph<
+        NodeData = Self::NodeData,
+        EdgeData = Self::EdgeData,
+        IndexType = Self::IndexType,
+    >;
 
     /**
      * Converts the given topology into a bigraph with the given mapping function.
      * If the resulting graph has wrongly mapped nodes, the method panics.
      */
-    fn new(_topology: Self::Topology, _binode_mapping_function: fn(&NodeData) -> NodeData) -> Self;
+    fn new(
+        _topology: Self::Topology,
+        _binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
+    ) -> Self;
 
     /**
      * Converts the given topology into a bigraph with the given mapping function.
@@ -103,7 +115,7 @@ pub trait StaticBigraphFromDigraph<NodeData, EdgeData, IndexType: PrimInt>:
      */
     fn new_unchecked(
         _topology: Self::Topology,
-        _binode_mapping_function: fn(&NodeData) -> NodeData,
+        _binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
     ) -> Self;
 }
 

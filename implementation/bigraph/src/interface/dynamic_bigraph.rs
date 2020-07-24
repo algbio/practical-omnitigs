@@ -3,8 +3,10 @@ use crate::StaticBigraphFromDigraph;
 use num_traits::PrimInt;
 use traitgraph::DynamicGraph;
 
-pub trait DynamicBigraph<NodeData, EdgeData: Clone, IndexType: PrimInt>:
-    DynamicGraph<NodeData, EdgeData, IndexType> + StaticBigraph<NodeData, EdgeData, IndexType>
+pub trait DynamicBigraph: DynamicGraph + StaticBigraph
+where
+    Self::IndexType: PrimInt,
+    Self::EdgeData: Clone,
 {
     /**
      * Adds edges such that the graph fulfils the [mirror property].
@@ -40,11 +42,11 @@ pub trait DynamicBigraph<NodeData, EdgeData: Clone, IndexType: PrimInt>:
     fn add_partner_nodes(&mut self);
 }
 
-pub trait DynamicBigraphFromDigraph<NodeData, EdgeData: Clone, IndexType: PrimInt>:
-    DynamicBigraph<NodeData, EdgeData, IndexType>
-    + StaticBigraphFromDigraph<NodeData, EdgeData, IndexType>
+pub trait DynamicBigraphFromDigraph: DynamicBigraph + StaticBigraphFromDigraph + Sized
 where
-    Self::Topology: DynamicGraph<NodeData, EdgeData, IndexType>,
+    Self::Topology: DynamicGraph,
+    Self::IndexType: PrimInt,
+    Self::EdgeData: Clone,
 {
     /**
      * Converts the given topology into a bigraph.
@@ -52,7 +54,7 @@ where
      */
     fn new_with_completed_nodes(
         _topology: Self::Topology,
-        _binode_mapping_function: fn(&NodeData) -> NodeData,
+        _binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
     ) -> Self {
         unimplemented!()
     }
@@ -65,7 +67,7 @@ where
      */
     fn new_with_completed_nodes_and_mirrored_edges(
         topology: Self::Topology,
-        binode_mapping_function: fn(&NodeData) -> NodeData,
+        binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
     ) -> Self {
         let mut bigraph = Self::new_with_completed_nodes(topology, binode_mapping_function);
         bigraph.add_mirror_edges();

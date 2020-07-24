@@ -53,8 +53,9 @@ impl<
         EdgeData,
         IndexType: PrimInt,
         T: StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
-    > StaticBigraph<NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+    > StaticBigraph for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+where
+    Self: GraphBase<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
 {
     fn partner_node(&self, node_id: NodeIndex<IndexType>) -> Option<NodeIndex<IndexType>> {
         if node_id.is_invalid() {
@@ -135,8 +136,7 @@ impl<
         EdgeData,
         IndexType: PrimInt + Debug,
         Topology: StaticGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
-    > StaticBigraphFromDigraph<NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
+    > StaticBigraphFromDigraph for NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
 {
     type Topology = Topology;
 
@@ -156,9 +156,8 @@ impl<
         NodeData: BidirectedNodeData,
         EdgeData: Clone,
         IndexType: PrimInt,
-        T: DynamicGraph<NodeData, EdgeData, IndexType>,
-    > DynamicBigraph<NodeData, EdgeData, IndexType>
-    for NodeBigraphWrapper<NodeData, EdgeData, IndexType, T>
+        Topology: DynamicGraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>,
+    > DynamicBigraph for NodeBigraphWrapper<NodeData, EdgeData, IndexType, Topology>
 {
     fn add_partner_nodes(&mut self) {
         for node_id in self.node_indices() {

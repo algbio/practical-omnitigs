@@ -69,27 +69,8 @@ pub trait NavigableGraph<'a>: GraphBase {
 pub trait StaticGraph: ImmutableGraphContainer + for<'a> NavigableGraph<'a> {}
 impl<T: ImmutableGraphContainer + for<'a> NavigableGraph<'a>> StaticGraph for T {}
 
-pub trait DynamicGraph<NodeData, EdgeData, IndexType>:
-    ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-    + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-    + for<'a> NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-{
-}
-impl<
-        NodeData,
-        EdgeData,
-        IndexType,
-        T: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-            + MutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType>
-            + for<'a> NavigableGraph<
-                'a,
-                NodeData = NodeData,
-                EdgeData = EdgeData,
-                IndexType = IndexType,
-            >,
-    > DynamicGraph<NodeData, EdgeData, IndexType> for T
-{
-}
+pub trait DynamicGraph: StaticGraph + MutableGraphContainer {}
+impl<T: StaticGraph + MutableGraphContainer> DynamicGraph for T {}
 
 /*pub struct Edge<IndexType> {
     pub from: NodeIndex<IndexType>,

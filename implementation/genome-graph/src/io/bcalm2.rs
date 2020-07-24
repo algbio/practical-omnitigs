@@ -245,10 +245,10 @@ pub fn read_bigraph_from_bcalm2_file<
     NodeData: From<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
     IndexType: PrimInt + FromStr + Debug,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType> + Default,
 >(
     path: P,
-) -> crate::Result<T>
+) -> crate::Result<Graph>
 where
     <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
 {
@@ -260,10 +260,10 @@ pub fn read_bigraph_from_bcalm2<
     NodeData: From<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
     IndexType: PrimInt + FromStr + Debug,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType> + Default,
 >(
     reader: bio::io::fasta::Reader<R>,
-) -> crate::Result<T>
+) -> crate::Result<Graph>
 where
     <IndexType as FromStr>::Err: std::error::Error + Send + 'static,
 {
@@ -272,7 +272,7 @@ where
         plain_edge: PlainBCalm2Edge<IndexType>,
     }
 
-    let mut bigraph = T::default();
+    let mut bigraph = Graph::default();
     let mut edges = Vec::new();
 
     for record in reader.records() {
@@ -340,9 +340,9 @@ pub fn write_bigraph_to_bcalm2_file<
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
     IndexType: PrimInt + Debug + Display,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType> + Default,
 >(
-    graph: &T,
+    graph: &Graph,
     path: P,
 ) -> crate::Result<()>
 where
@@ -359,9 +359,9 @@ pub fn write_bigraph_to_bcalm2<
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
     IndexType: PrimInt + Debug + Display,
-    T: DynamicBigraph<NodeData, EdgeData, IndexType> + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData, IndexType = IndexType> + Default,
 >(
-    graph: &T,
+    graph: &Graph,
     mut writer: bio::io::fasta::Writer<W>,
 ) -> crate::Result<()>
 where
