@@ -1,11 +1,9 @@
 use crate::interface::static_bigraph::StaticBigraph;
 use crate::StaticBigraphFromDigraph;
-use num_traits::PrimInt;
 use traitgraph::DynamicGraph;
 
 pub trait DynamicBigraph: DynamicGraph + StaticBigraph
 where
-    Self::IndexType: PrimInt,
     Self::EdgeData: Clone,
 {
     /**
@@ -17,14 +15,14 @@ where
     fn add_mirror_edges(&mut self) {
         let mut edges = Vec::new();
         for from_id in self.node_indices() {
-            for neighbor in self.out_neighbors(from_id).unwrap() {
+            for neighbor in self.out_neighbors(from_id) {
                 let to_id = neighbor.node_id;
                 let mirror_from_id = self.partner_node(to_id).unwrap();
                 let mirror_to_id = self.partner_node(from_id).unwrap();
                 if !self.contains_edge(mirror_from_id, mirror_to_id) {
                     edges.push((
                         mirror_from_id,
-                        self.edge_data(neighbor.edge_id).unwrap().clone(),
+                        self.edge_data(neighbor.edge_id).clone(),
                         mirror_to_id,
                     ));
                 }
@@ -45,7 +43,6 @@ where
 pub trait DynamicBigraphFromDigraph: DynamicBigraph + StaticBigraphFromDigraph + Sized
 where
     Self::Topology: DynamicGraph,
-    Self::IndexType: PrimInt,
     Self::EdgeData: Clone,
 {
     /**

@@ -911,8 +911,6 @@ name = "traitgraph"
 version = "0.1.0-alpha.1"
 dependencies = [
  "num-traits",
- "opaque_typedef",
- "opaque_typedef_macros",
  "petgraph 0.5.1",
 ]
 

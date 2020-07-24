@@ -1,69 +1,62 @@
-use crate::{EdgeIndex, EdgeIndices, NodeIndex, NodeIndices};
+use crate::{GraphIndex, GraphIndices, OptionalGraphIndex};
 
 /// Contains the associated types of a graph.
 pub trait GraphBase {
     type NodeData;
     type EdgeData;
-    type IndexType;
+    type OptionalNodeIndex: OptionalGraphIndex<Self::NodeIndex>;
+    type OptionalEdgeIndex: OptionalGraphIndex<Self::EdgeIndex>;
+    type NodeIndex: GraphIndex<Self::OptionalNodeIndex>;
+    type EdgeIndex: GraphIndex<Self::OptionalEdgeIndex>;
 }
 
 pub trait ImmutableGraphContainer: GraphBase {
-    fn node_indices(&self) -> NodeIndices<Self::IndexType>;
+    fn node_indices(&self) -> GraphIndices<Self::NodeIndex, Self::OptionalNodeIndex>;
 
-    fn edge_indices(&self) -> EdgeIndices<Self::IndexType>;
+    fn edge_indices(&self) -> GraphIndices<Self::EdgeIndex, Self::OptionalEdgeIndex>;
 
-    fn contains_node_index(&self, node_id: NodeIndex<Self::IndexType>) -> bool {
-        self.node_data(node_id).is_some()
-    }
+    fn contains_node_index(&self, node_id: Self::NodeIndex) -> bool;
 
-    fn contains_edge_index(&self, edge_id: EdgeIndex<Self::IndexType>) -> bool {
-        self.edge_data(edge_id).is_some()
-    }
+    fn contains_edge_index(&self, edge_id: Self::EdgeIndex) -> bool;
 
     fn node_count(&self) -> usize;
 
     fn edge_count(&self) -> usize;
 
     /// Returns the node data associated with the given node id, or None if there is no such node.
-    fn node_data(&self, node_id: NodeIndex<Self::IndexType>) -> Option<&Self::NodeData>;
+    fn node_data(&self, node_id: Self::NodeIndex) -> &Self::NodeData;
 
     /// Returns the edge data associated with the given edge id, or None if there is no such edge.
-    fn edge_data(&self, edge_id: EdgeIndex<Self::IndexType>) -> Option<&Self::EdgeData>;
+    fn edge_data(&self, edge_id: Self::EdgeIndex) -> &Self::EdgeData;
 
-    fn node_data_mut(&mut self, node_id: NodeIndex<Self::IndexType>)
-        -> Option<&mut Self::NodeData>;
+    fn node_data_mut(&mut self, node_id: Self::NodeIndex) -> &mut Self::NodeData;
 
-    fn edge_data_mut(&mut self, edge_id: EdgeIndex<Self::IndexType>)
-        -> Option<&mut Self::EdgeData>;
+    fn edge_data_mut(&mut self, edge_id: Self::EdgeIndex) -> &mut Self::EdgeData;
 
-    fn contains_edge(
-        &self,
-        from: NodeIndex<Self::IndexType>,
-        to: NodeIndex<Self::IndexType>,
-    ) -> bool;
+    fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool;
 }
 
 pub trait MutableGraphContainer: GraphBase {
-    fn add_node(&mut self, node_data: Self::NodeData) -> NodeIndex<Self::IndexType>;
+    fn add_node(&mut self, node_data: Self::NodeData) -> Self::NodeIndex;
 
     fn add_edge(
         &mut self,
-        from: NodeIndex<Self::IndexType>,
-        to: NodeIndex<Self::IndexType>,
+        from: Self::NodeIndex,
+        to: Self::NodeIndex,
         edge_data: Self::EdgeData,
-    ) -> EdgeIndex<Self::IndexType>;
+    ) -> Self::EdgeIndex;
 
-    fn remove_node(&mut self, node_id: NodeIndex<Self::IndexType>) -> Option<Self::NodeData>;
+    fn remove_node(&mut self, node_id: Self::NodeIndex) -> Option<Self::NodeData>;
 
-    fn remove_edge(&mut self, edge_id: EdgeIndex<Self::IndexType>) -> Option<Self::EdgeData>;
+    fn remove_edge(&mut self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeData>;
 }
 
 pub trait NavigableGraph<'a>: GraphBase {
-    type OutNeighbors: IntoIterator<Item = Neighbor<Self::IndexType>>;
-    type InNeighbors: IntoIterator<Item = Neighbor<Self::IndexType>>;
+    type OutNeighbors: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type InNeighbors: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
 
-    fn out_neighbors(&'a self, node_id: NodeIndex<Self::IndexType>) -> Option<Self::OutNeighbors>;
-    fn in_neighbors(&'a self, node_id: NodeIndex<Self::IndexType>) -> Option<Self::InNeighbors>;
+    fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors;
+    fn in_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::InNeighbors;
 }
 
 pub trait StaticGraph: ImmutableGraphContainer + for<'a> NavigableGraph<'a> {}
@@ -77,7 +70,7 @@ impl<T: StaticGraph + MutableGraphContainer> DynamicGraph for T {}
     pub to: NodeIndex<IndexType>,
 }*/
 
-pub struct Neighbor<IndexType> {
-    pub edge_id: EdgeIndex<IndexType>,
-    pub node_id: NodeIndex<IndexType>,
+pub struct Neighbor<NodeIndex, EdgeIndex> {
+    pub edge_id: EdgeIndex,
+    pub node_id: NodeIndex,
 }
