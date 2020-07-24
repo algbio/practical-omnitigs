@@ -57,15 +57,15 @@ impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology> {
     }
 }
 
-impl<
-        NodeData: Eq + Hash + Debug,
-        EdgeData,
-        Topology: StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
-    > NodeBigraphWrapper<Topology>
+impl<Topology: StaticGraph> NodeBigraphWrapper<Topology>
+where
+    <Self as GraphBase>::NodeData: Eq + Hash + Debug,
 {
     fn new_internal(
         topology: Topology,
-        binode_mapping_function: fn(&NodeData) -> NodeData,
+        binode_mapping_function: fn(
+            &<Self as GraphBase>::NodeData,
+        ) -> <Self as GraphBase>::NodeData,
         checked: bool,
     ) -> Self {
         let mut data_map = HashMap::new(); //: HashMap<NodeData, Self::NodeIndex> = HashMap::new();
@@ -108,31 +108,35 @@ impl<
     }
 }
 
-impl<
-        NodeData: Eq + Hash + Debug,
-        EdgeData,
-        Topology: StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
-    > StaticBigraphFromDigraph for NodeBigraphWrapper<Topology>
+impl<Topology: StaticGraph> StaticBigraphFromDigraph for NodeBigraphWrapper<Topology>
+where
+    <Self as GraphBase>::NodeData: Eq + Hash + Debug,
 {
     type Topology = Topology;
 
-    fn new(topology: Self::Topology, binode_mapping_function: fn(&NodeData) -> NodeData) -> Self {
+    fn new(
+        topology: Self::Topology,
+        binode_mapping_function: fn(
+            &<Self as GraphBase>::NodeData,
+        ) -> <Self as GraphBase>::NodeData,
+    ) -> Self {
         Self::new_internal(topology, binode_mapping_function, true)
     }
 
     fn new_unchecked(
         _topology: Self::Topology,
-        _binode_mapping_function: fn(&NodeData) -> NodeData,
+        _binode_mapping_function: fn(
+            &<Self as GraphBase>::NodeData,
+        ) -> <Self as GraphBase>::NodeData,
     ) -> Self {
         Self::new_internal(_topology, _binode_mapping_function, false)
     }
 }
 
-impl<
-        NodeData: BidirectedNodeData,
-        EdgeData: Clone,
-        Topology: DynamicGraph<NodeData = NodeData, EdgeData = EdgeData>,
-    > DynamicBigraph for NodeBigraphWrapper<Topology>
+impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology>
+where
+    <Self as GraphBase>::NodeData: BidirectedNodeData,
+    <Self as GraphBase>::EdgeData: Clone,
 {
     fn add_partner_nodes(&mut self) {
         for node_id in self.node_indices() {
@@ -145,12 +149,7 @@ impl<
     }
 }
 
-impl<
-        NodeData,
-        EdgeData,
-        Topology: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
-    > ImmutableGraphContainer for NodeBigraphWrapper<Topology>
-{
+impl<Topology: ImmutableGraphContainer> ImmutableGraphContainer for NodeBigraphWrapper<Topology> {
     fn node_indices(&self) -> GraphIndices<Self::NodeIndex, Self::OptionalNodeIndex> {
         self.topology.node_indices()
     }
@@ -175,19 +174,19 @@ impl<
         self.topology.edge_count()
     }
 
-    fn node_data(&self, node_id: Self::NodeIndex) -> &NodeData {
+    fn node_data(&self, node_id: Self::NodeIndex) -> &Self::NodeData {
         self.topology.node_data(node_id)
     }
 
-    fn edge_data(&self, edge_id: Self::EdgeIndex) -> &EdgeData {
+    fn edge_data(&self, edge_id: Self::EdgeIndex) -> &Self::EdgeData {
         self.topology.edge_data(edge_id)
     }
 
-    fn node_data_mut(&mut self, node_id: Self::NodeIndex) -> &mut NodeData {
+    fn node_data_mut(&mut self, node_id: Self::NodeIndex) -> &mut Self::NodeData {
         self.topology.node_data_mut(node_id)
     }
 
-    fn edge_data_mut(&mut self, edge_id: Self::EdgeIndex) -> &mut EdgeData {
+    fn edge_data_mut(&mut self, edge_id: Self::EdgeIndex) -> &mut Self::EdgeData {
         self.topology.edge_data_mut(edge_id)
     }
 
@@ -196,13 +195,10 @@ impl<
     }
 }
 
-impl<
-        NodeData,
-        EdgeData,
-        Topology: MutableGraphContainer + StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
-    > MutableGraphContainer for NodeBigraphWrapper<Topology>
+impl<Topology: MutableGraphContainer + StaticGraph> MutableGraphContainer
+    for NodeBigraphWrapper<Topology>
 {
-    fn add_node(&mut self, node_data: NodeData) -> Self::NodeIndex {
+    fn add_node(&mut self, node_data: Self::NodeData) -> Self::NodeIndex {
         self.binode_map.push(Self::OptionalNodeIndex::new_none());
         self.topology.add_node(node_data)
     }
@@ -211,27 +207,21 @@ impl<
         &mut self,
         from: Self::NodeIndex,
         to: Self::NodeIndex,
-        edge_data: EdgeData,
+        edge_data: Self::EdgeData,
     ) -> Self::EdgeIndex {
         self.topology.add_edge(from, to, edge_data)
     }
 
-    fn remove_node(&mut self, node_id: Self::NodeIndex) -> Option<NodeData> {
+    fn remove_node(&mut self, node_id: Self::NodeIndex) -> Option<Self::NodeData> {
         self.topology.remove_node(node_id)
     }
 
-    fn remove_edge(&mut self, edge_id: Self::EdgeIndex) -> Option<EdgeData> {
+    fn remove_edge(&mut self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeData> {
         self.topology.remove_edge(edge_id)
     }
 }
 
-impl<
-        'a,
-        NodeData,
-        EdgeData,
-        Topology: NavigableGraph<'a, NodeData = NodeData, EdgeData = EdgeData>,
-    > NavigableGraph<'a> for NodeBigraphWrapper<Topology>
-{
+impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper<Topology> {
     type OutNeighbors = <Topology as NavigableGraph<'a>>::OutNeighbors;
     type InNeighbors = <Topology as NavigableGraph<'a>>::InNeighbors;
 
