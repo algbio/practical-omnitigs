@@ -87,4 +87,9 @@ This project contains the following crates.
 
 Except for `cli`, all crates are published on `crates.io`.
 
+## License
+
+This project is licensed under the terms of the BSD 2-Clause license.
+See `LICENSE.md` for more information.
+
 [cli crate]: https://github.com/algbio/practical-omnitigs/tree/master/implementation/cli
