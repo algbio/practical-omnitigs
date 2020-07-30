@@ -1,9 +1,1 @@
-/.idea/workspace.xml
-/.idea/shelf/
-
-/target/
 /.snakemake/
-
-*.fa
-*.fa.verify
-*.fa.clean
