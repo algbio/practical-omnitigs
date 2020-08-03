@@ -86,12 +86,12 @@ impl<
 
     pub fn next(&mut self, graph: &'a Graph) -> Option<Graph::NodeIndex> {
         if let Some(first) = QueueStrategy::pop(&mut self.queue) {
-            for neighbor in graph.out_neighbors(first) {
-                let rank_entry = &mut self.rank[neighbor.node_id.as_usize()];
+            for neighbor in NeighborStrategy::neighbor_iterator(graph, first) {
+                let rank_entry = &mut self.rank[neighbor.as_usize()];
                 if *rank_entry == None.into() {
                     *rank_entry = self.current_rank.into();
                     self.current_rank = self.current_rank + 1;
-                    QueueStrategy::push(&mut self.queue, neighbor.node_id);
+                    QueueStrategy::push(&mut self.queue, neighbor);
                 }
             }
 

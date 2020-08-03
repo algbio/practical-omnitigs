@@ -261,4 +261,48 @@ mod tests {
         assert_eq!(result.edge_data(e9), &17);
         assert_eq!(result.edge_data(e10), &11);
     }
+
+    #[test]
+    fn test_decompose_weakly_connected_components_nearly_scc_reverse() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let e0 = graph.add_edge(n4, n1, 10);
+        let e1 = graph.add_edge(n1, n2, 11);
+        let e2 = graph.add_edge(n2, n3, 12);
+        let e3 = graph.add_edge(n3, n4, 13);
+        let e4 = graph.add_edge(n4, n0, 14);
+        let e5 = graph.add_edge(n1, n0, 15);
+        let e6 = graph.add_edge(n2, n1, 16);
+        let e7 = graph.add_edge(n3, n2, 17);
+        let e8 = graph.add_edge(n4, n3, 18);
+        let e9 = graph.add_edge(n1, n4, 19);
+        let e10 = graph.add_edge(n2, n2, 20);
+        let result = decompose_weakly_connected_components(&graph);
+        assert_eq!(result.len(), 1);
+        let result = result.first().unwrap();
+        assert_eq!(result.node_count(), graph.node_count());
+        assert_eq!(result.edge_count(), graph.edge_count());
+
+        assert_eq!(result.node_data(n0), &0);
+        assert_eq!(result.node_data(n1), &1);
+        assert_eq!(result.node_data(n2), &4);
+        assert_eq!(result.node_data(n3), &2);
+        assert_eq!(result.node_data(n4), &3);
+
+        assert_eq!(result.edge_data(e0), &15);
+        assert_eq!(result.edge_data(e1), &14);
+        assert_eq!(result.edge_data(e2), &10);
+        assert_eq!(result.edge_data(e3), &19);
+        assert_eq!(result.edge_data(e4), &20);
+        assert_eq!(result.edge_data(e5), &16);
+        assert_eq!(result.edge_data(e6), &11);
+        assert_eq!(result.edge_data(e7), &17);
+        assert_eq!(result.edge_data(e8), &13);
+        assert_eq!(result.edge_data(e9), &18);
+        assert_eq!(result.edge_data(e10), &12);
+    }
 }
