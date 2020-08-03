@@ -120,7 +120,7 @@ pub fn is_strongly_connected<Graph: StaticGraph>(graph: &Graph) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::algo::components::decompose_weakly_connected_components;
+    use crate::algo::components::{decompose_weakly_connected_components, is_strongly_connected};
     use crate::implementation::petgraph_impl;
     use crate::interface::{ImmutableGraphContainer, MutableGraphContainer};
 
@@ -337,5 +337,112 @@ mod tests {
         assert_eq!(result.edge_data(e8), &13);
         assert_eq!(result.edge_data(e9), &18);
         assert_eq!(result.edge_data(e10), &12);
+    }
+
+    #[test]
+    fn test_scc_check_scc() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n0, 14);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n0, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(is_strongly_connected(&graph));
+    }
+
+    #[test]
+    fn test_scc_check_one_wc_with_two_sccs() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+    }
+
+    #[test]
+    fn test_scc_check_multiple_wccs() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        graph.add_edge(n0, n0, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n3, n4, 12);
+        graph.add_edge(n4, n5, 13);
+        assert!(!is_strongly_connected(&graph));
+    }
+
+    #[test]
+    fn test_scc_check_empty_graph() {
+        let graph = petgraph_impl::new::<i32, i32>();
+        assert!(is_strongly_connected(&graph));
+    }
+
+    #[test]
+    fn ttest_scc_check_nearly_scc() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n1, 14);
+        graph.add_edge(n1, n4, 15);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n0, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+    }
+
+    #[test]
+    fn test_scc_check_nearly_scc_reverse() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n4, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n0, 14);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n1, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
     }
 }
