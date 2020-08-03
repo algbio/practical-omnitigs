@@ -34,6 +34,13 @@ pub trait ImmutableGraphContainer: GraphBase {
     fn edge_data_mut(&mut self, edge_id: Self::EdgeIndex) -> &mut Self::EdgeData;
 
     fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool;
+
+    /// Returns true if the graph is empty, i.e. contains no nodes or edges.
+    fn is_empty(&self) -> bool {
+        // Zero nodes must imply zero edges.
+        debug_assert!(self.node_count() != 0 || self.edge_count() == 0);
+        self.node_count() == 0
+    }
 }
 
 pub trait MutableGraphContainer: GraphBase {

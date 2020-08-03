@@ -1,5 +1,5 @@
 use crate::index::GraphIndex;
-use crate::traversal::PreOrderUndirectedBfs;
+use crate::traversal::{PreOrderBackwardBfs, PreOrderForwardBfs, PreOrderUndirectedBfs};
 use crate::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
@@ -86,8 +86,36 @@ where
 }
 
 /// Returns true if the graph is strongly connected.
-pub fn is_strongly_connected<Graph: StaticGraph>(_graph: &Graph) -> bool {
-    unimplemented!();
+pub fn is_strongly_connected<Graph: StaticGraph>(graph: &Graph) -> bool {
+    if graph.is_empty() {
+        return true;
+    }
+
+    let mut traversal = PreOrderForwardBfs::new(graph, graph.node_indices().next().unwrap());
+    let mut traversal_node_count = 0;
+
+    while traversal.next(graph).is_some() {
+        traversal_node_count += 1;
+    }
+
+    if traversal_node_count != graph.node_count() {
+        debug_assert!(traversal_node_count < graph.node_count());
+        return false;
+    }
+
+    let mut traversal = PreOrderBackwardBfs::new(graph, graph.node_indices().next().unwrap());
+    let mut traversal_node_count = 0;
+
+    while traversal.next(graph).is_some() {
+        traversal_node_count += 1;
+    }
+
+    if traversal_node_count != graph.node_count() {
+        debug_assert!(traversal_node_count < graph.node_count());
+        return false;
+    }
+
+    true
 }
 
 #[cfg(test)]
