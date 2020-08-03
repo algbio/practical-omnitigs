@@ -391,8 +391,10 @@ mod tests {
         let n5 = graph.add_node(5);
         graph.add_edge(n0, n0, 10);
         graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n1, 13);
         graph.add_edge(n3, n4, 12);
         graph.add_edge(n4, n5, 13);
+        graph.add_edge(n5, n3, 13);
         assert!(!is_strongly_connected(&graph));
     }
 
