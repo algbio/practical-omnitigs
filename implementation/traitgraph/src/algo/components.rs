@@ -3,6 +3,10 @@ use crate::traversal::UndirectedBfs;
 use crate::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
+/// Returns the weakly connected components of a graph.
+///
+/// If the graph is empty, no WCCs are returned.
+/// Otherwise, the WCCs are cloned into new graphs, without preserving the node or edge indices.
 pub fn decompose_weakly_connected_components<Graph: Default + MutableGraphContainer + StaticGraph>(
     graph: &Graph,
 ) -> Vec<Graph>
@@ -12,8 +16,8 @@ where
 {
     let mut result = Vec::new();
     let mut nodes: LinkedList<_> = graph.node_indices().collect();
-    // TODO this is not optimal. The Bfs recreates a vector of all nodes all the time.
-    // Instead of doing that, the Bfs could reuse the order vector.
+    // TODO this is not optimal. The bfs recreates a vector of all nodes all the time.
+    // Instead of doing that, the bfs could reuse the order vector.
     // Then, an offset would need to be used for the subgraph indices.
     let mut visited = vec![false; graph.node_count()];
 
@@ -205,5 +209,12 @@ mod tests {
         assert_eq!(second.edge_data(0.into()), &11);
         assert_eq!(third.edge_data(0.into()), &12);
         assert_eq!(third.edge_data(1.into()), &13);
+    }
+
+    #[test]
+    fn test_decompose_weakly_connected_components_empty_graph() {
+        let graph = petgraph_impl::new::<i32, i32>();
+        let result = decompose_weakly_connected_components(&graph);
+        assert_eq!(result.len(), 0);
     }
 }
