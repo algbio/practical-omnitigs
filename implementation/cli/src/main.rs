@@ -1,10 +1,13 @@
 #![recursion_limit = "1024"]
 #[macro_use]
 extern crate error_chain;
+#[macro_use]
+extern crate log;
 
 use clap::Clap;
 use error_chain::{ChainedError, ExitCode};
 use genome_graph::types::PetBCalm2Graph;
+use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 error_chain! {
     links {
@@ -59,23 +62,35 @@ fn main() {
     });
 }
 
+fn initialise_logging() {
+    CombinedLogger::init(vec![TermLogger::new(
+        LevelFilter::Trace,
+        Config::default(),
+        TerminalMode::Mixed,
+    )])
+    .unwrap();
+
+    info!("Logging initialised successfully");
+}
+
 fn run() -> Result<()> {
     let options = &CliOptions::parse();
+    initialise_logging();
 
-    println!("Hello");
+    info!("Hello");
 
     match &options.subcommand {
         Command::Verify => verify(options),
     }?;
 
-    println!("Goodbye");
+    info!("Goodbye");
     Ok(())
 }
 
 fn verify(options: &CliOptions) -> Result<()> {
-    println!(
-        "Input file: {}\nOutput file: {}",
-        options.input,
+    info!("Input file: {}", options.input);
+    info!(
+        "Output file: {}",
         options.output.as_ref().unwrap_or(&"None".to_owned())
     );
 
