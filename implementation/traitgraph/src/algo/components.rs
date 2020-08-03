@@ -34,7 +34,7 @@ where
             visited[node.as_usize()] = true;
             //println!("add_node: {:?}", node);
             subgraph.add_node(graph.node_data(node).clone());
-            let subnode = bfs.order_of(node).unwrap();
+            let subnode = bfs.rank_of(node).unwrap();
 
             for out_neighbor in graph.out_neighbors(node) {
                 let neighbor_id = out_neighbor.node_id;
@@ -45,7 +45,7 @@ where
                     neighbor_id
                 );
                 let edge_id = out_neighbor.edge_id;
-                if let Some(subneighbor) = bfs.order_of(neighbor_id) {
+                if let Some(subneighbor) = bfs.rank_of(neighbor_id) {
                     if subgraph.contains_node_index(subneighbor) {
                         let edge_data = graph.edge_data(edge_id).clone();
                         //println!("f: ({:?}, {:?}) becomes ({:?}, {:?})", node, neighbor_id, subnode, subneighbor);
@@ -69,7 +69,7 @@ where
                 );
                 let edge_id = in_neighbor.edge_id;
 
-                if let Some(subneighbor) = bfs.order_of(neighbor_id) {
+                if let Some(subneighbor) = bfs.rank_of(neighbor_id) {
                     if subgraph.contains_node_index(subneighbor) {
                         let edge_data = graph.edge_data(edge_id).clone();
                         //println!("r: ({:?}, {:?}) becomes ({:?}, {:?})", neighbor_id, node, subneighbor, subnode);

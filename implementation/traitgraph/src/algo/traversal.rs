@@ -54,8 +54,8 @@ pub struct Traversal<
     Queue: BidirectedQueue<Graph::NodeIndex>,
 > {
     queue: Queue,
-    order: Vec<Graph::OptionalNodeIndex>,
-    current_order: Graph::NodeIndex,
+    rank: Vec<Graph::OptionalNodeIndex>,
+    current_rank: Graph::NodeIndex,
     graph: PhantomData<Graph>,
     neighbor_strategy: PhantomData<NeighborStrategy>,
     queue_strategy: PhantomData<QueueStrategy>,
@@ -72,12 +72,12 @@ impl<
     pub fn new(graph: &Graph, start: Graph::NodeIndex) -> Self {
         let mut queue = Queue::default();
         queue.push_back(start);
-        let mut order = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
-        order[start.as_usize()] = Some(0).into();
+        let mut rank = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
+        rank[start.as_usize()] = Some(0).into();
         Self {
             queue,
-            order,
-            current_order: 1.into(),
+            rank,
+            current_rank: 1.into(),
             graph: Default::default(),
             neighbor_strategy: Default::default(),
             queue_strategy: Default::default(),
@@ -85,13 +85,13 @@ impl<
     }
 
     pub fn next(&mut self, graph: &'a Graph) -> Option<Graph::NodeIndex> {
-        if let Some(first) = self.queue.pop_front() {
+        if let Some(first) = QueueStrategy::pop(&mut self.queue) {
             for neighbor in graph.out_neighbors(first) {
-                let order_entry = &mut self.order[neighbor.node_id.as_usize()];
-                if *order_entry == None.into() {
-                    *order_entry = self.current_order.into();
-                    self.current_order = self.current_order + 1;
-                    self.queue.push_back(neighbor.node_id);
+                let rank_entry = &mut self.rank[neighbor.node_id.as_usize()];
+                if *rank_entry == None.into() {
+                    *rank_entry = self.current_rank.into();
+                    self.current_rank = self.current_rank + 1;
+                    QueueStrategy::push(&mut self.queue, neighbor.node_id);
                 }
             }
 
@@ -101,9 +101,9 @@ impl<
         }
     }
 
-    pub fn order_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
-        let order = self.order[node.as_usize()];
-        order.into()
+    pub fn rank_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
+        let rank = self.rank[node.as_usize()];
+        rank.into()
     }
 }
 
