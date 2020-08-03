@@ -168,4 +168,42 @@ mod tests {
         assert_eq!(result.edge_data(e6), &18);
         assert_eq!(result.edge_data(e7), &13);
     }
+
+    #[test]
+    fn test_decompose_weakly_connected_components_multiple_wccs() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        graph.add_edge(n0, n0, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n3, n4, 12);
+        graph.add_edge(n4, n5, 13);
+        let result = decompose_weakly_connected_components(&graph);
+        assert_eq!(result.len(), 3);
+        let first = result[0].clone();
+        let second = result[1].clone();
+        let third = result[2].clone();
+        assert_eq!(first.node_count(), 1);
+        assert_eq!(first.edge_count(), 1);
+        assert_eq!(second.node_count(), 2);
+        assert_eq!(second.edge_count(), 1);
+        assert_eq!(third.node_count(), 3);
+        assert_eq!(third.edge_count(), 2);
+
+        assert_eq!(first.node_data(0.into()), &0);
+        assert_eq!(second.node_data(0.into()), &1);
+        assert_eq!(second.node_data(1.into()), &2);
+        assert_eq!(third.node_data(0.into()), &3);
+        assert_eq!(third.node_data(1.into()), &4);
+        assert_eq!(third.node_data(2.into()), &5);
+
+        assert_eq!(first.edge_data(0.into()), &10);
+        assert_eq!(second.edge_data(0.into()), &11);
+        assert_eq!(third.edge_data(0.into()), &12);
+        assert_eq!(third.edge_data(1.into()), &13);
+    }
 }
