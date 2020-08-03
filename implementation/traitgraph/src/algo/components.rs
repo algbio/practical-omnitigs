@@ -1,5 +1,5 @@
 use crate::index::GraphIndex;
-use crate::traversal::UndirectedBfs;
+use crate::traversal::PreOrderUndirectedBfs;
 use crate::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
@@ -27,7 +27,7 @@ where
             continue;
         }
 
-        let mut bfs: UndirectedBfs<Graph> = UndirectedBfs::new(graph, start);
+        let mut bfs = PreOrderUndirectedBfs::new(graph, start);
         let mut subgraph = Graph::default();
 
         while let Some(node) = bfs.next(graph) {
@@ -83,6 +83,11 @@ where
     }
 
     result
+}
+
+/// Returns true if the graph is strongly connected.
+pub fn is_strongly_connected<Graph: StaticGraph>(_graph: &Graph) -> bool {
+    unimplemented!();
 }
 
 #[cfg(test)]
