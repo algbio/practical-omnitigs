@@ -3,80 +3,69 @@ on: [push, pull_request]
 name: Tests & Lints
 
 jobs:
-  check:
-    name: Check
+  rust:
+    name: Rust Tests & Lints
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust:
           - stable
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Check out Repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - uses: actions-rs/cargo@v1
+
+      - name: Install rustfmt
+        run: rustup component add rustfmt
+
+      - name: Install clippy
+        run: rustup component add clippy
+
+      - name: Install cargo-tarpaulin
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-tarpaulin
+          version: latest
+          use-tool-cache: true
+
+      - name: Cargo Check
+        uses: actions-rs/cargo@v1
         with:
           command: check
           args: --manifest-path implementation/Cargo.toml
 
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - uses: actions-rs/cargo@v1
+      - name: Cargo Test
+        uses: actions-rs/cargo@v1
         with:
           command: test
           args: --manifest-path implementation/Cargo.toml
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
+      - name: Cargo Format
+        uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all --manifest-path implementation/Cargo.toml -- --check
 
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
+      - name: Cargo Lint
+        uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --all --all-targets --manifest-path implementation/Cargo.toml -- -D warnings
+
+      - name: Coverage Report with tarpaulin
+        uses: actions-rs/cargo@v1
+        with:
+          command: tarpaulin
+          args: --manifest-path implementation/Cargo.toml --all --all-features --timeout 600 --out Lcov -- --test-threads 1
+
+      - name: Upload Coverage
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./lcov.info
