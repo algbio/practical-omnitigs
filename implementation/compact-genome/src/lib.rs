@@ -1,2 +1,2 @@
-pub mod genome;
-pub mod vector_genome_impl;
+pub mod implementation;
+pub mod interface;
