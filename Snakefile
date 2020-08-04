@@ -8,13 +8,13 @@ rule selftest:
     shell: "conda --version; wget --version"
 
 rule test:
-    input: "data/GCF_000008865.2_ASM886v2_genomic.fna.unitigs.fa"
+    input: "data/GCF_000008865.2_ASM886v2_genomic.unitigs.fa"
 
 rule bcalm2:
     input: "data/{file}.fna"
-    output: "data/{file}.fna.unitigs.fa"
+    output: "data/{file}.unitigs.fa"
     conda: "config/conda-bcalm2-env.yaml"
-    shell: "cd data; bcalm2 -in {input} -kmer-size 21 -abundance-min 1"
+    shell: "cd data; bcalm -in ../{input} -kmer-size 21 -abundance-min 1"
 
 rule download_test_file:
     output: "data/GCF_000008865.2_ASM886v2_genomic.fna.gz"

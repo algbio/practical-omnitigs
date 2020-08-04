@@ -1,4 +1,4 @@
 channels:
         - bioconda
 dependencies:
-        - bcalm2==2.2.3
+        - bcalm==2.2.3
