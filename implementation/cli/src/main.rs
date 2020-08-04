@@ -12,7 +12,7 @@ mod verify;
 
 error_chain! {
     links {
-        GenomeGraph(genome_graph::Error, genome_graph::ErrorKind);
+        GenomeGraph(genome_graph::error::Error, genome_graph::error::ErrorKind);
     }
 }
 

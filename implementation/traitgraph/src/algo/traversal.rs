@@ -1,5 +1,6 @@
 use crate::algo::queue::BidirectedQueue;
-use crate::{GraphBase, GraphIndex, NavigableGraph, OptionalGraphIndex, StaticGraph};
+use crate::index::{GraphIndex, OptionalGraphIndex};
+use crate::interface::{GraphBase, NavigableGraph, StaticGraph};
 use std::collections::LinkedList;
 use std::iter::IntoIterator;
 use std::marker::PhantomData;

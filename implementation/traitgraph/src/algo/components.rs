@@ -1,6 +1,6 @@
+use super::traversal::{PreOrderBackwardBfs, PreOrderForwardBfs, PreOrderUndirectedBfs};
 use crate::index::GraphIndex;
-use crate::traversal::{PreOrderBackwardBfs, PreOrderForwardBfs, PreOrderUndirectedBfs};
-use crate::{MutableGraphContainer, StaticGraph};
+use crate::interface::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
 /// Returns the weakly connected components of a graph.

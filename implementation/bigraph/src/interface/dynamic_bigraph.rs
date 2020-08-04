@@ -1,6 +1,6 @@
 use crate::interface::static_bigraph::StaticBigraph;
-use crate::StaticBigraphFromDigraph;
-use traitgraph::DynamicGraph;
+use crate::interface::static_bigraph::StaticBigraphFromDigraph;
+use traitgraph::interface::DynamicGraph;
 
 pub trait DynamicBigraph: DynamicGraph + StaticBigraph
 where
@@ -74,10 +74,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        petgraph_impl, BidirectedNodeData, DynamicBigraph, ImmutableGraphContainer,
-        MutableGraphContainer, NodeBigraphWrapper, StaticBigraph, StaticBigraphFromDigraph,
+    use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+    use crate::interface::{
+        dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
+        static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
     };
+    use crate::traitgraph::implementation::petgraph_impl;
+    use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
 
     #[test]
     fn test_bigraph_add_mirror_edges() {

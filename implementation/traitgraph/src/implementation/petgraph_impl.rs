@@ -1,7 +1,8 @@
-use crate::{
-    DynamicGraph, GraphBase, GraphIndex, ImmutableGraphContainer, MutableGraphContainer, Neighbor,
+use crate::index::{GraphIndex, GraphIndices};
+use crate::interface::{
+    DynamicGraph, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
+    Neighbor,
 };
-use crate::{GraphIndices, NavigableGraph};
 use num_traits::{PrimInt, ToPrimitive};
 use petgraph::graph::{DiGraph, Edges};
 use petgraph::visit::EdgeRef;

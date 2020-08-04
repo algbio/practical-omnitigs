@@ -1,4 +1,4 @@
-use traitgraph::StaticGraph;
+use traitgraph::interface::StaticGraph;
 
 /**
  * A node-centric bidirected graph.
@@ -103,8 +103,9 @@ pub trait StaticBigraphFromDigraph: StaticBigraph {
 mod test {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
     use crate::interface::static_bigraph::StaticBigraph;
-    use crate::{petgraph_impl, StaticBigraphFromDigraph};
-    use traitgraph::MutableGraphContainer;
+    use crate::interface::static_bigraph::StaticBigraphFromDigraph;
+    use crate::traitgraph::implementation::petgraph_impl;
+    use traitgraph::interface::MutableGraphContainer;
 
     #[test]
     fn test_verify_mirror_property_positive() {
