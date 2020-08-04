@@ -2,12 +2,12 @@
 #[macro_use]
 extern crate error_chain;
 
-mod error;
+pub mod error;
 pub mod io;
 pub mod types;
 
 pub use bigraph;
-pub use error::*;
+pub use compact_genome;
 
 #[cfg(test)]
 mod tests {

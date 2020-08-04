@@ -1,14 +1,18 @@
 #![recursion_limit = "1024"]
 #[macro_use]
 extern crate error_chain;
+#[macro_use]
+extern crate log;
 
 use clap::Clap;
 use error_chain::{ChainedError, ExitCode};
-use genome_graph::types::PetBCalm2Graph;
+use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
+
+mod verify;
 
 error_chain! {
     links {
-        GenomeGraph(genome_graph::Error, genome_graph::ErrorKind);
+        GenomeGraph(genome_graph::error::Error, genome_graph::error::ErrorKind);
     }
 }
 
@@ -42,47 +46,37 @@ enum Command {
 // Using just the macro makes IntelliJ complain that there would be no main.
 // The real main (programmed manually) is run, below this method.
 fn main() {
-    use std::io::Write;
-
     ::std::process::exit(match run() {
         Ok(()) => ExitCode::code(()),
         Err(ref e) => {
-            write!(
-                &mut ::std::io::stderr(),
-                "{}",
-                ChainedError::display_chain(e)
-            )
-            .expect("Error writing to stderr");
+            error!("{}", ChainedError::display_chain(e));
 
             1
         }
     });
 }
 
-fn run() -> Result<()> {
-    let options = &CliOptions::parse();
+fn initialise_logging() {
+    CombinedLogger::init(vec![TermLogger::new(
+        LevelFilter::Trace,
+        Config::default(),
+        TerminalMode::Mixed,
+    )])
+    .unwrap();
 
-    println!("Hello");
-
-    match &options.subcommand {
-        Command::Verify => verify(options),
-    }?;
-
-    println!("Goodbye");
-    Ok(())
+    info!("Logging initialised successfully");
 }
 
-fn verify(options: &CliOptions) -> Result<()> {
-    println!(
-        "Input file: {}\nOutput file: {}",
-        options.input,
-        options.output.as_ref().unwrap_or(&"None".to_owned())
-    );
+fn run() -> Result<()> {
+    let options = &CliOptions::parse();
+    initialise_logging();
 
-    let genome_graph: PetBCalm2Graph =
-        genome_graph::io::bcalm2::read_bigraph_from_bcalm2_file(&options.input)?;
-    if let Some(output) = &options.output {
-        genome_graph::io::bcalm2::write_bigraph_to_bcalm2_file(&genome_graph, output)?;
-    }
+    info!("Hello");
+
+    match &options.subcommand {
+        Command::Verify => verify::verify(options),
+    }?;
+
+    info!("Goodbye");
     Ok(())
 }

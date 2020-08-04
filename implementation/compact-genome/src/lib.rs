@@ -1,5 +1,2 @@
-mod genome;
-mod vector_genome_impl;
-
-pub use genome::*;
-pub use vector_genome_impl::*;
+pub mod genome;
+pub mod vector_genome_impl;

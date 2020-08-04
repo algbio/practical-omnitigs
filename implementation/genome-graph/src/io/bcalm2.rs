@@ -1,6 +1,7 @@
-use bigraph::{BidirectedNodeData, DynamicBigraph, GraphIndex};
+use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedNodeData};
+use bigraph::traitgraph::index::GraphIndex;
 use bio::io::fasta::Record;
-use compact_genome::{Genome, VectorGenome};
+use compact_genome::{genome::Genome, vector_genome_impl::VectorGenome};
 use num_traits::NumCast;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Debug, Write};
@@ -96,9 +97,9 @@ impl BidirectedNodeData for PlainBCalm2NodeData {
 }
 
 impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
-    type Error = crate::Error;
+    type Error = crate::error::Error;
 
-    fn try_from(value: Record) -> crate::Result<Self> {
+    fn try_from(value: Record) -> crate::error::Result<Self> {
         let id = value
             .id()
             .parse()
@@ -239,7 +240,7 @@ pub fn read_bigraph_from_bcalm2_file<
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     path: P,
-) -> crate::Result<Graph> {
+) -> crate::error::Result<Graph> {
     read_bigraph_from_bcalm2(bio::io::fasta::Reader::from_file(path).map_err(Error::from)?)
 }
 
@@ -250,7 +251,7 @@ pub fn read_bigraph_from_bcalm2<
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     reader: bio::io::fasta::Reader<R>,
-) -> crate::Result<Graph> {
+) -> crate::error::Result<Graph> {
     struct BiEdge {
         from_node: usize,
         plain_edge: PlainBCalm2Edge,
@@ -297,7 +298,7 @@ pub fn read_bigraph_from_bcalm2<
 fn write_binode_to_bcalm2(
     node: &PlainBCalm2NodeData,
     out_neighbors: Vec<(bool, usize, bool)>,
-) -> crate::Result<String> {
+) -> crate::error::Result<String> {
     let mut result = String::new();
     write!(
         result,
@@ -327,7 +328,7 @@ pub fn write_bigraph_to_bcalm2_file<
 >(
     graph: &Graph,
     path: P,
-) -> crate::Result<()>
+) -> crate::error::Result<()>
 where
     for<'a> PlainBCalm2NodeData: From<&'a NodeData>,
 {
@@ -345,7 +346,7 @@ pub fn write_bigraph_to_bcalm2<
 >(
     graph: &Graph,
     mut writer: bio::io::fasta::Writer<W>,
-) -> crate::Result<()>
+) -> crate::error::Result<()>
 where
     for<'a> PlainBCalm2NodeData: From<&'a NodeData>,
 {
