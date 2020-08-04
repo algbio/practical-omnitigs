@@ -3,7 +3,7 @@ name = "bigraph"
 description = "Different representations with implemented operations on bigraphs"
 categories = ["data-structures", "mathematics", "science"]
 keywords = ["bigraph", "graph", "bidirected", "abstract", "implementation"]
-version = "0.1.0-alpha.6"
+version = "0.1.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
 homepage = "https://github.com/algbio/practical-omnitigs/tree/master/implementation/bigraph"
@@ -15,7 +15,7 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-traitgraph = {path = "../traitgraph", version = "^0.1.0-alpha.1"}
+traitgraph = {path = "../traitgraph", version = "0.1.0"}
 opaque_typedef = "0.0.5"
 opaque_typedef_macros = "0.0.5"
 petgraph = "0.5"
