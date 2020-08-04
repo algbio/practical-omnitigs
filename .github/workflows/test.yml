@@ -83,38 +83,38 @@ jobs:
           command: clippy
           args: --all --all-targets --manifest-path implementation/Cargo.toml -- -D warnings
 
-  coverage:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+#  coverage:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        rust:
+#          - stable
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v2
 
-      - name: Install nightly toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
+#      - name: Install nightly toolchain
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          profile: minimal
+#          toolchain: ${{ matrix.rust }}
+#          override: true
 
-      - name: Install cargo-tarpaulin
-        uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-tarpaulin
-          version: latest
-          use-tool-cache: true
+#      - name: Install cargo-tarpaulin
+#        uses: actions-rs/install@v0.1
+#        with:
+#          crate: cargo-tarpaulin
+#          version: latest
+#          use-tool-cache: true
 
-      - name: Coverage with tarpaulin
-        uses: actions-rs/cargo@v1
-        with:
-          command: tarpaulin
-          args: --manifest-path implementation/Cargo.toml --all --all-features --timeout 600 --out Lcov -- --test-threads 1
-
-      - name: Upload coverage
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./lcov.info
+#      - name: Coverage with tarpaulin
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: tarpaulin
+#          args: --manifest-path implementation/Cargo.toml --all --all-features --timeout 600 --out Lcov -- --test-threads 1
+#
+#      - name: Upload coverage
+#        uses: coverallsapp/github-action@master
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          path-to-lcov: ./lcov.info
