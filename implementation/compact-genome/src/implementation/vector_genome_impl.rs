@@ -1,5 +1,5 @@
-use crate::genome::ascii_complement;
-use crate::genome::Genome;
+use crate::interface::ascii_complement;
+use crate::interface::Genome;
 use std::iter::{Cloned, FromIterator};
 
 #[derive(Eq, PartialEq, Debug, Clone, Ord, PartialOrd)]
@@ -56,8 +56,8 @@ impl FromIterator<u8> for VectorGenome {
 
 #[cfg(test)]
 mod tests {
-    use crate::genome::Genome;
-    use crate::vector_genome_impl::VectorGenome;
+    use crate::implementation::vector_genome_impl::VectorGenome;
+    use crate::interface::Genome;
     use std::iter::FromIterator;
 
     #[test]
