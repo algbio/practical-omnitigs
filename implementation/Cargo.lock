@@ -66,7 +66,7 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.1.0-alpha.6"
+version = "0.1.0-rc.1"
 dependencies = [
  "num-traits",
  "opaque_typedef",
@@ -232,7 +232,7 @@ dependencies = [
 
 [[package]]
 name = "cli"
-version = "0.1.0-alpha.3"
+version = "0.1.0-rc.1"
 dependencies = [
  "clap",
  "colored",
@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "compact-genome"
-version = "0.1.0-alpha.6"
+version = "0.1.0-rc.1"
 
 [[package]]
 name = "csv"
@@ -353,7 +353,7 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "0.1.0-alpha.3"
+version = "0.1.0-rc.1"
 dependencies = [
  "bigraph",
  "bio",
@@ -963,7 +963,7 @@ dependencies = [
 
 [[package]]
 name = "traitgraph"
-version = "0.1.0-alpha.1"
+version = "0.1.0-rc.1"
 dependencies = [
  "num-traits",
  "petgraph 0.5.1",
