@@ -108,7 +108,10 @@ jobs:
           use-tool-cache: true
 
       - name: Coverage with tarpaulin
-        run: cargo tarpaulin --manifest-path implementation/Cargo.toml --all --all-features --timeout 600 --out Lcov -- --test-threads 1
+        uses: actions-rs/cargo@v1
+        with:
+          command: tarpaulin
+          args: --manifest-path implementation/Cargo.toml --all --all-features --timeout 600 --out Lcov -- --test-threads 1
 
       - name: Upload coverage
         uses: coverallsapp/github-action@master
