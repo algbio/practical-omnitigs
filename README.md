@@ -1,6 +1,7 @@
 # Practical [Omnitigs](https://www.liebertpub.com/doi/full/10.1089/cmb.2016.0141)
 
 ![](https://github.com/algbio/practical-omnitigs/workflows/Tests%20%26%20Lints/badge.svg?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/algbio/practical-omnitigs/badge.svg?branch=master)](https://coveralls.io/github/algbio/practical-omnitigs?branch=master)
 
 This is a repository to conduct experiments with omnitig-related models in the context of genome assembly.
 The algorithms are implemented in *Rust*, and around that we built a *snakemake* toolchain to conduct experiments.
