@@ -17,3 +17,4 @@ genome-graph = {path = "../genome-graph"}
 error-chain = "0.12"
 log = "0.4"
 simplelog = "0.8"
+colored = "2"

@@ -1,5 +1,5 @@
-use crate::interface::StaticGraph;
 use crate::index::GraphIndex;
+use crate::interface::StaticGraph;
 
 /// Returns the amount of unitigs in the graph that are longer than two nodes.
 /// Those are called uncompacted, because they can be trivially compacted by contracting the inner nodes.
@@ -14,19 +14,35 @@ pub fn count_uncompacted_unitigs<Graph: StaticGraph>(graph: &Graph) -> usize {
             used_nodes[node_index.as_usize()] = true;
         }
 
-        if graph.out_neighbors(node_index).into_iter().count() == 1 && graph.in_neighbors(node_index).into_iter().count() == 1 {
+        if graph.out_neighbors(node_index).into_iter().count() == 1
+            && graph.in_neighbors(node_index).into_iter().count() == 1
+        {
             uncompacted_unitig_count += 1;
 
             let mut start_index = node_index;
             let mut end_index = node_index;
 
-            while graph.out_neighbors(start_index).into_iter().count() <= 1 && graph.in_neighbors(start_index).into_iter().count() == 1 {
+            while graph.out_neighbors(start_index).into_iter().count() <= 1
+                && graph.in_neighbors(start_index).into_iter().count() == 1
+            {
                 used_nodes[start_index.as_usize()] = true;
-                start_index = graph.in_neighbors(start_index).into_iter().next().unwrap().node_id;
+                start_index = graph
+                    .in_neighbors(start_index)
+                    .into_iter()
+                    .next()
+                    .unwrap()
+                    .node_id;
             }
-            while graph.out_neighbors(end_index).into_iter().count() == 1 && graph.in_neighbors(end_index).into_iter().count() <= 1 {
+            while graph.out_neighbors(end_index).into_iter().count() == 1
+                && graph.in_neighbors(end_index).into_iter().count() <= 1
+            {
                 used_nodes[end_index.as_usize()] = true;
-                end_index = graph.out_neighbors(end_index).into_iter().next().unwrap().node_id;
+                end_index = graph
+                    .out_neighbors(end_index)
+                    .into_iter()
+                    .next()
+                    .unwrap()
+                    .node_id;
             }
 
             // println!("Found uncompacted unitig from {:?} to {:?}", start_index, end_index);
@@ -38,8 +54,8 @@ pub fn count_uncompacted_unitigs<Graph: StaticGraph>(graph: &Graph) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::unitigs::count_uncompacted_unitigs;
     use crate::petgraph_impl;
+    use crate::unitigs::count_uncompacted_unitigs;
     use crate::MutableGraphContainer;
 
     #[test]
