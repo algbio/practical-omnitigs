@@ -47,11 +47,13 @@ jobs:
           args: --manifest-path implementation/Cargo.toml
 
       - name: Cargo Format
+        uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all --manifest-path implementation/Cargo.toml -- --check
 
       - name: Cargo Lint
+        uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --all --all-targets --manifest-path implementation/Cargo.toml -- -D warnings
