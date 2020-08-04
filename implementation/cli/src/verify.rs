@@ -4,12 +4,7 @@ use genome_graph::bigraph::ImmutableGraphContainer;
 use genome_graph::types::PetBCalm2Graph;
 
 pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
-    info!("Input file: {}", options.input);
-    info!(
-        "Output file: {}",
-        options.output.as_ref().unwrap_or(&"None".to_owned())
-    );
-
+    info!("Reading bigraph from {}", options.input);
     let genome_graph: PetBCalm2Graph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_file(&options.input)?;
 
@@ -68,6 +63,7 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
     info!("");
 
     if let Some(output) = &options.output {
+        info!("Writing the unmodified bigraph to {}", output);
         genome_graph::io::bcalm2::write_bigraph_to_bcalm2_file(&genome_graph, output)?;
     }
     Ok(())
