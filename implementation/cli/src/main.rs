@@ -6,8 +6,9 @@ extern crate log;
 
 use clap::Clap;
 use error_chain::{ChainedError, ExitCode};
-use genome_graph::types::PetBCalm2Graph;
 use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
+
+mod verify;
 
 error_chain! {
     links {
@@ -45,17 +46,10 @@ enum Command {
 // Using just the macro makes IntelliJ complain that there would be no main.
 // The real main (programmed manually) is run, below this method.
 fn main() {
-    use std::io::Write;
-
     ::std::process::exit(match run() {
         Ok(()) => ExitCode::code(()),
         Err(ref e) => {
-            write!(
-                &mut ::std::io::stderr(),
-                "{}",
-                ChainedError::display_chain(e)
-            )
-            .expect("Error writing to stderr");
+            error!("{}", ChainedError::display_chain(e));
 
             1
         }
@@ -80,24 +74,9 @@ fn run() -> Result<()> {
     info!("Hello");
 
     match &options.subcommand {
-        Command::Verify => verify(options),
+        Command::Verify => verify::verify(options),
     }?;
 
     info!("Goodbye");
-    Ok(())
-}
-
-fn verify(options: &CliOptions) -> Result<()> {
-    info!("Input file: {}", options.input);
-    info!(
-        "Output file: {}",
-        options.output.as_ref().unwrap_or(&"None".to_owned())
-    );
-
-    let genome_graph: PetBCalm2Graph =
-        genome_graph::io::bcalm2::read_bigraph_from_bcalm2_file(&options.input)?;
-    if let Some(output) = &options.output {
-        genome_graph::io::bcalm2::write_bigraph_to_bcalm2_file(&genome_graph, output)?;
-    }
     Ok(())
 }

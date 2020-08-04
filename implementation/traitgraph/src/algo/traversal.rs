@@ -1,24 +1,25 @@
 use crate::algo::queue::BidirectedQueue;
 use crate::{GraphBase, GraphIndex, NavigableGraph, OptionalGraphIndex, StaticGraph};
 use std::collections::LinkedList;
+use std::iter::IntoIterator;
 use std::marker::PhantomData;
 
 /// A normal forward BFS in a directed graph.
-pub type ForwardBfs<Graph> = Traversal<
+pub type PreOrderForwardBfs<Graph> = PreOrderTraversal<
     Graph,
     ForwardNeighborStrategy,
     BfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A normal backward BFS in a directed graph.
-pub type BackwardBfs<Graph> = Traversal<
+pub type PreOrderBackwardBfs<Graph> = PreOrderTraversal<
     Graph,
     BackwardNeighborStrategy,
     BfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A BFS that treats each directed edge as an undirected edge, i.e. that traverses edge both in forward and backward direction.
-pub type UndirectedBfs<Graph> = Traversal<
+pub type PreOrderUndirectedBfs<Graph> = PreOrderTraversal<
     Graph,
     UndirectedNeighborStrategy,
     BfsQueueStrategy,
@@ -26,36 +27,36 @@ pub type UndirectedBfs<Graph> = Traversal<
 >;
 
 /// A normal forward DFS in a directed graph.
-pub type ForwardDfs<Graph> = Traversal<
+pub type PreOrderForwardDfs<Graph> = PreOrderTraversal<
     Graph,
     ForwardNeighborStrategy,
     DfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A normal backward DFS in a directed graph.
-pub type BackwardDfs<Graph> = Traversal<
+pub type PreOrderBackwardDfs<Graph> = PreOrderTraversal<
     Graph,
     BackwardNeighborStrategy,
     DfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A DFS that treats each directed edge as an undirected edge, i.e. that traverses edge both in forward and backward direction.
-pub type UndirectedDfs<Graph> = Traversal<
+pub type PreOrderUndirectedDfs<Graph> = PreOrderTraversal<
     Graph,
     UndirectedNeighborStrategy,
     DfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 
-pub struct Traversal<
+pub struct PreOrderTraversal<
     Graph: GraphBase,
     NeighborStrategy,
     QueueStrategy,
     Queue: BidirectedQueue<Graph::NodeIndex>,
 > {
     queue: Queue,
-    order: Vec<Graph::OptionalNodeIndex>,
-    current_order: Graph::NodeIndex,
+    rank: Vec<Graph::OptionalNodeIndex>,
+    current_rank: Graph::NodeIndex,
     graph: PhantomData<Graph>,
     neighbor_strategy: PhantomData<NeighborStrategy>,
     queue_strategy: PhantomData<QueueStrategy>,
@@ -67,17 +68,17 @@ impl<
         NeighborStrategy: TraversalNeighborStrategy<'a, Graph>,
         QueueStrategy: TraversalQueueStrategy<Graph, Queue>,
         Queue: BidirectedQueue<Graph::NodeIndex>,
-    > Traversal<Graph, NeighborStrategy, QueueStrategy, Queue>
+    > PreOrderTraversal<Graph, NeighborStrategy, QueueStrategy, Queue>
 {
     pub fn new(graph: &Graph, start: Graph::NodeIndex) -> Self {
         let mut queue = Queue::default();
-        queue.push_back(start);
-        let mut order = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
-        order[start.as_usize()] = Some(0).into();
+        QueueStrategy::push(&mut queue, start);
+        let mut rank = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
+        rank[start.as_usize()] = Some(0).into();
         Self {
             queue,
-            order,
-            current_order: 1.into(),
+            rank,
+            current_rank: 1.into(),
             graph: Default::default(),
             neighbor_strategy: Default::default(),
             queue_strategy: Default::default(),
@@ -85,13 +86,13 @@ impl<
     }
 
     pub fn next(&mut self, graph: &'a Graph) -> Option<Graph::NodeIndex> {
-        if let Some(first) = self.queue.pop_front() {
-            for neighbor in graph.out_neighbors(first) {
-                let order_entry = &mut self.order[neighbor.node_id.as_usize()];
-                if *order_entry == None.into() {
-                    *order_entry = self.current_order.into();
-                    self.current_order = self.current_order + 1;
-                    self.queue.push_back(neighbor.node_id);
+        if let Some(first) = QueueStrategy::pop(&mut self.queue) {
+            for neighbor in NeighborStrategy::neighbor_iterator(graph, first) {
+                let rank_entry = &mut self.rank[neighbor.as_usize()];
+                if *rank_entry == None.into() {
+                    *rank_entry = self.current_rank.into();
+                    self.current_rank = self.current_rank + 1;
+                    QueueStrategy::push(&mut self.queue, neighbor);
                 }
             }
 
@@ -101,9 +102,85 @@ impl<
         }
     }
 
-    pub fn order_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
-        let order = self.order[node.as_usize()];
-        order.into()
+    pub fn rank_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
+        let rank = self.rank[node.as_usize()];
+        rank.into()
+    }
+}
+
+pub struct DfsPostOrderTraversal<
+    Graph: GraphBase,
+    NeighborStrategy,
+    Queue: BidirectedQueue<Graph::NodeIndex>,
+> {
+    queue: Queue,
+    rank: Vec<Graph::OptionalNodeIndex>,
+    current_rank: Graph::NodeIndex,
+    graph: PhantomData<Graph>,
+    neighbor_strategy: PhantomData<NeighborStrategy>,
+}
+
+impl<
+        'a,
+        Graph: StaticGraph,
+        NeighborStrategy: TraversalNeighborStrategy<'a, Graph>,
+        Queue: BidirectedQueue<Graph::NodeIndex>,
+    > DfsPostOrderTraversal<Graph, NeighborStrategy, Queue>
+{
+    pub fn new(graph: &Graph, start: Graph::NodeIndex) -> Self {
+        let mut queue = Queue::default();
+        queue.push_back(start);
+        let rank = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
+        Self {
+            queue,
+            rank,
+            current_rank: 0.into(),
+            graph: Default::default(),
+            neighbor_strategy: Default::default(),
+        }
+    }
+
+    pub fn reset(&mut self, start: Graph::NodeIndex) {
+        self.queue.clear();
+        self.queue.push_back(start);
+        for rank in &mut self.rank {
+            *rank = Graph::OptionalNodeIndex::new_none();
+        }
+        self.current_rank = 0.into();
+    }
+
+    pub fn next(&mut self, graph: &'a Graph) -> Option<Graph::NodeIndex> {
+        while let Some(first) = self.queue.pop_back() {
+            let rank_entry = &mut self.rank[first.as_usize()];
+            if *rank_entry == Self::explored_rank() {
+                assert_ne!(self.current_rank.into(), Self::explored_rank());
+                *rank_entry = self.current_rank.into();
+                self.current_rank = self.current_rank + 1;
+
+                return Some(first);
+            } else if *rank_entry == None.into() {
+                self.queue.push_back(first);
+                *rank_entry = Self::explored_rank();
+
+                for neighbor in NeighborStrategy::neighbor_iterator(graph, first) {
+                    let rank_entry = &mut self.rank[neighbor.as_usize()];
+                    if *rank_entry == None.into() {
+                        self.queue.push_back(neighbor);
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
+    pub fn rank_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
+        let rank = self.rank[node.as_usize()];
+        rank.into()
+    }
+
+    fn explored_rank() -> Graph::OptionalNodeIndex {
+        Some(Graph::OptionalNodeIndex::new_none().as_usize_unchecked() - 1).into()
     }
 }
 
@@ -199,5 +276,46 @@ impl<Graph: GraphBase, Queue: BidirectedQueue<Graph::NodeIndex>>
 
     fn pop(queue: &mut Queue) -> Option<Graph::NodeIndex> {
         queue.pop_back()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::algo::traversal::{DfsPostOrderTraversal, ForwardNeighborStrategy};
+    use crate::implementation::petgraph_impl;
+    use crate::interface::{MutableGraphContainer, NavigableGraph};
+    use std::collections::LinkedList;
+
+    #[test]
+    fn test_postorder_traversal_simple() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n0, 13);
+        graph.add_edge(n1, n0, 14);
+        graph.add_edge(n2, n1, 15);
+        graph.add_edge(n3, n2, 16);
+        graph.add_edge(n0, n3, 17);
+
+        let mut ordering =
+            DfsPostOrderTraversal::<_, ForwardNeighborStrategy, LinkedList<_>>::new(&graph, n0);
+        assert_eq!(
+            graph
+                .out_neighbors(n0)
+                .into_iter()
+                .map(|n| n.node_id)
+                .next(),
+            Some(3.into())
+        );
+        assert_eq!(ordering.next(&graph), Some(n3));
+        assert_eq!(ordering.next(&graph), Some(n2));
+        assert_eq!(ordering.next(&graph), Some(n1));
+        assert_eq!(ordering.next(&graph), Some(n0));
+        assert_eq!(ordering.next(&graph), None);
     }
 }
