@@ -54,9 +54,9 @@ pub fn count_uncompacted_unitigs<Graph: StaticGraph>(graph: &Graph) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::petgraph_impl;
-    use crate::unitigs::count_uncompacted_unitigs;
-    use crate::MutableGraphContainer;
+    use super::count_uncompacted_unitigs;
+    use crate::implementation::petgraph_impl;
+    use crate::interface::MutableGraphContainer;
 
     #[test]
     fn test_count_uncompacted_unitigs_simple() {

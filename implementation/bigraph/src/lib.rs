@@ -1,6 +1,4 @@
-mod implementation;
-mod interface;
+pub mod implementation;
+pub mod interface;
 
-pub use implementation::*;
-pub use interface::*;
-pub use traitgraph::*;
+pub use traitgraph;

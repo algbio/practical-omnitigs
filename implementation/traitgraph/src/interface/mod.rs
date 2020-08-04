@@ -1,4 +1,4 @@
-use crate::{GraphIndex, GraphIndices, OptionalGraphIndex};
+use crate::index::{GraphIndex, GraphIndices, OptionalGraphIndex};
 
 /// Contains the associated types of a graph.
 pub trait GraphBase {

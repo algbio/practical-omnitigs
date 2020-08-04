@@ -1,6 +1,6 @@
 use crate::CliOptions;
 use colored::*;
-use genome_graph::bigraph::ImmutableGraphContainer;
+use genome_graph::bigraph::traitgraph::interface::ImmutableGraphContainer;
 use genome_graph::types::PetBCalm2Graph;
 
 pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
@@ -24,7 +24,7 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
 
     // Uncompacted unitigs
     let uncompacted_unitig_amount =
-        genome_graph::bigraph::unitigs::count_uncompacted_unitigs(&genome_graph);
+        genome_graph::bigraph::traitgraph::algo::unitigs::count_uncompacted_unitigs(&genome_graph);
     if uncompacted_unitig_amount % 2 != 0 {
         error!("Internal error: uneven amount of uncompacted unitigs in a bidirected graph");
     }
@@ -41,10 +41,12 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
 
     // Components
     let wccs =
-        genome_graph::bigraph::components::decompose_weakly_connected_components(&genome_graph);
+        genome_graph::bigraph::traitgraph::algo::components::decompose_weakly_connected_components(
+            &genome_graph,
+        );
     let mut non_scc_wcc_count = 0;
     for wcc in &wccs {
-        if !genome_graph::bigraph::components::is_strongly_connected(wcc) {
+        if !genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected(wcc) {
             non_scc_wcc_count += 1;
         }
     }

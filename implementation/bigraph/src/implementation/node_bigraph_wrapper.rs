@@ -1,10 +1,14 @@
-use crate::{BidirectedNodeData, DynamicBigraph, StaticBigraph, StaticBigraphFromDigraph};
+use crate::interface::{
+    dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
+    static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
+};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-use traitgraph::{
-    DynamicGraph, GraphBase, GraphIndex, GraphIndices, ImmutableGraphContainer,
-    MutableGraphContainer, NavigableGraph, OptionalGraphIndex, StaticGraph,
+use traitgraph::index::{GraphIndex, GraphIndices, OptionalGraphIndex};
+use traitgraph::interface::{
+    DynamicGraph, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
+    StaticGraph,
 };
 
 /**
@@ -14,9 +18,10 @@ use traitgraph::{
 *   The binode mapping function then associates the parts with each other.
 *
 *   ```rust
-*   use bigraph::node_bigraph_wrapper::NodeBigraphWrapper;
-*   use bigraph::{StaticBigraph, MutableGraphContainer, StaticBigraphFromDigraph};
-*   use bigraph::petgraph_impl;
+*   use bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+*   use bigraph::interface::static_bigraph::{StaticBigraph, StaticBigraphFromDigraph};
+*   use bigraph::traitgraph::interface::MutableGraphContainer;
+*   use bigraph::traitgraph::implementation::petgraph_impl;
 *
 *   let mut graph = petgraph_impl::new();
 *   let n1 = graph.add_node(0);
@@ -245,11 +250,13 @@ impl<Topology: Default + GraphBase> Default for NodeBigraphWrapper<Topology> {
 
 #[cfg(test)]
 mod tests {
-    use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
-    use crate::{
-        petgraph_impl, BidirectedNodeData, DynamicBigraph, ImmutableGraphContainer,
-        MutableGraphContainer, StaticBigraph, StaticBigraphFromDigraph,
+    use super::NodeBigraphWrapper;
+    use crate::interface::{
+        dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
+        static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
     };
+    use crate::traitgraph::implementation::petgraph_impl;
+    use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
 
     #[test]
     fn test_bigraph_creation() {
