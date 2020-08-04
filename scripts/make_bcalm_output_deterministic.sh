@@ -1,12 +1,8 @@
 #!/bin/bash
 
-in_file="GCF_000008865.2_ASM886v2_genomic.fna.unitigs.fa"
-out_file="$in_file.verify"
-clean_in_file="$in_file.clean"
+in_file="$1"
+clean_in_file="$2"
 
-cargo run -- --input "$in_file" --output "$out_file" verify
-
-function join_by { local IFS="$1"; shift; echo "$*"; }
 while read -r line
 do
 	if [[ $line == \>* ]]; then
@@ -23,12 +19,3 @@ do
 	fi
 done < "$in_file" > "$clean_in_file"
 
-
-diff=`diff "$clean_in_file" "$out_file"`
-if [ -n "$diff" ]; then
-	echo "Our output does not match the output from bcalm2!"
-	echo "$diff"
-	exit 1
-else
-	echo "Bigraph read and written successfully."
-fi

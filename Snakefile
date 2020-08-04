@@ -8,7 +8,19 @@ rule selftest:
     shell: "conda --version; wget --version"
 
 rule test:
-    input: "data/GCF_000008865.2_ASM886v2_genomic.unitigs.fa"
+    input: ["data/GCF_000008865.2_ASM886v2_genomic.unitigs.fa.verify", "data/GCF_000008865.2_ASM886v2_genomic.unitigs.fa.deterministic"]
+    shell: "cmp --silent {input[0]} {input[1]}"
+
+rule make_bcalm_output_deterministic:
+    input: "data/{file}.unitigs.fa"
+    output: "data/{file}.unitigs.fa.deterministic"
+    shell: "scripts/make_bcalm_output_deterministic.sh '{input}' '{output}'"
+
+rule verify:
+    input: "data/{file}.unitigs.fa"
+    output: ["data/{file}.unitigs.fa.verify", "data/{file}.unitigs.fa.properties"]
+    conda: "config/conda-rust-env.yaml"
+    shell: "cd implementation; cargo run --release --target-dir '../data/target' -- --input '../{input}' --output '../{output[0]}' verify > '../{output[1]}'"
 
 rule bcalm2:
     input: "data/{file}.fna"
