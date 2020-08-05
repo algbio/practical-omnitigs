@@ -1,3 +1,6 @@
 use_conda: true
-experiment_files: ["GCF_000008865.2_ASM886v2_genomic.fna.unitigs.fa"]
+
+# The test file must be given without file endings.
+test_file: "GCF_000008865.2_ASM886v2_genomic"
+experiment_file_urls: ["https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"]
 
