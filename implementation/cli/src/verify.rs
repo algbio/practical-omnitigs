@@ -14,12 +14,12 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
     info!("========================");
     info!("");
     info!(
-        "{} binodes, {} biedges",
+        "{} binodes, {} edges",
         genome_graph.node_count() / 2,
-        genome_graph.edge_count() / 2
+        genome_graph.edge_count()
     );
-    if genome_graph.node_count() % 2 != 0 || genome_graph.edge_count() % 2 != 0 {
-        error!("Internal error: uneven amount of nodes or edges in a bidirected graph");
+    if genome_graph.node_count() % 2 != 0 {
+        return Err("Internal error: uneven amount of nodes in a bidirected graph".into());
     }
 
     // Uncompacted unitigs
