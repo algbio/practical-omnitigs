@@ -24,7 +24,9 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
 
     // Uncompacted unitigs
     let uncompacted_unitig_amount =
-        genome_graph::bigraph::traitgraph::algo::unitigs::count_uncompacted_unitigs(&genome_graph);
+        genome_graph::bigraph::traitgraph::algo::unitigs::count_uncompacted_node_unitigs(
+            &genome_graph,
+        );
     if uncompacted_unitig_amount % 2 != 0 {
         error!("Internal error: uneven amount of uncompacted unitigs in a bidirected graph");
     }
