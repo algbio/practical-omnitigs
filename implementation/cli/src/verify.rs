@@ -27,18 +27,42 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
         genome_graph::bigraph::traitgraph::algo::unitigs::count_uncompacted_node_unitigs(
             &genome_graph,
         );
-    if uncompacted_unitig_amount % 2 != 0 {
-        error!("Internal error: uneven amount of uncompacted unitigs in a bidirected graph");
+    if uncompacted_unitig_amount.total() % 2 != 0 {
+        return Err(
+            "Internal error: uneven amount of total uncompacted unitigs in a bidirected graph"
+                .into(),
+        );
+    }
+    if uncompacted_unitig_amount.len_2 % 2 != 0 {
+        return Err(
+            "Internal error: uneven amount of len 2 uncompacted unitigs in a bidirected graph"
+                .into(),
+        );
+    }
+    if uncompacted_unitig_amount.len_3 % 2 != 0 {
+        return Err(
+            "Internal error: uneven amount of len 3 uncompacted unitigs in a bidirected graph"
+                .into(),
+        );
+    }
+    if uncompacted_unitig_amount.len_4_more % 2 != 0 {
+        return Err("Internal error: uneven amount of len longer than 3 uncompacted unitigs in a bidirected graph".into());
     }
 
     let log_string = format!(
         "{} uncompacted bidirected unitigs",
-        uncompacted_unitig_amount / 2
+        uncompacted_unitig_amount.total() / 2
     );
-    if uncompacted_unitig_amount == 0 {
+    let detail_string = format!(
+        ", of which {} have length 2, {} have length 3 and {} are longer than 3",
+        uncompacted_unitig_amount.len_2 / 2,
+        uncompacted_unitig_amount.len_3 / 2,
+        uncompacted_unitig_amount.len_4_more / 2
+    );
+    if uncompacted_unitig_amount.total() == 0 {
         info!("{}", log_string);
     } else {
-        warn!("{}", log_string.yellow());
+        warn!("{}{}", log_string.yellow(), detail_string.yellow());
     }
 
     // Components

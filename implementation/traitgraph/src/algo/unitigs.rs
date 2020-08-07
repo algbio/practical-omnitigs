@@ -1,15 +1,31 @@
 use crate::index::GraphIndex;
 use crate::interface::StaticGraph;
 
+#[derive(Debug, Eq, PartialEq, Default)]
+pub struct UncompactedNodeUnitigs {
+    /// Uncompacted unitigs of length two
+    pub len_2: usize,
+    /// Uncompacted unitigs of length three
+    pub len_3: usize,
+    /// Uncompacted unitigs of length four or more
+    pub len_4_more: usize,
+}
+
+impl UncompactedNodeUnitigs {
+    pub fn total(&self) -> usize {
+        self.len_2 + self.len_3 + self.len_4_more
+    }
+}
+
 /// Returns the amount of node unitigs in the graph that can be compacted.
 /// A unitig can be compacted if
 ///  * it contains more than one inner node, or
 ///  * it contains one inner node and its first node has outdegree one, or
 ///  * it contains one inner node and its last node has indegree one, or
 ///  * it contains two nodes (no inner node) and its first node has outdegree one and its second node has indegree one.
-pub fn count_uncompacted_node_unitigs<Graph: StaticGraph>(graph: &Graph) -> usize {
+pub fn count_uncompacted_node_unitigs<Graph: StaticGraph>(graph: &Graph) -> UncompactedNodeUnitigs {
     let mut used_edges = vec![false; graph.edge_count()];
-    let mut uncompacted_unitig_count = 0;
+    let mut uncompacted_unitig_count = UncompactedNodeUnitigs::default();
 
     for first_index in graph.node_indices() {
         for neighbor in graph.out_neighbors(first_index) {
@@ -43,12 +59,13 @@ pub fn count_uncompacted_node_unitigs<Graph: StaticGraph>(graph: &Graph) -> usiz
             let start_out_degree = graph.out_degree(start_index);
             let end_in_degree = graph.in_degree(end_index);
 
-            if length >= 4
-                || (length >= 3 && (start_out_degree == 1 || end_in_degree == 1))
-                || (length >= 2 && start_out_degree == 1 && end_in_degree == 1)
-            {
-                uncompacted_unitig_count += 1;
+            if length >= 4 {
+                uncompacted_unitig_count.len_4_more += 1;
             //println!("Found uncompacted unitig from {:?} to {:?} (len: {})", start_index, end_index, length);
+            } else if length >= 3 && (start_out_degree == 1 || end_in_degree == 1) {
+                uncompacted_unitig_count.len_3 += 1;
+            } else if length >= 2 && start_out_degree == 1 && end_in_degree == 1 {
+                uncompacted_unitig_count.len_2 += 1;
             } else {
                 //println!("Found compacted unitig from {:?} to {:?}", start_index, end_index);
             }
@@ -61,6 +78,7 @@ pub fn count_uncompacted_node_unitigs<Graph: StaticGraph>(graph: &Graph) -> usiz
 #[cfg(test)]
 mod tests {
     use super::count_uncompacted_node_unitigs;
+    use super::UncompactedNodeUnitigs;
     use crate::implementation::petgraph_impl;
     use crate::interface::MutableGraphContainer;
 
@@ -87,20 +105,48 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_node_unitigs(&graph), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 1
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 1
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 1
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 1
+            }
+        );
 
         drop(graph); // Against linter errors for last clone.
     }
@@ -126,20 +172,48 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_node_unitigs(&graph), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 1,
+                len_4_more: 0
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 1,
+                len_4_more: 0
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 1,
+                len_4_more: 0
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 0);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 0
+            }
+        );
 
         drop(graph); // Against linter errors for last clone.
     }
@@ -163,20 +237,48 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_node_unitigs(&graph), 1);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph),
+            UncompactedNodeUnitigs {
+                len_2: 1,
+                len_3: 0,
+                len_4_more: 0
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 0);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 0
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 0);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 0
+            }
+        );
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_node_unitigs(&graph2), 0);
+        assert_eq!(
+            count_uncompacted_node_unitigs(&graph2),
+            UncompactedNodeUnitigs {
+                len_2: 0,
+                len_3: 0,
+                len_4_more: 0
+            }
+        );
 
         drop(graph); // Against linter errors for last clone.
     }
