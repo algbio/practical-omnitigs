@@ -1,7 +1,7 @@
 use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedNodeData};
 use bigraph::traitgraph::index::GraphIndex;
 use bio::io::fasta::Record;
-use compact_genome::{genome::Genome, vector_genome_impl::VectorGenome};
+use compact_genome::{implementation::vector_genome_impl::VectorGenome, interface::Genome};
 use num_traits::NumCast;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Debug, Write};
