@@ -64,6 +64,14 @@ pub trait NavigableGraph<'a>: GraphBase {
 
     fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors;
     fn in_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::InNeighbors;
+
+    fn out_degree(&'a self, node_id: Self::NodeIndex) -> usize {
+        self.out_neighbors(node_id).into_iter().count()
+    }
+
+    fn in_degree(&'a self, node_id: Self::NodeIndex) -> usize {
+        self.in_neighbors(node_id).into_iter().count()
+    }
 }
 
 pub trait StaticGraph: ImmutableGraphContainer + for<'a> NavigableGraph<'a> {}

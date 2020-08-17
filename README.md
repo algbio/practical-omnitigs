@@ -38,7 +38,9 @@ snakemake --cores all <experiment>
 ```
 
 Valid experiments are:
- * `test`: execute all integration tests of this project.
+ * `selftest`: Check if you have conda set up correctly. It prints the version of `snakemake` `conda` and `wget`. The versions of `snakemake` and `conda` should match the definition in `/environment.yaml` and the version of `wget` should match the definition in `/config/conda-selftest-env.yaml`.
+ * `test`: execute all integration tests of this project on a single small sample genome.
+ * `test_all`: execute all integration tests of this project on all defined genomes (potentially very large).
 
 The experiments are run inside a conda environment that is set up by snakemake.
 This ensures reproducibility of the results and automates the installation of required tools.
