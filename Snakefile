@@ -27,7 +27,7 @@ rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob
 
 rule selftest:
     conda: "config/conda-selftest-env.yaml"
-    shell: "conda --version; wget --version"
+    shell: "echo \"snakemake $(snakemake --version)\"; conda --version; wget --version"
 
 rule test_all:
     input: expand("{file}.is_tested", file = experiment_file_names)
