@@ -4,4 +4,3 @@ channels:
         - conda-forge
 dependencies: 
         - snakemake==5.20.1
-        - conda==4.8.3
