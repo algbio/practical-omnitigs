@@ -32,10 +32,7 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
             &genome_graph,
         );
 
-    let log_string = format!(
-        "{} uncompacted unitigs",
-        uncompacted_unitig_amount.total()
-    );
+    let log_string = format!("{} uncompacted unitigs", uncompacted_unitig_amount.total());
     let detail_string = format!(
         ", of which {} have length 2, {} have length 3 and {} are longer than 3",
         uncompacted_unitig_amount.len_2,
