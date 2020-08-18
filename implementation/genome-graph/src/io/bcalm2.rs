@@ -637,7 +637,7 @@ where
 pub fn write_edge_centric_bigraph_to_bcalm2_to_file<
     P: AsRef<Path>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
-    EdgeData: Default + Clone,
+    EdgeData: Clone,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     graph: &Graph,

@@ -75,8 +75,66 @@ pub fn count_uncompacted_node_unitigs<Graph: StaticGraph>(graph: &Graph) -> Unco
     uncompacted_unitig_count
 }
 
+/// Returns the amount of edge unitigs in the graph that can be compacted.
+/// A unitig can be compacted if it has length of at least two edges.
+pub fn count_uncompacted_edge_unitigs<Graph: StaticGraph>(graph: &Graph) -> usize {
+    let mut used_nodes = vec![false; graph.node_count()];
+    let mut uncompacted_unitig_count = 0;
+
+    for node in graph.node_indices() {
+        // Skip nodes that were part of a different uncompacted unitig
+        if used_nodes[node.as_usize()] {
+            continue;
+        }
+
+        let mut first_node = node;
+        let mut last_node = node;
+        let mut uncompacted = false;
+
+        while graph.in_degree(first_node) == 1 && graph.out_degree(first_node) <= 1 {
+            used_nodes[first_node.as_usize()] = true;
+            first_node = graph
+                .in_neighbors(first_node)
+                .into_iter()
+                .next()
+                .unwrap()
+                .node_id;
+
+            if first_node != node {
+                uncompacted = true;
+            } else {
+                break;
+            }
+        }
+
+        while graph.in_degree(last_node) <= 1 && graph.out_degree(last_node) == 1 {
+            used_nodes[last_node.as_usize()] = true;
+            last_node = graph
+                .out_neighbors(last_node)
+                .into_iter()
+                .next()
+                .unwrap()
+                .node_id;
+
+            if last_node != node {
+                uncompacted = true;
+            } else {
+                break;
+            }
+        }
+
+        if uncompacted {
+            println!("Found uncompacted unitig from {} to {}", first_node.as_usize(), last_node.as_usize());
+            uncompacted_unitig_count += 1;
+        }
+    }
+
+    uncompacted_unitig_count
+}
+
 #[cfg(test)]
 mod tests {
+    use super::count_uncompacted_edge_unitigs;
     use super::count_uncompacted_node_unitigs;
     use super::UncompactedNodeUnitigs;
     use crate::implementation::petgraph_impl;
@@ -279,6 +337,123 @@ mod tests {
                 len_4_more: 0
             }
         );
+
+        drop(graph); // Against linter errors for last clone.
+    }
+
+    #[test]
+    fn test_count_uncompacted_edge_unitigs_four() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        let n6 = graph.add_node(6);
+        let n7 = graph.add_node(7);
+        let n8 = graph.add_node(8);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n3, n5, 14);
+        graph.add_edge(n4, n8, 15);
+        graph.add_edge(n5, n8, 16);
+        graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n7, 18);
+        graph.add_edge(n6, n0, 19);
+        graph.add_edge(n7, n0, 20);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph), 5);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n8, n3, 21);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n0, n8, 22);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n8, n3, 21);
+        graph2.add_edge(n0, n8, 22);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+
+        drop(graph); // Against linter errors for last clone.
+    }
+
+    #[test]
+    fn test_count_uncompacted_edge_unitigs_three() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        let n6 = graph.add_node(6);
+        let n7 = graph.add_node(7);
+        let n8 = graph.add_node(8);
+        graph.add_edge(n0, n2, 10);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n3, n5, 14);
+        graph.add_edge(n4, n8, 15);
+        graph.add_edge(n5, n8, 16);
+        graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n7, 18);
+        graph.add_edge(n6, n0, 19);
+        graph.add_edge(n7, n0, 20);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph), 5);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n8, n3, 21);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n0, n8, 22);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n8, n3, 21);
+        graph2.add_edge(n0, n8, 22);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+
+        drop(graph); // Against linter errors for last clone.
+    }
+
+    #[test]
+    fn test_count_uncompacted_edge_unitigs_two() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        let n6 = graph.add_node(6);
+        let n7 = graph.add_node(7);
+        let n8 = graph.add_node(8);
+        graph.add_edge(n0, n3, 10);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n3, n5, 14);
+        graph.add_edge(n4, n8, 15);
+        graph.add_edge(n5, n8, 16);
+        graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n7, 18);
+        graph.add_edge(n6, n0, 19);
+        graph.add_edge(n7, n0, 20);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n8, n3, 21);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n0, n8, 22);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+
+        let mut graph2 = graph.clone();
+        graph2.add_edge(n8, n3, 21);
+        graph2.add_edge(n0, n8, 22);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         drop(graph); // Against linter errors for last clone.
     }

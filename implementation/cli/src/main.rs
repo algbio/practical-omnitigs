@@ -39,7 +39,14 @@ struct CliOptions {
 
 #[derive(Clap)]
 enum Command {
+    #[clap(
+        about = "Prints statistics about the input graph, and saves it back to disc for verification purposes if --output is given"
+    )]
     Verify,
+    #[clap(
+        about = "Same as verify, but loads the input graph node-centric instead of edge-centric"
+    )]
+    VerifyNodeCentric,
 }
 
 // The main is unpacked from an error-chain macro.
@@ -74,7 +81,8 @@ fn run() -> Result<()> {
     info!("Hello");
 
     match &options.subcommand {
-        Command::Verify => verify::verify(options),
+        Command::Verify => verify::verify_edge_centric(options),
+        Command::VerifyNodeCentric => verify::verify_node_centric(options),
     }?;
 
     info!("Goodbye");
