@@ -1,3 +1,7 @@
 [workspace]
 
 members = ["bigraph", "compact-genome", "cli", "genome-graph", "traitgraph"]
+
+[profile.release]
+debug = true
+lto = true

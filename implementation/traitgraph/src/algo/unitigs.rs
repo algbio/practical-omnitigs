@@ -124,7 +124,11 @@ pub fn count_uncompacted_edge_unitigs<Graph: StaticGraph>(graph: &Graph) -> usiz
         }
 
         if uncompacted {
-            println!("Found uncompacted unitig from {} to {}", first_node.as_usize(), last_node.as_usize());
+            println!(
+                "Found uncompacted unitig from {} to {}",
+                first_node.as_usize(),
+                last_node.as_usize()
+            );
             uncompacted_unitig_count += 1;
         }
     }

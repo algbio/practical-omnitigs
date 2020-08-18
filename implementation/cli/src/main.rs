@@ -29,6 +29,13 @@ struct CliOptions {
     #[clap(
         short,
         long,
+        about = "The kmer size selected when generating the input with bcalm2"
+    )]
+    pub kmer_size: usize,
+
+    #[clap(
+        short,
+        long,
         about = "The output file, depending on the subcommand used"
     )]
     pub output: Option<String>,

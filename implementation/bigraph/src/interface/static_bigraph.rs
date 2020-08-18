@@ -12,6 +12,8 @@ pub trait StaticBigraph: StaticGraph {
 
     /**
      * Returns the unique partner of the given edge id, or `None` if the given edge id has no partner edge.
+     * If the edge is its own reverse complement, and an partner edge with a different id exists, then the different id is returned.
+     * Otherwise, for an edge that is its own reverse complement, the given id is returned.
      */
     fn partner_edge(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex>;
 

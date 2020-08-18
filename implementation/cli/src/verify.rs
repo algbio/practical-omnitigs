@@ -8,6 +8,7 @@ pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
     let genome_graph: PetBCalm2EdgeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
             &options.input,
+            options.kmer_size,
         )?;
 
     info!("");

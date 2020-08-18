@@ -1,11 +1,15 @@
-use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedData};
+use bigraph::interface::{
+    dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph, BidirectedData,
+};
 use bigraph::traitgraph::index::GraphIndex;
-use bigraph::traitgraph::interface::GraphBase;
+use bigraph::traitgraph::interface::{DynamicGraph, GraphBase};
 use bio::io::fasta::Record;
 use compact_genome::{implementation::vector_genome_impl::VectorGenome, interface::Genome};
 use num_traits::NumCast;
+use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Debug, Write};
+use std::hash::Hash;
 use std::iter::FromIterator;
 use std::path::Path;
 
@@ -466,9 +470,11 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     path: P,
+    kmer_size: usize,
 ) -> crate::error::Result<Graph> {
     read_bigraph_from_bcalm2_as_edge_centric(
         bio::io::fasta::Reader::from_file(path).map_err(Error::from)?,
+        kmer_size,
     )
 }
 
@@ -487,6 +493,35 @@ fn initialise_or_assert_eq<T: Eq + Debug>(
     Ok(())
 }
 
+fn get_or_create_node<Graph: DynamicBigraph, G: Genome + Hash>(
+    bigraph: &mut Graph,
+    id_map: &mut HashMap<G, <Graph as GraphBase>::NodeIndex>,
+    genome: &G,
+) -> <Graph as GraphBase>::NodeIndex
+where
+    for<'a> &'a G: IntoIterator<Item = u8>,
+    <Graph as GraphBase>::NodeData: Default,
+    <Graph as GraphBase>::EdgeData: Clone,
+{
+    if let Some(node) = id_map.get(genome) {
+        node.clone()
+    } else {
+        let node = bigraph.add_node(Default::default());
+        id_map.insert(genome.clone(), node);
+
+        let reverse_complement = genome.reverse_complement();
+        if &reverse_complement == genome {
+            bigraph.set_partner_nodes(node, node);
+        } else {
+            let partner_node = bigraph.add_node(Default::default());
+            id_map.insert(reverse_complement.clone(), partner_node);
+            bigraph.set_partner_nodes(node, partner_node);
+        }
+
+        node.clone()
+    }
+}
+
 pub fn read_bigraph_from_bcalm2_as_edge_centric<
     R: std::io::Read,
     NodeData: Default + Clone,
@@ -494,129 +529,30 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric<
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     reader: bio::io::fasta::Reader<R>,
+    kmer_size: usize,
 ) -> crate::error::Result<Graph>
 where
     <Graph as GraphBase>::NodeIndex: Clone,
 {
     let mut bigraph = Graph::default();
+    let mut id_map = HashMap::new();
+    let mut next_id = 0;
+    let node_kmer_size = kmer_size - 1;
 
     for record in reader.records() {
         let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
         print!("Processing edge {}: ", record.id);
-        let mut succ_plus = None;
-        let pre_minus;
-        let mut succ_minus = None;
-        let pre_plus;
+        let reverse_complement = record.reverse_complement();
 
-        let mut self_loop = 0;
-        let mut plus_minus_loop = false;
-        let mut minus_plus_loop = false;
+        let pre_plus = record.sequence.prefix(node_kmer_size);
+        let pre_minus = reverse_complement.sequence.prefix(node_kmer_size);
+        let succ_plus = record.sequence.suffix(node_kmer_size);
+        let succ_minus = reverse_complement.sequence.suffix(node_kmer_size);
 
-        for edge in &record.edges {
-            match edge.to_node.cmp(&record.id) {
-                std::cmp::Ordering::Less => {
-                    // Find existing endpoints
-                    print!("({} ", edge.to_node);
-                    let succ: &mut Option<<Graph as GraphBase>::NodeIndex> = if edge.from_side {
-                        print!("s+");
-                        &mut succ_plus
-                    } else {
-                        print!("s-");
-                        &mut succ_minus
-                    };
-                    let node = if edge.to_side {
-                        print!("n+");
-                        bigraph.edge_endpoints((2 * edge.to_node).into()).from_node
-                    } else {
-                        print!("n-");
-                        bigraph
-                            .partner_node(bigraph.edge_endpoints((2 * edge.to_node).into()).to_node)
-                            .unwrap()
-                    };
-                    print!(" ={}[{:?}]) ", node.as_usize(), succ);
-                    initialise_or_assert_eq(succ, node)?;
-                }
-                std::cmp::Ordering::Equal => {
-                    // Discover loops
-                    if edge.to_side == edge.from_side {
-                        self_loop += 1;
-                        print!("(self loop) ");
-                    } else if edge.from_side {
-                        if plus_minus_loop {
-                            return Err("discovered more than one plus-minus loop".into());
-                        }
-                        plus_minus_loop = true;
-                        print!("(+- loop) ");
-                    } else {
-                        if minus_plus_loop {
-                            return Err("discovered more than one minus-plus loop".into());
-                        }
-                        minus_plus_loop = true;
-                        print!("(-+ loop) ");
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        if self_loop > 0 {
-            if self_loop != 2 {
-                return Err("discovered just one or more than two self-loops".into());
-            }
-
-            if let Some(succ_plus) = succ_plus {
-                pre_plus = succ_plus;
-                initialise_or_assert_eq(&mut succ_minus, bigraph.partner_node(pre_plus).unwrap())?;
-                pre_minus = succ_minus.unwrap();
-            } else if let Some(succ_minus) = succ_minus {
-                pre_minus = succ_minus;
-                initialise_or_assert_eq(&mut succ_plus, bigraph.partner_node(pre_minus).unwrap())?;
-                pre_plus = succ_plus.unwrap();
-            } else {
-                succ_plus = Some(bigraph.add_node(NodeData::default()));
-                pre_plus = succ_plus.unwrap();
-
-                if plus_minus_loop || minus_plus_loop {
-                    if !plus_minus_loop || !minus_plus_loop {
-                        return Err("discovered a node with a self loop and a plus-minus or minus-plus loop, but the corresponding minus-plus or plus-minus loop is missing".into());
-                    }
-
-                    pre_minus = succ_plus.unwrap();
-                    succ_minus = succ_plus;
-                } else {
-                    pre_minus = bigraph.add_node(NodeData::default());
-                    succ_minus = Some(pre_minus);
-                }
-                bigraph.set_partner_nodes(succ_plus.unwrap(), pre_minus);
-            }
-        } else {
-            if let Some(succ_plus) = succ_plus {
-                pre_minus = bigraph.partner_node(succ_plus).unwrap();
-            } else {
-                succ_plus = Some(bigraph.add_node(NodeData::default()));
-                if plus_minus_loop {
-                    pre_minus = succ_plus.unwrap();
-                } else {
-                    pre_minus = bigraph.add_node(NodeData::default());
-                }
-                bigraph.set_partner_nodes(succ_plus.unwrap(), pre_minus);
-            }
-
-            if let Some(succ_minus) = succ_minus {
-                pre_plus = bigraph.partner_node(succ_minus).unwrap();
-            } else {
-                succ_minus = Some(bigraph.add_node(NodeData::default()));
-                if minus_plus_loop {
-                    pre_plus = succ_minus.unwrap();
-                } else {
-                    pre_plus = bigraph.add_node(NodeData::default());
-                }
-                bigraph.set_partner_nodes(succ_minus.unwrap(), pre_plus);
-            }
-        }
-
-        let succ_plus = succ_plus.unwrap();
-        let succ_minus = succ_minus.unwrap();
+        let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, &pre_plus);
+        let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, &pre_minus);
+        let succ_plus = get_or_create_node(&mut bigraph, &mut id_map, &succ_plus);
+        let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, &succ_minus);
 
         bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
         bigraph.add_edge(pre_minus, succ_minus, record.reverse_complement().into());
@@ -788,13 +724,13 @@ mod tests {
         let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:1:-\n\
             AGT\n\
             >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:2:+\n\
-            GGTCTCGGGTAAGT\n\
+            AATCTCGGGTAAAC\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:1:-\n\
-            ATGATG\n";
+            ACGAGG\n";
         let input = Vec::from(test_file);
 
         let graph: PetBCalm2EdgeGraph =
-            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
                 .unwrap();
         let mut output = Vec::new();
         write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
@@ -813,16 +749,16 @@ mod tests {
     fn test_edge_read_write_self_loops() {
         let test_file: &'static [u8] =
             b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:+ L:+:1:- L:-:0:- L:-:2:+\n\
-            AGT\n\
+            AAA\n\
             >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:2:+\n\
-            GGTCTCGGGTAAGT\n\
+            GGTCTCGGGTAATT\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:+ L:-:1:-\n\
-            ATGATG\n";
+            TTGATG\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
 
         let graph: PetBCalm2EdgeGraph =
-            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
                 .unwrap();
         let mut output = Vec::new();
         write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
@@ -840,16 +776,16 @@ mod tests {
     #[test]
     fn test_edge_read_write_plus_minus_loop() {
         let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:- L:+:1:- L:+:2:+\n\
-            AGT\n\
+            CAT\n\
             >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:1:- L:+:2:+\n\
-            GGTCTCGGGTAAGT\n\
+            GGTCTCGGGTAAAT\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:- L:-:1:- L:-:2:+\n\
-            ATGATG\n";
+            ATGATT\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
 
         let graph: PetBCalm2EdgeGraph =
-            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
                 .unwrap();
         let mut output = Vec::new();
         write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
@@ -867,16 +803,16 @@ mod tests {
     #[test]
     fn test_edge_read_write_minus_plus_loop() {
         let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:1:- L:-:0:+\n\
-            AGT\n\
+            ATG\n\
             >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:2:+\n\
-            GGTCTCGGGTAAGT\n\
+            GGTCTCGGGTAACA\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:1:-\n\
-            ATGATG\n";
+            CAGATT\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
 
         let graph: PetBCalm2EdgeGraph =
-            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
                 .unwrap();
         let mut output = Vec::new();
         write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
@@ -894,17 +830,17 @@ mod tests {
     #[test]
     fn test_edge_read_write_plus_minus_and_minus_plus_loop() {
         let test_file: &'static [u8] =
-            b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:- L:+:1:- L:+:2:+ L:-:0:+\n\
-            AGT\n\
+            b">0 LN:i:4 KC:i:4 km:f:3.0 L:+:0:- L:+:1:- L:+:2:+ L:-:0:+\n\
+            CGAT\n\
             >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:1:- L:+:2:+\n\
-            GGTCTCGGGTAAGT\n\
+            GGTCTCGGGTAAAT\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:- L:-:1:- L:-:2:+\n\
             ATGATG\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
 
         let graph: PetBCalm2EdgeGraph =
-            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
                 .unwrap();
         let mut output = Vec::new();
         write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
@@ -921,16 +857,43 @@ mod tests {
 
     #[test]
     fn test_edge_read_write_all_loops() {
-        let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:- L:+:0:+ L:+:1:- L:+:2:+ L:-:0:- L:-:0:+ L:-:1:- L:-:2:+\n\
-            AGT\n\
+        let test_file: &'static [u8] = b">0 LN:i:4 KC:i:4 km:f:3.0 L:+:0:- L:+:0:+ L:+:1:- L:+:2:+ L:-:0:- L:-:0:+ L:-:1:- L:-:2:+\n\
+            ATAT\n\
             >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:0:+ L:+:1:- L:+:2:+\n\
-            GGTCTCGGGTAAGT\n\
+            TCTCGGAAGTAAAT\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:- L:-:0:+ L:-:1:- L:-:2:+\n\
             ATGATG\n";
         let input = Vec::from(test_file);
 
         let graph: PetBCalm2EdgeGraph =
-            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
+                .unwrap();
+        let mut output = Vec::new();
+        write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
+            .unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_edge_read_write_forward_merge() {
+        let test_file: &'static [u8] = b"\
+            >0 LN:i:3 KC:i:4 km:f:3.0 L:+:2:-\n\
+            AGT\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:2:-\n\
+            GGTCTCGGGTAAGT\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:+:0:- L:+:1:-\n\
+            AAGAAC\n";
+        let input = Vec::from(test_file);
+
+        let graph: PetBCalm2EdgeGraph =
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
                 .unwrap();
         let mut output = Vec::new();
         write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
