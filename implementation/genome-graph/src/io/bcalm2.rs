@@ -541,7 +541,6 @@ where
 
     for record in reader.records() {
         let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
-        print!("Processing edge {}: ", record.id);
         let reverse_complement = record.reverse_complement();
 
         let pre_plus = record.sequence.prefix(node_kmer_size);
@@ -556,13 +555,6 @@ where
 
         bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
         bigraph.add_edge(pre_minus, succ_minus, record.reverse_complement().into());
-        println!(
-            "Adding {} -+> {} and {} --> {}",
-            pre_plus.as_usize(),
-            succ_plus.as_usize(),
-            pre_minus.as_usize(),
-            succ_minus.as_usize()
-        );
     }
 
     assert!(bigraph.verify_node_pairing());
