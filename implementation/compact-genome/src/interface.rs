@@ -2,7 +2,8 @@ use std::iter::FromIterator;
 
 /// A genome string.
 /// It should be lexically ordered.
-pub trait Genome: for<'a> FromIterator<&'a u8> + FromIterator<u8> + Eq + Clone + Ord
+pub trait Genome:
+    for<'a> FromIterator<&'a u8> + FromIterator<u8> + Eq + Clone + Ord + Sized
 where
     for<'a> &'a Self: IntoIterator<Item = u8>,
 {
@@ -33,6 +34,18 @@ where
     /// Copies this genome string into a `Vec`.
     fn into_vec(&self) -> Vec<u8> {
         self.into_iter().collect()
+    }
+
+    /// Returns a copy of the prefix with length `len` of this genome.
+    /// Panics if `len >= self.len()`.
+    fn prefix(&self, len: usize) -> Self {
+        Self::from_iter(self.into_iter().take(len))
+    }
+
+    /// Returns a copy of the suffix with length `len` of this genome.
+    /// Panics if `len >= self.len()`.
+    fn suffix(&self, len: usize) -> Self {
+        Self::from_iter(self.into_iter().skip(self.len() - len))
     }
 }
 

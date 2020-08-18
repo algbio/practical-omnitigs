@@ -6,14 +6,46 @@ use traitgraph::interface::StaticGraph;
  */
 pub trait StaticBigraph: StaticGraph {
     /**
-     * Returns the unique partner of the given node id, or `None` if the given node id does not exist.
+     * Returns the unique partner of the given node id, or `None` if the given node id has no partner node.
      */
     fn partner_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex>;
 
     /**
+     * Returns the unique partner of the given edge id, or `None` if the given edge id has no partner edge.
+     * If the edge is its own reverse complement, and an partner edge with a different id exists, then the different id is returned.
+     * Otherwise, for an edge that is its own reverse complement, the given id is returned.
+     */
+    fn partner_edge(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex>;
+
+    /**
      * Returns true if each node has exactly one partner, and this relation is symmetric.
+     * This check allows nodes that are their own partner.
      */
     fn verify_node_pairing(&self) -> bool {
+        for node_index in self.node_indices() {
+            let partner_index = if let Some(partner_node) = self.partner_node(node_index) {
+                partner_node
+            } else {
+                return false;
+            };
+            let partner_partner_index =
+                if let Some(partner_partner_node) = self.partner_node(partner_index) {
+                    partner_partner_node
+                } else {
+                    return false;
+                };
+            if node_index != partner_partner_index {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /**
+     * Returns true if each node has exactly one partner, and this relation is symmetric and irreflexive (no node is its own partner).
+     */
+    fn verify_node_pairing_without_self_partners(&self) -> bool {
         for node_index in self.node_indices() {
             let partner_index = if let Some(partner_node) = self.partner_node(node_index) {
                 partner_node
@@ -104,8 +136,18 @@ mod test {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
     use crate::interface::static_bigraph::StaticBigraph;
     use crate::interface::static_bigraph::StaticBigraphFromDigraph;
+    use crate::interface::BidirectedData;
     use crate::traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::MutableGraphContainer;
+
+    #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+    struct EdgeData(usize);
+
+    impl BidirectedData for EdgeData {
+        fn reverse_complement(&self) -> Self {
+            EdgeData(1000 - self.0)
+        }
+    }
 
     #[test]
     fn test_verify_mirror_property_positive() {
@@ -114,10 +156,10 @@ mod test {
         let n2 = graph.add_node(1);
         let n3 = graph.add_node(2);
         let n4 = graph.add_node(3);
-        graph.add_edge(n1, n3, 10);
-        graph.add_edge(n4, n2, 11);
-        graph.add_edge(n3, n1, 12);
-        graph.add_edge(n2, n4, 13);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n4, n2, EdgeData(11));
+        graph.add_edge(n3, n1, EdgeData(12));
+        graph.add_edge(n2, n4, EdgeData(13));
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_mirror_property());
@@ -130,9 +172,9 @@ mod test {
         let n2 = graph.add_node(1);
         let n3 = graph.add_node(2);
         let n4 = graph.add_node(3);
-        graph.add_edge(n1, n3, 10);
-        graph.add_edge(n4, n2, 11);
-        graph.add_edge(n3, n1, 12);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n4, n2, EdgeData(11));
+        graph.add_edge(n3, n1, EdgeData(12));
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         assert!(bigraph.verify_node_pairing());
         assert!(!bigraph.verify_mirror_property());
@@ -149,18 +191,18 @@ mod test {
         let n6 = graph.add_node(5);
         let n7 = graph.add_node(6);
         let n8 = graph.add_node(7);
-        graph.add_edge(n1, n3, 10);
-        graph.add_edge(n4, n2, 11);
-        graph.add_edge(n3, n5, 12);
-        graph.add_edge(n6, n4, 13);
-        graph.add_edge(n5, n7, 14);
-        graph.add_edge(n8, n6, 15);
-        graph.add_edge(n7, n1, 16);
-        graph.add_edge(n2, n8, 17);
-        graph.add_edge(n1, n5, 18);
-        graph.add_edge(n6, n2, 19);
-        graph.add_edge(n3, n7, 20);
-        graph.add_edge(n8, n4, 21);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n4, n2, EdgeData(11));
+        graph.add_edge(n3, n5, EdgeData(12));
+        graph.add_edge(n6, n4, EdgeData(13));
+        graph.add_edge(n5, n7, EdgeData(14));
+        graph.add_edge(n8, n6, EdgeData(15));
+        graph.add_edge(n7, n1, EdgeData(16));
+        graph.add_edge(n2, n8, EdgeData(17));
+        graph.add_edge(n1, n5, EdgeData(18));
+        graph.add_edge(n6, n2, EdgeData(19));
+        graph.add_edge(n3, n7, EdgeData(20));
+        graph.add_edge(n8, n4, EdgeData(21));
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_mirror_property());
@@ -178,16 +220,16 @@ mod test {
         let n6 = graph.add_node(5);
         let n7 = graph.add_node(6);
         let n8 = graph.add_node(7);
-        graph.add_edge(n1, n3, 10);
-        graph.add_edge(n4, n2, 11);
-        graph.add_edge(n3, n5, 12);
-        graph.add_edge(n6, n4, 13);
-        graph.add_edge(n5, n7, 14);
-        graph.add_edge(n8, n6, 15);
-        graph.add_edge(n7, n1, 16);
-        graph.add_edge(n2, n8, 17);
-        graph.add_edge(n1, n5, 18);
-        graph.add_edge(n6, n2, 19);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n4, n2, EdgeData(11));
+        graph.add_edge(n3, n5, EdgeData(12));
+        graph.add_edge(n6, n4, EdgeData(13));
+        graph.add_edge(n5, n7, EdgeData(14));
+        graph.add_edge(n8, n6, EdgeData(15));
+        graph.add_edge(n7, n1, EdgeData(16));
+        graph.add_edge(n2, n8, EdgeData(17));
+        graph.add_edge(n1, n5, EdgeData(18));
+        graph.add_edge(n6, n2, EdgeData(19));
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_mirror_property());

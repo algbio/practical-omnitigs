@@ -35,6 +35,8 @@ pub trait ImmutableGraphContainer: GraphBase {
 
     fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool;
 
+    fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex>;
+
     /// Returns true if the graph is empty, i.e. contains no nodes or edges.
     fn is_empty(&self) -> bool {
         // Zero nodes must imply zero edges.
@@ -61,9 +63,22 @@ pub trait MutableGraphContainer: GraphBase {
 pub trait NavigableGraph<'a>: GraphBase {
     type OutNeighbors: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
     type InNeighbors: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type OutNeighborsTo: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type InNeighborsFrom: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
 
     fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors;
     fn in_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::InNeighbors;
+
+    fn out_neighbors_to(
+        &'a self,
+        from_node_id: Self::NodeIndex,
+        to_node_id: Self::NodeIndex,
+    ) -> Self::OutNeighborsTo;
+    fn in_neighbors_from(
+        &'a self,
+        to_node_id: Self::NodeIndex,
+        from_node_id: Self::NodeIndex,
+    ) -> Self::InNeighborsFrom;
 
     fn out_degree(&'a self, node_id: Self::NodeIndex) -> usize {
         self.out_neighbors(node_id).into_iter().count()
@@ -80,11 +95,13 @@ impl<T: ImmutableGraphContainer + for<'a> NavigableGraph<'a>> StaticGraph for T 
 pub trait DynamicGraph: StaticGraph + MutableGraphContainer {}
 impl<T: StaticGraph + MutableGraphContainer> DynamicGraph for T {}
 
-/*pub struct Edge<IndexType> {
-    pub from: NodeIndex<IndexType>,
-    pub to: NodeIndex<IndexType>,
-}*/
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct Edge<NodeIndex> {
+    pub from_node: NodeIndex,
+    pub to_node: NodeIndex,
+}
 
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Neighbor<NodeIndex, EdgeIndex> {
     pub edge_id: EdgeIndex,
     pub node_id: NodeIndex,

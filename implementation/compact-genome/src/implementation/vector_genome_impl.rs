@@ -2,7 +2,7 @@ use crate::interface::ascii_complement;
 use crate::interface::Genome;
 use std::iter::{Cloned, FromIterator};
 
-#[derive(Eq, PartialEq, Debug, Clone, Ord, PartialOrd)]
+#[derive(Eq, PartialEq, Debug, Clone, Ord, PartialOrd, Hash)]
 pub struct VectorGenome(Vec<u8>);
 
 impl Genome for VectorGenome {

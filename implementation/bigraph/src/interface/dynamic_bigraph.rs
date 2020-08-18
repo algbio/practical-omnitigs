@@ -33,11 +33,16 @@ where
             self.add_edge(edge.0, edge.2, edge.1);
         }
     }
+
     /**
      * Adds nodes such that the graph becomes a valid bigraph.
      * The indices of existing nodes are not altered.
      */
     fn add_partner_nodes(&mut self);
+
+    /// Make the nodes with the given two node ids partner nodes.
+    /// This may leave the old partners from a and b with dangling partner pointers.
+    fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex);
 }
 
 pub trait DynamicBigraphFromDigraph: DynamicBigraph + StaticBigraphFromDigraph + Sized
@@ -77,7 +82,7 @@ mod tests {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
     use crate::interface::{
         dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-        static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
+        static_bigraph::StaticBigraphFromDigraph, BidirectedData,
     };
     use crate::traitgraph::implementation::petgraph_impl;
     use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
@@ -87,7 +92,7 @@ mod tests {
         let mut graph = petgraph_impl::new();
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
-        impl BidirectedNodeData for NodeData {
+        impl BidirectedData for NodeData {
             fn reverse_complement(&self) -> Self {
                 Self(1000 - self.0)
             }

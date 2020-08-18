@@ -1,13 +1,13 @@
 use crate::interface::{
     dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-    static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
+    static_bigraph::StaticBigraphFromDigraph, BidirectedData,
 };
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use traitgraph::index::{GraphIndex, GraphIndices, OptionalGraphIndex};
 use traitgraph::interface::{
-    DynamicGraph, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
+    DynamicGraph, Edge, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
     StaticGraph,
 };
 
@@ -48,17 +48,38 @@ impl<'a, Topology: GraphBase> GraphBase for NodeBigraphWrapper<Topology> {
     type EdgeIndex = Topology::EdgeIndex;
 }
 
-impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology> {
+impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology>
+where
+    <Self as GraphBase>::EdgeData: BidirectedData + Eq,
+{
     fn partner_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex> {
-        if let Some(partner_node) = self.binode_map.get(node_id.as_usize()).cloned() {
-            if let Some(partner_node) = Into::<Option<Self::NodeIndex>>::into(partner_node) {
-                Some(partner_node)
-            } else {
-                None
+        self.binode_map[node_id.as_usize()].into()
+    }
+
+    fn partner_edge(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex> {
+        let endpoints = self.edge_endpoints(edge_id);
+        let reverse_from = self.partner_node(endpoints.to_node)?;
+        let reverse_to = self.partner_node(endpoints.from_node)?;
+        let edge_data = self.edge_data(edge_id);
+        let mut result = None;
+
+        for reverse_edge in self.out_neighbors_to(reverse_from, reverse_to) {
+            debug_assert_eq!(reverse_edge.node_id, reverse_to);
+            let reverse_edge_id = reverse_edge.edge_id;
+            if &edge_data.reverse_complement() == self.edge_data(reverse_edge_id) {
+                if let Some(node) = result {
+                    if node == edge_id {
+                        return Some(reverse_edge_id);
+                    }
+                } else if reverse_edge_id == edge_id {
+                    result = Some(reverse_edge_id);
+                } else {
+                    return Some(reverse_edge_id);
+                }
             }
-        } else {
-            None
         }
+
+        None
     }
 }
 
@@ -73,7 +94,9 @@ where
         ) -> <Self as GraphBase>::NodeData,
         checked: bool,
     ) -> Self {
-        let mut data_map = HashMap::new(); //: HashMap<NodeData, Self::NodeIndex> = HashMap::new();
+        //let mut data_map = HashMap::new();
+        let mut data_map: HashMap<<Self as GraphBase>::NodeData, <Self as GraphBase>::NodeIndex> =
+            HashMap::new();
         let mut binode_map =
             vec![<Self as GraphBase>::OptionalNodeIndex::new_none(); topology.node_count()];
 
@@ -81,7 +104,7 @@ where
             let node_data = topology.node_data(node_index);
 
             if let Some(partner_index) = data_map.get(node_data).cloned() {
-                assert_ne!(node_index, partner_index);
+                //assert_ne!(node_index, partner_index);
                 assert!(!binode_map[node_index.as_usize()].is_valid());
                 assert!(!binode_map[partner_index.as_usize()].is_valid());
                 assert_eq!(
@@ -93,7 +116,7 @@ where
                 data_map.remove(node_data);
             } else {
                 let partner_data = binode_mapping_function(node_data);
-                assert_ne!(&partner_data, node_data);
+                //assert_ne!(&partner_data, node_data);
                 assert_eq!(None, data_map.insert(partner_data, node_index));
             }
         }
@@ -116,6 +139,7 @@ where
 impl<Topology: StaticGraph> StaticBigraphFromDigraph for NodeBigraphWrapper<Topology>
 where
     <Self as GraphBase>::NodeData: Eq + Hash + Debug,
+    <Self as GraphBase>::EdgeData: BidirectedData + Eq,
 {
     type Topology = Topology;
 
@@ -140,8 +164,8 @@ where
 
 impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology>
 where
-    <Self as GraphBase>::NodeData: BidirectedNodeData,
-    <Self as GraphBase>::EdgeData: Clone,
+    <Self as GraphBase>::NodeData: BidirectedData,
+    <Self as GraphBase>::EdgeData: BidirectedData + Clone + Eq,
 {
     fn add_partner_nodes(&mut self) {
         for node_id in self.node_indices() {
@@ -151,6 +175,13 @@ where
                 self.binode_map[partner_index.as_usize()] = node_id.into();
             }
         }
+    }
+
+    fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex) {
+        assert!(self.contains_node_index(a));
+        assert!(self.contains_node_index(b));
+        self.binode_map[a.as_usize()] = b.into();
+        self.binode_map[b.as_usize()] = a.into();
     }
 }
 
@@ -198,6 +229,10 @@ impl<Topology: ImmutableGraphContainer> ImmutableGraphContainer for NodeBigraphW
     fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
         self.topology.contains_edge(from, to)
     }
+
+    fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex> {
+        self.topology.edge_endpoints(edge_id)
+    }
 }
 
 impl<Topology: MutableGraphContainer + StaticGraph> MutableGraphContainer
@@ -229,6 +264,8 @@ impl<Topology: MutableGraphContainer + StaticGraph> MutableGraphContainer
 impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper<Topology> {
     type OutNeighbors = <Topology as NavigableGraph<'a>>::OutNeighbors;
     type InNeighbors = <Topology as NavigableGraph<'a>>::InNeighbors;
+    type OutNeighborsTo = <Topology as NavigableGraph<'a>>::OutNeighborsTo;
+    type InNeighborsFrom = <Topology as NavigableGraph<'a>>::InNeighborsFrom;
 
     fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors {
         self.topology.out_neighbors(node_id)
@@ -236,6 +273,22 @@ impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper
 
     fn in_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::InNeighbors {
         self.topology.in_neighbors(node_id)
+    }
+
+    fn out_neighbors_to(
+        &'a self,
+        from_node_id: Self::NodeIndex,
+        to_node_id: Self::NodeIndex,
+    ) -> Self::OutNeighborsTo {
+        self.topology.out_neighbors_to(from_node_id, to_node_id)
+    }
+
+    fn in_neighbors_from(
+        &'a self,
+        to_node_id: Self::NodeIndex,
+        from_node_id: Self::NodeIndex,
+    ) -> Self::InNeighborsFrom {
+        self.topology.in_neighbors_from(to_node_id, from_node_id)
     }
 }
 
@@ -253,7 +306,7 @@ mod tests {
     use super::NodeBigraphWrapper;
     use crate::interface::{
         dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-        static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
+        static_bigraph::StaticBigraphFromDigraph, BidirectedData,
     };
     use crate::traitgraph::implementation::petgraph_impl;
     use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
@@ -265,7 +318,7 @@ mod tests {
         let n2 = graph.add_node(1);
         let n3 = graph.add_node(2);
         let n4 = graph.add_node(3);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
 
         assert_eq!(Some(n2), bigraph.partner_node(n1));
@@ -283,7 +336,7 @@ mod tests {
         graph.add_node(2);
         graph.add_node(3);
         graph.add_node(4);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
     }
 
@@ -296,7 +349,7 @@ mod tests {
         graph.add_node(2);
         graph.add_node(3);
         graph.add_node(4);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new(graph, |n| {
             if *n == 4 {
                 3
@@ -317,7 +370,7 @@ mod tests {
         graph.add_node(2);
         graph.add_node(3);
         graph.add_node(4);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new(graph, |n| {
             if *n == 4 {
                 4
@@ -339,7 +392,7 @@ mod tests {
         graph.add_node(3);
         graph.add_node(4);
         graph.add_node(5);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new(graph, |n| {
             if *n == 4 {
                 4
@@ -358,7 +411,7 @@ mod tests {
         let n2 = graph.add_node(1);
         let n3 = graph.add_node(2);
         let n4 = graph.add_node(3);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph =
             NodeBigraphWrapper::new_unchecked(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
 
@@ -376,7 +429,7 @@ mod tests {
         let n3 = graph.add_node(2);
         let n4 = graph.add_node(3);
         let n5 = graph.add_node(4);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph =
             NodeBigraphWrapper::new_unchecked(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
 
@@ -396,7 +449,7 @@ mod tests {
         graph.add_node(2);
         graph.add_node(3);
         graph.add_node(4);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new_unchecked(graph, |n| {
             if *n == 4 {
                 3
@@ -417,7 +470,7 @@ mod tests {
         let n2 = graph.add_node(1);
         graph.add_node(2);
         graph.add_node(3);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new_unchecked(graph, |n| {
             if *n == 4 {
                 3
@@ -438,7 +491,7 @@ mod tests {
         graph.add_node(2);
         graph.add_node(3);
         graph.add_node(4);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new_unchecked(graph, |n| {
             if *n == 4 {
                 4
@@ -460,7 +513,7 @@ mod tests {
         graph.add_node(3);
         graph.add_node(4);
         graph.add_node(5);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         NodeBigraphWrapper::new_unchecked(graph, |n| {
             if *n == 4 {
                 4
@@ -479,8 +532,9 @@ mod tests {
         let n2 = graph.add_node(1);
         graph.add_node(2);
         graph.add_node(3);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing_without_self_partners());
         assert!(bigraph.verify_node_pairing());
     }
 
@@ -491,12 +545,13 @@ mod tests {
         let n2 = graph.add_node(1);
         graph.add_node(2);
         graph.add_node(3);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let mut bigraph =
             NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         bigraph.topology.add_node(4);
         bigraph.binode_map.push(4usize.into());
-        assert!(!bigraph.verify_node_pairing());
+        assert!(!bigraph.verify_node_pairing_without_self_partners());
+        assert!(bigraph.verify_node_pairing());
     }
 
     #[test]
@@ -506,11 +561,12 @@ mod tests {
         let n2 = graph.add_node(1);
         graph.add_node(2);
         graph.add_node(3);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let mut bigraph =
             NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         bigraph.topology.add_node(4);
         bigraph.binode_map.push(None.into());
+        assert!(!bigraph.verify_node_pairing_without_self_partners());
         assert!(!bigraph.verify_node_pairing());
     }
 
@@ -521,11 +577,12 @@ mod tests {
         let n2 = graph.add_node(1);
         graph.add_node(2);
         graph.add_node(3);
-        graph.add_edge(n1, n2, "e1"); // Just to fix the EdgeData type parameter
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let mut bigraph =
             NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
         bigraph.topology.add_node(4);
         bigraph.binode_map.push(3usize.into());
+        assert!(!bigraph.verify_node_pairing_without_self_partners());
         assert!(!bigraph.verify_node_pairing());
     }
 
@@ -534,7 +591,7 @@ mod tests {
         let mut graph = petgraph_impl::new();
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
-        impl BidirectedNodeData for NodeData {
+        impl BidirectedData for NodeData {
             fn reverse_complement(&self) -> Self {
                 Self(1000 - self.0)
             }

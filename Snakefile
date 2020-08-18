@@ -50,12 +50,17 @@ rule verify:
     input: file = "data/{file}.unitigs.fa", binary = "data/target/release/cli"
     output: ["data/{file}.unitigs.fa.verify", "data/{file}.unitigs.fa.properties"]
     conda: "config/conda-rust-env.yaml"
-    shell: "data/target/release/cli --input '{input.file}' --output '{output[0]}' verify 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
+    shell: "data/target/release/cli --input '{input.file}' --kmer-size 21 --output '{output[0]}' verify 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
 
-rule build_rust:
-    input: expand("{source}", source = list(rust_sources))
+rule build_rust_release:
+    input: "data/rust.is_tested"
     output: "data/target/release/cli"
-    shell: "cargo test --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'; cargo build --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "cargo build --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
+
+rule test_rust:
+    input: expand("{source}", source = list(rust_sources))
+    output: touch("data/rust.is_tested")
+    shell: "cargo test --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule bcalm2:
     input: "data/{file}.fna"

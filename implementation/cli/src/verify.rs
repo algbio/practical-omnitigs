@@ -1,12 +1,81 @@
 use crate::CliOptions;
 use colored::*;
 use genome_graph::bigraph::traitgraph::interface::ImmutableGraphContainer;
-use genome_graph::types::PetBCalm2Graph;
+use genome_graph::types::{PetBCalm2EdgeGraph, PetBCalm2NodeGraph};
 
-pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
+pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
     info!("Reading bigraph from {}", options.input);
-    let genome_graph: PetBCalm2Graph =
-        genome_graph::io::bcalm2::read_bigraph_from_bcalm2_file(&options.input)?;
+    let genome_graph: PetBCalm2EdgeGraph =
+        genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
+            &options.input,
+            options.kmer_size,
+        )?;
+
+    info!("");
+    info!("========================");
+    info!("=== Graph Statistics ===");
+    info!("========================");
+    info!("");
+    info!(
+        "{} nodes, {} edges",
+        genome_graph.node_count(),
+        genome_graph.edge_count()
+    );
+
+    // Uncompacted unitigs
+    let uncompacted_unitig_amount =
+        genome_graph::bigraph::traitgraph::algo::unitigs::count_uncompacted_edge_unitigs(
+            &genome_graph,
+        );
+
+    let log_string = format!("{} uncompacted unitigs", uncompacted_unitig_amount);
+    if uncompacted_unitig_amount == 0 {
+        info!("{}", log_string);
+    } else {
+        warn!("{}", log_string.yellow());
+    }
+
+    // Components
+    let wccs =
+        genome_graph::bigraph::traitgraph::algo::components::decompose_weakly_connected_components(
+            &genome_graph,
+        );
+    let mut non_scc_wcc_count = 0;
+    for wcc in &wccs {
+        if !genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected(wcc) {
+            non_scc_wcc_count += 1;
+        }
+    }
+    let non_scc_wcc_string = if non_scc_wcc_count == 0 {
+        "which all are strongly connected".to_string().normal()
+    } else {
+        format!("of which {} are not strongly connected", non_scc_wcc_count).red()
+    };
+
+    info!(
+        "{} weakly connected components, {}",
+        wccs.len(),
+        non_scc_wcc_string
+    );
+
+    info!("");
+
+    if let Some(output) = &options.output {
+        info!("Writing the unmodified bigraph to {}", output);
+        genome_graph::io::bcalm2::write_edge_centric_bigraph_to_bcalm2_to_file(
+            &genome_graph,
+            output,
+        )?;
+    }
+    Ok(())
+}
+
+pub(crate) fn verify_node_centric(options: &CliOptions) -> crate::Result<()> {
+    info!("Reading bigraph from {}", options.input);
+    let genome_graph: PetBCalm2NodeGraph =
+        genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_node_centric_from_file(
+            &options.input,
+        )?;
 
     info!("");
     info!("========================");
@@ -97,7 +166,10 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
 
     if let Some(output) = &options.output {
         info!("Writing the unmodified bigraph to {}", output);
-        genome_graph::io::bcalm2::write_bigraph_to_bcalm2_file(&genome_graph, output)?;
+        genome_graph::io::bcalm2::write_node_centric_bigraph_to_bcalm2_to_file(
+            &genome_graph,
+            output,
+        )?;
     }
     Ok(())
 }
