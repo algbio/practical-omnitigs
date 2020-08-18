@@ -1,8 +1,6 @@
-use bigraph::interface::{
-    dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph, BidirectedData,
-};
+use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedData};
 use bigraph::traitgraph::index::GraphIndex;
-use bigraph::traitgraph::interface::{DynamicGraph, GraphBase};
+use bigraph::traitgraph::interface::GraphBase;
 use bio::io::fasta::Record;
 use compact_genome::{implementation::vector_genome_impl::VectorGenome, interface::Genome};
 use num_traits::NumCast;
@@ -478,21 +476,6 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     )
 }
 
-fn initialise_or_assert_eq<T: Eq + Debug>(
-    option: &mut Option<T>,
-    initialiser: T,
-) -> crate::error::Result<()> {
-    if let Some(t) = option {
-        if t != &initialiser {
-            return Err("malformed topology".into());
-        }
-    } else {
-        *option = Some(initialiser);
-    }
-
-    Ok(())
-}
-
 fn get_or_create_node<Graph: DynamicBigraph, G: Genome + Hash>(
     bigraph: &mut Graph,
     id_map: &mut HashMap<G, <Graph as GraphBase>::NodeIndex>,
@@ -504,7 +487,7 @@ where
     <Graph as GraphBase>::EdgeData: Clone,
 {
     if let Some(node) = id_map.get(genome) {
-        node.clone()
+        *node
     } else {
         let node = bigraph.add_node(Default::default());
         id_map.insert(genome.clone(), node);
@@ -514,11 +497,11 @@ where
             bigraph.set_partner_nodes(node, node);
         } else {
             let partner_node = bigraph.add_node(Default::default());
-            id_map.insert(reverse_complement.clone(), partner_node);
+            id_map.insert(reverse_complement, partner_node);
             bigraph.set_partner_nodes(node, partner_node);
         }
 
-        node.clone()
+        node
     }
 }
 
@@ -536,7 +519,6 @@ where
 {
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
-    let mut next_id = 0;
     let node_kmer_size = kmer_size - 1;
 
     for record in reader.records() {
