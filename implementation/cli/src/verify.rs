@@ -1,11 +1,11 @@
 use crate::CliOptions;
 use colored::*;
 use genome_graph::bigraph::traitgraph::interface::ImmutableGraphContainer;
-use genome_graph::types::PetBCalm2Graph;
+use genome_graph::types::PetBCalm2NodeGraph;
 
 pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
     info!("Reading bigraph from {}", options.input);
-    let genome_graph: PetBCalm2Graph =
+    let genome_graph: PetBCalm2NodeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_node_centric_from_file(
             &options.input,
         )?;
