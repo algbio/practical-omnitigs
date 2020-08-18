@@ -35,6 +35,8 @@ pub trait ImmutableGraphContainer: GraphBase {
 
     fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool;
 
+    fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex>;
+
     /// Returns true if the graph is empty, i.e. contains no nodes or edges.
     fn is_empty(&self) -> bool {
         // Zero nodes must imply zero edges.
@@ -80,10 +82,10 @@ impl<T: ImmutableGraphContainer + for<'a> NavigableGraph<'a>> StaticGraph for T 
 pub trait DynamicGraph: StaticGraph + MutableGraphContainer {}
 impl<T: StaticGraph + MutableGraphContainer> DynamicGraph for T {}
 
-/*pub struct Edge<IndexType> {
-    pub from: NodeIndex<IndexType>,
-    pub to: NodeIndex<IndexType>,
-}*/
+pub struct Edge<NodeIndex> {
+    pub from_node: NodeIndex,
+    pub to_node: NodeIndex,
+}
 
 pub struct Neighbor<NodeIndex, EdgeIndex> {
     pub edge_id: EdgeIndex,

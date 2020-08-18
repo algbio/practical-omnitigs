@@ -1,13 +1,13 @@
 use crate::interface::{
     dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-    static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
+    static_bigraph::StaticBigraphFromDigraph, BidirectedData,
 };
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use traitgraph::index::{GraphIndex, GraphIndices, OptionalGraphIndex};
 use traitgraph::interface::{
-    DynamicGraph, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
+    DynamicGraph, Edge, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
     StaticGraph,
 };
 
@@ -140,7 +140,7 @@ where
 
 impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology>
 where
-    <Self as GraphBase>::NodeData: BidirectedNodeData,
+    <Self as GraphBase>::NodeData: BidirectedData,
     <Self as GraphBase>::EdgeData: Clone,
 {
     fn add_partner_nodes(&mut self) {
@@ -151,6 +151,14 @@ where
                 self.binode_map[partner_index.as_usize()] = node_id.into();
             }
         }
+    }
+
+    fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex) {
+        assert_ne!(a, b);
+        assert!(self.contains_node_index(a));
+        assert!(self.contains_node_index(b));
+        self.binode_map[a.as_usize()] = b.into();
+        self.binode_map[b.as_usize()] = a.into();
     }
 }
 
@@ -197,6 +205,10 @@ impl<Topology: ImmutableGraphContainer> ImmutableGraphContainer for NodeBigraphW
 
     fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
         self.topology.contains_edge(from, to)
+    }
+
+    fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex> {
+        self.topology.edge_endpoints(edge_id)
     }
 }
 
@@ -253,7 +265,7 @@ mod tests {
     use super::NodeBigraphWrapper;
     use crate::interface::{
         dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-        static_bigraph::StaticBigraphFromDigraph, BidirectedNodeData,
+        static_bigraph::StaticBigraphFromDigraph, BidirectedData,
     };
     use crate::traitgraph::implementation::petgraph_impl;
     use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
@@ -534,7 +546,7 @@ mod tests {
         let mut graph = petgraph_impl::new();
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
-        impl BidirectedNodeData for NodeData {
+        impl BidirectedData for NodeData {
             fn reverse_complement(&self) -> Self {
                 Self(1000 - self.0)
             }

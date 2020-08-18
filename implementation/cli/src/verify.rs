@@ -6,7 +6,9 @@ use genome_graph::types::PetBCalm2Graph;
 pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
     info!("Reading bigraph from {}", options.input);
     let genome_graph: PetBCalm2Graph =
-        genome_graph::io::bcalm2::read_bigraph_from_bcalm2_file(&options.input)?;
+        genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_node_centric_from_file(
+            &options.input,
+        )?;
 
     info!("");
     info!("========================");
@@ -97,7 +99,10 @@ pub(crate) fn verify(options: &CliOptions) -> crate::Result<()> {
 
     if let Some(output) = &options.output {
         info!("Writing the unmodified bigraph to {}", output);
-        genome_graph::io::bcalm2::write_bigraph_to_bcalm2_file(&genome_graph, output)?;
+        genome_graph::io::bcalm2::write_node_centric_bigraph_to_bcalm2_to_file(
+            &genome_graph,
+            output,
+        )?;
     }
     Ok(())
 }

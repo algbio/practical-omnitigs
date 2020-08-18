@@ -1,6 +1,6 @@
 use crate::index::{GraphIndex, GraphIndices};
 use crate::interface::{
-    DynamicGraph, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
+    DynamicGraph, Edge, GraphBase, ImmutableGraphContainer, MutableGraphContainer, NavigableGraph,
     Neighbor,
 };
 use num_traits::{PrimInt, ToPrimitive};
@@ -70,6 +70,14 @@ impl<NodeData, EdgeData> ImmutableGraphContainer for DiGraph<NodeData, EdgeData,
         self.edges_connecting(from.into(), to.into())
             .next()
             .is_some()
+    }
+
+    fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex> {
+        let endpoints = self.edge_endpoints(edge_id.into()).unwrap();
+        Edge {
+            from_node: endpoints.0.index().into(),
+            to_node: endpoints.1.index().into(),
+        }
     }
 }
 
