@@ -472,12 +472,19 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     )
 }
 
-fn initialise_or_assert_eq<T: Eq + Debug>(option: &mut Option<T>, initialiser: T) {
+fn initialise_or_assert_eq<T: Eq + Debug>(
+    option: &mut Option<T>,
+    initialiser: T,
+) -> crate::error::Result<()> {
     if let Some(t) = option {
-        assert_eq!(t, &initialiser);
+        if t != &initialiser {
+            return Err("malformed topology".into());
+        }
     } else {
         *option = Some(initialiser);
     }
+
+    Ok(())
 }
 
 pub fn read_bigraph_from_bcalm2_as_edge_centric<
@@ -495,13 +502,13 @@ where
 
     for record in reader.records() {
         let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
-        //print!("Processing edge {}: ", record.id);
+        print!("Processing edge {}: ", record.id);
         let mut succ_plus = None;
         let pre_minus;
         let mut succ_minus = None;
         let pre_plus;
 
-        let mut self_loop = false;
+        let mut self_loop = 0;
         let mut plus_minus_loop = false;
         let mut minus_plus_loop = false;
 
@@ -509,63 +516,78 @@ where
             match edge.to_node.cmp(&record.id) {
                 std::cmp::Ordering::Less => {
                     // Find existing endpoints
-                    //print!("({} ", edge.to_node);
-                    let succ = if edge.from_side {
-                        //print!("s+");
+                    print!("({} ", edge.to_node);
+                    let succ: &mut Option<<Graph as GraphBase>::NodeIndex> = if edge.from_side {
+                        print!("s+");
                         &mut succ_plus
                     } else {
-                        //print!("s-");
+                        print!("s-");
                         &mut succ_minus
                     };
                     let node = if edge.to_side {
-                        //print!("n+");
+                        print!("n+");
                         bigraph.edge_endpoints((2 * edge.to_node).into()).from_node
                     } else {
-                        //print!("n-");
+                        print!("n-");
                         bigraph
                             .partner_node(bigraph.edge_endpoints((2 * edge.to_node).into()).to_node)
                             .unwrap()
                     };
-                    initialise_or_assert_eq(succ, node);
-                    //print!(" ={}) ", succ.unwrap().as_usize());
+                    print!(" ={}[{:?}]) ", node.as_usize(), succ);
+                    initialise_or_assert_eq(succ, node)?;
                 }
                 std::cmp::Ordering::Equal => {
                     // Discover loops
                     if edge.to_side == edge.from_side {
-                        self_loop = true;
-                    //print!("(self loop) ");
+                        self_loop += 1;
+                        print!("(self loop) ");
                     } else if edge.from_side {
+                        if plus_minus_loop {
+                            return Err("discovered more than one plus-minus loop".into());
+                        }
                         plus_minus_loop = true;
-                    //print!("(+- loop) ");
+                        print!("(+- loop) ");
                     } else {
+                        if minus_plus_loop {
+                            return Err("discovered more than one minus-plus loop".into());
+                        }
                         minus_plus_loop = true;
-                        //print!("(-+ loop) ");
+                        print!("(-+ loop) ");
                     }
                 }
                 _ => {}
             }
         }
 
-        if self_loop {
+        if self_loop > 0 {
+            if self_loop != 2 {
+                return Err("discovered just one or more than two self-loops".into());
+            }
+
             if let Some(succ_plus) = succ_plus {
-                initialise_or_assert_eq(&mut succ_minus, succ_plus);
-                pre_minus = bigraph.partner_node(succ_plus).unwrap();
-                pre_plus = pre_minus;
+                pre_plus = succ_plus;
+                initialise_or_assert_eq(&mut succ_minus, bigraph.partner_node(pre_plus).unwrap())?;
+                pre_minus = succ_minus.unwrap();
             } else if let Some(succ_minus) = succ_minus {
-                initialise_or_assert_eq(&mut succ_plus, succ_minus);
-                pre_minus = bigraph.partner_node(succ_minus).unwrap();
-                pre_plus = pre_minus;
+                pre_minus = succ_minus;
+                initialise_or_assert_eq(&mut succ_plus, bigraph.partner_node(pre_minus).unwrap())?;
+                pre_plus = succ_plus.unwrap();
             } else {
                 succ_plus = Some(bigraph.add_node(NodeData::default()));
-                succ_minus = succ_plus;
+                pre_plus = succ_plus.unwrap();
 
                 if plus_minus_loop || minus_plus_loop {
+                    if !plus_minus_loop || !minus_plus_loop {
+                        return Err("discovered a node with a self loop and a plus-minus or minus-plus loop, but the corresponding minus-plus or plus-minus loop is missing".into());
+                    }
+
                     pre_minus = succ_plus.unwrap();
-                    pre_plus = succ_plus.unwrap();
+                    succ_minus = succ_plus;
                 } else {
                     pre_minus = bigraph.add_node(NodeData::default());
-                    pre_plus = pre_minus;
+                    succ_minus = Some(pre_minus);
                 }
+                bigraph.set_partner_nodes(succ_plus.unwrap(), pre_minus);
             }
         } else {
             if let Some(succ_plus) = succ_plus {
@@ -598,13 +620,13 @@ where
 
         bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
         bigraph.add_edge(pre_minus, succ_minus, record.reverse_complement().into());
-        /*println!(
+        println!(
             "Adding {} -+> {} and {} --> {}",
             pre_plus.as_usize(),
             succ_plus.as_usize(),
             pre_minus.as_usize(),
             succ_minus.as_usize()
-        );*/
+        );
     }
 
     assert!(bigraph.verify_node_pairing());
@@ -642,7 +664,7 @@ pub fn write_edge_centric_bigraph_to_bcalm2<
 where
     for<'a> PlainBCalm2NodeData: From<&'a EdgeData>,
 {
-    let mut output_edges = vec![false; graph.node_count()];
+    let mut output_edges = vec![false; graph.edge_count()];
 
     for edge_id in graph.edge_indices() {
         if !output_edges[graph
@@ -768,6 +790,142 @@ mod tests {
             >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:2:+\n\
             GGTCTCGGGTAAGT\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:1:-\n\
+            ATGATG\n";
+        let input = Vec::from(test_file);
+
+        let graph: PetBCalm2EdgeGraph =
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+                .unwrap();
+        let mut output = Vec::new();
+        write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
+            .unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_edge_read_write_self_loops() {
+        let test_file: &'static [u8] =
+            b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:+ L:+:1:- L:-:0:- L:-:2:+\n\
+            AGT\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:2:+\n\
+            GGTCTCGGGTAAGT\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:+ L:-:1:-\n\
+            ATGATG\n";
+        let input = Vec::from(test_file);
+        println!("{}", String::from_utf8(input.clone()).unwrap());
+
+        let graph: PetBCalm2EdgeGraph =
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+                .unwrap();
+        let mut output = Vec::new();
+        write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
+            .unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_edge_read_write_plus_minus_loop() {
+        let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:- L:+:1:- L:+:2:+\n\
+            AGT\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:1:- L:+:2:+\n\
+            GGTCTCGGGTAAGT\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:- L:-:1:- L:-:2:+\n\
+            ATGATG\n";
+        let input = Vec::from(test_file);
+        println!("{}", String::from_utf8(input.clone()).unwrap());
+
+        let graph: PetBCalm2EdgeGraph =
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+                .unwrap();
+        let mut output = Vec::new();
+        write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
+            .unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_edge_read_write_minus_plus_loop() {
+        let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:1:- L:-:0:+\n\
+            AGT\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:2:+\n\
+            GGTCTCGGGTAAGT\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:-:1:-\n\
+            ATGATG\n";
+        let input = Vec::from(test_file);
+        println!("{}", String::from_utf8(input.clone()).unwrap());
+
+        let graph: PetBCalm2EdgeGraph =
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+                .unwrap();
+        let mut output = Vec::new();
+        write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
+            .unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_edge_read_write_plus_minus_and_minus_plus_loop() {
+        let test_file: &'static [u8] =
+            b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:- L:+:1:- L:+:2:+ L:-:0:+\n\
+            AGT\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:1:- L:+:2:+\n\
+            GGTCTCGGGTAAGT\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:- L:-:1:- L:-:2:+\n\
+            ATGATG\n";
+        let input = Vec::from(test_file);
+        println!("{}", String::from_utf8(input.clone()).unwrap());
+
+        let graph: PetBCalm2EdgeGraph =
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file))
+                .unwrap();
+        let mut output = Vec::new();
+        write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
+            .unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_edge_read_write_all_loops() {
+        let test_file: &'static [u8] = b">0 LN:i:3 KC:i:4 km:f:3.0 L:+:0:- L:+:0:+ L:+:1:- L:+:2:+ L:-:0:- L:-:0:+ L:-:1:- L:-:2:+\n\
+            AGT\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:0:- L:+:0:+ L:+:1:- L:+:2:+\n\
+            GGTCTCGGGTAAGT\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:- L:-:0:+ L:-:1:- L:-:2:+\n\
             ATGATG\n";
         let input = Vec::from(test_file);
 

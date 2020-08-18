@@ -169,7 +169,6 @@ where
     }
 
     fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex) {
-        assert_ne!(a, b);
         assert!(self.contains_node_index(a));
         assert!(self.contains_node_index(b));
         self.binode_map[a.as_usize()] = b.into();
