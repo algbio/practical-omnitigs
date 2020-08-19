@@ -69,3 +69,22 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: ./lcov.info
+
+  snakemake:
+    name: Snakemake Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Repository
+        uses: actions/checkout@v2
+
+      - name: Set up conda
+        uses: s-weigand/setup-conda@v1.0.4
+
+      - name: Create conda environment
+        run: conda env create -f environment.yaml
+
+      - name: Activate conda environment
+        run: conda activate practical-omnitigs
+
+      - name: Run snakemake Tests
+        run: snakemake --cores 1 test
