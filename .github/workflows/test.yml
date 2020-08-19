@@ -22,7 +22,7 @@ jobs:
             /usr/share/rust/.cargo/registry
             /usr/share/rust/.cargo/git
             implementation/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('implementation/**') }}
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -98,7 +98,7 @@ jobs:
             ~/implementation/target
             ~/data
             ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('implementation/**', 'environment.yml') }}
 
       - name: Setup miniconda
         uses: goanpeca/setup-miniconda@v1
