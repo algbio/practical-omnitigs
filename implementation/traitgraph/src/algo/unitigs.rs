@@ -164,6 +164,7 @@ mod tests {
         graph.add_edge(n4, n8, 15);
         graph.add_edge(n5, n8, 16);
         graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n6, 175);
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
@@ -231,6 +232,7 @@ mod tests {
         graph.add_edge(n4, n8, 15);
         graph.add_edge(n5, n8, 16);
         graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n6, 175);
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
@@ -296,6 +298,7 @@ mod tests {
         graph.add_edge(n4, n8, 15);
         graph.add_edge(n5, n8, 16);
         graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n6, 175);
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
@@ -365,23 +368,24 @@ mod tests {
         graph.add_edge(n4, n8, 15);
         graph.add_edge(n5, n8, 16);
         graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n6, 175);
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         drop(graph); // Against linter errors for last clone.
     }
@@ -404,23 +408,24 @@ mod tests {
         graph.add_edge(n4, n8, 15);
         graph.add_edge(n5, n8, 16);
         graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n6, 175);
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 5);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         drop(graph); // Against linter errors for last clone.
     }
@@ -441,23 +446,24 @@ mod tests {
         graph.add_edge(n4, n8, 15);
         graph.add_edge(n5, n8, 16);
         graph.add_edge(n8, n6, 17);
+        graph.add_edge(n8, n6, 175);
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph), 3);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
 
         drop(graph); // Against linter errors for last clone.
     }

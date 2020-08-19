@@ -318,8 +318,8 @@ pub fn read_bigraph_from_bcalm2_as_node_centric<
         bigraph.add_edge(from_node, to_node, EdgeData::default());
     }
 
-    bigraph.add_mirror_edges();
-    assert!(bigraph.verify_mirror_property());
+    bigraph.add_node_centric_mirror_edges();
+    assert!(bigraph.verify_node_mirror_property());
     Ok(bigraph)
 }
 
@@ -540,7 +540,7 @@ where
     }
 
     assert!(bigraph.verify_node_pairing());
-    assert!(bigraph.verify_mirror_property());
+    assert!(bigraph.verify_node_mirror_property());
     Ok(bigraph)
 }
 
@@ -864,6 +864,33 @@ mod tests {
             GGTCTCGGGTAAGT\n\
             >2 LN:i:6 KC:i:15 km:f:2.2 L:+:0:- L:+:1:-\n\
             AAGAAC\n";
+        let input = Vec::from(test_file);
+
+        let graph: PetBCalm2EdgeGraph =
+            read_bigraph_from_bcalm2_as_edge_centric(bio::io::fasta::Reader::new(test_file), 3)
+                .unwrap();
+        let mut output = Vec::new();
+        write_edge_centric_bigraph_to_bcalm2(&graph, bio::io::fasta::Writer::new(&mut output))
+            .unwrap();
+
+        assert_eq!(
+            input,
+            output,
+            "in:\n{}\n\nout:\n{}\n",
+            String::from_utf8(input.clone()).unwrap(),
+            String::from_utf8(output.clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_edge_read_write_multigraph() {
+        let test_file: &'static [u8] = b"\
+            >0 LN:i:7 KC:i:4 km:f:3.0 L:+:2:+ L:-:2:-\n\
+            AGTTCTC\n\
+            >1 LN:i:14 KC:i:2 km:f:3.2 L:+:2:+ L:-:2:-\n\
+            AGTCTCGGGTAATC\n\
+            >2 LN:i:6 KC:i:15 km:f:2.2 L:+:0:+ L:+:1:+ L:-:0:- L:-:1:-\n\
+            TCGAAG\n";
         let input = Vec::from(test_file);
 
         let graph: PetBCalm2EdgeGraph =

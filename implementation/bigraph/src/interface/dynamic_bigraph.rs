@@ -7,19 +7,25 @@ where
     Self::EdgeData: Clone,
 {
     /**
-     * Adds edges such that the graph fulfils the [mirror property].
+     * Adds edges such that the graph fulfils the node centric [mirror property].
      * Mirror edges get the cloned `EdgeData` from their existing mirror.
      *
      * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
-    fn add_mirror_edges(&mut self) {
+    fn add_node_centric_mirror_edges(&mut self) {
         let mut edges = Vec::new();
         for from_id in self.node_indices() {
-            for neighbor in self.out_neighbors(from_id) {
+            let mut out_neighbors: Vec<_> = self.out_neighbors(from_id).into_iter().collect();
+            out_neighbors.sort_by(|a, b| a.node_id.cmp(&b.node_id));
+            out_neighbors.dedup_by(|a, b| a.node_id == b.node_id);
+            for neighbor in out_neighbors {
                 let to_id = neighbor.node_id;
                 let mirror_from_id = self.partner_node(to_id).unwrap();
                 let mirror_to_id = self.partner_node(from_id).unwrap();
-                if !self.contains_edge(mirror_from_id, mirror_to_id) {
+                let difference = self
+                    .edge_count_between(from_id, to_id)
+                    .saturating_sub(self.edge_count_between(mirror_from_id, mirror_to_id));
+                for _ in 0..difference {
                     edges.push((
                         mirror_from_id,
                         self.edge_data(neighbor.edge_id).clone(),
@@ -72,7 +78,7 @@ where
         binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
     ) -> Self {
         let mut bigraph = Self::new_with_completed_nodes(topology, binode_mapping_function);
-        bigraph.add_mirror_edges();
+        bigraph.add_node_centric_mirror_edges();
         bigraph
     }
 }
@@ -88,7 +94,7 @@ mod tests {
     use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
 
     #[test]
-    fn test_bigraph_add_mirror_edges() {
+    fn test_bigraph_add_node_centric_mirror_edges() {
         let mut graph = petgraph_impl::new();
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
@@ -102,8 +108,12 @@ mod tests {
         let n2 = graph.add_node(NodeData(2));
         let n3 = graph.add_node(NodeData(3));
         let n4 = graph.add_node(NodeData(997));
+        // TODO make an edge-centric copy of this test
         graph.add_edge(n3, n4, ()); // This edge is a self-mirror
         graph.add_edge(n1, n2, ()); // This edge is not a self-mirror
+        graph.add_edge(n1, n2, ()); // This edge is not a self-mirror
+        graph.add_edge(n1, n2, ()); // This edge is not a self-mirror
+        graph.add_edge(n0, n3, ()); // This edge is not a self-mirror
         graph.add_edge(n0, n3, ()); // This edge is not a self-mirror
 
         let mut graph = NodeBigraphWrapper::new_unchecked(graph, NodeData::reverse_complement);
@@ -111,9 +121,14 @@ mod tests {
         assert!(graph.verify_node_pairing());
         assert_eq!(graph.node_count(), 8);
 
-        assert!(!graph.verify_mirror_property());
-        graph.add_mirror_edges();
-        assert!(graph.verify_mirror_property());
-        assert_eq!(graph.edge_count(), 5);
+        graph.add_edge(
+            graph.partner_node(n2).unwrap(),
+            graph.partner_node(n1).unwrap(),
+            (),
+        );
+        assert!(!graph.verify_node_mirror_property());
+        graph.add_node_centric_mirror_edges();
+        assert!(graph.verify_node_mirror_property());
+        assert_eq!(graph.edge_count(), 11);
     }
 }

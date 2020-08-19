@@ -134,9 +134,11 @@ mod tests {
         let n4 = graph.add_node(4);
         let e0 = graph.add_edge(n0, n1, 10);
         let e1 = graph.add_edge(n1, n2, 11);
+        let e15 = graph.add_edge(n1, n2, 115);
         let e2 = graph.add_edge(n2, n3, 12);
         let e3 = graph.add_edge(n3, n4, 13);
         let e4 = graph.add_edge(n4, n0, 14);
+        let e45 = graph.add_edge(n4, n0, 145);
         let e5 = graph.add_edge(n1, n0, 15);
         let e6 = graph.add_edge(n2, n1, 16);
         let e7 = graph.add_edge(n3, n2, 17);
@@ -155,16 +157,18 @@ mod tests {
         assert_eq!(result.node_data(n3), &3);
         assert_eq!(result.node_data(n4), &2);
 
-        assert_eq!(result.edge_data(e0), &14);
-        assert_eq!(result.edge_data(e1), &19);
+        assert_eq!(result.edge_data(e0), &145);
+        assert_eq!(result.edge_data(e1), &14);
+        assert_eq!(result.edge_data(e15), &19);
         assert_eq!(result.edge_data(e2), &15);
         assert_eq!(result.edge_data(e3), &10);
         assert_eq!(result.edge_data(e4), &13);
-        assert_eq!(result.edge_data(e5), &18);
-        assert_eq!(result.edge_data(e6), &20);
-        assert_eq!(result.edge_data(e7), &16);
-        assert_eq!(result.edge_data(e8), &12);
-        assert_eq!(result.edge_data(e9), &17);
+        assert_eq!(result.edge_data(e45), &18);
+        assert_eq!(result.edge_data(e5), &20);
+        assert_eq!(result.edge_data(e6), &16);
+        assert_eq!(result.edge_data(e7), &12);
+        assert_eq!(result.edge_data(e8), &17);
+        assert_eq!(result.edge_data(e9), &115);
         assert_eq!(result.edge_data(e10), &11);
     }
 
@@ -184,6 +188,7 @@ mod tests {
         let e5 = graph.add_edge(n3, n2, 17);
         let e6 = graph.add_edge(n4, n3, 18);
         let e7 = graph.add_edge(n2, n2, 20);
+        let e8 = graph.add_edge(n2, n2, 21);
         let result = decompose_weakly_connected_components(&graph);
         assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
@@ -198,12 +203,13 @@ mod tests {
 
         assert_eq!(result.edge_data(e0), &15);
         assert_eq!(result.edge_data(e1), &10);
-        assert_eq!(result.edge_data(e2), &20);
-        assert_eq!(result.edge_data(e3), &11);
-        assert_eq!(result.edge_data(e4), &17);
-        assert_eq!(result.edge_data(e5), &12);
-        assert_eq!(result.edge_data(e6), &18);
-        assert_eq!(result.edge_data(e7), &13);
+        assert_eq!(result.edge_data(e2), &21);
+        assert_eq!(result.edge_data(e3), &20);
+        assert_eq!(result.edge_data(e4), &11);
+        assert_eq!(result.edge_data(e5), &17);
+        assert_eq!(result.edge_data(e6), &12);
+        assert_eq!(result.edge_data(e7), &18);
+        assert_eq!(result.edge_data(e8), &13);
     }
 
     #[test]
@@ -217,6 +223,7 @@ mod tests {
         let n5 = graph.add_node(5);
         graph.add_edge(n0, n0, 10);
         graph.add_edge(n1, n2, 11);
+        graph.add_edge(n1, n2, 115);
         graph.add_edge(n3, n4, 12);
         graph.add_edge(n4, n5, 13);
         let result = decompose_weakly_connected_components(&graph);
@@ -227,7 +234,7 @@ mod tests {
         assert_eq!(first.node_count(), 1);
         assert_eq!(first.edge_count(), 1);
         assert_eq!(second.node_count(), 2);
-        assert_eq!(second.edge_count(), 1);
+        assert_eq!(second.edge_count(), 2);
         assert_eq!(third.node_count(), 3);
         assert_eq!(third.edge_count(), 2);
 
@@ -239,7 +246,8 @@ mod tests {
         assert_eq!(third.node_data(2.into()), &5);
 
         assert_eq!(first.edge_data(0.into()), &10);
-        assert_eq!(second.edge_data(0.into()), &11);
+        assert_eq!(second.edge_data(0.into()), &115);
+        assert_eq!(second.edge_data(1.into()), &11);
         assert_eq!(third.edge_data(0.into()), &12);
         assert_eq!(third.edge_data(1.into()), &13);
     }
@@ -260,6 +268,7 @@ mod tests {
         let n3 = graph.add_node(3);
         let n4 = graph.add_node(4);
         let e0 = graph.add_edge(n0, n1, 10);
+        let e05 = graph.add_edge(n0, n1, 105);
         let e1 = graph.add_edge(n1, n2, 11);
         let e2 = graph.add_edge(n2, n3, 12);
         let e3 = graph.add_edge(n3, n4, 13);
@@ -283,8 +292,9 @@ mod tests {
         assert_eq!(result.node_data(n4), &2);
 
         assert_eq!(result.edge_data(e0), &19);
-        assert_eq!(result.edge_data(e1), &15);
-        assert_eq!(result.edge_data(e2), &14);
+        assert_eq!(result.edge_data(e05), &15);
+        assert_eq!(result.edge_data(e1), &14);
+        assert_eq!(result.edge_data(e2), &105);
         assert_eq!(result.edge_data(e3), &10);
         assert_eq!(result.edge_data(e4), &13);
         assert_eq!(result.edge_data(e5), &18);
@@ -309,6 +319,7 @@ mod tests {
         let e3 = graph.add_edge(n3, n4, 13);
         let e4 = graph.add_edge(n4, n0, 14);
         let e5 = graph.add_edge(n1, n0, 15);
+        let e55 = graph.add_edge(n1, n0, 155);
         let e6 = graph.add_edge(n2, n1, 16);
         let e7 = graph.add_edge(n3, n2, 17);
         let e8 = graph.add_edge(n4, n3, 18);
@@ -326,12 +337,13 @@ mod tests {
         assert_eq!(result.node_data(n3), &2);
         assert_eq!(result.node_data(n4), &3);
 
-        assert_eq!(result.edge_data(e0), &15);
-        assert_eq!(result.edge_data(e1), &14);
-        assert_eq!(result.edge_data(e2), &10);
-        assert_eq!(result.edge_data(e3), &19);
-        assert_eq!(result.edge_data(e4), &20);
-        assert_eq!(result.edge_data(e5), &16);
+        assert_eq!(result.edge_data(e0), &155);
+        assert_eq!(result.edge_data(e1), &15);
+        assert_eq!(result.edge_data(e2), &14);
+        assert_eq!(result.edge_data(e3), &10);
+        assert_eq!(result.edge_data(e4), &19);
+        assert_eq!(result.edge_data(e5), &20);
+        assert_eq!(result.edge_data(e55), &16);
         assert_eq!(result.edge_data(e6), &11);
         assert_eq!(result.edge_data(e7), &17);
         assert_eq!(result.edge_data(e8), &13);
@@ -353,6 +365,7 @@ mod tests {
         graph.add_edge(n3, n4, 13);
         graph.add_edge(n4, n0, 14);
         graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
         graph.add_edge(n2, n1, 16);
         graph.add_edge(n3, n2, 17);
         graph.add_edge(n4, n3, 18);
@@ -374,6 +387,7 @@ mod tests {
         graph.add_edge(n2, n3, 12);
         graph.add_edge(n3, n4, 13);
         graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
         graph.add_edge(n3, n2, 17);
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n2, n2, 20);
@@ -393,6 +407,7 @@ mod tests {
         graph.add_edge(n1, n2, 11);
         graph.add_edge(n2, n1, 13);
         graph.add_edge(n3, n4, 12);
+        graph.add_edge(n3, n4, 125);
         graph.add_edge(n4, n5, 13);
         graph.add_edge(n5, n3, 13);
         assert!(!is_strongly_connected(&graph));
@@ -418,6 +433,7 @@ mod tests {
         graph.add_edge(n3, n4, 13);
         graph.add_edge(n4, n1, 14);
         graph.add_edge(n1, n4, 15);
+        graph.add_edge(n1, n4, 155);
         graph.add_edge(n2, n1, 16);
         graph.add_edge(n3, n2, 17);
         graph.add_edge(n4, n3, 18);
@@ -440,6 +456,7 @@ mod tests {
         graph.add_edge(n3, n4, 13);
         graph.add_edge(n4, n0, 14);
         graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
         graph.add_edge(n2, n1, 16);
         graph.add_edge(n3, n2, 17);
         graph.add_edge(n4, n3, 18);
