@@ -1,6 +1,12 @@
+use crate::interface::dynamic_bigraph::DynamicEdgeCentricBigraph;
+use crate::interface::dynamic_bigraph::DynamicNodeCentricBigraph;
 use crate::interface::{
-    dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-    static_bigraph::StaticBigraphFromDigraph, BidirectedData,
+    dynamic_bigraph::DynamicBigraph,
+    static_bigraph::StaticBigraph,
+    static_bigraph::{
+        StaticBigraphFromDigraph, StaticEdgeCentricBigraph, StaticNodeCentricBigraph,
+    },
+    BidirectedData,
 };
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -33,7 +39,7 @@ use traitgraph::interface::{
 *   assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
 *   ```
 */
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NodeBigraphWrapper<Topology: GraphBase> {
     pub topology: Topology,
     binode_map: Vec<Topology::OptionalNodeIndex>,
@@ -48,38 +54,9 @@ impl<'a, Topology: GraphBase> GraphBase for NodeBigraphWrapper<Topology> {
     type EdgeIndex = Topology::EdgeIndex;
 }
 
-impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology>
-where
-    <Self as GraphBase>::EdgeData: BidirectedData + Eq,
-{
+impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology> {
     fn partner_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex> {
         self.binode_map[node_id.as_usize()].into()
-    }
-
-    fn partner_edge(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex> {
-        let endpoints = self.edge_endpoints(edge_id);
-        let reverse_from = self.partner_node(endpoints.to_node)?;
-        let reverse_to = self.partner_node(endpoints.from_node)?;
-        let edge_data = self.edge_data(edge_id);
-        let mut result = None;
-
-        for reverse_edge in self.out_neighbors_to(reverse_from, reverse_to) {
-            debug_assert_eq!(reverse_edge.node_id, reverse_to);
-            let reverse_edge_id = reverse_edge.edge_id;
-            if &edge_data.reverse_complement() == self.edge_data(reverse_edge_id) {
-                if let Some(node) = result {
-                    if node == edge_id {
-                        return Some(reverse_edge_id);
-                    }
-                } else if reverse_edge_id == edge_id {
-                    result = Some(reverse_edge_id);
-                } else {
-                    return Some(reverse_edge_id);
-                }
-            }
-        }
-
-        None
     }
 }
 
@@ -162,21 +139,7 @@ where
     }
 }
 
-impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology>
-where
-    <Self as GraphBase>::NodeData: BidirectedData,
-    <Self as GraphBase>::EdgeData: BidirectedData + Clone + Eq,
-{
-    fn add_partner_nodes(&mut self) {
-        for node_id in self.node_indices() {
-            if self.partner_node(node_id).is_none() {
-                let partner_index = self.add_node(self.node_data(node_id).reverse_complement());
-                self.binode_map[node_id.as_usize()] = partner_index.into();
-                self.binode_map[partner_index.as_usize()] = node_id.into();
-            }
-        }
-    }
-
+impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology> {
     fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex) {
         assert!(self.contains_node_index(a));
         assert!(self.contains_node_index(b));
@@ -305,12 +268,31 @@ impl<Topology: Default + GraphBase> Default for NodeBigraphWrapper<Topology> {
     }
 }
 
+impl<Topology: StaticGraph> StaticNodeCentricBigraph for NodeBigraphWrapper<Topology> {}
+
+impl<Topology: StaticGraph> StaticEdgeCentricBigraph for NodeBigraphWrapper<Topology> where
+    <Topology as GraphBase>::EdgeData: BidirectedData + Eq
+{
+}
+
+impl<Topology: DynamicGraph> DynamicNodeCentricBigraph for NodeBigraphWrapper<Topology>
+where
+    <Topology as GraphBase>::NodeData: BidirectedData,
+    <Topology as GraphBase>::EdgeData: Clone,
+{
+}
+
+impl<Topology: DynamicGraph> DynamicEdgeCentricBigraph for NodeBigraphWrapper<Topology> where
+    <Topology as GraphBase>::EdgeData: BidirectedData + Eq
+{
+}
+
 #[cfg(test)]
 mod tests {
     use super::NodeBigraphWrapper;
+    use crate::interface::dynamic_bigraph::DynamicNodeCentricBigraph;
     use crate::interface::{
-        dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-        static_bigraph::StaticBigraphFromDigraph, BidirectedData,
+        static_bigraph::StaticBigraph, static_bigraph::StaticBigraphFromDigraph, BidirectedData,
     };
     use crate::traitgraph::implementation::petgraph_impl;
     use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
