@@ -108,27 +108,8 @@ jobs:
           environment-file: environment.yaml
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
-      #- name: Init conda with bash
-      #  shell: bash -l {0}
-      #  run: conda init bash
-
-      #- name: cat .bashrc
-      #  run: cat ~/.bashrc
-
-      #- name: pwd tilde
-      #  run: cd ~; pwd
-
-      #- name: ls /usr/share/miniconda/envs
-      #  run: ls -la /usr/share/miniconda/envs
-
-      - name: List conda environments
+      - name: Run snakemake tests
         shell: bash -l {0}
-        run: conda env list
-
-      - name: Activate conda environment
-        shell: bash -l {0}
-        run: conda activate practical-omnitigs
-
-      - name: Run snakemake Tests
-        shell: bash -l {0}
-        run: snakemake --cores 1 test
+        run: |
+          conda activate practical-omnitigs
+          snakemake --cores 1 test
