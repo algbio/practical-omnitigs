@@ -112,14 +112,14 @@ jobs:
       #  shell: bash -l {0}
       #  run: conda init bash
 
-      - name: cat .bashrc
-        run: cat ~/.bashrc
+      #- name: cat .bashrc
+      #  run: cat ~/.bashrc
 
-      - name: pwd tilde
-        run: cd ~; pwd
+      #- name: pwd tilde
+      #  run: cd ~; pwd
 
-      - name: ls /usr/share/miniconda/envs
-        run: ls -la /usr/share/miniconda/envs
+      #- name: ls /usr/share/miniconda/envs
+      #  run: ls -la /usr/share/miniconda/envs
 
       - name: List conda environments
         shell: bash -l {0}
