@@ -35,6 +35,8 @@ pub trait ImmutableGraphContainer: GraphBase {
 
     fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool;
 
+    fn edge_count_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> usize;
+
     fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex>;
 
     /// Returns true if the graph is empty, i.e. contains no nodes or edges.

@@ -72,6 +72,10 @@ impl<NodeData, EdgeData> ImmutableGraphContainer for DiGraph<NodeData, EdgeData,
             .is_some()
     }
 
+    fn edge_count_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> usize {
+        self.edges_connecting(from.into(), to.into()).count()
+    }
+
     fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex> {
         let endpoints = self.edge_endpoints(edge_id.into()).unwrap();
         Edge {

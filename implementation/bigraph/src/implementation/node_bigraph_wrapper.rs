@@ -230,6 +230,10 @@ impl<Topology: ImmutableGraphContainer> ImmutableGraphContainer for NodeBigraphW
         self.topology.contains_edge(from, to)
     }
 
+    fn edge_count_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> usize {
+        self.topology.edge_count_between(from, to)
+    }
+
     fn edge_endpoints(&self, edge_id: Self::EdgeIndex) -> Edge<Self::NodeIndex> {
         self.topology.edge_endpoints(edge_id)
     }
