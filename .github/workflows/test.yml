@@ -81,11 +81,17 @@ jobs:
       - name: Set up conda
         uses: s-weigand/setup-conda@v1.0.4
 
+      - name: Init conda with bash
+        run: conda init bash
+
+      - name: Source .bashrc after conda init
+        run: source ~/.bashrc
+
       - name: Create conda environment
         run: conda env create -f environment.yaml
 
       - name: Activate conda environment
-        run: source activate practical-omnitigs
+        run: conda activate practical-omnitigs
 
       - name: Run snakemake Tests
         run: snakemake --cores 1 test
