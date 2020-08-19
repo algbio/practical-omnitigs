@@ -17,28 +17,35 @@ use traitgraph::interface::{
     StaticGraph,
 };
 
-/**
-*   Wrapper for a static graph that adds a binode mapping function.
-*
-*   Bigraphs can be represented with this struct by creating their topology as normal directed graph where each binode is split into its two parts.
-*   The binode mapping function then associates the parts with each other.
-*
-*   ```rust
-*   use bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
-*   use bigraph::interface::static_bigraph::{StaticBigraph, StaticBigraphFromDigraph};
-*   use bigraph::traitgraph::interface::MutableGraphContainer;
-*   use bigraph::traitgraph::implementation::petgraph_impl;
-*
-*   let mut graph = petgraph_impl::new();
-*   let n1 = graph.add_node(0);
-*   let n2 = graph.add_node(1);
-*   graph.add_edge(n1.clone(), n2.clone(), ());
-*   graph.add_edge(n2.clone(), n1.clone(), ());
-*   let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 {n + 1} else {n - 1});
-*   assert_eq!(Some(n2.clone()), bigraph.partner_node(n1.clone()));
-*   assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
-*   ```
-*/
+/// Wrapper for a static graph that adds a binode mapping function.
+///
+/// Bigraphs can be represented with this struct by creating their topology as normal directed graph where each binode is split into its two parts.
+/// The binode mapping function then associates the parts with each other.
+///
+/// ```rust
+/// use bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+/// use bigraph::interface::static_bigraph::{StaticBigraph, StaticBigraphFromDigraph};
+/// use bigraph::traitgraph::interface::MutableGraphContainer;
+/// use bigraph::traitgraph::implementation::petgraph_impl;
+/// use bigraph::interface::BidirectedData;
+///
+/// #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+/// struct NodeData(i32);
+/// impl BidirectedData for NodeData {
+///     fn reverse_complement(&self) -> Self {
+///         Self(1000 - self.0)
+///     }
+/// }
+///
+/// let mut graph = petgraph_impl::new();
+/// let n1 = graph.add_node(NodeData(0));
+/// let n2 = graph.add_node(NodeData(1000));
+/// graph.add_edge(n1.clone(), n2.clone(), ());
+/// graph.add_edge(n2.clone(), n1.clone(), ());
+/// let bigraph = NodeBigraphWrapper::new(graph);
+/// assert_eq!(Some(n2.clone()), bigraph.partner_node(n1.clone()));
+/// assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
+/// ```
 #[derive(Debug, Clone)]
 pub struct NodeBigraphWrapper<Topology: GraphBase> {
     pub topology: Topology,
@@ -62,15 +69,9 @@ impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology> {
 
 impl<Topology: StaticGraph> NodeBigraphWrapper<Topology>
 where
-    <Self as GraphBase>::NodeData: Eq + Hash + Debug,
+    <Self as GraphBase>::NodeData: BidirectedData + Eq + Hash + Debug,
 {
-    fn new_internal(
-        topology: Topology,
-        binode_mapping_function: fn(
-            &<Self as GraphBase>::NodeData,
-        ) -> <Self as GraphBase>::NodeData,
-        checked: bool,
-    ) -> Self {
+    fn new_internal(topology: Topology, checked: bool) -> Self {
         //let mut data_map = HashMap::new();
         let mut data_map: HashMap<<Self as GraphBase>::NodeData, <Self as GraphBase>::NodeIndex> =
             HashMap::new();
@@ -86,13 +87,13 @@ where
                 assert!(!binode_map[partner_index.as_usize()].is_valid());
                 assert_eq!(
                     node_data,
-                    &binode_mapping_function(topology.node_data(partner_index))
+                    &topology.node_data(partner_index).reverse_complement()
                 );
                 binode_map[node_index.as_usize()] = partner_index.into();
                 binode_map[partner_index.as_usize()] = node_index.into();
                 data_map.remove(node_data);
             } else {
-                let partner_data = binode_mapping_function(node_data);
+                let partner_data = node_data.reverse_complement();
                 //assert_ne!(&partner_data, node_data);
                 assert_eq!(None, data_map.insert(partner_data, node_index));
             }
@@ -115,27 +116,16 @@ where
 
 impl<Topology: StaticGraph> StaticBigraphFromDigraph for NodeBigraphWrapper<Topology>
 where
-    <Self as GraphBase>::NodeData: Eq + Hash + Debug,
-    <Self as GraphBase>::EdgeData: BidirectedData + Eq,
+    <Self as GraphBase>::NodeData: BidirectedData + Eq + Hash + Debug,
 {
     type Topology = Topology;
 
-    fn new(
-        topology: Self::Topology,
-        binode_mapping_function: fn(
-            &<Self as GraphBase>::NodeData,
-        ) -> <Self as GraphBase>::NodeData,
-    ) -> Self {
-        Self::new_internal(topology, binode_mapping_function, true)
+    fn new(topology: Self::Topology) -> Self {
+        Self::new_internal(topology, true)
     }
 
-    fn new_unchecked(
-        _topology: Self::Topology,
-        _binode_mapping_function: fn(
-            &<Self as GraphBase>::NodeData,
-        ) -> <Self as GraphBase>::NodeData,
-    ) -> Self {
-        Self::new_internal(_topology, _binode_mapping_function, false)
+    fn new_unchecked(topology: Self::Topology) -> Self {
+        Self::new_internal(topology, false)
     }
 }
 
@@ -299,13 +289,25 @@ mod tests {
 
     #[test]
     fn test_bigraph_creation() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new(graph);
 
         assert_eq!(Some(n2), bigraph.partner_node(n1));
         assert_eq!(Some(n1), bigraph.partner_node(n2));
@@ -316,90 +318,131 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_bigraph_creation_unmapped_node() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_node(4);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(4));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        NodeBigraphWrapper::new(graph);
     }
 
     #[test]
     #[should_panic]
     fn test_bigraph_creation_wrongly_mapped_node() {
-        let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_node(4);
-        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new(graph, |n| {
-            if *n == 4 {
-                3
-            } else if n % 2 == 0 {
-                n + 1
-            } else {
-                n - 1
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 == 4 {
+                    3
+                } else if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
             }
-        });
+        }
+
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(4));
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new(graph);
     }
 
     #[test]
     #[should_panic]
     fn test_bigraph_creation_self_mapped_node_without_partner() {
-        let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_node(4);
-        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new(graph, |n| {
-            if *n == 4 {
-                4
-            } else if n % 2 == 0 {
-                n + 1
-            } else {
-                n - 1
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 == 4 {
+                    4
+                } else if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
             }
-        });
+        }
+
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(4));
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new(graph);
     }
 
     #[test]
     #[should_panic]
     fn test_bigraph_creation_self_mapped_node_with_partner() {
-        let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_node(4);
-        graph.add_node(5);
-        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new(graph, |n| {
-            if *n == 4 {
-                4
-            } else if n % 2 == 0 {
-                n + 1
-            } else {
-                n - 1
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 == 4 {
+                    4
+                } else if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
             }
-        });
+        }
+
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(4));
+        graph.add_node(NodeData(5));
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new(graph);
     }
 
     #[test]
     fn test_bigraph_unchecked_creation() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        let bigraph =
-            NodeBigraphWrapper::new_unchecked(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new_unchecked(graph);
 
         assert_eq!(Some(n2), bigraph.partner_node(n1));
         assert_eq!(Some(n1), bigraph.partner_node(n2));
@@ -409,15 +452,26 @@ mod tests {
 
     #[test]
     fn test_bigraph_unchecked_creation_unmapped_node() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
-        let n5 = graph.add_node(4);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
+        let n5 = graph.add_node(NodeData(4));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        let bigraph =
-            NodeBigraphWrapper::new_unchecked(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new_unchecked(graph);
 
         assert_eq!(Some(n2), bigraph.partner_node(n1));
         assert_eq!(Some(n1), bigraph.partner_node(n2));
@@ -429,112 +483,159 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_bigraph_unchecked_creation_wrongly_mapped_node_at_end() {
-        let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_node(4);
-        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new_unchecked(graph, |n| {
-            if *n == 4 {
-                3
-            } else if n % 2 == 0 {
-                n + 1
-            } else {
-                n - 1
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 == 4 {
+                    3
+                } else if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
             }
-        });
+        }
+
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(4));
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new_unchecked(graph);
     }
 
     #[test]
     #[should_panic]
     fn test_bigraph_unchecked_creation_wrongly_mapped_node_at_beginning() {
-        let mut graph = petgraph_impl::new();
-        graph.add_node(4);
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new_unchecked(graph, |n| {
-            if *n == 4 {
-                3
-            } else if n % 2 == 0 {
-                n + 1
-            } else {
-                n - 1
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 == 4 {
+                    3
+                } else if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
             }
-        });
+        }
+
+        let mut graph = petgraph_impl::new();
+        graph.add_node(NodeData(4));
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new_unchecked(graph);
     }
 
     #[test]
     #[should_panic]
     fn test_bigraph_unchecked_creation_self_mapped_node_without_partner() {
-        let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_node(4);
-        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new_unchecked(graph, |n| {
-            if *n == 4 {
-                4
-            } else if n % 2 == 0 {
-                n + 1
-            } else {
-                n - 1
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 == 4 {
+                    4
+                } else if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
             }
-        });
+        }
+
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(4));
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new_unchecked(graph);
     }
 
     #[test]
     #[should_panic]
     fn test_bigraph_unchecked_creation_self_mapped_node_with_partner() {
-        let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
-        graph.add_node(4);
-        graph.add_node(5);
-        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        NodeBigraphWrapper::new_unchecked(graph, |n| {
-            if *n == 4 {
-                4
-            } else if n % 2 == 0 {
-                n + 1
-            } else {
-                n - 1
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 == 4 {
+                    4
+                } else if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
             }
-        });
+        }
+
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
+        graph.add_node(NodeData(4));
+        graph.add_node(NodeData(5));
+        graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
+        NodeBigraphWrapper::new_unchecked(graph);
     }
 
     #[test]
     fn test_bigraph_verification() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new(graph);
         assert!(bigraph.verify_node_pairing_without_self_partners());
         assert!(bigraph.verify_node_pairing());
     }
 
     #[test]
     fn test_bigraph_verification_self_mapped_node() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        let mut bigraph =
-            NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
-        bigraph.topology.add_node(4);
+        let mut bigraph = NodeBigraphWrapper::new(graph);
+        bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(4usize.into());
         assert!(!bigraph.verify_node_pairing_without_self_partners());
         assert!(bigraph.verify_node_pairing());
@@ -542,15 +643,26 @@ mod tests {
 
     #[test]
     fn test_bigraph_verification_self_unmapped_node() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        let mut bigraph =
-            NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
-        bigraph.topology.add_node(4);
+        let mut bigraph = NodeBigraphWrapper::new(graph);
+        bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(None.into());
         assert!(!bigraph.verify_node_pairing_without_self_partners());
         assert!(!bigraph.verify_node_pairing());
@@ -558,15 +670,26 @@ mod tests {
 
     #[test]
     fn test_bigraph_verification_wrongly_mapped_node() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        graph.add_node(2);
-        graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        graph.add_node(NodeData(2));
+        graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
-        let mut bigraph =
-            NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
-        bigraph.topology.add_node(4);
+        let mut bigraph = NodeBigraphWrapper::new(graph);
+        bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(3usize.into());
         assert!(!bigraph.verify_node_pairing_without_self_partners());
         assert!(!bigraph.verify_node_pairing());
@@ -574,7 +697,6 @@ mod tests {
 
     #[test]
     fn test_bigraph_add_partner_nodes() {
-        let mut graph = petgraph_impl::new();
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
         impl BidirectedData for NodeData {
@@ -582,13 +704,15 @@ mod tests {
                 Self(1000 - self.0)
             }
         }
+
+        let mut graph = petgraph_impl::new();
         let n0 = graph.add_node(NodeData(0));
         let n1 = graph.add_node(NodeData(1));
         graph.add_node(NodeData(2));
         graph.add_node(NodeData(3));
         graph.add_node(NodeData(997));
         graph.add_edge(n0, n1, ());
-        let mut graph = NodeBigraphWrapper::new_unchecked(graph, NodeData::reverse_complement);
+        let mut graph = NodeBigraphWrapper::new_unchecked(graph);
         assert!(!graph.verify_node_pairing());
         graph.add_partner_nodes();
         assert!(graph.verify_node_pairing());

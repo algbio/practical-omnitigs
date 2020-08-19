@@ -210,20 +210,14 @@ pub trait StaticBigraphFromDigraph: StaticBigraph {
      * Converts the given topology into a bigraph with the given mapping function.
      * If the resulting graph has wrongly mapped nodes, the method panics.
      */
-    fn new(
-        _topology: Self::Topology,
-        _binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
-    ) -> Self;
+    fn new(topology: Self::Topology) -> Self;
 
     /**
      * Converts the given topology into a bigraph with the given mapping function.
      * Unmapped nodes are stored without mapping.
      * If a node maps to another node, but the other node does not map back, then this method panics.
      */
-    fn new_unchecked(
-        _topology: Self::Topology,
-        _binode_mapping_function: fn(&Self::NodeData) -> Self::NodeData,
-    ) -> Self;
+    fn new_unchecked(topology: Self::Topology) -> Self;
 }
 
 #[cfg(test)]
@@ -250,49 +244,84 @@ mod test {
 
     #[test]
     fn test_verify_node_mirror_property_positive() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n3, EdgeData(10));
         graph.add_edge(n4, n2, EdgeData(11));
         graph.add_edge(n3, n1, EdgeData(12));
         graph.add_edge(n2, n4, EdgeData(13));
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new(graph);
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_node_mirror_property());
     }
 
     #[test]
     fn test_verify_node_mirror_property_unpaired() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n3, EdgeData(10));
         graph.add_edge(n4, n2, EdgeData(11));
         graph.add_edge(n3, n1, EdgeData(12));
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new(graph);
         assert!(bigraph.verify_node_pairing());
         assert!(!bigraph.verify_node_mirror_property());
     }
 
     #[test]
     fn test_verify_node_mirror_property_duplicate_edges() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n3, EdgeData(10));
         graph.add_edge(n4, n2, EdgeData(11));
         graph.add_edge(n3, n1, EdgeData(12));
         graph.add_edge(n2, n4, EdgeData(13));
 
-        let mut bigraph =
-            NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let mut bigraph = NodeBigraphWrapper::new(graph);
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_node_mirror_property());
 
@@ -307,50 +336,85 @@ mod test {
 
     #[test]
     fn test_verify_edge_mirror_property_positive() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n3, EdgeData(10));
         graph.add_edge(n4, n2, EdgeData(990));
         graph.add_edge(n3, n1, EdgeData(12));
         graph.add_edge(n2, n4, EdgeData(988));
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new(graph);
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_edge_mirror_property());
     }
 
     #[test]
     fn test_verify_edge_mirror_property_unpaired() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n3, EdgeData(10));
         graph.add_edge(n4, n2, EdgeData(990));
         graph.add_edge(n3, n1, EdgeData(12));
         graph.add_edge(n4, n2, EdgeData(990));
-        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let bigraph = NodeBigraphWrapper::new(graph);
         assert!(bigraph.verify_node_pairing());
         assert!(!bigraph.verify_edge_mirror_property());
     }
 
     #[test]
     fn test_verify_edge_mirror_property_duplicate_edges_with_differing_data() {
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(if self.0 % 2 == 0 {
+                    self.0 + 1
+                } else {
+                    self.0 - 1
+                })
+            }
+        }
+
         let mut graph = petgraph_impl::new();
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
-        let n4 = graph.add_node(3);
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1));
+        let n3 = graph.add_node(NodeData(2));
+        let n4 = graph.add_node(NodeData(3));
         graph.add_edge(n1, n3, EdgeData(10));
         graph.add_edge(n4, n2, EdgeData(990));
         graph.add_edge(n3, n1, EdgeData(12));
         graph.add_edge(n2, n4, EdgeData(988));
 
-        let mut bigraph =
-            NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        let mut bigraph = NodeBigraphWrapper::new(graph);
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_edge_mirror_property());
 
@@ -365,10 +429,18 @@ mod test {
 
     #[test]
     fn test_verify_edge_mirror_property_duplicate_edges_with_plus_minus_loop() {
-        let mut graph = NodeBigraphWrapper::new(petgraph_impl::new(), |_| 0);
-        let n1 = graph.add_node(0);
-        let n2 = graph.add_node(1);
-        let n3 = graph.add_node(2);
+        #[derive(Clone, Eq, PartialEq, Hash, Debug)]
+        struct NodeData(i32);
+        impl BidirectedData for NodeData {
+            fn reverse_complement(&self) -> Self {
+                Self(1000 - self.0)
+            }
+        }
+
+        let mut graph = NodeBigraphWrapper::new(petgraph_impl::new());
+        let n1 = graph.add_node(NodeData(0));
+        let n2 = graph.add_node(NodeData(1000));
+        let n3 = graph.add_node(NodeData(500));
         graph.set_partner_nodes(n1, n2);
         graph.set_partner_nodes(n3, n3);
         graph.add_edge(n1, n3, EdgeData(10));

@@ -164,7 +164,7 @@ mod tests {
         graph.add_edge(n0, n3, ()); // This edge is not a self-mirror
         graph.add_edge(n0, n3, ()); // This edge is not a self-mirror
 
-        let mut graph = NodeBigraphWrapper::new_unchecked(graph, NodeData::reverse_complement);
+        let mut graph = NodeBigraphWrapper::new_unchecked(graph);
         graph.add_partner_nodes();
         assert!(graph.verify_node_pairing());
         assert_eq!(graph.node_count(), 8);
@@ -209,7 +209,7 @@ mod tests {
         graph.add_edge(n0, n3, EdgeData(2)); // This edge is not a self-mirror
         graph.add_edge(n0, n3, EdgeData(3)); // This edge is not a self-mirror
 
-        let mut graph = NodeBigraphWrapper::new_unchecked(graph, NodeData::reverse_complement);
+        let mut graph = NodeBigraphWrapper::new_unchecked(graph);
         graph.add_partner_nodes();
         assert!(graph.verify_node_pairing());
         assert_eq!(graph.node_count(), 8);
