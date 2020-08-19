@@ -108,13 +108,9 @@ jobs:
           environment-file: environment.yaml
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
-      - name: Init conda with bash
-        shell: bash -l {0}
-        run: conda init bash
-
-      - name: Create conda environment
-        shell: bash -l {0}
-        run: conda env create -f environment.yaml
+      #- name: Init conda with bash
+      #  shell: bash -l {0}
+      #  run: conda init bash
 
       - name: cat .bashrc
         run: cat ~/.bashrc
