@@ -21,6 +21,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
+            /usr/share/rust/registry
+            /usr/share/rust/git
             implementation/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
@@ -95,7 +97,7 @@ jobs:
           path: |
             implementation/target
             data
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-snakemake-${{ hashFiles('environment.yml') }}
 
       - name: Set up conda
         uses: s-weigand/setup-conda@v1.0.4
@@ -109,7 +111,7 @@ jobs:
       - name: Create conda environment
         run: conda env create -f environment.yaml
 
-      - name: ls
+      - name: ls /usr/share/miniconda
         run: ls -la
 
       - name: Activate conda environment
