@@ -1,11 +1,33 @@
 use crate::interface::static_bigraph::StaticBigraph;
-use crate::interface::static_bigraph::StaticBigraphFromDigraph;
+use crate::interface::static_bigraph::StaticEdgeCentricBigraph;
+use crate::interface::static_bigraph::StaticNodeCentricBigraph;
+use crate::interface::BidirectedData;
 use traitgraph::interface::DynamicGraph;
 
-pub trait DynamicBigraph: DynamicGraph + StaticBigraph
+pub trait DynamicBigraph: DynamicGraph + StaticBigraph {
+    /// Make the nodes with the given two node ids partner nodes.
+    /// This may leave the old partners from a and b with dangling partner pointers.
+    fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex);
+}
+
+pub trait DynamicNodeCentricBigraph: DynamicBigraph + StaticNodeCentricBigraph
 where
+    Self::NodeData: BidirectedData,
     Self::EdgeData: Clone,
 {
+    /**
+     * Adds nodes such that the graph becomes a valid node-centric bigraph.
+     * The indices of existing nodes are not altered.
+     */
+    fn add_partner_nodes(&mut self) {
+        for node_id in self.node_indices() {
+            if self.partner_node(node_id).is_none() {
+                let partner_index = self.add_node(self.node_data(node_id).reverse_complement());
+                self.set_partner_nodes(node_id, partner_index);
+            }
+        }
+    }
+
     /**
      * Adds edges such that the graph fulfils the node centric [mirror property].
      * Mirror edges get the cloned `EdgeData` from their existing mirror.
@@ -39,19 +61,15 @@ where
             self.add_edge(edge.0, edge.2, edge.1);
         }
     }
-
-    /**
-     * Adds nodes such that the graph becomes a valid bigraph.
-     * The indices of existing nodes are not altered.
-     */
-    fn add_partner_nodes(&mut self);
-
-    /// Make the nodes with the given two node ids partner nodes.
-    /// This may leave the old partners from a and b with dangling partner pointers.
-    fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex);
 }
 
-pub trait DynamicBigraphFromDigraph: DynamicBigraph + StaticBigraphFromDigraph + Sized
+pub trait DynamicEdgeCentricBigraph: DynamicBigraph + StaticEdgeCentricBigraph
+where
+    Self::EdgeData: BidirectedData + Eq,
+{
+}
+
+/*pub trait DynamicBigraphFromDigraph: DynamicBigraph + StaticBigraphFromDigraph + Sized
 where
     Self::Topology: DynamicGraph,
     Self::EdgeData: Clone,
@@ -81,14 +99,15 @@ where
         bigraph.add_node_centric_mirror_edges();
         bigraph
     }
-}
+}*/
 
 #[cfg(test)]
 mod tests {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+    use crate::interface::dynamic_bigraph::DynamicNodeCentricBigraph;
+    use crate::interface::static_bigraph::StaticNodeCentricBigraph;
     use crate::interface::{
-        dynamic_bigraph::DynamicBigraph, static_bigraph::StaticBigraph,
-        static_bigraph::StaticBigraphFromDigraph, BidirectedData,
+        static_bigraph::StaticBigraph, static_bigraph::StaticBigraphFromDigraph, BidirectedData,
     };
     use crate::traitgraph::implementation::petgraph_impl;
     use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};

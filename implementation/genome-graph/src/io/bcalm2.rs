@@ -1,3 +1,5 @@
+use crate::bigraph::interface::dynamic_bigraph::DynamicEdgeCentricBigraph;
+use crate::bigraph::interface::dynamic_bigraph::DynamicNodeCentricBigraph;
 use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedData};
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
@@ -261,9 +263,9 @@ impl<'a> From<&'a PlainBCalm2NodeData> for PlainBCalm2NodeData {
 
 pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
     P: AsRef<Path>,
-    NodeData: From<PlainBCalm2NodeData>,
+    NodeData: From<PlainBCalm2NodeData> + BidirectedData,
     EdgeData: Default + Clone,
-    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
+    Graph: DynamicNodeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     path: P,
 ) -> crate::error::Result<Graph> {
@@ -274,9 +276,9 @@ pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
 
 pub fn read_bigraph_from_bcalm2_as_node_centric<
     R: std::io::Read,
-    NodeData: From<PlainBCalm2NodeData>,
+    NodeData: From<PlainBCalm2NodeData> + BidirectedData,
     EdgeData: Default + Clone,
-    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
+    Graph: DynamicNodeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     reader: bio::io::fasta::Reader<R>,
 ) -> crate::error::Result<Graph> {
@@ -464,8 +466,8 @@ where
 pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     P: AsRef<Path>,
     NodeData: Default + Clone,
-    EdgeData: From<PlainBCalm2NodeData> + Clone,
-    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
+    EdgeData: From<PlainBCalm2NodeData> + Clone + Eq + BidirectedData,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     path: P,
     kmer_size: usize,
@@ -508,8 +510,8 @@ where
 pub fn read_bigraph_from_bcalm2_as_edge_centric<
     R: std::io::Read,
     NodeData: Default + Clone,
-    EdgeData: From<PlainBCalm2NodeData> + Clone,
-    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
+    EdgeData: From<PlainBCalm2NodeData> + Clone + Eq + BidirectedData,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     reader: bio::io::fasta::Reader<R>,
     kmer_size: usize,
@@ -540,15 +542,15 @@ where
     }
 
     assert!(bigraph.verify_node_pairing());
-    assert!(bigraph.verify_node_mirror_property());
+    assert!(bigraph.verify_edge_mirror_property());
     Ok(bigraph)
 }
 
 pub fn write_edge_centric_bigraph_to_bcalm2_to_file<
     P: AsRef<Path>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
-    EdgeData: Clone,
-    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
+    EdgeData: BidirectedData + Clone + Eq,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     graph: &Graph,
     path: P,
@@ -565,8 +567,8 @@ where
 pub fn write_edge_centric_bigraph_to_bcalm2<
     W: std::io::Write,
     NodeData,
-    EdgeData: Clone,
-    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
+    EdgeData: BidirectedData + Clone + Eq,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     graph: &Graph,
     mut writer: bio::io::fasta::Writer<W>,
@@ -578,7 +580,7 @@ where
 
     for edge_id in graph.edge_indices() {
         if !output_edges[graph
-            .partner_edge(edge_id)
+            .partner_edge_edge_centric(edge_id)
             .ok_or_else(|| Error::from(ErrorKind::BCalm2EdgeWithoutPartner))?
             .as_usize()]
         {
@@ -590,7 +592,7 @@ where
         if output_edges[edge_id.as_usize()] {
             let node_data = PlainBCalm2NodeData::from(graph.edge_data(edge_id));
             let partner_edge_id = graph
-                .partner_edge(edge_id)
+                .partner_edge_edge_centric(edge_id)
                 .ok_or_else(|| Error::from(ErrorKind::BCalm2EdgeWithoutPartner))?;
             let to_node_plus = graph.edge_endpoints(edge_id).to_node;
             let to_node_minus = graph.edge_endpoints(partner_edge_id).to_node;
@@ -608,9 +610,11 @@ where
                     } else {
                         PlainBCalm2NodeData::from(
                             graph.edge_data(
-                                graph.partner_edge(neighbor.edge_id).ok_or_else(|| {
-                                    Error::from(ErrorKind::BCalm2EdgeWithoutPartner)
-                                })?,
+                                graph
+                                    .partner_edge_edge_centric(neighbor.edge_id)
+                                    .ok_or_else(|| {
+                                        Error::from(ErrorKind::BCalm2EdgeWithoutPartner)
+                                    })?,
                             ),
                         )
                         .id
@@ -628,9 +632,11 @@ where
                     } else {
                         PlainBCalm2NodeData::from(
                             graph.edge_data(
-                                graph.partner_edge(neighbor.edge_id).ok_or_else(|| {
-                                    Error::from(ErrorKind::BCalm2EdgeWithoutPartner)
-                                })?,
+                                graph
+                                    .partner_edge_edge_centric(neighbor.edge_id)
+                                    .ok_or_else(|| {
+                                        Error::from(ErrorKind::BCalm2EdgeWithoutPartner)
+                                    })?,
                             ),
                         )
                         .id
