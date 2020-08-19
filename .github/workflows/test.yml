@@ -19,10 +19,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            /usr/share/rust/registry
-            /usr/share/rust/git
+            /usr/share/rust/.cargo/registry
+            /usr/share/rust/.cargo/git
             implementation/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
