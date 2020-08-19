@@ -42,9 +42,9 @@ rule test_single_file:
     shell: "cmp --silent {input.verify} {input.deterministic}"
 
 rule make_bcalm_output_deterministic:
-    input: "data/{file}.unitigs.fa"
+    input: file = "data/{file}.unitigs.fa", script = "scripts/make_bcalm_output_deterministic.py"
     output: "data/{file}.unitigs.fa.deterministic"
-    shell: "scripts/make_bcalm_output_deterministic.sh '{input}' '{output}'"
+    shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output}'"
 
 rule verify:
     input: file = "data/{file}.unitigs.fa", binary = "data/target/release/cli"
