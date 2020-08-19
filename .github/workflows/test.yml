@@ -95,10 +95,10 @@ jobs:
           CACHE_NUMBER: 0
         with:
           path: |
-            ~/implementation/target
-            ~/data
-            ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('implementation/**', 'environment.yml') }}
+            implementation/target
+            data
+            conda_pkgs_dir
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('implementation/**', 'environment.yml', 'Snakefile', 'scripts/*') }}
 
       - name: Setup miniconda
         uses: goanpeca/setup-miniconda@v1
