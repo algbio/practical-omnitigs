@@ -109,6 +109,9 @@ jobs:
       - name: Create conda environment
         run: conda env create -f environment.yaml
 
+      - name: cat .bashrc
+        run: cat ~/.bashrc
+
       - name: pwd tilde
         run: cd ~; pwd
 
