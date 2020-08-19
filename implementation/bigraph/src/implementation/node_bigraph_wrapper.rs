@@ -39,7 +39,7 @@ use traitgraph::interface::{
 *   assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
 *   ```
 */
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NodeBigraphWrapper<Topology: GraphBase> {
     pub topology: Topology,
     binode_map: Vec<Topology::OptionalNodeIndex>,

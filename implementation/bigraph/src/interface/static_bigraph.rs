@@ -1,4 +1,5 @@
 use crate::interface::BidirectedData;
+use std::collections::HashSet;
 use traitgraph::interface::{GraphBase, StaticGraph};
 
 /**
@@ -158,21 +159,41 @@ where
 
     /**
      * Returns true if the edge-centric [mirror property] of edges is fulfilled.
-     * Assumes that the node pairing is correct (See [verify_node_pairing()](NodeBigraphWrapper::verify_node_pairing))
+     * Assumes that the node pairing is correct (See [verify_node_pairing()](NodeBigraphWrapper::verify_node_pairing)) and that no two edges are the same, except for self mirrors.
      *
      * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
     fn verify_edge_mirror_property(&self) -> bool {
+        let mut edge_set = HashSet::new();
+
         for from_node in self.node_indices() {
             for neighbor in self.out_neighbors(from_node) {
                 let edge = neighbor.edge_id;
-                if self.partner_edge_edge_centric(edge).is_none() {
+                if let Some(mirror_edge) = self.partner_edge_edge_centric(edge) {
+                    let to_node = neighbor.node_id;
+                    let complete_edge = (from_node, to_node, edge);
+                    let mirror_complete_edge = (
+                        self.partner_node(to_node).unwrap(),
+                        self.partner_node(from_node).unwrap(),
+                        mirror_edge,
+                    );
+
+                    if edge_set.contains(&mirror_complete_edge) {
+                        edge_set.remove(&mirror_complete_edge);
+                        if &self.edge_data(edge).reverse_complement() != self.edge_data(mirror_edge)
+                        {
+                            return false;
+                        }
+                    } else {
+                        edge_set.insert(complete_edge);
+                    }
+                } else {
                     return false;
                 }
             }
         }
 
-        true
+        edge_set.is_empty()
     }
 }
 
@@ -208,11 +229,14 @@ pub trait StaticBigraphFromDigraph: StaticBigraph {
 #[cfg(test)]
 mod test {
     use crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+    use crate::interface::dynamic_bigraph::DynamicBigraph;
     use crate::interface::static_bigraph::StaticBigraph;
     use crate::interface::static_bigraph::StaticBigraphFromDigraph;
+    use crate::interface::static_bigraph::StaticEdgeCentricBigraph;
     use crate::interface::static_bigraph::StaticNodeCentricBigraph;
     use crate::interface::BidirectedData;
     use crate::traitgraph::implementation::petgraph_impl;
+    use traitgraph::interface::ImmutableGraphContainer;
     use traitgraph::interface::MutableGraphContainer;
 
     #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -279,5 +303,169 @@ mod test {
         bigraph.add_edge(n4, n2, EdgeData(15));
         assert!(bigraph.verify_node_pairing());
         assert!(bigraph.verify_node_mirror_property());
+    }
+
+    #[test]
+    fn test_verify_edge_mirror_property_positive() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n4, n2, EdgeData(990));
+        graph.add_edge(n3, n1, EdgeData(12));
+        graph.add_edge(n2, n4, EdgeData(988));
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing());
+        assert!(bigraph.verify_edge_mirror_property());
+    }
+
+    #[test]
+    fn test_verify_edge_mirror_property_unpaired() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n4, n2, EdgeData(990));
+        graph.add_edge(n3, n1, EdgeData(12));
+        graph.add_edge(n4, n2, EdgeData(990));
+        let bigraph = NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing());
+        assert!(!bigraph.verify_edge_mirror_property());
+    }
+
+    #[test]
+    fn test_verify_edge_mirror_property_duplicate_edges_with_differing_data() {
+        let mut graph = petgraph_impl::new();
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        let n4 = graph.add_node(3);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n4, n2, EdgeData(990));
+        graph.add_edge(n3, n1, EdgeData(12));
+        graph.add_edge(n2, n4, EdgeData(988));
+
+        let mut bigraph =
+            NodeBigraphWrapper::new(graph, |n| if n % 2 == 0 { n + 1 } else { n - 1 });
+        assert!(bigraph.verify_node_pairing());
+        assert!(bigraph.verify_edge_mirror_property());
+
+        bigraph.add_edge(n1, n3, EdgeData(14));
+        assert!(bigraph.verify_node_pairing());
+        assert!(!bigraph.verify_edge_mirror_property());
+
+        bigraph.add_edge(n4, n2, EdgeData(986));
+        assert!(bigraph.verify_node_pairing());
+        assert!(bigraph.verify_edge_mirror_property());
+    }
+
+    #[test]
+    fn test_verify_edge_mirror_property_duplicate_edges_with_plus_minus_loop() {
+        let mut graph = NodeBigraphWrapper::new(petgraph_impl::new(), |_| 0);
+        let n1 = graph.add_node(0);
+        let n2 = graph.add_node(1);
+        let n3 = graph.add_node(2);
+        graph.set_partner_nodes(n1, n2);
+        graph.set_partner_nodes(n3, n3);
+        graph.add_edge(n1, n3, EdgeData(10));
+        graph.add_edge(n3, n2, EdgeData(990));
+        graph.add_edge(n3, n1, EdgeData(12));
+        graph.add_edge(n2, n3, EdgeData(988));
+
+        assert!(graph.verify_node_pairing());
+        assert!(graph.verify_edge_mirror_property());
+
+        graph.add_edge(n1, n3, EdgeData(14));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n3, n2, EdgeData(986));
+        assert!(graph.verify_node_pairing());
+        assert!(graph.verify_edge_mirror_property());
+
+        assert_eq!(graph.edge_count(), 6);
+        let mirror_copy = graph.clone();
+
+        graph.add_edge(n1, n3, EdgeData(14));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n3, n2, EdgeData(986));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+        assert_eq!(graph.edge_count(), 8);
+
+        let mut graph = mirror_copy.clone();
+
+        graph.add_edge(n1, n3, EdgeData(100));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n1, n3, EdgeData(100));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n3, n2, EdgeData(900));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n3, n2, EdgeData(900));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+        assert_eq!(graph.edge_count(), 10);
+
+        let mut graph = mirror_copy.clone();
+
+        graph.add_edge(n3, n2, EdgeData(900));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n1, n3, EdgeData(100));
+        assert!(graph.verify_node_pairing());
+        assert!(graph.verify_edge_mirror_property());
+
+        graph.add_edge(n1, n3, EdgeData(100));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n3, n2, EdgeData(900));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+        assert_eq!(graph.edge_count(), 10);
+
+        let mut graph = mirror_copy.clone();
+
+        graph.add_edge(n3, n2, EdgeData(986));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n1, n3, EdgeData(14));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+        assert_eq!(graph.edge_count(), 8);
+
+        let mut graph = mirror_copy;
+
+        graph.add_edge(n3, n3, EdgeData(500));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n3, n3, EdgeData(500));
+        assert!(graph.verify_node_pairing());
+        assert!(graph.verify_edge_mirror_property());
+        assert_eq!(graph.edge_count(), 8);
+
+        graph.add_edge(n3, n3, EdgeData(500));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+
+        graph.add_edge(n3, n3, EdgeData(500));
+        assert!(graph.verify_node_pairing());
+        assert!(!graph.verify_edge_mirror_property());
+        assert_eq!(graph.edge_count(), 10);
     }
 }

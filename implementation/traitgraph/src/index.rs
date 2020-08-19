@@ -1,4 +1,5 @@
 use num_traits::{NumCast, PrimInt, ToPrimitive};
+use std::hash::Hash;
 use std::marker::PhantomData;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
@@ -15,6 +16,7 @@ pub trait OptionalGraphIndex<PartnerGraphIndex: GraphIndex<Self>>:
     + std::fmt::Debug
     + Eq
     + Ord
+    + Hash
     + Copy
     + Sized
     + From<usize>
@@ -46,6 +48,7 @@ pub trait GraphIndex<PartnerOptionalGraphIndex: OptionalGraphIndex<Self>>:
     std::fmt::Debug
     + Eq
     + Ord
+    + Hash
     + Copy
     + Sized
     + From<usize>
@@ -59,7 +62,7 @@ pub trait GraphIndex<PartnerOptionalGraphIndex: OptionalGraphIndex<Self>>:
 
 macro_rules! impl_graph_index {
     ($GraphIndexType:ident, $OptionalGraphIndexType:ident) => {
-        impl<IndexType: PrimInt> OptionalGraphIndex<$GraphIndexType<IndexType>>
+        impl<IndexType: PrimInt + Hash> OptionalGraphIndex<$GraphIndexType<IndexType>>
             for $OptionalGraphIndexType<IndexType>
         {
             fn as_usize(self) -> Option<usize> {
@@ -75,7 +78,7 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> GraphIndex<$OptionalGraphIndexType<IndexType>>
+        impl<IndexType: PrimInt + Hash> GraphIndex<$OptionalGraphIndexType<IndexType>>
             for $GraphIndexType<IndexType>
         {
             fn as_usize(self) -> usize {
@@ -89,7 +92,7 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> std::fmt::Debug for $OptionalGraphIndexType<IndexType> {
+        impl<IndexType: PrimInt + Hash> std::fmt::Debug for $OptionalGraphIndexType<IndexType> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 if let Some(value) = self.as_usize() {
                     write!(f, "{}", value)
@@ -99,7 +102,7 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> std::fmt::Debug for $GraphIndexType<IndexType> {
+        impl<IndexType: PrimInt + Hash> std::fmt::Debug for $GraphIndexType<IndexType> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 //debug_assert!(self.0 != IndexType::max_value());
                 write!(f, "{}", self.as_usize())
@@ -134,7 +137,7 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> From<$GraphIndexType<IndexType>>
+        impl<IndexType: PrimInt + Hash> From<$GraphIndexType<IndexType>>
             for $OptionalGraphIndexType<IndexType>
         {
             fn from(source: $GraphIndexType<IndexType>) -> Self {
@@ -142,7 +145,7 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> From<Option<$GraphIndexType<IndexType>>>
+        impl<IndexType: PrimInt + Hash> From<Option<$GraphIndexType<IndexType>>>
             for $OptionalGraphIndexType<IndexType>
         {
             fn from(source: Option<$GraphIndexType<IndexType>>) -> Self {
@@ -154,7 +157,7 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> From<$OptionalGraphIndexType<IndexType>>
+        impl<IndexType: PrimInt + Hash> From<$OptionalGraphIndexType<IndexType>>
             for Option<$GraphIndexType<IndexType>>
         {
             fn from(source: $OptionalGraphIndexType<IndexType>) -> Self {
@@ -166,7 +169,9 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> std::ops::Add<usize> for $OptionalGraphIndexType<IndexType> {
+        impl<IndexType: PrimInt + Hash> std::ops::Add<usize>
+            for $OptionalGraphIndexType<IndexType>
+        {
             type Output = Self;
 
             fn add(self, rhs: usize) -> Self::Output {
@@ -174,7 +179,7 @@ macro_rules! impl_graph_index {
             }
         }
 
-        impl<IndexType: PrimInt> std::ops::Add<usize> for $GraphIndexType<IndexType> {
+        impl<IndexType: PrimInt + Hash> std::ops::Add<usize> for $GraphIndexType<IndexType> {
             type Output = Self;
 
             fn add(self, rhs: usize) -> Self::Output {
@@ -219,7 +224,7 @@ impl<IndexType: PrimInt> From<EdgeIndex<IndexType>> for usize {
     }
 }*/
 
-impl<T, IndexType: PrimInt> std::ops::Index<NodeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt + Hash> std::ops::Index<NodeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: NodeIndex<IndexType>) -> &Self::Output {
@@ -227,7 +232,7 @@ impl<T, IndexType: PrimInt> std::ops::Index<NodeIndex<IndexType>> for Vec<T> {
     }
 }
 
-impl<T, IndexType: PrimInt> std::ops::Index<EdgeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt + Hash> std::ops::Index<EdgeIndex<IndexType>> for Vec<T> {
     type Output = T;
 
     fn index(&self, index: EdgeIndex<IndexType>) -> &Self::Output {
@@ -235,13 +240,13 @@ impl<T, IndexType: PrimInt> std::ops::Index<EdgeIndex<IndexType>> for Vec<T> {
     }
 }
 
-impl<T, IndexType: PrimInt> std::ops::IndexMut<NodeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt + Hash> std::ops::IndexMut<NodeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: NodeIndex<IndexType>) -> &mut Self::Output {
         &mut self[index.as_usize()]
     }
 }
 
-impl<T, IndexType: PrimInt> std::ops::IndexMut<EdgeIndex<IndexType>> for Vec<T> {
+impl<T, IndexType: PrimInt + Hash> std::ops::IndexMut<EdgeIndex<IndexType>> for Vec<T> {
     fn index_mut(&mut self, index: EdgeIndex<IndexType>) -> &mut Self::Output {
         &mut self[index.as_usize()]
     }
