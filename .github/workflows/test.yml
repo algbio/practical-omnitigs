@@ -115,8 +115,8 @@ jobs:
       - name: pwd tilde
         run: cd ~; pwd
 
-      - name: ls /usr/share/miniconda
-        run: ls -la /usr/share/miniconda
+      - name: ls /usr/share/miniconda/envs
+        run: ls -la /usr/share/miniconda/envs
 
       - name: Activate conda environment
         run: conda activate practical-omnitigs
