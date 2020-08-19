@@ -111,8 +111,11 @@ jobs:
       - name: Create conda environment
         run: conda env create -f environment.yaml
 
+      - name: pwd tilde
+        run: cd ~; pwd
+
       - name: ls /usr/share/miniconda
-        run: ls -la
+        run: ls -la /usr/share/miniconda
 
       - name: Activate conda environment
         run: conda activate practical-omnitigs
