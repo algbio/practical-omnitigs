@@ -106,6 +106,7 @@ jobs:
           activate-environment: anaconda-client-env
           python-version: 3.8
           environment-file: environment.yaml
+          auto-update-conda: true
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
       - name: Run snakemake tests
