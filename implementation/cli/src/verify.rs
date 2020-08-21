@@ -1,7 +1,57 @@
 use crate::CliOptions;
 use colored::*;
-use genome_graph::bigraph::traitgraph::interface::ImmutableGraphContainer;
+use genome_graph::bigraph::traitgraph::algo::components::{
+    decompose_strongly_connected_components, decompose_weakly_connected_components,
+    extract_subgraphs_from_node_mapping,
+};
+use genome_graph::bigraph::traitgraph::interface::{DynamicGraph, ImmutableGraphContainer};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetBCalm2NodeGraph};
+
+fn verify_components<Graph: Default + DynamicGraph>(genome_graph: &Graph)
+where
+    Graph::NodeData: Clone,
+    Graph::EdgeData: Clone,
+{
+    let wccs = decompose_weakly_connected_components(genome_graph);
+    let mut scc_amount_per_wcc = Vec::new();
+    let mut scc_count = 0;
+    let mut non_scc_wcc_count = 0;
+    for wcc in &wccs {
+        let sccs =
+            extract_subgraphs_from_node_mapping(wcc, &decompose_strongly_connected_components(wcc));
+        scc_amount_per_wcc.push(sccs.len());
+        scc_count += sccs.len();
+        if sccs.len() >= 2 {
+            non_scc_wcc_count += 1;
+        }
+    }
+    let non_scc_wcc_string = if non_scc_wcc_count == 0 {
+        "which all are strongly connected".to_string().normal()
+    } else {
+        format!("of which {} are not strongly connected", non_scc_wcc_count).red()
+    };
+
+    info!(
+        "{} weakly connected components, {}",
+        wccs.len(),
+        non_scc_wcc_string
+    );
+
+    let mut scc_amount_per_wcc_string = String::new();
+    for scc_amount in scc_amount_per_wcc {
+        if !scc_amount_per_wcc_string.is_empty() {
+            scc_amount_per_wcc_string += ", ";
+        }
+        if scc_amount == 1 {
+            scc_amount_per_wcc_string += "1";
+        } else {
+            assert!(scc_amount > 1);
+            scc_amount_per_wcc_string += &format!("{}", scc_amount.to_string().yellow());
+        }
+    }
+
+    info!("{} strongly connected components, that are distributed in the weakly connected components as [{}]", scc_count, scc_amount_per_wcc_string);
+}
 
 pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
     info!("Reading bigraph from {}", options.input);
@@ -36,27 +86,7 @@ pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
     }
 
     // Components
-    let wccs =
-        genome_graph::bigraph::traitgraph::algo::components::decompose_weakly_connected_components(
-            &genome_graph,
-        );
-    let mut non_scc_wcc_count = 0;
-    for wcc in &wccs {
-        if !genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected(wcc) {
-            non_scc_wcc_count += 1;
-        }
-    }
-    let non_scc_wcc_string = if non_scc_wcc_count == 0 {
-        "which all are strongly connected".to_string().normal()
-    } else {
-        format!("of which {} are not strongly connected", non_scc_wcc_count).red()
-    };
-
-    info!(
-        "{} weakly connected components, {}",
-        wccs.len(),
-        non_scc_wcc_string
-    );
+    verify_components(&genome_graph);
 
     info!("");
 
@@ -140,27 +170,7 @@ pub(crate) fn verify_node_centric(options: &CliOptions) -> crate::Result<()> {
     }*/
 
     // Components
-    let wccs =
-        genome_graph::bigraph::traitgraph::algo::components::decompose_weakly_connected_components(
-            &genome_graph,
-        );
-    let mut non_scc_wcc_count = 0;
-    for wcc in &wccs {
-        if !genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected(wcc) {
-            non_scc_wcc_count += 1;
-        }
-    }
-    let non_scc_wcc_string = if non_scc_wcc_count == 0 {
-        "which all are strongly connected".to_string().normal()
-    } else {
-        format!("of which {} are not strongly connected", non_scc_wcc_count).red()
-    };
-
-    info!(
-        "{} weakly connected components, {}",
-        wccs.len(),
-        non_scc_wcc_string
-    );
+    verify_components(&genome_graph);
 
     info!("");
 
