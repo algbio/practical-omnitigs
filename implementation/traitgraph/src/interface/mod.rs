@@ -89,6 +89,11 @@ pub trait NavigableGraph<'a>: GraphBase {
     fn in_degree(&'a self, node_id: Self::NodeIndex) -> usize {
         self.in_neighbors(node_id).into_iter().count()
     }
+
+    /// Returns true if the given node has indegree == outdegree == 1.
+    fn is_biunivocal_node(&'a self, node_id: Self::NodeIndex) -> bool {
+        self.in_degree(node_id) == 1 && self.out_degree(node_id) == 1
+    }
 }
 
 pub trait StaticGraph: ImmutableGraphContainer + for<'a> NavigableGraph<'a> {}
