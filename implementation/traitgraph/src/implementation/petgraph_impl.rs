@@ -7,12 +7,13 @@ use num_traits::{PrimInt, ToPrimitive};
 use petgraph::graph::{DiGraph, Edges, EdgesConnecting};
 use petgraph::visit::EdgeRef;
 use petgraph::{Directed, Direction};
+use std::fmt::Debug;
 use std::iter::Map;
 
 pub use petgraph;
 
-pub fn new<NodeData: 'static + Clone, EdgeData: 'static + Clone>(
-) -> impl DynamicGraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Clone {
+pub fn new<NodeData: 'static + Clone + Debug, EdgeData: 'static + Clone + Debug>(
+) -> impl DynamicGraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Clone + Debug {
     DiGraph::<NodeData, EdgeData, usize>::default()
 }
 

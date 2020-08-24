@@ -1,5 +1,9 @@
-use super::traversal::{PreOrderBackwardBfs, PreOrderForwardBfs, PreOrderUndirectedBfs};
+use super::traversal::{
+    AllowedForbiddenNodes, PostOrderForwardDfs, PreOrderBackwardBfs, PreOrderForwardBfs,
+    PreOrderUndirectedBfs,
+};
 use crate::index::GraphIndex;
+use crate::index::OptionalGraphIndex;
 use crate::interface::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
@@ -118,9 +122,115 @@ pub fn is_strongly_connected<Graph: StaticGraph>(graph: &Graph) -> bool {
     true
 }
 
+/// Returns the strongly connected components of a graph.
+///
+/// If the graph is empty, no SCCs are returned.
+/// Otherwise, an array is returned that maps each node to a root node representing its SCC.
+/// Node that if the node ids are not consecutive, this mapping is still returned as consecutive array.
+pub fn decompose_strongly_connected_components<Graph: StaticGraph>(
+    graph: &Graph,
+) -> Vec<Graph::NodeIndex> {
+    let mut result: Vec<_> = graph.node_indices().collect();
+    let mut nodes = LinkedList::new();
+    // TODO this is not optimal. The dfs recreates a vector of all nodes all the time.
+    // Instead of doing that, the dfs could reuse the order vector.
+    // Then, an offset would need to be used for the subgraph indices.
+    let mut visited = vec![false; graph.node_count()];
+
+    for node in graph.node_indices() {
+        if !visited[node.as_usize()] {
+            let mut dfs = PostOrderForwardDfs::new(graph, node);
+
+            while let Some(node) = dfs.next(graph) {
+                visited[node.as_usize()] = true;
+                nodes.push_front(node);
+            }
+        }
+    }
+
+    //println!("nodes: {:?}", nodes);
+
+    for root_node in nodes {
+        if visited[root_node.as_usize()] {
+            //println!("Reverse processing {:?}", root_node);
+            let mut bfs = PreOrderBackwardBfs::new(graph, root_node);
+
+            while let Some(node) =
+                bfs.next_with_forbidden_nodes(graph, &AllowedForbiddenNodes::new(&visited))
+            {
+                visited[node.as_usize()] = false;
+                result[node.as_usize()] = root_node;
+            }
+        }
+    }
+
+    //println!("result: {:?}", result);
+    result
+}
+
+/// Extract the subgraphs of the given graph according to the given node_mapping.
+///
+/// The node indices of the graph are assumed to match the indices of the vector given as node mapping.
+/// The return value is a vector of graphs of which each is the induced subgraph of a set of nodes with the same mapped value.
+pub fn extract_subgraphs_from_node_mapping<Graph: Default + MutableGraphContainer + StaticGraph>(
+    graph: &Graph,
+    node_mapping: &[Graph::NodeIndex],
+) -> Vec<Graph>
+where
+    Graph::NodeData: Clone,
+    Graph::EdgeData: Clone,
+{
+    let mut result = Vec::new();
+    let mut extracted_nodes = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
+    let mut id_map = Vec::new();
+
+    for node in graph.node_indices() {
+        if !extracted_nodes[node.as_usize()].is_valid() {
+            //println!("Processing {:?}", node);
+
+            let root_node = node_mapping[node.as_usize()];
+            let mut subgraph = Graph::default();
+            id_map.clear();
+
+            for node in graph
+                .node_indices()
+                .skip(node.as_usize())
+                .filter(|n| node_mapping[n.as_usize()] == root_node)
+            {
+                //println!("Adding node {:?}", node);
+                let subgraph_node = subgraph.add_node(graph.node_data(node).clone());
+                extracted_nodes[node.as_usize()] = subgraph_node.into();
+                id_map.push(node);
+            }
+
+            for subgraph_node in subgraph.node_indices() {
+                let node = id_map[subgraph_node.as_usize()];
+                for neighbor in graph.out_neighbors(node) {
+                    let edge = neighbor.edge_id;
+                    let neighbor_node = neighbor.node_id;
+
+                    if node_mapping[neighbor_node.as_usize()] == root_node {
+                        let subgraph_neighbor_node =
+                            extracted_nodes[neighbor_node.as_usize()].into().unwrap();
+                        let edge_data = graph.edge_data(edge);
+                        subgraph.add_edge(subgraph_node, subgraph_neighbor_node, edge_data.clone());
+                    }
+                }
+            }
+
+            result.push(subgraph);
+        }
+    }
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::algo::components::{decompose_weakly_connected_components, is_strongly_connected};
+    use crate::algo::components::{
+        decompose_strongly_connected_components, decompose_weakly_connected_components,
+        extract_subgraphs_from_node_mapping, is_strongly_connected,
+    };
     use crate::implementation::petgraph_impl;
     use crate::interface::{ImmutableGraphContainer, MutableGraphContainer};
 
@@ -420,7 +530,7 @@ mod tests {
     }
 
     #[test]
-    fn ttest_scc_check_nearly_scc() {
+    fn test_scc_check_nearly_scc() {
         let mut graph = petgraph_impl::new();
         let n0 = graph.add_node(0);
         let n1 = graph.add_node(1);
@@ -463,5 +573,343 @@ mod tests {
         graph.add_edge(n1, n4, 19);
         graph.add_edge(n2, n2, 20);
         assert!(!is_strongly_connected(&graph));
+    }
+
+    /////////////////////////////////////////////////////////
+
+    #[test]
+    fn test_decompose_sccs_scc() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n0, 14);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n0, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(is_strongly_connected(&graph));
+        assert_eq!(decompose_strongly_connected_components(&graph), vec![n0; 5]);
+    }
+
+    #[test]
+    fn test_decompose_sccs_one_wc_with_two_sccs() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 1);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+        assert_eq!(
+            decompose_strongly_connected_components(&graph),
+            vec![n0, n0, n2, n2, n2]
+        );
+    }
+
+    #[test]
+    fn test_decompose_sccs_multiple_wccs() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        graph.add_edge(n0, n0, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n1, 13);
+        graph.add_edge(n3, n4, 12);
+        graph.add_edge(n3, n4, 125);
+        graph.add_edge(n4, n5, 13);
+        graph.add_edge(n5, n3, 13);
+        assert!(!is_strongly_connected(&graph));
+        assert_eq!(
+            decompose_strongly_connected_components(&graph),
+            vec![n0, n1, n1, n3, n3, n3]
+        );
+    }
+
+    #[test]
+    fn test_decompose_sccs_empty_graph() {
+        let graph = petgraph_impl::new::<i32, i32>();
+        assert!(is_strongly_connected(&graph));
+        assert_eq!(decompose_strongly_connected_components(&graph), vec![]);
+    }
+
+    #[test]
+    fn test_decompose_sccs_nearly_scc() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n1, 14);
+        graph.add_edge(n1, n4, 15);
+        graph.add_edge(n1, n4, 155);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n0, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+        assert_eq!(
+            decompose_strongly_connected_components(&graph),
+            vec![n0, n1, n1, n1, n1]
+        );
+    }
+
+    #[test]
+    fn test_decompose_sccs_nearly_scc_reverse() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n4, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n0, 14);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n1, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+        assert_eq!(
+            decompose_strongly_connected_components(&graph),
+            vec![n0, n1, n1, n1, n1]
+        );
+    }
+
+    /////////////////////////////////////////////////////////
+
+    #[test]
+    fn test_extract_subgraphs_scc() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n0, 14);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n0, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(is_strongly_connected(&graph));
+        let extracted = extract_subgraphs_from_node_mapping(
+            &graph,
+            &decompose_strongly_connected_components(&graph),
+        );
+        assert_eq!(1, extracted.len());
+        assert!(is_strongly_connected(&extracted[0]));
+        assert_eq!(5, extracted[0].node_count());
+        assert_eq!(12, extracted[0].edge_count());
+    }
+
+    #[test]
+    fn test_extract_subgraphs_one_wc_with_two_sccs() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 1);
+        graph.add_edge(n0, n3, 18);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+        let extracted = extract_subgraphs_from_node_mapping(
+            &graph,
+            &decompose_strongly_connected_components(&graph),
+        );
+        assert_eq!(2, extracted.len());
+        for (i, graph) in extracted.iter().enumerate() {
+            assert!(
+                is_strongly_connected(&extracted[i]),
+                "Graph {} not strongly connected: {:?}",
+                i,
+                graph
+            );
+        }
+
+        assert_eq!(2, extracted[0].node_count());
+        assert_eq!(3, extracted[0].edge_count());
+        assert_eq!(3, extracted[1].node_count());
+        assert_eq!(5, extracted[1].edge_count());
+    }
+
+    #[test]
+    fn test_extract_subgraphs_multiple_wccs() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        graph.add_edge(n0, n0, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n1, 13);
+        graph.add_edge(n3, n4, 12);
+        graph.add_edge(n3, n4, 125);
+        graph.add_edge(n4, n5, 13);
+        graph.add_edge(n5, n3, 13);
+        assert!(!is_strongly_connected(&graph));
+        let extracted = extract_subgraphs_from_node_mapping(
+            &graph,
+            &decompose_strongly_connected_components(&graph),
+        );
+        assert_eq!(3, extracted.len());
+        for (i, graph) in extracted.iter().enumerate() {
+            assert!(
+                is_strongly_connected(&extracted[i]),
+                "Graph {} not strongly connected: {:?}",
+                i,
+                graph
+            );
+        }
+
+        assert_eq!(1, extracted[0].node_count());
+        assert_eq!(1, extracted[0].edge_count());
+        assert_eq!(2, extracted[1].node_count());
+        assert_eq!(2, extracted[1].edge_count());
+        assert_eq!(3, extracted[2].node_count());
+        assert_eq!(4, extracted[2].edge_count());
+    }
+
+    #[test]
+    fn test_extract_subgraphs_empty_graph() {
+        let graph = petgraph_impl::new::<i32, i32>();
+        assert!(is_strongly_connected(&graph));
+        let extracted = extract_subgraphs_from_node_mapping(
+            &graph,
+            &decompose_strongly_connected_components(&graph),
+        );
+        assert!(extracted.is_empty());
+    }
+
+    #[test]
+    fn test_extract_subgraphs_nearly_scc() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n1, 14);
+        graph.add_edge(n1, n4, 15);
+        graph.add_edge(n1, n4, 155);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n0, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+        let extracted = extract_subgraphs_from_node_mapping(
+            &graph,
+            &decompose_strongly_connected_components(&graph),
+        );
+        assert_eq!(2, extracted.len());
+        for (i, graph) in extracted.iter().enumerate() {
+            assert!(
+                is_strongly_connected(&extracted[i]),
+                "Graph {} not strongly connected: {:?}",
+                i,
+                graph
+            );
+        }
+
+        assert_eq!(1, extracted[0].node_count());
+        assert_eq!(0, extracted[0].edge_count());
+        assert_eq!(4, extracted[1].node_count());
+        assert_eq!(10, extracted[1].edge_count());
+    }
+
+    #[test]
+    fn test_extract_subgraphs_nearly_scc_reverse() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        graph.add_edge(n4, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n4, n0, 14);
+        graph.add_edge(n1, n0, 15);
+        graph.add_edge(n1, n0, 155);
+        graph.add_edge(n2, n1, 16);
+        graph.add_edge(n3, n2, 17);
+        graph.add_edge(n4, n3, 18);
+        graph.add_edge(n1, n4, 19);
+        graph.add_edge(n2, n2, 20);
+        assert!(!is_strongly_connected(&graph));
+        let extracted = extract_subgraphs_from_node_mapping(
+            &graph,
+            &decompose_strongly_connected_components(&graph),
+        );
+        assert_eq!(2, extracted.len());
+        for (i, graph) in extracted.iter().enumerate() {
+            assert!(
+                is_strongly_connected(&extracted[i]),
+                "Graph {} not strongly connected: {:?}",
+                i,
+                graph
+            );
+        }
+
+        assert_eq!(1, extracted[0].node_count());
+        assert_eq!(0, extracted[0].edge_count());
+        assert_eq!(4, extracted[1].node_count());
+        assert_eq!(9, extracted[1].edge_count());
     }
 }

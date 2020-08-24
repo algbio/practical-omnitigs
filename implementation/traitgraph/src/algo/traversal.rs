@@ -49,6 +49,25 @@ pub type PreOrderUndirectedDfs<Graph> = PreOrderTraversal<
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 
+/// A post-order forward DFS in a directed graph.
+pub type PostOrderForwardDfs<Graph> = DfsPostOrderTraversal<
+    Graph,
+    ForwardNeighborStrategy,
+    LinkedList<<Graph as GraphBase>::NodeIndex>,
+>;
+/// A post-order forward DFS in a directed graph.
+pub type PostOrderBackwardDfs<Graph> = DfsPostOrderTraversal<
+    Graph,
+    BackwardNeighborStrategy,
+    LinkedList<<Graph as GraphBase>::NodeIndex>,
+>;
+/// A post-order forward DFS in a directed graph.
+pub type PostOrderUndirectedDfs<Graph> = DfsPostOrderTraversal<
+    Graph,
+    UndirectedNeighborStrategy,
+    LinkedList<<Graph as GraphBase>::NodeIndex>,
+>;
+
 pub struct PreOrderTraversal<
     Graph: GraphBase,
     NeighborStrategy,
@@ -87,8 +106,34 @@ impl<
     }
 
     pub fn next(&mut self, graph: &'a Graph) -> Option<Graph::NodeIndex> {
+        self.next_internal(graph, &NoForbiddenNodes)
+    }
+
+    pub fn next_with_forbidden_nodes<FN: ForbiddenNodes<Graph>>(
+        &mut self,
+        graph: &'a Graph,
+        forbidden_nodes: &FN,
+    ) -> Option<Graph::NodeIndex> {
+        self.next_internal(graph, forbidden_nodes)
+    }
+
+    #[inline]
+    fn next_internal<FN: ForbiddenNodes<Graph>>(
+        &mut self,
+        graph: &'a Graph,
+        forbidden_nodes: &FN,
+    ) -> Option<Graph::NodeIndex> {
         if let Some(first) = QueueStrategy::pop(&mut self.queue) {
+            assert!(
+                !forbidden_nodes.is_forbidden(first),
+                "A node became forbidden after being added to the queue. This is not supported."
+            );
+
             for neighbor in NeighborStrategy::neighbor_iterator(graph, first) {
+                if forbidden_nodes.is_forbidden(neighbor) {
+                    continue;
+                }
+
                 let rank_entry = &mut self.rank[neighbor.as_usize()];
                 if *rank_entry == None.into() {
                     *rank_entry = self.current_rank.into();
@@ -185,6 +230,11 @@ impl<
     }
 }
 
+/// A type with this trait can tell if a node is forbidden in a graph traversal.
+pub trait ForbiddenNodes<Graph: GraphBase> {
+    fn is_forbidden(&self, node: Graph::NodeIndex) -> bool;
+}
+
 pub trait TraversalNeighborStrategy<'a, Graph: GraphBase> {
     type Iterator: Iterator<Item = <Graph as GraphBase>::NodeIndex>;
 
@@ -194,6 +244,29 @@ pub trait TraversalNeighborStrategy<'a, Graph: GraphBase> {
 pub trait TraversalQueueStrategy<Graph: GraphBase, Queue: BidirectedQueue<Graph::NodeIndex>> {
     fn push(queue: &mut Queue, node: Graph::NodeIndex);
     fn pop(queue: &mut Queue) -> Option<Graph::NodeIndex>;
+}
+
+/// A type implementing [ForbiddenNodes](ForbiddenNodes) that allows all nodes in a graph traversal.
+pub struct NoForbiddenNodes;
+impl<Graph: GraphBase> ForbiddenNodes<Graph> for NoForbiddenNodes {
+    fn is_forbidden(&self, _: Graph::NodeIndex) -> bool {
+        false
+    }
+}
+
+/// A type implementing [ForbiddenNodes](ForbiddenNodes) that allows all nodes set to true in a boolean vector.
+pub struct AllowedForbiddenNodes<'a> {
+    allowed_nodes: &'a [bool],
+}
+impl<'a> AllowedForbiddenNodes<'a> {
+    pub fn new(allowed_nodes: &'a [bool]) -> Self {
+        Self { allowed_nodes }
+    }
+}
+impl<'a, Graph: GraphBase> ForbiddenNodes<Graph> for AllowedForbiddenNodes<'a> {
+    fn is_forbidden(&self, node: Graph::NodeIndex) -> bool {
+        !self.allowed_nodes[node.as_usize()]
+    }
 }
 
 pub struct ForwardNeighborStrategy;
