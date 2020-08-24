@@ -129,6 +129,7 @@ impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
             .parse()
             .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IDError(value.id().to_owned())))?;
         let sequence = VectorGenome::from_iter(value.seq()); // TODO store with bio
+        // TODO check if genome is valid
 
         let mut length = None;
         let mut total_abundance = None;
