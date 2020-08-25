@@ -1,3 +1,2 @@
-pub mod unitigs;
 pub mod macrotigs;
-pub mod walks;
+pub mod unitigs;

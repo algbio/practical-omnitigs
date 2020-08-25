@@ -5,7 +5,7 @@ use traitgraph::interface::StaticGraph;
 pub struct StronglyConnectedMacronodes;
 
 impl<Graph: StaticGraph> MacronodeAlgorithm<Graph> for StronglyConnectedMacronodes {
-    fn compute_macronodes(graph: &Graph) -> Macronodes<Graph> {
+    fn compute_macronodes(_graph: &Graph) -> Macronodes<Graph> {
         todo!()
     }
 }

@@ -239,6 +239,7 @@ dependencies = [
  "error-chain",
  "genome-graph",
  "log",
+ "omnitigs",
  "simplelog",
 ]
 

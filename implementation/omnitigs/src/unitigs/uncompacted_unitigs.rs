@@ -1,5 +1,5 @@
-use crate::index::GraphIndex;
-use crate::interface::StaticGraph;
+use traitgraph::index::GraphIndex;
+use traitgraph::interface::StaticGraph;
 
 #[derive(Debug, Eq, PartialEq, Default)]
 pub struct UncompactedNodeUnitigs {
@@ -141,8 +141,8 @@ mod tests {
     use super::count_uncompacted_edge_unitigs;
     use super::count_uncompacted_node_unitigs;
     use super::UncompactedNodeUnitigs;
-    use crate::implementation::petgraph_impl;
-    use crate::interface::MutableGraphContainer;
+    use traitgraph::implementation::petgraph_impl;
+    use traitgraph::interface::MutableGraphContainer;
 
     #[test]
     fn test_count_uncompacted_node_unitigs_four() {

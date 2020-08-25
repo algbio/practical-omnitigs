@@ -1,4 +1,5 @@
 use crate::index::{GraphIndex, GraphIndices, OptionalGraphIndex};
+use crate::walks::{EdgeWalk, NodeWalk};
 
 /// Contains the associated types of a graph.
 pub trait GraphBase {
@@ -96,8 +97,37 @@ pub trait NavigableGraph<'a>: GraphBase {
     }
 }
 
-pub trait StaticGraph: ImmutableGraphContainer + for<'a> NavigableGraph<'a> {}
-impl<T: ImmutableGraphContainer + for<'a> NavigableGraph<'a>> StaticGraph for T {}
+/// A helper trait to get the correct walk type from a graph.
+/// This is the factory pattern, where a graph is a factory for walks.
+pub trait WalkableGraph: GraphBase + Sized {
+    fn create_node_walk<WalkType: for<'a> NodeWalk<'a, Self>>(
+        &self,
+        walk: &[Self::NodeIndex],
+    ) -> WalkType {
+        WalkType::from(&walk)
+    }
+
+    fn create_empty_node_walk<WalkType: for<'a> NodeWalk<'a, Self>>(&self) -> WalkType {
+        self.create_node_walk(&[])
+    }
+    fn create_edge_walk<WalkType: for<'a> EdgeWalk<'a, Self>>(
+        &self,
+        walk: &[Self::EdgeIndex],
+    ) -> WalkType {
+        WalkType::from(&walk)
+    }
+
+    fn create_empty_edge_walk<WalkType: for<'a> EdgeWalk<'a, Self>>(&self) -> WalkType {
+        self.create_edge_walk(&[])
+    }
+}
+impl<Graph: GraphBase> WalkableGraph for Graph {}
+
+pub trait StaticGraph:
+    ImmutableGraphContainer + for<'a> NavigableGraph<'a> + WalkableGraph
+{
+}
+impl<T: ImmutableGraphContainer + for<'a> NavigableGraph<'a> + WalkableGraph> StaticGraph for T {}
 
 pub trait DynamicGraph: StaticGraph + MutableGraphContainer {}
 impl<T: StaticGraph + MutableGraphContainer> DynamicGraph for T {}
