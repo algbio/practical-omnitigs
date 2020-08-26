@@ -43,6 +43,12 @@ mod tests {
         let n9 = graph.add_node(9);
         let n10 = graph.add_node(10);
         let n11 = graph.add_node(11);
+        let n12 = graph.add_node(12);
+        let n13 = graph.add_node(13);
+        let n14 = graph.add_node(14);
+        let n15 = graph.add_node(15);
+        let n16 = graph.add_node(16);
+        let n17 = graph.add_node(17);
         graph.add_edge(n0, n1, 10);
         graph.add_edge(n1, n2, 11);
         graph.add_edge(n2, n3, 12);
@@ -62,6 +68,16 @@ mod tests {
         graph.add_edge(n11, n5, 25);
         graph.add_edge(n6, n11, 26);
         graph.add_edge(n7, n11, 27);
+        graph.add_edge(n8, n12, 28);
+        graph.add_edge(n8, n12, 29);
+        graph.add_edge(n12, n13, 30);
+        graph.add_edge(n13, n14, 31);
+        graph.add_edge(n14, n8, 32);
+        graph.add_edge(n8, n15, 33);
+        graph.add_edge(n15, n16, 34);
+        graph.add_edge(n16, n17, 35);
+        graph.add_edge(n17, n8, 36);
+        graph.add_edge(n17, n8, 37);
 
         let macronodes = StronglyConnectedMacronodes::compute_macronodes(&graph);
         let mut macronodes_iter = macronodes.iter();
