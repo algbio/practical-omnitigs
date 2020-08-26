@@ -50,7 +50,7 @@ rule verify_genome_graph:
     input: file = "data/{file}.unitigs.fa", binary = "data/target/release/cli"
     output: ["data/{file}.unitigs.fa.verify", "data/{file}.unitigs.fa.properties"]
     conda: "config/conda-rust-env.yaml"
-    shell: "data/target/release/cli --input '{input.file}' --kmer-size 51 --output '{output[0]}' verify 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
+    shell: "data/target/release/cli --input '{input.file}' verify --kmer-size 51 --output '{output[0]}' 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
 
 rule verify_genome:
     input: file = "{file}.fna", binary = "data/target/release/cli"
