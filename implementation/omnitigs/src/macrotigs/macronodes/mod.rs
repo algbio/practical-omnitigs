@@ -10,7 +10,11 @@ pub struct Macronodes<Graph: GraphBase> {
     macronodes: Vec<VecEdgeWalk<Graph>>,
 }
 
-impl<Graph: GraphBase> Macronodes<Graph> {}
+impl<Graph: GraphBase> Macronodes<Graph> {
+    pub fn new(macronodes: Vec<VecEdgeWalk<Graph>>) -> Self {
+        Self { macronodes }
+    }
+}
 
 impl<'a, Graph: GraphBase> IntoIterator for &'a Macronodes<Graph> {
     type Item = &'a VecEdgeWalk<Graph>;

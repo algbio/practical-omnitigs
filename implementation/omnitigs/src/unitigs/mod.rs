@@ -4,6 +4,8 @@ use traitgraph::walks::VecEdgeWalk;
 
 pub mod uncompacted_unitigs;
 
+pub type Unitig<Graph> = VecEdgeWalk<Graph>;
+
 pub struct Unitigs<Graph: GraphBase> {
     unitigs: Vec<VecEdgeWalk<Graph>>,
 }
@@ -45,14 +47,18 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
 
         Self { unitigs }
     }
+
+    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecEdgeWalk<Graph>> {
+        self.unitigs.iter()
+    }
 }
 
-impl<'a, Graph: GraphBase> IntoIterator for &'a Unitigs<Graph> {
-    type Item = &'a VecEdgeWalk<Graph>;
-    type IntoIter = std::slice::Iter<'a, VecEdgeWalk<Graph>>;
+impl<Graph: GraphBase> IntoIterator for Unitigs<Graph> {
+    type Item = VecEdgeWalk<Graph>;
+    type IntoIter = std::vec::IntoIter<VecEdgeWalk<Graph>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.unitigs.iter()
+        self.unitigs.into_iter()
     }
 }
 
@@ -88,7 +94,7 @@ mod test {
         let e11 = graph.add_edge(n7, n0, 20);
 
         let unitigs = Unitigs::new(&graph);
-        let mut unitigs_iter = unitigs.into_iter();
+        let mut unitigs_iter = unitigs.iter();
         // TODO move walks to traitgraph and support properly from another graph trait, i.e. WalkableGraph.
         assert_eq!(
             unitigs_iter.next(),
