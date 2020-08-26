@@ -1,4 +1,5 @@
 use crate::CliOptions;
+use clap::Clap;
 use colored::*;
 use genome_graph::bigraph::traitgraph::algo::components::{
     decompose_strongly_connected_components, decompose_weakly_connected_components,
@@ -6,6 +7,33 @@ use genome_graph::bigraph::traitgraph::algo::components::{
 };
 use genome_graph::bigraph::traitgraph::interface::{DynamicGraph, ImmutableGraphContainer};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetBCalm2NodeGraph};
+
+#[derive(Clap)]
+pub struct VerifyEdgeCentricCommand {
+    #[clap(
+        short,
+        long,
+        about = "The kmer size selected when generating the input with bcalm2"
+    )]
+    pub kmer_size: usize,
+
+    #[clap(
+        short,
+        long,
+        about = "The output file, to which the graph should be written in bcalm2 format for verification purposes"
+    )]
+    pub output: Option<String>,
+}
+
+#[derive(Clap)]
+pub struct VerifyNodeCentricCommand {
+    #[clap(
+        short,
+        long,
+        about = "The output file, to which the graph should be written in bcalm2 format for verification purposes"
+    )]
+    pub output: Option<String>,
+}
 
 fn verify_components<Graph: Default + DynamicGraph>(genome_graph: &Graph)
 where
@@ -53,23 +81,19 @@ where
     info!("{} strongly connected components, that are distributed in the weakly connected components as [{}]", scc_count, scc_amount_per_wcc_string);
 }
 
-pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
-    let kmer_size = if let Some(kmer_size) = options.kmer_size {
-        kmer_size
-    } else {
-        error!("kmer_size is not set");
-        return Err(crate::Error::from(crate::ErrorKind::Parameter));
-    };
-
+pub(crate) fn verify_edge_centric(
+    options: &CliOptions,
+    subcommand: &VerifyEdgeCentricCommand,
+) -> crate::Result<()> {
     let genome_graph: PetBCalm2EdgeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
             &options.input,
-            kmer_size,
+            subcommand.kmer_size,
         )?;
 
     info!(
         "Reading bigraph from '{}' with kmer size {}",
-        options.input, kmer_size
+        options.input, subcommand.kmer_size
     );
     info!("");
     info!("========================");
@@ -98,7 +122,7 @@ pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
 
     info!("");
 
-    if let Some(output) = &options.output {
+    if let Some(output) = &subcommand.output {
         info!("Writing the unmodified bigraph to {}", output);
         genome_graph::io::bcalm2::write_edge_centric_bigraph_to_bcalm2_to_file(
             &genome_graph,
@@ -108,7 +132,10 @@ pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
     Ok(())
 }
 
-pub(crate) fn verify_node_centric(options: &CliOptions) -> crate::Result<()> {
+pub(crate) fn verify_node_centric(
+    options: &CliOptions,
+    subcommand: &VerifyNodeCentricCommand,
+) -> crate::Result<()> {
     info!("Reading bigraph from {}", options.input);
     let genome_graph: PetBCalm2NodeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_node_centric_from_file(
@@ -180,7 +207,7 @@ pub(crate) fn verify_node_centric(options: &CliOptions) -> crate::Result<()> {
 
     info!("");
 
-    if let Some(output) = &options.output {
+    if let Some(output) = &subcommand.output {
         info!("Writing the unmodified bigraph to {}", output);
         genome_graph::io::bcalm2::write_node_centric_bigraph_to_bcalm2_to_file(
             &genome_graph,

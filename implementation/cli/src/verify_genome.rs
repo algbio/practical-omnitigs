@@ -36,7 +36,7 @@ error_chain! {
     }
 }
 
-pub(crate) fn verify_genome(options: &CliOptions) -> Result<()> {
+pub(crate) fn verify_genome(options: &CliOptions) -> crate::Result<()> {
     info!("Verifying that the genome has no holes...");
 
     info!("Reading genome from: {}", &options.input);
@@ -63,24 +63,24 @@ pub(crate) fn verify_genome(options: &CliOptions) -> Result<()> {
             Ok(invalid_characters) => {
                 if !invalid_characters.is_empty() {
                     error!("Genome contains a hole: invalid characters");
-                    return Err(Error::from(ErrorKind::GenomeHasHole(invalid_characters)));
+                    return Err(Error::from(ErrorKind::GenomeHasHole(invalid_characters)).into());
                 }
             }
             Err(_) => {
                 error!("Genome contains a hole: characters that are not valid UTF-8");
-                return Err(Error::from(ErrorKind::GenomeHasNonUTF8Characters));
+                return Err(Error::from(ErrorKind::GenomeHasNonUTF8Characters).into());
             }
         }
 
         if genome.is_empty() {
             error!("Genome string is empty");
-            return Err(Error::from(ErrorKind::EmptyGenomeString));
+            return Err(Error::from(ErrorKind::EmptyGenomeString).into());
         }
     }
 
     if records_found == 0 {
         error!("Genome contains no fasta records");
-        return Err(Error::from(ErrorKind::GenomeHasNoRecords));
+        return Err(Error::from(ErrorKind::GenomeHasNoRecords).into());
     }
 
     info!("Found {} records", records_found);

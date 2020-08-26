@@ -12,6 +12,10 @@ mod verify;
 mod verify_genome;
 
 error_chain! {
+    foreign_links {
+        Io(std::io::Error);
+    }
+
     links {
         GenomeGraph(genome_graph::error::Error, genome_graph::error::ErrorKind);
         VerifyGenome(verify_genome::Error, verify_genome::ErrorKind);
@@ -35,20 +39,6 @@ struct CliOptions {
     )]
     pub input: String,
 
-    #[clap(
-        short,
-        long,
-        about = "The kmer size selected when generating the input with bcalm2"
-    )]
-    pub kmer_size: Option<usize>,
-
-    #[clap(
-        short,
-        long,
-        about = "The output file, depending on the subcommand used"
-    )]
-    pub output: Option<String>,
-
     #[clap(subcommand)]
     pub subcommand: Command,
 }
@@ -58,11 +48,11 @@ enum Command {
     #[clap(
         about = "Prints statistics about the input graph, and saves it back to disc for verification purposes if --output is given"
     )]
-    Verify,
+    Verify(verify::VerifyEdgeCentricCommand),
     #[clap(
         about = "Same as verify, but loads the input graph node-centric instead of edge-centric"
     )]
-    VerifyNodeCentric,
+    VerifyNodeCentric(verify::VerifyNodeCentricCommand),
     #[clap(about = "Verifies that no record of the genome contains illegal characters")]
     VerifyGenome,
 }
@@ -99,10 +89,10 @@ fn run() -> Result<()> {
     info!("Hello");
 
     match &options.subcommand {
-        Command::Verify => verify::verify_edge_centric(options)?,
-        Command::VerifyNodeCentric => verify::verify_node_centric(options)?,
-        Command::VerifyGenome => verify_genome::verify_genome(options)?,
-    };
+        Command::Verify(subcommand) => verify::verify_edge_centric(options, subcommand),
+        Command::VerifyNodeCentric(subcommand) => verify::verify_node_centric(options, subcommand),
+        Command::VerifyGenome => verify_genome::verify_genome(options),
+    }?;
 
     info!("Goodbye");
     Ok(())
