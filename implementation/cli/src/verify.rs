@@ -67,7 +67,10 @@ pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
             kmer_size,
         )?;
 
-    info!("Reading bigraph from '{}' with kmer size {}", options.input, kmer_size);
+    info!(
+        "Reading bigraph from '{}' with kmer size {}",
+        options.input, kmer_size
+    );
     info!("");
     info!("========================");
     info!("=== Graph Statistics ===");
