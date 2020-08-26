@@ -14,6 +14,7 @@ publish = false
 [dependencies]
 clap = "3.0.0-beta.1"
 genome-graph = {path = "../genome-graph"}
+omnitigs = {path = "../omnitigs"}
 error-chain = "0.12"
 log = "0.4"
 simplelog = "0.8"

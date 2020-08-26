@@ -74,9 +74,7 @@ pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
 
     // Uncompacted unitigs
     let uncompacted_unitig_amount =
-        genome_graph::bigraph::traitgraph::algo::unitigs::count_uncompacted_edge_unitigs(
-            &genome_graph,
-        );
+        omnitigs::unitigs::uncompacted_unitigs::count_uncompacted_edge_unitigs(&genome_graph);
 
     let log_string = format!("{} uncompacted unitigs", uncompacted_unitig_amount);
     if uncompacted_unitig_amount == 0 {
@@ -127,9 +125,7 @@ pub(crate) fn verify_node_centric(options: &CliOptions) -> crate::Result<()> {
 
     // Uncompacted unitigs
     let uncompacted_unitig_amount =
-        genome_graph::bigraph::traitgraph::algo::unitigs::count_uncompacted_node_unitigs(
-            &genome_graph,
-        );
+        omnitigs::unitigs::uncompacted_unitigs::count_uncompacted_node_unitigs(&genome_graph);
 
     let log_string = format!("{} uncompacted unitigs", uncompacted_unitig_amount.total());
     let detail_string = format!(
