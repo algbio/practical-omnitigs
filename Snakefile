@@ -58,6 +58,12 @@ rule verify_genome:
     conda: "config/conda-rust-env.yaml"
     shell: "data/target/release/cli --input '{input.file}' verify-genome 2>&1 | tee '{output.log}'"
 
+rule circularise_genome:
+    input: file = "{file}.fna", binary = "data/target/release/cli"
+    output: data = "{file}.fna-circularised", log = "{file}.fna-circularised-log"
+    conda: "config/conda-rust-env.yaml"
+    shell: "data/target/release/cli --input '{input.file}' circularise-genome 2>&1 --output '{output.data}' | tee '{output.log}'"
+
 rule build_rust_release:
     input: "data/rust.is_tested"
     output: "data/target/release/cli"
@@ -69,7 +75,7 @@ rule test_rust:
     shell: "cargo test --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule bcalm2:
-    input: genome = "data/{file}.fna", verification = "data/{file}.is_genome_verified"
+    input: genome = "data/{file}.fna-circularised", verification = "data/{file}.is_genome_verified"
     output: "data/{file}.unitigs.fa"
     conda: "config/conda-bcalm2-env.yaml"
     shell: "cd data; bcalm -in ../{input.genome} -kmer-size 51 -abundance-min 1"
