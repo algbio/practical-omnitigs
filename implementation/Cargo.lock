@@ -257,6 +257,9 @@ dependencies = [
 [[package]]
 name = "compact-genome"
 version = "0.1.0"
+dependencies = [
+ "itertools",
+]
 
 [[package]]
 name = "csv"
