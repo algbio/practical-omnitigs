@@ -234,8 +234,10 @@ dependencies = [
 name = "cli"
 version = "0.1.0"
 dependencies = [
+ "bio",
  "clap",
  "colored",
+ "compact-genome",
  "error-chain",
  "genome-graph",
  "log",
@@ -257,6 +259,9 @@ dependencies = [
 [[package]]
 name = "compact-genome"
 version = "0.1.0"
+dependencies = [
+ "itertools",
+]
 
 [[package]]
 name = "csv"

@@ -54,13 +54,23 @@ where
 }
 
 pub(crate) fn verify_edge_centric(options: &CliOptions) -> crate::Result<()> {
-    info!("Reading bigraph from {}", options.input);
+    let kmer_size = if let Some(kmer_size) = options.kmer_size {
+        kmer_size
+    } else {
+        error!("kmer_size is not set");
+        return Err(crate::Error::from(crate::ErrorKind::Parameter));
+    };
+
     let genome_graph: PetBCalm2EdgeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
             &options.input,
-            options.kmer_size,
+            kmer_size,
         )?;
 
+    info!(
+        "Reading bigraph from '{}' with kmer size {}",
+        options.input, kmer_size
+    );
     info!("");
     info!("========================");
     info!("=== Graph Statistics ===");

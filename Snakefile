@@ -46,11 +46,17 @@ rule make_bcalm_output_deterministic:
     output: "data/{file}.unitigs.fa.deterministic"
     shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output}'"
 
-rule verify:
+rule verify_genome_graph:
     input: file = "data/{file}.unitigs.fa", binary = "data/target/release/cli"
     output: ["data/{file}.unitigs.fa.verify", "data/{file}.unitigs.fa.properties"]
     conda: "config/conda-rust-env.yaml"
-    shell: "data/target/release/cli --input '{input.file}' --kmer-size 21 --output '{output[0]}' verify 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
+    shell: "data/target/release/cli --input '{input.file}' --kmer-size 51 --output '{output[0]}' verify 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
+
+rule verify_genome:
+    input: file = "{file}.fna", binary = "data/target/release/cli"
+    output: log = "{file}.is_genome_verified"
+    conda: "config/conda-rust-env.yaml"
+    shell: "data/target/release/cli --input '{input.file}' verify-genome 2>&1 | tee '{output.log}'"
 
 rule build_rust_release:
     input: "data/rust.is_tested"
@@ -63,10 +69,10 @@ rule test_rust:
     shell: "cargo test --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule bcalm2:
-    input: "data/{file}.fna"
+    input: genome = "data/{file}.fna", verification = "data/{file}.is_genome_verified"
     output: "data/{file}.unitigs.fa"
     conda: "config/conda-bcalm2-env.yaml"
-    shell: "cd data; bcalm -in ../{input} -kmer-size 21 -abundance-min 1"
+    shell: "cd data; bcalm -in ../{input.genome} -kmer-size 51 -abundance-min 1"
 
 rule extract:
     input: "data/{file}.gz"

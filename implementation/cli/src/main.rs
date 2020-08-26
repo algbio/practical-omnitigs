@@ -9,10 +9,19 @@ use error_chain::{ChainedError, ExitCode};
 use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod verify;
+mod verify_genome;
 
 error_chain! {
     links {
         GenomeGraph(genome_graph::error::Error, genome_graph::error::ErrorKind);
+        VerifyGenome(verify_genome::Error, verify_genome::ErrorKind);
+    }
+
+    errors {
+        Parameter {
+            description("a parameter was missing, superfluous or had an illegal value, see the log for more details")
+            display("a parameter was missing, superfluous or had an illegal value, see the log for more details")
+        }
     }
 }
 
@@ -31,7 +40,7 @@ struct CliOptions {
         long,
         about = "The kmer size selected when generating the input with bcalm2"
     )]
-    pub kmer_size: usize,
+    pub kmer_size: Option<usize>,
 
     #[clap(
         short,
@@ -54,6 +63,8 @@ enum Command {
         about = "Same as verify, but loads the input graph node-centric instead of edge-centric"
     )]
     VerifyNodeCentric,
+    #[clap(about = "Verifies that no record of the genome contains illegal characters")]
+    VerifyGenome,
 }
 
 // The main is unpacked from an error-chain macro.
@@ -88,9 +99,10 @@ fn run() -> Result<()> {
     info!("Hello");
 
     match &options.subcommand {
-        Command::Verify => verify::verify_edge_centric(options),
-        Command::VerifyNodeCentric => verify::verify_node_centric(options),
-    }?;
+        Command::Verify => verify::verify_edge_centric(options)?,
+        Command::VerifyNodeCentric => verify::verify_node_centric(options)?,
+        Command::VerifyGenome => verify_genome::verify_genome(options)?,
+    };
 
     info!("Goodbye");
     Ok(())

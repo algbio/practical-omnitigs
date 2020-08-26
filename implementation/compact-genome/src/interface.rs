@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::iter::FromIterator;
 
 /// A genome string.
@@ -21,6 +22,13 @@ where
      */
     fn is_valid(&self) -> bool {
         self.into_iter().all(is_valid_ascii_genome_character)
+    }
+
+    fn get_invalid_characters(&self) -> Vec<u8> {
+        self.into_iter()
+            .filter(|c| !is_valid_ascii_genome_character(*c))
+            .unique()
+            .collect()
     }
 
     /// Returns the amount of bases in this genome string.
@@ -67,6 +75,7 @@ pub fn ascii_complement(char: u8) -> Option<u8> {
  * Returns true if the given ascii character represents a valid genome character.
  * Valid genome characters are `A`, `T`, `G` and `C`.
  */
+// Note: do not add more characters here, but make a new method if required.
 pub fn is_valid_ascii_genome_character(char: u8) -> bool {
     match char {
         b'A' | b'T' | b'G' | b'C' => true,
