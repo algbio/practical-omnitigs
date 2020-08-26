@@ -8,6 +8,7 @@ use clap::Clap;
 use error_chain::{ChainedError, ExitCode};
 use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
+mod circularise_records;
 mod verify;
 mod verify_genome;
 
@@ -55,6 +56,8 @@ enum Command {
     VerifyNodeCentric(verify::VerifyNodeCentricCommand),
     #[clap(about = "Verifies that no record of the genome contains illegal characters")]
     VerifyGenome,
+    #[clap(about = "Circularises each record in a genome by appending a prefix to itself")]
+    CirculariseGenome(circularise_records::CirculariseGenomeCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -92,6 +95,9 @@ fn run() -> Result<()> {
         Command::Verify(subcommand) => verify::verify_edge_centric(options, subcommand),
         Command::VerifyNodeCentric(subcommand) => verify::verify_node_centric(options, subcommand),
         Command::VerifyGenome => verify_genome::verify_genome(options),
+        Command::CirculariseGenome(subcommand) => {
+            circularise_records::circularise_records(options, subcommand)
+        }
     }?;
 
     info!("Goodbye");
