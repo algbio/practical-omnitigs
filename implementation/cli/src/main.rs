@@ -63,7 +63,7 @@ enum Command {
         about = "Same as verify, but loads the input graph node-centric instead of edge-centric"
     )]
     VerifyNodeCentric,
-    #[clap(about = "Verifies that the genome is a single linear string without holes")]
+    #[clap(about = "Verifies that no record of the genome contains illegal characters")]
     VerifyGenome,
 }
 
