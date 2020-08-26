@@ -9,10 +9,12 @@ use error_chain::{ChainedError, ExitCode};
 use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod verify;
+mod verify_genome;
 
 error_chain! {
     links {
         GenomeGraph(genome_graph::error::Error, genome_graph::error::ErrorKind);
+        VerifyGenome(verify_genome::Error, verify_genome::ErrorKind);
     }
 }
 
@@ -54,6 +56,8 @@ enum Command {
         about = "Same as verify, but loads the input graph node-centric instead of edge-centric"
     )]
     VerifyNodeCentric,
+    #[clap(about = "Verifies that the genome is a single linear string without holes")]
+    VerifyGenome,
 }
 
 // The main is unpacked from an error-chain macro.
@@ -88,9 +92,10 @@ fn run() -> Result<()> {
     info!("Hello");
 
     match &options.subcommand {
-        Command::Verify => verify::verify_edge_centric(options),
-        Command::VerifyNodeCentric => verify::verify_node_centric(options),
-    }?;
+        Command::Verify => verify::verify_edge_centric(options)?,
+        Command::VerifyNodeCentric => verify::verify_node_centric(options)?,
+        Command::VerifyGenome => verify_genome::verify_genome(options)?,
+    };
 
     info!("Goodbye");
     Ok(())
