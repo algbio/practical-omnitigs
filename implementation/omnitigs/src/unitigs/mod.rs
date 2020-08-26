@@ -1,35 +1,89 @@
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
-use traitgraph::walks::VecEdgeWalk;
+use traitgraph::walks::{NodeWalk, VecNodeWalk};
 
 pub mod uncompacted_unitigs;
 
-pub type Unitig<Graph> = VecEdgeWalk<Graph>;
+/// A unitig stored as sequence of nodes.
+#[derive(Debug, Clone)]
+pub struct NodeUnitig<Graph: GraphBase> {
+    /// Store the unitig as a node-centric walk.
+    /// This allows unitigs that are a single node to be stored.
+    walk: VecNodeWalk<Graph>,
+    /// If a unitig has just a single edge, this edge might be a multiedge.
+    /// In this case, this field is required to uniquely identify the unitig.
+    single_edge_disambiguator: Option<Graph::EdgeIndex>,
+}
+
+impl<Graph: GraphBase> NodeUnitig<Graph> {
+    /// Creates a new unitig from the given walk.
+    /// Panics if the walk as length two nodes but no single edge is given, or if a single edge is given but the walk has a length other than two nodes.
+    pub fn new(walk: VecNodeWalk<Graph>, single_edge: Option<Graph::EdgeIndex>) -> Self {
+        assert_eq!(walk.len() == 2, single_edge.is_some());
+        Self {
+            walk,
+            single_edge_disambiguator: single_edge,
+        }
+    }
+
+    /// Returns an iterator over the nodes of this unitig.
+    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = Graph::NodeIndex> {
+        self.walk.iter()
+    }
+
+    /// Returns the single edge field of this unitig.
+    /// The field is `Some` if this unitig has exactly two nodes.
+    /// In this case, the two nodes might be connected by multiple edges, so then this field serves as disambiguation between the edges.
+    pub fn single_edge(&self) -> &Option<Graph::EdgeIndex> {
+        &self.single_edge_disambiguator
+    }
+
+    /// Extracts the node walk from this unitig, consuming the unitig.
+    /// Note that the information for unitigs of length two with a multiedge is lost.
+    pub fn into_node_walk(self) -> VecNodeWalk<Graph> {
+        self.walk
+    }
+
+    /// Returns the length of this unitigs as its amount of nodes.
+    pub fn len(&self) -> usize {
+        self.walk.len()
+    }
+
+    /// Returns true if this unitig contains no nodes.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
 
 pub struct Unitigs<Graph: GraphBase> {
-    unitigs: Vec<VecEdgeWalk<Graph>>,
+    unitigs: Vec<NodeUnitig<Graph>>,
 }
 
 impl<Graph: StaticGraph> Unitigs<Graph> {
-    /// Computes the unitigs of a graph.
-    /// Assumes that the graph is not a cycle, otherwise the method enters an endless loop.
+    /// Computes the maximal unitigs of a graph.
+    ///
+    /// The unitigs are computed both node- and edge-centric.
+    /// That means that parallel edges are counted as separate unitig each, and single nodes are counted as unitigs as well.
+    ///
+    /// If the graph is a cycle, it outputs an arbitrary subwalk.
     pub fn new(graph: &Graph) -> Self {
         let mut used_edges = vec![false; graph.edge_count()];
         let mut unitigs = Vec::new();
 
+        // Add unitigs of length at least two nodes.
         for edge in graph.edge_indices() {
             if !used_edges[edge.as_usize()] {
                 used_edges[edge.as_usize()] = true;
 
                 let mut start_node = graph.edge_endpoints(edge).from_node;
                 let mut end_node = graph.edge_endpoints(edge).to_node;
-                let mut unitig = vec![edge];
+                let mut unitig = vec![end_node, start_node];
 
                 while graph.is_biunivocal_node(start_node) && start_node != end_node {
                     let in_neighbor = graph.in_neighbors(start_node).into_iter().next().unwrap();
                     start_node = in_neighbor.node_id;
                     used_edges[in_neighbor.edge_id.as_usize()] = true;
-                    unitig.push(in_neighbor.edge_id);
+                    unitig.push(start_node);
                 }
 
                 unitig.reverse();
@@ -38,33 +92,58 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
                     let out_neighbor = graph.out_neighbors(end_node).into_iter().next().unwrap();
                     end_node = out_neighbor.node_id;
                     used_edges[out_neighbor.edge_id.as_usize()] = true;
-                    unitig.push(out_neighbor.edge_id);
+                    unitig.push(end_node);
                 }
 
-                unitigs.push(unitig.into());
+                let single_edge_disambiguator = if unitig.len() == 2 { Some(edge) } else { None };
+                unitigs.push(NodeUnitig::new(unitig.into(), single_edge_disambiguator));
+            }
+        }
+
+        // Add single nodes
+        for node in graph.node_indices() {
+            if graph.is_bivalent_node(node) {
+                unitigs.push(NodeUnitig::new(vec![node].into(), None));
             }
         }
 
         Self { unitigs }
     }
 
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecEdgeWalk<Graph>> {
+    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a NodeUnitig<Graph>> {
         self.unitigs.iter()
     }
 }
 
 impl<Graph: GraphBase> IntoIterator for Unitigs<Graph> {
-    type Item = VecEdgeWalk<Graph>;
-    type IntoIter = std::vec::IntoIter<VecEdgeWalk<Graph>>;
+    type Item = NodeUnitig<Graph>;
+    type IntoIter = std::vec::IntoIter<NodeUnitig<Graph>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.unitigs.into_iter()
     }
 }
 
+impl<Graph: GraphBase> PartialEq for NodeUnitig<Graph>
+where
+    Graph::NodeIndex: PartialEq,
+    Graph::EdgeIndex: PartialEq,
+{
+    fn eq(&self, rhs: &Self) -> bool {
+        self.walk == rhs.walk && self.single_edge_disambiguator == rhs.single_edge_disambiguator
+    }
+}
+
+impl<Graph: GraphBase> Eq for NodeUnitig<Graph>
+where
+    Graph::NodeIndex: Eq,
+    Graph::EdgeIndex: Eq,
+{
+}
+
 #[cfg(test)]
 mod test {
-    use super::Unitigs;
+    use super::{NodeUnitig, Unitigs};
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::{MutableGraphContainer, WalkableGraph};
 
@@ -80,41 +159,74 @@ mod test {
         let n6 = graph.add_node(6);
         let n7 = graph.add_node(7);
         let n8 = graph.add_node(8);
-        let e0 = graph.add_edge(n0, n1, 10);
-        let e1 = graph.add_edge(n1, n2, 11);
-        let e2 = graph.add_edge(n2, n3, 12);
-        let e3 = graph.add_edge(n3, n4, 13);
-        let e4 = graph.add_edge(n3, n5, 14);
-        let e5 = graph.add_edge(n4, n8, 15);
-        let e6 = graph.add_edge(n5, n8, 16);
+        graph.add_edge(n0, n1, 10);
+        graph.add_edge(n1, n2, 11);
+        graph.add_edge(n2, n3, 12);
+        graph.add_edge(n3, n4, 13);
+        graph.add_edge(n3, n5, 14);
+        graph.add_edge(n4, n8, 15);
+        graph.add_edge(n5, n8, 16);
         let e7 = graph.add_edge(n8, n6, 17);
         let e8 = graph.add_edge(n8, n6, 175);
-        let e9 = graph.add_edge(n8, n7, 18);
+        graph.add_edge(n8, n7, 18);
         let e10 = graph.add_edge(n6, n0, 19);
-        let e11 = graph.add_edge(n7, n0, 20);
+        graph.add_edge(n7, n0, 20);
 
         let unitigs = Unitigs::new(&graph);
         let mut unitigs_iter = unitigs.iter();
-        // TODO move walks to traitgraph and support properly from another graph trait, i.e. WalkableGraph.
         assert_eq!(
             unitigs_iter.next(),
-            Some(&graph.create_edge_walk(&[e0, e1, e2]))
+            Some(&NodeUnitig::new(
+                graph.create_node_walk(&[n0, n1, n2, n3]),
+                None
+            ))
         );
         assert_eq!(
             unitigs_iter.next(),
-            Some(&graph.create_edge_walk(&[e3, e5]))
+            Some(&NodeUnitig::new(
+                graph.create_node_walk(&[n3, n4, n8]),
+                None
+            ))
         );
         assert_eq!(
             unitigs_iter.next(),
-            Some(&graph.create_edge_walk(&[e4, e6]))
+            Some(&NodeUnitig::new(
+                graph.create_node_walk(&[n3, n5, n8]),
+                None
+            ))
         );
-        assert_eq!(unitigs_iter.next(), Some(&graph.create_edge_walk(&[e7])));
-        assert_eq!(unitigs_iter.next(), Some(&graph.create_edge_walk(&[e8])));
         assert_eq!(
             unitigs_iter.next(),
-            Some(&graph.create_edge_walk(&[e9, e11]))
+            Some(&NodeUnitig::new(
+                graph.create_node_walk(&[n8, n6]),
+                Some(e7)
+            ))
         );
-        assert_eq!(unitigs_iter.next(), Some(&graph.create_edge_walk(&[e10])));
+        assert_eq!(
+            unitigs_iter.next(),
+            Some(&NodeUnitig::new(
+                graph.create_node_walk(&[n8, n6]),
+                Some(e8)
+            ))
+        );
+        assert_eq!(
+            unitigs_iter.next(),
+            Some(&NodeUnitig::new(
+                graph.create_node_walk(&[n8, n7, n0]),
+                None
+            ))
+        );
+        assert_eq!(
+            unitigs_iter.next(),
+            Some(&NodeUnitig::new(
+                graph.create_node_walk(&[n6, n0]),
+                Some(e10)
+            ))
+        );
+        assert_eq!(
+            unitigs_iter.next(),
+            Some(&NodeUnitig::new(graph.create_node_walk(&[n8]), None))
+        );
         assert_eq!(unitigs_iter.next(), None);
     }
 }

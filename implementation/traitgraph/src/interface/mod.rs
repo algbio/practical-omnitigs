@@ -95,6 +95,11 @@ pub trait NavigableGraph<'a>: GraphBase {
     fn is_biunivocal_node(&'a self, node_id: Self::NodeIndex) -> bool {
         self.in_degree(node_id) == 1 && self.out_degree(node_id) == 1
     }
+
+    /// Returns true if the given node has indegree > 1 and outdegree > 1.
+    fn is_bivalent_node(&'a self, node_id: Self::NodeIndex) -> bool {
+        self.in_degree(node_id) > 1 && self.out_degree(node_id) > 1
+    }
 }
 
 /// A helper trait to get the correct walk type from a graph.
