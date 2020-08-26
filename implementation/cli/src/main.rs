@@ -16,6 +16,13 @@ error_chain! {
         GenomeGraph(genome_graph::error::Error, genome_graph::error::ErrorKind);
         VerifyGenome(verify_genome::Error, verify_genome::ErrorKind);
     }
+
+    errors {
+        Parameter {
+            description("a parameter was missing, superfluous or had an illegal value, see the log for more details")
+            display("a parameter was missing, superfluous or had an illegal value, see the log for more details")
+        }
+    }
 }
 
 #[derive(Clap)]
@@ -33,7 +40,7 @@ struct CliOptions {
         long,
         about = "The kmer size selected when generating the input with bcalm2"
     )]
-    pub kmer_size: usize,
+    pub kmer_size: Option<usize>,
 
     #[clap(
         short,
