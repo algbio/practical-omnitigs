@@ -40,49 +40,56 @@ pub(crate) fn verify_genome(options: &CliOptions) -> Result<()> {
     info!("Verifying that the genome has no holes...");
 
     info!("Reading genome from: {}", &options.input);
-    let mut records = bio::io::fasta::Reader::from_file(&options.input)
+    let records = bio::io::fasta::Reader::from_file(&options.input)
         .map_err(|e| {
             error!("Error reading genome file");
             Error::from(e)
         })?
         .records();
-    let genome = if let Some(record) = records.next() {
-        match record {
+
+    let mut records_found = 0;
+    for record in records {
+        records_found += 1;
+        let genome = match record {
             Ok(record) => VectorGenome::from_iter(record.seq()),
             Err(err) => {
                 error!("Error reading genome file");
                 return Err(err.into());
             }
-        }
-    } else {
-        error!("Genome contains no fasta records");
-        return Err(Error::from(ErrorKind::GenomeHasNoRecords));
-    };
+        };
 
-    let invalid_characters = String::from_utf8(genome.get_invalid_characters());
-    match invalid_characters {
-        Ok(invalid_characters) => {
-            if !invalid_characters.is_empty() {
-                error!("Genome contains a hole: invalid characters");
-                return Err(Error::from(ErrorKind::GenomeHasHole(invalid_characters)));
+        let invalid_characters = String::from_utf8(genome.get_invalid_characters());
+        match invalid_characters {
+            Ok(invalid_characters) => {
+                if !invalid_characters.is_empty() {
+                    error!("Genome contains a hole: invalid characters");
+                    return Err(Error::from(ErrorKind::GenomeHasHole(invalid_characters)));
+                }
+            }
+            Err(_) => {
+                error!("Genome contains a hole: characters that are not valid UTF-8");
+                return Err(Error::from(ErrorKind::GenomeHasNonUTF8Characters));
             }
         }
-        Err(_) => {
-            error!("Genome contains a hole: characters that are not valid UTF-8");
-            return Err(Error::from(ErrorKind::GenomeHasNonUTF8Characters));
+
+        if genome.is_empty() {
+            error!("Genome string is empty");
+            return Err(Error::from(ErrorKind::EmptyGenomeString));
         }
     }
 
-    if records.next().is_some() {
-        error!("Genome contains a hole: multiple fasta records");
-        return Err(Error::from(ErrorKind::GenomeHasMultipleRecords));
+    if records_found == 0 {
+        error!("Genome contains no fasta records");
+        return Err(Error::from(ErrorKind::GenomeHasNoRecords));
     }
 
-    if genome.is_empty() {
-        error!("Genome string is empty");
-        return Err(Error::from(ErrorKind::EmptyGenomeString));
+    info!("Found {} records", records_found);
+
+    if records_found == 1 {
+        info!("Genome has no holes");
+    } else {
+        info!("No record of the genome has a hole, but it consists of multiple records.")
     }
 
-    info!("Genome has no holes");
     Ok(())
 }
