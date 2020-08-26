@@ -1,4 +1,4 @@
-configfile: "config/default.yaml"
+configfile: "config/default.yml"
 
 if 'use_conda' in config and config['use_conda']:
     workflow.use_conda = True
@@ -26,7 +26,7 @@ rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob
 
 
 rule selftest:
-    conda: "config/conda-selftest-env.yaml"
+    conda: "config/conda-selftest-env.yml"
     shell: "echo \"snakemake $(snakemake --version)\"; conda --version; wget --version"
 
 rule test_all:
@@ -49,19 +49,19 @@ rule make_bcalm_output_deterministic:
 rule verify_genome_graph:
     input: file = "data/{file}.unitigs.fa", binary = "data/target/release/cli"
     output: ["data/{file}.unitigs.fa.verify", "data/{file}.unitigs.fa.properties"]
-    conda: "config/conda-rust-env.yaml"
+    conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' verify --kmer-size 51 --output '{output[0]}' 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
 
 rule verify_genome:
     input: file = "{file}.fna", binary = "data/target/release/cli"
     output: log = "{file}.is_genome_verified"
-    conda: "config/conda-rust-env.yaml"
+    conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' verify-genome 2>&1 | tee '{output.log}'"
 
 rule circularise_genome:
     input: file = "{file}.fna", binary = "data/target/release/cli"
     output: data = "{file}.fna-circularised", log = "{file}.fna-circularised-log"
-    conda: "config/conda-rust-env.yaml"
+    conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' circularise-genome 2>&1 --output '{output.data}' | tee '{output.log}'"
 
 rule build_rust_release:
@@ -77,13 +77,13 @@ rule test_rust:
 rule bcalm2:
     input: genome = "data/{file}.fna-circularised", verification = "data/{file}.is_genome_verified"
     output: "data/{file}.unitigs.fa"
-    conda: "config/conda-bcalm2-env.yaml"
+    conda: "config/conda-bcalm2-env.yml"
     shell: "cd data; bcalm -in ../{input.genome} -kmer-size 51 -abundance-min 1"
 
 rule extract:
     input: "data/{file}.gz"
     output: "data/{file}"
-    conda: "config/conda-extract-env.yaml"
+    conda: "config/conda-extract-env.yml"
     shell: "cd data; gunzip -k {wildcards.file}.gz"
 
 rule download_experiment_file:
