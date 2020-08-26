@@ -19,12 +19,12 @@ error_chain! {
             display("the genome contains characters that are not valid UTF-8")
         }
 
-        GenomeHasMultipleStrings {
-            description("the genome consists of multiple strings")
-            display("the genome consists of multiple strings")
+        GenomeHasMultipleRecords {
+            description("the genome consists of multiple fasta records")
+            display("the genome consists of multiple fasta records")
         }
 
-        NoRecords {
+        GenomeHasNoRecords {
             description("the genome has no fasta records")
             display("the genome has no fasta records")
         }
@@ -55,8 +55,8 @@ pub(crate) fn verify_genome(options: &CliOptions) -> Result<()> {
             }
         }
     } else {
-        error!("Genome contains no records");
-        return Err(Error::from(ErrorKind::NoRecords));
+        error!("Genome contains no fasta records");
+        return Err(Error::from(ErrorKind::GenomeHasNoRecords));
     };
 
     let invalid_characters = String::from_utf8(genome.get_invalid_characters());
@@ -74,8 +74,8 @@ pub(crate) fn verify_genome(options: &CliOptions) -> Result<()> {
     }
 
     if records.next().is_some() {
-        error!("Genome contains a hole: multiple strings");
-        return Err(Error::from(ErrorKind::GenomeHasMultipleStrings));
+        error!("Genome contains a hole: multiple fasta records");
+        return Err(Error::from(ErrorKind::GenomeHasMultipleRecords));
     }
 
     if genome.is_empty() {
