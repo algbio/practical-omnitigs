@@ -50,6 +50,11 @@ This ensures reproducibility of the results and automates the installation of re
 The Rust code written for this project includes a command line interface that can be used directly.
 For documentation on how to use it, please refer to the documentation of the [cli crate][cli crate].
 
+### Troubleshooting
+
+If you have problems with using this software package, take a look at our [troubleshooting page](https://github.com/algbio/practical-omnitigs/tree/master/TROUBLESHOOTING.md).
+If that does not solve your issue, do not hesitate to [file a bug report](https://github.com/algbio/practical-omnitigs/issues).
+
 ## Technical Information
 
 ### Directory Structure
