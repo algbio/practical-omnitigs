@@ -1,0 +1,12 @@
+channels:
+        - conda-forge
+        - bioconda
+dependencies:
+        - python
+        - bwa
+        - kmc
+        - samtools
+        - snakemake
+        - git
+        - make
+        - gcc_impl_linux-64
