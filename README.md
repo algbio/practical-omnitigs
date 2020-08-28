@@ -63,6 +63,7 @@ If that does not solve your issue, do not hesitate to [file a bug report](https:
  * `.idea`: Configuration for the IntelliJ IDEA integrated development environment.
  * `config`: All config files related to the experiments, including conda environments and experiment declarations.
  * `data`: Data used and produced by the experiments.
+ * `external-software`: Location to install external software required by the experiment pipeline.
  * `implementation`: The algorithms that we are testing. Everything is written in Rust, so the folder contains a Rust workspace. 
 
 ### Implementation
