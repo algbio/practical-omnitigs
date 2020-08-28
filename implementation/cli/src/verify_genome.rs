@@ -62,7 +62,10 @@ pub(crate) fn verify_genome(options: &CliOptions) -> crate::Result<()> {
         match invalid_characters {
             Ok(invalid_characters) => {
                 if !invalid_characters.is_empty() {
-                    error!("Genome contains a hole: invalid characters");
+                    error!(
+                        "Genome contains a hole: invalid characters '{}'",
+                        invalid_characters
+                    );
                     return Err(Error::from(ErrorKind::GenomeHasHole(invalid_characters)).into());
                 }
             }

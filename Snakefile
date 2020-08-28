@@ -53,13 +53,13 @@ rule verify_genome_graph:
     shell: "data/target/release/cli --input '{input.file}' verify --kmer-size 51 --output '{output[0]}' 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
 
 rule verify_genome:
-    input: file = "{file}.fna", binary = "data/target/release/cli"
+    input: file = "{file}.fna", binary = ancient("data/target/release/cli")
     output: log = "{file}.is_genome_verified"
     conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' verify-genome 2>&1 | tee '{output.log}'"
 
 rule circularise_genome:
-    input: file = "{file}.fna", binary = "data/target/release/cli"
+    input: file = "{file}.fna", binary = ancient("data/target/release/cli")
     output: data = "{file}.fna-circularised", log = "{file}.fna-circularised-log"
     conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' circularise-genome 2>&1 --output '{output.data}' | tee '{output.log}'"
@@ -90,3 +90,59 @@ rule download_experiment_file:
     output: "{file}.fna.gz"
     params: url = lambda wildcards, output: experiment_file_url_map[str(output)]
     shell: "cd data; wget {params.url}"
+
+########################
+###### Validation ######
+########################
+
+rule validate_single_file:
+    input: unitigs = "{file}.unitigs.contigvalidator"
+    output: touch("{file}.is_validated")
+
+rule validate_all:
+    input: expand("{file}.is_validated", file = experiment_file_names)
+
+rule test_validate:
+    input: verify = "data/" + config['test_file'] + ".is_validated"
+
+#############################
+###### ContigValidator ######
+#############################
+
+rule install_sdsl:
+    output: dir = directory("external-software/sdsl-lite")
+    conda: "config/conda-contigvalidator-env.yml"
+    shell:
+        """
+        cd external-software
+        git clone https://github.com/simongog/sdsl-lite.git
+        cd sdsl-lite
+        git checkout v2.1.1
+        HOME=`pwd` ./install.sh
+        """
+
+rule install_contig_validator:
+    input: sdsl = directory("external-software/sdsl-lite")
+    output: dir = directory("external-software/ContigValidator")
+    conda: "config/conda-contigvalidator-env.yml"
+    shell: 
+        """
+        cd external-software
+        git clone --recursive https://github.com/mayankpahadia1993/ContigValidator.git
+        cd ContigValidator/src
+        LIBRARY_PATH="../../sdsl-lite/lib" CPATH="../../sdsl-lite/include" make
+        """
+
+rule run_contig_validator_unitigs:
+    input: cv = directory("external-software/ContigValidator"), genome = "{file}.unitigs.fa"
+    output: result = "{file}.unitigs.contigvalidator", exact_alignments = temp("{file}.unitigs.exact"),
+        bwa_bam = temp("{file}.unitigs.fa.bwa.bam"), bwa_bam_bai = temp("{file}.unitigs.fa.bwa.bam.bai"), fn_kmc_pre = temp("{file}.unitigs.fa.fn.kmc_pre"),
+        fn_kmc_suf = temp("{file}.unitigs.fa.fn.kmc_suf"), fp_kmc_pre = temp("{file}.unitigs.fa.fp.kmc_pre"), fp_kmc_suf = temp("{file}.unitigs.fa.fp.kmc_suf"),
+        kmc_kmc_pre = temp("{file}.unitigs.fa.kmc.kmc_pre"), kmc_kmc_suf = temp("{file}.unitigs.fa.kmc.kmc_suf"), tp_kmc_pre = temp("{file}.unitigs.fa.tp.kmc_pre"),
+        tp_kmc_suf = temp("{file}.unitigs.fa.tp.kmc_suf")
+    conda: "config/conda-contigvalidator-env.yml"
+    shell:
+        """
+        cd external-software/ContigValidator
+        bash run.sh -suffixsave 0 -abundance-min 1 -kmer-size 51 -r '../../{wildcards.file}.fna-circularised' -a '../../{wildcards.file}.unitigs.contigvalidator' -i '../../{wildcards.file}.unitigs.fa'
+        """
