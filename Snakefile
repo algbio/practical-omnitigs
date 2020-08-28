@@ -96,7 +96,7 @@ rule download_experiment_file:
 ########################
 
 rule validate_single_file:
-    input: unitigs = "{file}.unitigs.contigvalidator"
+    input: unitigs_contigvalidator = "{file}.unitigs.contigvalidator", untiigs_quast = directory("{file}.unitigs.quast")
     output: touch("{file}.is_validated")
 
 rule validate_all:
@@ -146,3 +146,13 @@ rule run_contig_validator_unitigs:
         cd external-software/ContigValidator
         bash run.sh -suffixsave 0 -abundance-min 1 -kmer-size 51 -r '../../{wildcards.file}.fna-circularised' -a '../../{wildcards.file}.unitigs.contigvalidator' -i '../../{wildcards.file}.unitigs.fa'
         """
+
+###################
+###### QUAST ######
+###################
+
+rule run_quast_unitigs:
+    input: cv = directory("external-software/ContigValidator"), unitigs = "{file}.unitigs.fa", reference = "{file}.fna-circularised"
+    output: report = directory("{file}.unitigs.quast")
+    conda: "config/conda-quast-env.yml"
+    shell: "quast -o {output.report} -r {input.reference} {input.unitigs}"
