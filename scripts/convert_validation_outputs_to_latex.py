@@ -32,36 +32,50 @@ contig_validator_lines = []
 ### Build LaTeX file ###
 ########################
 
+def table_header(caption):
+	return """
+	\\begin{table}[ht]
+	\\begin{center}
+	\\caption{""" + caption + """}
+	\\begin{tabular}{|l*{1}{|r}|}
+	\\hline
+	Parameter & Value \\\\ \\hline
+	"""
+
+table_footer = """\\hline
+	\\end{tabular}
+	\\end{center}
+	\\end{table}
+	"""
+
+def write_table(output_file, caption, rows):
+	output_file.write(table_header(caption))
+	for row in rows:
+		output_file.write(row + '\n')
+	output_file.write(table_footer)
+
 output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
 	\\documentclass[10pt,a4paper]{article}
 	\\usepackage{fullpage}
 	\\begin{document}
-	\\begin{table}[ht]
-	\\begin{center}
-	\\caption{QUAST: All statistics are based on contigs of size $\\geq$ 500 bp, unless otherwise noted (e.g., "\\# contigs ($\\geq$ 0 bp)" and "Total length ($\\geq$ 0 bp)" include all contigs)\\newline
-	ContigValidator: Minor errors due to circularisation may occur.}
-	\\begin{tabular}{|l*{1}{|r}|}
-	\\hline
-	Parameter & Value \\\\
+	\\begin{description}
+		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
+	\\end{description}
 	"""
 )
+#output_file.write(table_header("QUAST: All statistics are based on contigs of size $\\geq$ 500 bp, unless otherwise noted (e.g., \"\\# contigs ($\\geq$ 0 bp)" and "Total length ($\\geq$ 0 bp)\" include all contigs)\\newline	ContigValidator: Minor errors due to circularisation may occur."))
+write_table(output_file, "QUAST: \\# of contigs", quast_lines[0:6])
+write_table(output_file, "QUAST: total length of contigs", quast_lines[6:12])
+write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", quast_lines[12:26])
+write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", quast_lines[26:])
 
-output_file.write("\\textbf{QUAST} & \\\\")
-for line in quast_lines:
-	output_file.write(line + '\n')
 
-
-output_file.write("\\textbf{ContigValidator} & \\\\")
-for line in contig_validator_lines:
-	output_file.write(line + '\n')
+write_table(output_file, "ContigValidator", contig_validator_lines)
 
 output_file.write(
 	"""
-	\\end{tabular}
-	\\end{center}
-	\\end{table}
 	\\end{document}
 	"""
 )
