@@ -25,8 +25,15 @@ quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
 ### Process ContigValidator file ###
 ####################################
 
-# TODO
-contig_validator_lines = []
+
+contig_validator_file = open(contig_validator_file_name, 'r')
+contig_validator_lines = contig_validator_file.readlines()
+contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
+contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
+contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
+contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
+contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
+
 
 ########################
 ### Build LaTeX file ###
@@ -57,8 +64,8 @@ def write_table(output_file, caption, rows):
 output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
-	\\documentclass[10pt,a4paper]{article}
-	\\usepackage{fullpage}
+	\\documentclass[10pt,a4paper,twocolumn]{article}
+	\\usepackage[cm]{fullpage}
 	\\begin{document}
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
