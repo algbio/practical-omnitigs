@@ -91,12 +91,23 @@ rule download_experiment_file:
     params: url = lambda wildcards, output: experiment_file_url_map[str(output)]
     shell: "cd data; wget {params.url}"
 
+rule latex:
+    input: "{file}.tex"
+    output: "{file}.pdf"
+    conda: "config/conda-latex-env.yml"
+    shell: "tectonic {input}"
+
 ########################
 ###### Validation ######
 ########################
 
+rule create_single_validation_tex:
+    input: unitigs_contigvalidator = "{file}.unitigs.contigvalidator", untiigs_quast = directory("{file}.unitigs.quast"), script = "scripts/convert_validation_outputs_to_latex.py"
+    output: "{file}.unitigs.tex"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.unitigs_contigvalidator}' '{input.untiigs_quast}/report.tex' {output}"
+
 rule validate_single_file:
-    input: unitigs_contigvalidator = "{file}.unitigs.contigvalidator", untiigs_quast = directory("{file}.unitigs.quast")
+    input: "{file}.unitigs.pdf"
     output: touch("{file}.is_validated")
 
 rule validate_all:
@@ -135,7 +146,7 @@ rule install_contig_validator:
 
 rule run_contig_validator_unitigs:
     input: cv = directory("external-software/ContigValidator"), genome = "{file}.unitigs.fa"
-    output: result = "{file}.unitigs.contigvalidator", exact_alignments = temp("{file}.unitigs.exact"),
+    output: result = "{file}.unitigs.contigvalidator", exact_alignments = temp("{file}.unitigs.fa.exact"),
         bwa_bam = temp("{file}.unitigs.fa.bwa.bam"), bwa_bam_bai = temp("{file}.unitigs.fa.bwa.bam.bai"), fn_kmc_pre = temp("{file}.unitigs.fa.fn.kmc_pre"),
         fn_kmc_suf = temp("{file}.unitigs.fa.fn.kmc_suf"), fp_kmc_pre = temp("{file}.unitigs.fa.fp.kmc_pre"), fp_kmc_suf = temp("{file}.unitigs.fa.fp.kmc_suf"),
         kmc_kmc_pre = temp("{file}.unitigs.fa.kmc.kmc_pre"), kmc_kmc_suf = temp("{file}.unitigs.fa.kmc.kmc_suf"), tp_kmc_pre = temp("{file}.unitigs.fa.tp.kmc_pre"),
