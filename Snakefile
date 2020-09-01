@@ -67,7 +67,7 @@ rule circularise_genome:
 rule build_rust_release:
     input: "data/rust.is_tested"
     output: "data/target/release/cli"
-    shell: "cargo build --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "RUSTFLAGS=\"-C target-cpu=native\" cargo build --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
@@ -102,9 +102,9 @@ rule latex:
 ########################
 
 rule create_single_validation_tex:
-    input: unitigs_contigvalidator = "{file}.unitigs.contigvalidator", untiigs_quast = directory("{file}.unitigs.quast"), script = "scripts/convert_validation_outputs_to_latex.py"
+    input: unitigs_contigvalidator = "{file}.unitigs.contigvalidator", unitigs_quast = directory("{file}.unitigs.quast"), script = "scripts/convert_validation_outputs_to_latex.py"
     output: "{file}.unitigs.tex"
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.unitigs_contigvalidator}' '{input.untiigs_quast}/report.tex' {output}"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.unitigs_contigvalidator}' '{input.unitigs_quast}/report.tex' {output}"
 
 rule validate_single_file:
     input: "{file}.unitigs.pdf"
