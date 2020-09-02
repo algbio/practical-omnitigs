@@ -79,6 +79,7 @@ pub trait NavigableGraph<'a>: GraphBase {
         from_node_id: Self::NodeIndex,
         to_node_id: Self::NodeIndex,
     ) -> Self::OutNeighborsTo;
+
     fn in_neighbors_from(
         &'a self,
         to_node_id: Self::NodeIndex,
@@ -117,6 +118,7 @@ pub trait WalkableGraph: GraphBase + Sized {
     fn create_empty_node_walk<WalkType: for<'a> NodeWalk<'a, Self>>(&self) -> WalkType {
         self.create_node_walk(&[])
     }
+
     fn create_edge_walk<WalkType: for<'a> EdgeWalk<'a, Self>>(
         &self,
         walk: &[Self::EdgeIndex],
@@ -149,4 +151,10 @@ pub struct Edge<NodeIndex> {
 pub struct Neighbor<NodeIndex, EdgeIndex> {
     pub edge_id: EdgeIndex,
     pub node_id: NodeIndex,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum NodeOrEdge<NodeIndex, EdgeIndex> {
+    Node(NodeIndex),
+    Edge(EdgeIndex),
 }

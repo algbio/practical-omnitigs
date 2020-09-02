@@ -4,6 +4,7 @@ use super::traversal::{
 };
 use crate::index::GraphIndex;
 use crate::index::OptionalGraphIndex;
+use crate::interface::NodeOrEdge;
 use crate::interface::{MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
@@ -34,7 +35,12 @@ where
         let mut bfs = PreOrderUndirectedBfs::new(graph, start);
         let mut subgraph = Graph::default();
 
-        while let Some(node) = bfs.next(graph) {
+        while let Some(node) = bfs.next() {
+            let node = if let NodeOrEdge::Node(node) = node {
+                node
+            } else {
+                continue;
+            };
             visited[node.as_usize()] = true;
             //println!("add_node: {:?}", node);
             subgraph.add_node(graph.node_data(node).clone());
@@ -95,11 +101,13 @@ pub fn is_strongly_connected<Graph: StaticGraph>(graph: &Graph) -> bool {
         return true;
     }
 
-    let mut traversal = PreOrderForwardBfs::new(graph, graph.node_indices().next().unwrap());
+    let traversal = PreOrderForwardBfs::new(graph, graph.node_indices().next().unwrap());
     let mut traversal_node_count = 0;
 
-    while traversal.next(graph).is_some() {
-        traversal_node_count += 1;
+    for node_or_edge in traversal {
+        if let NodeOrEdge::Node(_) = node_or_edge {
+            traversal_node_count += 1;
+        }
     }
 
     if traversal_node_count != graph.node_count() {
@@ -107,11 +115,13 @@ pub fn is_strongly_connected<Graph: StaticGraph>(graph: &Graph) -> bool {
         return false;
     }
 
-    let mut traversal = PreOrderBackwardBfs::new(graph, graph.node_indices().next().unwrap());
+    let traversal = PreOrderBackwardBfs::new(graph, graph.node_indices().next().unwrap());
     let mut traversal_node_count = 0;
 
-    while traversal.next(graph).is_some() {
-        traversal_node_count += 1;
+    for node_or_edge in traversal {
+        if let NodeOrEdge::Node(_) = node_or_edge {
+            traversal_node_count += 1;
+        }
     }
 
     if traversal_node_count != graph.node_count() {
@@ -156,8 +166,13 @@ pub fn decompose_strongly_connected_components<Graph: StaticGraph>(
             let mut bfs = PreOrderBackwardBfs::new(graph, root_node);
 
             while let Some(node) =
-                bfs.next_with_forbidden_nodes(graph, &AllowedForbiddenNodes::new(&visited))
+                bfs.next_with_forbidden_subgraph(&AllowedForbiddenNodes::new(&visited))
             {
+                let node = if let NodeOrEdge::Node(node) = node {
+                    node
+                } else {
+                    continue;
+                };
                 visited[node.as_usize()] = false;
                 result[node.as_usize()] = root_node;
             }

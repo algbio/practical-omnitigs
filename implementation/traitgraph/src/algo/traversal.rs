@@ -1,26 +1,30 @@
 use crate::algo::queue::BidirectedQueue;
 use crate::index::{GraphIndex, OptionalGraphIndex};
-use crate::interface::{GraphBase, NavigableGraph, StaticGraph};
+use crate::interface::NodeOrEdge;
+use crate::interface::{GraphBase, NavigableGraph, Neighbor, StaticGraph};
 use std::collections::LinkedList;
 use std::iter::IntoIterator;
 use std::marker::PhantomData;
 
 /// A normal forward BFS in a directed graph.
-pub type PreOrderForwardBfs<Graph> = PreOrderTraversal<
+pub type PreOrderForwardBfs<'a, Graph> = PreOrderTraversal<
+    'a,
     Graph,
     ForwardNeighborStrategy,
     BfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A normal backward BFS in a directed graph.
-pub type PreOrderBackwardBfs<Graph> = PreOrderTraversal<
+pub type PreOrderBackwardBfs<'a, Graph> = PreOrderTraversal<
+    'a,
     Graph,
     BackwardNeighborStrategy,
     BfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A BFS that treats each directed edge as an undirected edge, i.e. that traverses edge both in forward and backward direction.
-pub type PreOrderUndirectedBfs<Graph> = PreOrderTraversal<
+pub type PreOrderUndirectedBfs<'a, Graph> = PreOrderTraversal<
+    'a,
     Graph,
     UndirectedNeighborStrategy,
     BfsQueueStrategy,
@@ -28,21 +32,24 @@ pub type PreOrderUndirectedBfs<Graph> = PreOrderTraversal<
 >;
 
 /// A normal forward DFS in a directed graph.
-pub type PreOrderForwardDfs<Graph> = PreOrderTraversal<
+pub type PreOrderForwardDfs<'a, Graph> = PreOrderTraversal<
+    'a,
     Graph,
     ForwardNeighborStrategy,
     DfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A normal backward DFS in a directed graph.
-pub type PreOrderBackwardDfs<Graph> = PreOrderTraversal<
+pub type PreOrderBackwardDfs<'a, Graph> = PreOrderTraversal<
+    'a,
     Graph,
     BackwardNeighborStrategy,
     DfsQueueStrategy,
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A DFS that treats each directed edge as an undirected edge, i.e. that traverses edge both in forward and backward direction.
-pub type PreOrderUndirectedDfs<Graph> = PreOrderTraversal<
+pub type PreOrderUndirectedDfs<'a, Graph> = PreOrderTraversal<
+    'a,
     Graph,
     UndirectedNeighborStrategy,
     DfsQueueStrategy,
@@ -69,15 +76,17 @@ pub type PostOrderUndirectedDfs<Graph> = DfsPostOrderTraversal<
 >;
 
 pub struct PreOrderTraversal<
+    'a,
     Graph: GraphBase,
-    NeighborStrategy,
+    NeighborStrategy: TraversalNeighborStrategy<'a, Graph>,
     QueueStrategy,
     Queue: BidirectedQueue<Graph::NodeIndex>,
 > {
+    graph: &'a Graph,
     queue: Queue,
     rank: Vec<Graph::OptionalNodeIndex>,
     current_rank: Graph::NodeIndex,
-    graph: PhantomData<Graph>,
+    neighbor_iterator: Option<NeighborStrategy::Iterator>,
     neighbor_strategy: PhantomData<NeighborStrategy>,
     queue_strategy: PhantomData<QueueStrategy>,
 }
@@ -88,61 +97,65 @@ impl<
         NeighborStrategy: TraversalNeighborStrategy<'a, Graph>,
         QueueStrategy: TraversalQueueStrategy<Graph, Queue>,
         Queue: BidirectedQueue<Graph::NodeIndex>,
-    > PreOrderTraversal<Graph, NeighborStrategy, QueueStrategy, Queue>
+    > PreOrderTraversal<'a, Graph, NeighborStrategy, QueueStrategy, Queue>
 {
-    pub fn new(graph: &Graph, start: Graph::NodeIndex) -> Self {
+    pub fn new(graph: &'a Graph, start: Graph::NodeIndex) -> Self {
         let mut queue = Queue::default();
         QueueStrategy::push(&mut queue, start);
         let mut rank = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
         rank[start.as_usize()] = Some(0).into();
         Self {
+            graph,
             queue,
             rank,
             current_rank: 1.into(),
-            graph: Default::default(),
+            neighbor_iterator: None,
             neighbor_strategy: Default::default(),
             queue_strategy: Default::default(),
         }
     }
 
-    pub fn next(&mut self, graph: &'a Graph) -> Option<Graph::NodeIndex> {
-        self.next_internal(graph, &NoForbiddenNodes)
-    }
-
-    pub fn next_with_forbidden_nodes<FN: ForbiddenNodes<Graph>>(
+    pub fn next_with_forbidden_subgraph<FN: ForbiddenSubgraph<Graph>>(
         &mut self,
-        graph: &'a Graph,
-        forbidden_nodes: &FN,
-    ) -> Option<Graph::NodeIndex> {
-        self.next_internal(graph, forbidden_nodes)
+        forbidden_subgraph: &FN,
+    ) -> Option<NodeOrEdge<Graph::NodeIndex, Graph::EdgeIndex>> {
+        self.next_internal(forbidden_subgraph)
     }
 
     #[inline]
-    fn next_internal<FN: ForbiddenNodes<Graph>>(
+    fn next_internal<FS: ForbiddenSubgraph<Graph>>(
         &mut self,
-        graph: &'a Graph,
-        forbidden_nodes: &FN,
-    ) -> Option<Graph::NodeIndex> {
-        if let Some(first) = QueueStrategy::pop(&mut self.queue) {
-            assert!(
-                !forbidden_nodes.is_forbidden(first),
-                "A node became forbidden after being added to the queue. This is not supported."
-            );
-
-            for neighbor in NeighborStrategy::neighbor_iterator(graph, first) {
-                if forbidden_nodes.is_forbidden(neighbor) {
+        forbidden_subgraph: &FS,
+    ) -> Option<NodeOrEdge<Graph::NodeIndex, Graph::EdgeIndex>> {
+        if let Some(neighbor_iterator) = self.neighbor_iterator.as_mut() {
+            for neighbor in neighbor_iterator {
+                if forbidden_subgraph.is_edge_forbidden(neighbor.edge_id) {
                     continue;
                 }
 
-                let rank_entry = &mut self.rank[neighbor.as_usize()];
-                if *rank_entry == None.into() {
-                    *rank_entry = self.current_rank.into();
-                    self.current_rank = self.current_rank + 1;
-                    QueueStrategy::push(&mut self.queue, neighbor);
+                if !forbidden_subgraph.is_node_forbidden(neighbor.node_id) {
+                    let rank_entry = &mut self.rank[neighbor.node_id.as_usize()];
+                    if *rank_entry == None.into() {
+                        *rank_entry = self.current_rank.into();
+                        self.current_rank = self.current_rank + 1;
+                        QueueStrategy::push(&mut self.queue, neighbor.node_id);
+                    }
                 }
+
+                return Some(NodeOrEdge::Edge(neighbor.edge_id));
             }
 
-            Some(first)
+            self.neighbor_iterator = None;
+        }
+
+        if let Some(first) = QueueStrategy::pop(&mut self.queue) {
+            assert!(
+                !forbidden_subgraph.is_node_forbidden(first),
+                "A node became forbidden after being added to the queue. This is not supported."
+            );
+            self.neighbor_iterator = Some(NeighborStrategy::neighbor_iterator(self.graph, first));
+
+            Some(NodeOrEdge::Node(first))
         } else {
             None
         }
@@ -151,6 +164,21 @@ impl<
     pub fn rank_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
         let rank = self.rank[node.as_usize()];
         rank.into()
+    }
+}
+
+impl<
+        'a,
+        Graph: StaticGraph,
+        NeighborStrategy: TraversalNeighborStrategy<'a, Graph>,
+        QueueStrategy: TraversalQueueStrategy<Graph, Queue>,
+        Queue: BidirectedQueue<Graph::NodeIndex>,
+    > Iterator for PreOrderTraversal<'a, Graph, NeighborStrategy, QueueStrategy, Queue>
+{
+    type Item = NodeOrEdge<Graph::NodeIndex, Graph::EdgeIndex>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_internal(&NoForbiddenNodes)
     }
 }
 
@@ -209,9 +237,9 @@ impl<
                 *rank_entry = Self::explored_rank();
 
                 for neighbor in NeighborStrategy::neighbor_iterator(graph, first) {
-                    let rank_entry = &mut self.rank[neighbor.as_usize()];
+                    let rank_entry = &mut self.rank[neighbor.node_id.as_usize()];
                     if *rank_entry == None.into() {
-                        self.queue.push_back(neighbor);
+                        self.queue.push_back(neighbor.node_id);
                     }
                 }
             }
@@ -230,13 +258,15 @@ impl<
     }
 }
 
-/// A type with this trait can tell if a node is forbidden in a graph traversal.
-pub trait ForbiddenNodes<Graph: GraphBase> {
-    fn is_forbidden(&self, node: Graph::NodeIndex) -> bool;
+/// A type with this trait can tell if a node or edge is forbidden in a graph traversal.
+pub trait ForbiddenSubgraph<Graph: GraphBase> {
+    fn is_node_forbidden(&self, node: Graph::NodeIndex) -> bool;
+
+    fn is_edge_forbidden(&self, edge: Graph::EdgeIndex) -> bool;
 }
 
 pub trait TraversalNeighborStrategy<'a, Graph: GraphBase> {
-    type Iterator: Iterator<Item = <Graph as GraphBase>::NodeIndex>;
+    type Iterator: Iterator<Item = Neighbor<Graph::NodeIndex, Graph::EdgeIndex>>;
 
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator;
 }
@@ -248,8 +278,12 @@ pub trait TraversalQueueStrategy<Graph: GraphBase, Queue: BidirectedQueue<Graph:
 
 /// A type implementing [ForbiddenNodes](ForbiddenNodes) that allows all nodes in a graph traversal.
 pub struct NoForbiddenNodes;
-impl<Graph: GraphBase> ForbiddenNodes<Graph> for NoForbiddenNodes {
-    fn is_forbidden(&self, _: Graph::NodeIndex) -> bool {
+impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for NoForbiddenNodes {
+    fn is_node_forbidden(&self, _: Graph::NodeIndex) -> bool {
+        false
+    }
+
+    fn is_edge_forbidden(&self, _: Graph::EdgeIndex) -> bool {
         false
     }
 }
@@ -263,25 +297,29 @@ impl<'a> AllowedForbiddenNodes<'a> {
         Self { allowed_nodes }
     }
 }
-impl<'a, Graph: GraphBase> ForbiddenNodes<Graph> for AllowedForbiddenNodes<'a> {
-    fn is_forbidden(&self, node: Graph::NodeIndex) -> bool {
+impl<'a, Graph: GraphBase> ForbiddenSubgraph<Graph> for AllowedForbiddenNodes<'a> {
+    fn is_node_forbidden(&self, node: Graph::NodeIndex) -> bool {
         !self.allowed_nodes[node.as_usize()]
+    }
+
+    fn is_edge_forbidden(&self, _: Graph::EdgeIndex) -> bool {
+        false
     }
 }
 
 pub struct ForwardNeighborStrategy;
-pub type NeighborsIntoNodes<NodeIndex, EdgeIndex, Neighbors> = std::iter::Map<
+/*pub type NeighborsIntoNodes<NodeIndex, EdgeIndex, Neighbors> = std::iter::Map<
     <Neighbors as IntoIterator>::IntoIter,
     fn(crate::interface::Neighbor<NodeIndex, EdgeIndex>) -> NodeIndex,
->;
+>;*/
 
 impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     for ForwardNeighborStrategy
 {
-    type Iterator = NeighborsIntoNodes<Graph::NodeIndex, Graph::EdgeIndex, Graph::OutNeighbors>;
+    type Iterator = Graph::OutNeighbors;
 
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator {
-        graph.out_neighbors(node).map(|e| e.node_id)
+        graph.out_neighbors(node)
     }
 }
 
@@ -290,37 +328,26 @@ pub struct BackwardNeighborStrategy;
 impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     for BackwardNeighborStrategy
 {
-    type Iterator = NeighborsIntoNodes<Graph::NodeIndex, Graph::EdgeIndex, Graph::InNeighbors>;
+    type Iterator = Graph::InNeighbors;
 
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator {
-        graph.in_neighbors(node).map(|e| e.node_id)
+        graph.in_neighbors(node)
     }
 }
 
 pub struct UndirectedNeighborStrategy;
-pub type InOutNeighborsIntoNodes<NodeIndex, EdgeIndex, OutNeighbors, InNeighbors> = std::iter::Map<
-    std::iter::Chain<
-        <OutNeighbors as IntoIterator>::IntoIter,
-        <InNeighbors as IntoIterator>::IntoIter,
-    >,
-    fn(crate::interface::Neighbor<NodeIndex, EdgeIndex>) -> NodeIndex,
+pub type InOutNeighborsChain<OutNeighbors, InNeighbors> = std::iter::Chain<
+    <OutNeighbors as IntoIterator>::IntoIter,
+    <InNeighbors as IntoIterator>::IntoIter,
 >;
 
 impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     for UndirectedNeighborStrategy
 {
-    type Iterator = InOutNeighborsIntoNodes<
-        Graph::NodeIndex,
-        Graph::EdgeIndex,
-        Graph::OutNeighbors,
-        Graph::InNeighbors,
-    >;
+    type Iterator = InOutNeighborsChain<Graph::OutNeighbors, Graph::InNeighbors>;
 
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator {
-        graph
-            .out_neighbors(node)
-            .chain(graph.in_neighbors(node))
-            .map(|e| e.node_id)
+        graph.out_neighbors(node).chain(graph.in_neighbors(node))
     }
 }
 
