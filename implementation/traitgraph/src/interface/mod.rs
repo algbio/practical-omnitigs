@@ -1,6 +1,8 @@
 use crate::index::{GraphIndex, GraphIndices, OptionalGraphIndex};
 use crate::walks::{EdgeWalk, NodeWalk};
 
+pub mod subgraph;
+
 /// Contains the associated types of a graph.
 pub trait GraphBase {
     type NodeData;
