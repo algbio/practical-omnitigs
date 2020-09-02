@@ -66,7 +66,7 @@ impl<Graph: StaticGraph> VecNodeWalk<Graph> {
             let mut edges_between = graph.out_neighbors_to(from, to);
 
             if let Some(edge) = edges_between.next() {
-                walk.push(edge.edge_id);
+                walk.push(edge);
             } else {
                 panic!("Not a valid node walk");
             }

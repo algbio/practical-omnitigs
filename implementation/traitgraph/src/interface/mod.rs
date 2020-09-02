@@ -66,8 +66,8 @@ pub trait MutableGraphContainer: GraphBase {
 pub trait NavigableGraph<'a>: GraphBase {
     type OutNeighbors: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
     type InNeighbors: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
-    type OutNeighborsTo: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
-    type InNeighborsFrom: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type OutNeighborsTo: Iterator<Item = Self::EdgeIndex>;
+    type InNeighborsFrom: Iterator<Item = Self::EdgeIndex>;
 
     fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors;
     fn in_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::InNeighbors;

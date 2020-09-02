@@ -116,9 +116,9 @@ type PetgraphNeighborTranslator<'a, EdgeData, NodeIndex, EdgeIndex> = Map<
     fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<NodeIndex, EdgeIndex>,
 >;
 
-type PetgraphRestrictedNeighborTranslator<'a, EdgeData, NodeIndex, EdgeIndex> = Map<
+type PetgraphRestrictedNeighborTranslator<'a, EdgeData, EdgeIndex> = Map<
     EdgesConnecting<'a, EdgeData, Directed, usize>,
-    fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> Neighbor<NodeIndex, EdgeIndex>,
+    fn(petgraph::graph::EdgeReference<'a, EdgeData, usize>) -> EdgeIndex,
 >;
 
 impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for DiGraph<NodeData, EdgeData, usize> {
@@ -134,18 +134,10 @@ impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for DiGraph<NodeData, EdgeDa
         <Self as GraphBase>::NodeIndex,
         <Self as GraphBase>::EdgeIndex,
     >;
-    type OutNeighborsTo = PetgraphRestrictedNeighborTranslator<
-        'a,
-        EdgeData,
-        <Self as GraphBase>::NodeIndex,
-        <Self as GraphBase>::EdgeIndex,
-    >;
-    type InNeighborsFrom = PetgraphRestrictedNeighborTranslator<
-        'a,
-        EdgeData,
-        <Self as GraphBase>::NodeIndex,
-        <Self as GraphBase>::EdgeIndex,
-    >;
+    type OutNeighborsTo =
+        PetgraphRestrictedNeighborTranslator<'a, EdgeData, <Self as GraphBase>::EdgeIndex>;
+    type InNeighborsFrom =
+        PetgraphRestrictedNeighborTranslator<'a, EdgeData, <Self as GraphBase>::EdgeIndex>;
 
     fn out_neighbors(&'a self, node_id: <Self as GraphBase>::NodeIndex) -> Self::OutNeighbors {
         debug_assert!(self.contains_node_index(node_id));
@@ -173,10 +165,7 @@ impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for DiGraph<NodeData, EdgeDa
         debug_assert!(self.contains_node_index(from_node_id));
         debug_assert!(self.contains_node_index(to_node_id));
         self.edges_connecting(from_node_id.into(), to_node_id.into())
-            .map(|edge| Neighbor {
-                edge_id: <Self as GraphBase>::EdgeIndex::from(edge.id().index()),
-                node_id: <Self as GraphBase>::NodeIndex::from(edge.target().index()),
-            })
+            .map(|edge| <Self as GraphBase>::EdgeIndex::from(edge.id().index()))
     }
 
     fn in_neighbors_from(
@@ -187,10 +176,7 @@ impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for DiGraph<NodeData, EdgeDa
         debug_assert!(self.contains_node_index(from_node_id));
         debug_assert!(self.contains_node_index(to_node_id));
         self.edges_connecting(from_node_id.into(), to_node_id.into())
-            .map(|edge| Neighbor {
-                edge_id: <Self as GraphBase>::EdgeIndex::from(edge.id().index()),
-                node_id: <Self as GraphBase>::NodeIndex::from(edge.source().index()),
-            })
+            .map(|edge| <Self as GraphBase>::EdgeIndex::from(edge.id().index()))
     }
 }
 

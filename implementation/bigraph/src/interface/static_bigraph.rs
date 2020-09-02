@@ -78,9 +78,7 @@ pub trait StaticNodeCentricBigraph: StaticBigraph {
         let reverse_to = self.mirror_node(endpoints.from_node)?;
         let mut result = None;
 
-        for reverse_edge in self.out_neighbors_to(reverse_from, reverse_to) {
-            debug_assert_eq!(reverse_edge.node_id, reverse_to);
-            let reverse_edge_id = reverse_edge.edge_id;
+        for reverse_edge_id in self.out_neighbors_to(reverse_from, reverse_to) {
             if let Some(node) = result {
                 if node == edge_id {
                     return Some(reverse_edge_id);
@@ -138,9 +136,7 @@ where
         let edge_data = self.edge_data(edge_id);
         let mut result = None;
 
-        for reverse_edge in self.out_neighbors_to(reverse_from, reverse_to) {
-            debug_assert_eq!(reverse_edge.node_id, reverse_to);
-            let reverse_edge_id = reverse_edge.edge_id;
+        for reverse_edge_id in self.out_neighbors_to(reverse_from, reverse_to) {
             if &edge_data.reverse_complement() == self.edge_data(reverse_edge_id) {
                 if let Some(node) = result {
                     if node == edge_id {
