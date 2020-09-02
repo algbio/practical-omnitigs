@@ -64,10 +64,10 @@ pub trait MutableGraphContainer: GraphBase {
 }
 
 pub trait NavigableGraph<'a>: GraphBase {
-    type OutNeighbors: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
-    type InNeighbors: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
-    type OutNeighborsTo: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
-    type InNeighborsFrom: IntoIterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type OutNeighbors: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type InNeighbors: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type OutNeighborsTo: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
+    type InNeighborsFrom: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
 
     fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors;
     fn in_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::InNeighbors;
@@ -84,11 +84,11 @@ pub trait NavigableGraph<'a>: GraphBase {
     ) -> Self::InNeighborsFrom;
 
     fn out_degree(&'a self, node_id: Self::NodeIndex) -> usize {
-        self.out_neighbors(node_id).into_iter().count()
+        self.out_neighbors(node_id).count()
     }
 
     fn in_degree(&'a self, node_id: Self::NodeIndex) -> usize {
-        self.in_neighbors(node_id).into_iter().count()
+        self.in_neighbors(node_id).count()
     }
 
     /// Returns true if the given node has indegree == outdegree == 1.

@@ -42,14 +42,14 @@ pub fn count_uncompacted_node_unitigs<Graph: StaticGraph>(graph: &Graph) -> Unco
             let mut length = 2usize;
 
             while graph.out_degree(start_index) == 1 && graph.in_degree(start_index) == 1 {
-                let neighbor = graph.in_neighbors(start_index).into_iter().next().unwrap();
+                let neighbor = graph.in_neighbors(start_index).next().unwrap();
 
                 start_index = neighbor.node_id;
                 used_edges[neighbor.edge_id.as_usize()] = true;
                 length += 1;
             }
             while graph.out_degree(end_index) == 1 && graph.in_degree(end_index) == 1 {
-                let neighbor = graph.out_neighbors(end_index).into_iter().next().unwrap();
+                let neighbor = graph.out_neighbors(end_index).next().unwrap();
 
                 end_index = neighbor.node_id;
                 used_edges[neighbor.edge_id.as_usize()] = true;
@@ -93,12 +93,7 @@ pub fn count_uncompacted_edge_unitigs<Graph: StaticGraph>(graph: &Graph) -> usiz
 
         while graph.in_degree(first_node) == 1 && graph.out_degree(first_node) <= 1 {
             used_nodes[first_node.as_usize()] = true;
-            first_node = graph
-                .in_neighbors(first_node)
-                .into_iter()
-                .next()
-                .unwrap()
-                .node_id;
+            first_node = graph.in_neighbors(first_node).next().unwrap().node_id;
 
             if first_node != node {
                 uncompacted = true;
@@ -109,12 +104,7 @@ pub fn count_uncompacted_edge_unitigs<Graph: StaticGraph>(graph: &Graph) -> usiz
 
         while graph.in_degree(last_node) <= 1 && graph.out_degree(last_node) == 1 {
             used_nodes[last_node.as_usize()] = true;
-            last_node = graph
-                .out_neighbors(last_node)
-                .into_iter()
-                .next()
-                .unwrap()
-                .node_id;
+            last_node = graph.out_neighbors(last_node).next().unwrap().node_id;
 
             if last_node != node {
                 uncompacted = true;
