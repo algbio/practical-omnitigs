@@ -60,14 +60,14 @@ error_chain! {
             display("node id is out of range (usize)")
         }
 
-        BCalm2NodeWithoutPartner {
-            description("node has no partner")
-            display("node has no partner")
+        BCalm2NodeWithoutMirror {
+            description("node has no mirror")
+            display("node has no mirror")
         }
 
-        BCalm2EdgeWithoutPartner {
-            description("edge has no partner")
-            display("edge has no partner")
+        BCalm2EdgeWithoutMirror {
+            description("edge has no mirror")
+            display("edge has no mirror")
         }
     }
 }
@@ -302,21 +302,19 @@ pub fn read_bigraph_from_bcalm2_as_node_centric<
         assert_eq!(id, record_id.into());
     }
 
-    bigraph.add_partner_nodes();
+    bigraph.add_mirror_nodes();
     assert!(bigraph.verify_node_pairing());
 
     for edge in edges {
         let from_node = if edge.plain_edge.from_side {
             edge.from_node.into()
         } else {
-            bigraph.partner_node(edge.from_node.into()).unwrap()
+            bigraph.mirror_node(edge.from_node.into()).unwrap()
         };
         let to_node = if edge.plain_edge.to_side {
             edge.plain_edge.to_node.into()
         } else {
-            bigraph
-                .partner_node(edge.plain_edge.to_node.into())
-                .unwrap()
+            bigraph.mirror_node(edge.plain_edge.to_node.into()).unwrap()
         };
         bigraph.add_edge(from_node, to_node, EdgeData::default());
     }
@@ -385,8 +383,8 @@ where
 
     for node_id in graph.node_indices() {
         if !output_nodes[graph
-            .partner_node(node_id)
-            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutPartner))?
+            .mirror_node(node_id)
+            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutMirror))?
             .as_usize()]
         {
             output_nodes[node_id.as_usize()] = true;
@@ -396,12 +394,12 @@ where
     for node_id in graph.node_indices() {
         if output_nodes[node_id.as_usize()] {
             let node_data = PlainBCalm2NodeData::from(graph.node_data(node_id));
-            let partner_node_id = graph
-                .partner_node(node_id)
-                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutPartner))?;
-            /*let partner_node_data = PlainBCalm2NodeData::<IndexType>::from(
+            let mirror_node_id = graph
+                .mirror_node(node_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutMirror))?;
+            /*let mirror_node_data = PlainBCalm2NodeData::<IndexType>::from(
                 graph
-                    .node_data(partner_node_id)
+                    .node_data(mirror_node_id)
                     .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?,
             );*/
             let mut out_neighbors_plus = Vec::new();
@@ -416,14 +414,14 @@ where
                         neighbor.node_id.as_usize()
                     } else {
                         graph
-                            .partner_node(neighbor.node_id)
+                            .mirror_node(neighbor.node_id)
                             .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
                             .as_usize()
                     },
                     output_nodes[neighbor_node_id],
                 ));
             }
-            for neighbor in graph.out_neighbors(partner_node_id) {
+            for neighbor in graph.out_neighbors(mirror_node_id) {
                 let neighbor_node_id = neighbor.node_id.as_usize();
 
                 out_neighbors_minus.push((
@@ -432,7 +430,7 @@ where
                         neighbor.node_id.as_usize()
                     } else {
                         graph
-                            .partner_node(neighbor.node_id)
+                            .mirror_node(neighbor.node_id)
                             .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
                             .as_usize()
                     },
@@ -497,11 +495,11 @@ where
 
         let reverse_complement = genome.reverse_complement();
         if &reverse_complement == genome {
-            bigraph.set_partner_nodes(node, node);
+            bigraph.set_mirror_nodes(node, node);
         } else {
-            let partner_node = bigraph.add_node(Default::default());
-            id_map.insert(reverse_complement, partner_node);
-            bigraph.set_partner_nodes(node, partner_node);
+            let mirror_node = bigraph.add_node(Default::default());
+            id_map.insert(reverse_complement, mirror_node);
+            bigraph.set_mirror_nodes(node, mirror_node);
         }
 
         node
@@ -581,8 +579,8 @@ where
 
     for edge_id in graph.edge_indices() {
         if !output_edges[graph
-            .partner_edge_edge_centric(edge_id)
-            .ok_or_else(|| Error::from(ErrorKind::BCalm2EdgeWithoutPartner))?
+            .mirror_edge_edge_centric(edge_id)
+            .ok_or_else(|| Error::from(ErrorKind::BCalm2EdgeWithoutMirror))?
             .as_usize()]
         {
             output_edges[edge_id.as_usize()] = true;
@@ -592,11 +590,11 @@ where
     for edge_id in graph.edge_indices() {
         if output_edges[edge_id.as_usize()] {
             let node_data = PlainBCalm2NodeData::from(graph.edge_data(edge_id));
-            let partner_edge_id = graph
-                .partner_edge_edge_centric(edge_id)
-                .ok_or_else(|| Error::from(ErrorKind::BCalm2EdgeWithoutPartner))?;
+            let mirror_edge_id = graph
+                .mirror_edge_edge_centric(edge_id)
+                .ok_or_else(|| Error::from(ErrorKind::BCalm2EdgeWithoutMirror))?;
             let to_node_plus = graph.edge_endpoints(edge_id).to_node;
-            let to_node_minus = graph.edge_endpoints(partner_edge_id).to_node;
+            let to_node_minus = graph.edge_endpoints(mirror_edge_id).to_node;
 
             let mut out_neighbors_plus = Vec::new();
             let mut out_neighbors_minus = Vec::new();
@@ -612,9 +610,9 @@ where
                         PlainBCalm2NodeData::from(
                             graph.edge_data(
                                 graph
-                                    .partner_edge_edge_centric(neighbor.edge_id)
+                                    .mirror_edge_edge_centric(neighbor.edge_id)
                                     .ok_or_else(|| {
-                                        Error::from(ErrorKind::BCalm2EdgeWithoutPartner)
+                                        Error::from(ErrorKind::BCalm2EdgeWithoutMirror)
                                     })?,
                             ),
                         )
@@ -634,9 +632,9 @@ where
                         PlainBCalm2NodeData::from(
                             graph.edge_data(
                                 graph
-                                    .partner_edge_edge_centric(neighbor.edge_id)
+                                    .mirror_edge_edge_centric(neighbor.edge_id)
                                     .ok_or_else(|| {
-                                        Error::from(ErrorKind::BCalm2EdgeWithoutPartner)
+                                        Error::from(ErrorKind::BCalm2EdgeWithoutMirror)
                                     })?,
                             ),
                         )

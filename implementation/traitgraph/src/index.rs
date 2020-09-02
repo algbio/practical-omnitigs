@@ -11,7 +11,7 @@ pub struct NodeIndex<IndexType: Sized>(IndexType);
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub struct EdgeIndex<IndexType: Sized>(IndexType);
 
-pub trait OptionalGraphIndex<PartnerGraphIndex: GraphIndex<Self>>:
+pub trait OptionalGraphIndex<MirrorGraphIndex: GraphIndex<Self>>:
     Default
     + std::fmt::Debug
     + Eq
@@ -21,9 +21,9 @@ pub trait OptionalGraphIndex<PartnerGraphIndex: GraphIndex<Self>>:
     + Sized
     + From<usize>
     + From<Option<usize>>
-    + From<PartnerGraphIndex>
-    + From<Option<PartnerGraphIndex>>
-    + Into<Option<PartnerGraphIndex>>
+    + From<MirrorGraphIndex>
+    + From<Option<MirrorGraphIndex>>
+    + Into<Option<MirrorGraphIndex>>
     + std::ops::Add<usize, Output = Self>
 {
     // We don't wanna have OptionalGraphIndex: Into<usize>, to make this type strong, i.e. make it hard to accidentally convert it to a different type.
@@ -44,7 +44,7 @@ pub trait OptionalGraphIndex<PartnerGraphIndex: GraphIndex<Self>>:
     }
 }
 
-pub trait GraphIndex<PartnerOptionalGraphIndex: OptionalGraphIndex<Self>>:
+pub trait GraphIndex<MirrorOptionalGraphIndex: OptionalGraphIndex<Self>>:
     std::fmt::Debug
     + Eq
     + Ord
@@ -52,7 +52,7 @@ pub trait GraphIndex<PartnerOptionalGraphIndex: OptionalGraphIndex<Self>>:
     + Copy
     + Sized
     + From<usize>
-    + Into<PartnerOptionalGraphIndex>
+    + Into<MirrorOptionalGraphIndex>
     + std::ops::Add<usize, Output = Self>
 {
     // We don't wanna have GraphIndex: Into<usize>, to make this type strong, i.e. make it hard to accidentally convert it to a different type.

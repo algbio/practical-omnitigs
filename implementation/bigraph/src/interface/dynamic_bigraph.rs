@@ -5,9 +5,9 @@ use crate::interface::BidirectedData;
 use traitgraph::interface::DynamicGraph;
 
 pub trait DynamicBigraph: DynamicGraph + StaticBigraph {
-    /// Make the nodes with the given two node ids partner nodes.
-    /// This may leave the old partners from a and b with dangling partner pointers.
-    fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex);
+    /// Make the nodes with the given two node ids mirror nodes.
+    /// This may leave the old mirrors from a and b with dangling mirror pointers.
+    fn set_mirror_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex);
 }
 
 pub trait DynamicNodeCentricBigraph: DynamicBigraph + StaticNodeCentricBigraph
@@ -19,11 +19,11 @@ where
      * Adds nodes such that the graph becomes a valid node-centric bigraph.
      * The indices of existing nodes are not altered.
      */
-    fn add_partner_nodes(&mut self) {
+    fn add_mirror_nodes(&mut self) {
         for node_id in self.node_indices() {
-            if self.partner_node(node_id).is_none() {
-                let partner_index = self.add_node(self.node_data(node_id).reverse_complement());
-                self.set_partner_nodes(node_id, partner_index);
+            if self.mirror_node(node_id).is_none() {
+                let mirror_index = self.add_node(self.node_data(node_id).reverse_complement());
+                self.set_mirror_nodes(node_id, mirror_index);
             }
         }
     }
@@ -42,8 +42,8 @@ where
             out_neighbors.dedup_by(|a, b| a.node_id == b.node_id);
             for neighbor in out_neighbors {
                 let to_id = neighbor.node_id;
-                let mirror_from_id = self.partner_node(to_id).unwrap();
-                let mirror_to_id = self.partner_node(from_id).unwrap();
+                let mirror_from_id = self.mirror_node(to_id).unwrap();
+                let mirror_to_id = self.mirror_node(from_id).unwrap();
                 let difference = self
                     .edge_count_between(from_id, to_id)
                     .saturating_sub(self.edge_count_between(mirror_from_id, mirror_to_id));
@@ -79,9 +79,9 @@ where
             for neighbor in self.out_neighbors(from_id) {
                 let to_id = neighbor.node_id;
                 let edge = neighbor.edge_id;
-                if self.partner_edge_edge_centric(edge).is_none() {
-                    let mirror_from_id = self.partner_node(to_id).unwrap();
-                    let mirror_to_id = self.partner_node(from_id).unwrap();
+                if self.mirror_edge_edge_centric(edge).is_none() {
+                    let mirror_from_id = self.mirror_node(to_id).unwrap();
+                    let mirror_to_id = self.mirror_node(from_id).unwrap();
                     edges.push((
                         mirror_from_id,
                         self.edge_data(edge).reverse_complement(),
@@ -104,7 +104,7 @@ where
 {
     /**
      * Converts the given topology into a bigraph.
-     * Missing partners are added.
+     * Missing mirrors are added.
      */
     fn new_with_completed_nodes(
         _topology: Self::Topology,
@@ -115,7 +115,7 @@ where
 
     /**
      * Converts the given topology into a bigraph that fulfils the [mirror property].
-     * Missing partners and mirror edges are added.
+     * Missing mirrors and mirror edges are added.
      *
      * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
@@ -165,13 +165,13 @@ mod tests {
         graph.add_edge(n0, n3, ()); // This edge is not a self-mirror
 
         let mut graph = NodeBigraphWrapper::new_unchecked(graph);
-        graph.add_partner_nodes();
+        graph.add_mirror_nodes();
         assert!(graph.verify_node_pairing());
         assert_eq!(graph.node_count(), 8);
 
         graph.add_edge(
-            graph.partner_node(n2).unwrap(),
-            graph.partner_node(n1).unwrap(),
+            graph.mirror_node(n2).unwrap(),
+            graph.mirror_node(n1).unwrap(),
             (),
         );
         assert!(!graph.verify_node_mirror_property());
@@ -210,13 +210,13 @@ mod tests {
         graph.add_edge(n0, n3, EdgeData(3)); // This edge is not a self-mirror
 
         let mut graph = NodeBigraphWrapper::new_unchecked(graph);
-        graph.add_partner_nodes();
+        graph.add_mirror_nodes();
         assert!(graph.verify_node_pairing());
         assert_eq!(graph.node_count(), 8);
 
         graph.add_edge(
-            graph.partner_node(n2).unwrap(),
-            graph.partner_node(n1).unwrap(),
+            graph.mirror_node(n2).unwrap(),
+            graph.mirror_node(n1).unwrap(),
             EdgeData(955),
         );
         assert!(!graph.verify_edge_mirror_property());
