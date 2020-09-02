@@ -281,7 +281,7 @@ impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     type Iterator = NeighborsIntoNodes<Graph::NodeIndex, Graph::EdgeIndex, Graph::OutNeighbors>;
 
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator {
-        graph.out_neighbors(node).into_iter().map(|e| e.node_id)
+        graph.out_neighbors(node).map(|e| e.node_id)
     }
 }
 
@@ -293,7 +293,7 @@ impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     type Iterator = NeighborsIntoNodes<Graph::NodeIndex, Graph::EdgeIndex, Graph::InNeighbors>;
 
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator {
-        graph.in_neighbors(node).into_iter().map(|e| e.node_id)
+        graph.in_neighbors(node).map(|e| e.node_id)
     }
 }
 
@@ -319,8 +319,7 @@ impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator {
         graph
             .out_neighbors(node)
-            .into_iter()
-            .chain(graph.in_neighbors(node).into_iter())
+            .chain(graph.in_neighbors(node))
             .map(|e| e.node_id)
     }
 }
@@ -379,11 +378,7 @@ mod test {
         let mut ordering =
             DfsPostOrderTraversal::<_, ForwardNeighborStrategy, LinkedList<_>>::new(&graph, n0);
         assert_eq!(
-            graph
-                .out_neighbors(n0)
-                .into_iter()
-                .map(|n| n.node_id)
-                .next(),
+            graph.out_neighbors(n0).map(|n| n.node_id).next(),
             Some(3.into())
         );
         assert_eq!(ordering.next(&graph), Some(n3));

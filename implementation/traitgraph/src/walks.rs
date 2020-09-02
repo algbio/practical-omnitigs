@@ -63,7 +63,7 @@ impl<Graph: StaticGraph> VecNodeWalk<Graph> {
         for node_pair in self.walk.windows(2) {
             let from = node_pair[0];
             let to = node_pair[1];
-            let mut edges_between = graph.out_neighbors_to(from, to).into_iter();
+            let mut edges_between = graph.out_neighbors_to(from, to);
 
             if let Some(edge) = edges_between.next() {
                 walk.push(edge.edge_id);

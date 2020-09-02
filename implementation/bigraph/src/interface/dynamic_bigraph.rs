@@ -37,7 +37,7 @@ where
     fn add_node_centric_mirror_edges(&mut self) {
         let mut edges = Vec::new();
         for from_id in self.node_indices() {
-            let mut out_neighbors: Vec<_> = self.out_neighbors(from_id).into_iter().collect();
+            let mut out_neighbors: Vec<_> = self.out_neighbors(from_id).collect();
             out_neighbors.sort_by(|a, b| a.node_id.cmp(&b.node_id));
             out_neighbors.dedup_by(|a, b| a.node_id == b.node_id);
             for neighbor in out_neighbors {

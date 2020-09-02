@@ -80,7 +80,7 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
                 let mut unitig = vec![end_node, start_node];
 
                 while graph.is_biunivocal_node(start_node) && start_node != end_node {
-                    let in_neighbor = graph.in_neighbors(start_node).into_iter().next().unwrap();
+                    let in_neighbor = graph.in_neighbors(start_node).next().unwrap();
                     start_node = in_neighbor.node_id;
                     used_edges[in_neighbor.edge_id.as_usize()] = true;
                     unitig.push(start_node);
@@ -89,7 +89,7 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
                 unitig.reverse();
 
                 while graph.is_biunivocal_node(end_node) && start_node != end_node {
-                    let out_neighbor = graph.out_neighbors(end_node).into_iter().next().unwrap();
+                    let out_neighbor = graph.out_neighbors(end_node).next().unwrap();
                     end_node = out_neighbor.node_id;
                     used_edges[out_neighbor.edge_id.as_usize()] = true;
                     unitig.push(end_node);
