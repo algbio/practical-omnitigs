@@ -2,14 +2,15 @@
 
 """
 Convert the output of the different validation tools into a LaTeX file.
-Arguments: <ContigValidator results> <quast report.tex> <output file>
+Arguments: <ContigValidator results> <quast report.tex> <cli verify LaTeX results> <output file>
 """
 
 import sys
 
 contig_validator_file_name = sys.argv[1]
 quast_file_name = sys.argv[2]
-output_file_name = sys.argv[3]
+graph_statistics_file_name = sys.argv[3]
+output_file_name = sys.argv[4]
 
 ##########################
 ### Process QUAST file ###
@@ -25,7 +26,6 @@ quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
 ### Process ContigValidator file ###
 ####################################
 
-
 contig_validator_file = open(contig_validator_file_name, 'r')
 contig_validator_lines = contig_validator_file.readlines()
 contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
@@ -34,6 +34,13 @@ contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%
 contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
 contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
 
+#########################################
+### Process CLI graph statistics file ###
+#########################################
+
+graph_statistics_file = open(graph_statistics_file_name, 'r')
+graph_statistics_lines = graph_statistics_file.readlines()
+graph_statistics_lines = [x.strip() for x in graph_statistics_lines]
 
 ########################
 ### Build LaTeX file ###
@@ -72,14 +79,16 @@ output_file.write(
 	\\end{description}
 	"""
 )
-#output_file.write(table_header("QUAST: All statistics are based on contigs of size $\\geq$ 500 bp, unless otherwise noted (e.g., \"\\# contigs ($\\geq$ 0 bp)" and "Total length ($\\geq$ 0 bp)\" include all contigs)\\newline	ContigValidator: Minor errors due to circularisation may occur."))
+
+write_table(output_file, "Genome Graph Statistics", graph_statistics_lines)
+
+write_table(output_file, "ContigValidator", contig_validator_lines)
+
 write_table(output_file, "QUAST: \\# of contigs", quast_lines[0:6])
 write_table(output_file, "QUAST: total length of contigs", quast_lines[6:12])
 write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", quast_lines[12:26])
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", quast_lines[26:])
 
-
-write_table(output_file, "ContigValidator", contig_validator_lines)
 
 output_file.write(
 	"""

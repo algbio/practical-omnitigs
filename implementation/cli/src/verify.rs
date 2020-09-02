@@ -7,6 +7,7 @@ use genome_graph::bigraph::traitgraph::algo::components::{
 };
 use genome_graph::bigraph::traitgraph::interface::{DynamicGraph, ImmutableGraphContainer};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetBCalm2NodeGraph};
+use std::io::Write;
 
 #[derive(Clap)]
 pub struct VerifyEdgeCentricCommand {
@@ -23,6 +24,13 @@ pub struct VerifyEdgeCentricCommand {
         about = "The output file, to which the graph should be written in bcalm2 format for verification purposes"
     )]
     pub output: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
+    )]
+    pub latex: Option<String>,
 }
 
 #[derive(Clap)]
@@ -35,19 +43,28 @@ pub struct VerifyNodeCentricCommand {
     pub output: Option<String>,
 }
 
-fn verify_components<Graph: Default + DynamicGraph>(genome_graph: &Graph)
+fn verify_components<Graph: Default + DynamicGraph, OutputWriter: std::io::Write>(
+    genome_graph: &Graph,
+    latex_file: &mut Option<OutputWriter>,
+) -> crate::Result<()>
 where
     Graph::NodeData: Clone,
     Graph::EdgeData: Clone,
 {
     let wccs = decompose_weakly_connected_components(genome_graph);
+    if wccs.is_empty() {
+        warn!("No weakly connected components found");
+    }
+
     let mut scc_amount_per_wcc = Vec::new();
+    let mut scc_amount_per_wcc_float = Vec::new();
     let mut scc_count = 0;
     let mut non_scc_wcc_count = 0;
     for wcc in &wccs {
         let sccs =
             extract_subgraphs_from_node_mapping(wcc, &decompose_strongly_connected_components(wcc));
         scc_amount_per_wcc.push(sccs.len());
+        scc_amount_per_wcc_float.push(sccs.len() as f64);
         scc_count += sccs.len();
         if sccs.len() >= 2 {
             non_scc_wcc_count += 1;
@@ -64,9 +81,13 @@ where
         wccs.len(),
         non_scc_wcc_string
     );
+    if let Some(latex_file) = latex_file.as_mut() {
+        writeln!(latex_file, "WCCs & {} \\\\", wccs.len())?;
+        writeln!(latex_file, "non-SCC WCCs & {} \\\\", non_scc_wcc_count)?;
+    }
 
     let mut scc_amount_per_wcc_string = String::new();
-    for scc_amount in scc_amount_per_wcc {
+    for &scc_amount in &scc_amount_per_wcc {
         if !scc_amount_per_wcc_string.is_empty() {
             scc_amount_per_wcc_string += ", ";
         }
@@ -79,22 +100,62 @@ where
     }
 
     info!("{} strongly connected components, that are distributed in the weakly connected components as [{}]", scc_count, scc_amount_per_wcc_string);
+    if let Some(latex_file) = latex_file.as_mut() {
+        writeln!(latex_file, "SCCs & {} \\\\", scc_count)?;
+        if scc_amount_per_wcc.is_empty() {
+            writeln!(latex_file, "max SCCs per WCC & N/A \\\\")?;
+            writeln!(latex_file, "min SCCs per WCC & N/A \\\\")?;
+            writeln!(latex_file, "average SCCs per WCC & N/A \\\\")?;
+            writeln!(latex_file, "median SCCs per WCC & N/A \\\\")?;
+        } else {
+            writeln!(
+                latex_file,
+                "max SCCs per WCC & {} \\\\",
+                scc_amount_per_wcc.iter().max().unwrap()
+            )?;
+            writeln!(
+                latex_file,
+                "min SCCs per WCC & {} \\\\",
+                scc_amount_per_wcc.iter().min().unwrap()
+            )?;
+            writeln!(
+                latex_file,
+                "mean SCCs per WCC & {} \\\\",
+                statistical::mean(&scc_amount_per_wcc_float)
+            )?;
+            writeln!(
+                latex_file,
+                "median SCCs per WCC & {} \\\\",
+                statistical::median(&scc_amount_per_wcc_float)
+            )?;
+        }
+    }
+
+    Ok(())
 }
 
 pub(crate) fn verify_edge_centric(
     options: &CliOptions,
     subcommand: &VerifyEdgeCentricCommand,
 ) -> crate::Result<()> {
+    let mut latex_file = if let Some(latex_file_name) = &subcommand.latex {
+        Some(std::io::BufWriter::new(std::fs::File::create(
+            latex_file_name,
+        )?))
+    } else {
+        None
+    };
+
+    info!(
+        "Reading bigraph from '{}' with kmer size {}",
+        options.input, subcommand.kmer_size
+    );
     let genome_graph: PetBCalm2EdgeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
             &options.input,
             subcommand.kmer_size,
         )?;
 
-    info!(
-        "Reading bigraph from '{}' with kmer size {}",
-        options.input, subcommand.kmer_size
-    );
     info!("");
     info!("========================");
     info!("=== Graph Statistics ===");
@@ -105,6 +166,10 @@ pub(crate) fn verify_edge_centric(
         genome_graph.node_count(),
         genome_graph.edge_count()
     );
+    if let Some(latex_file) = latex_file.as_mut() {
+        writeln!(latex_file, "nodes & {} \\\\", genome_graph.node_count())?;
+        writeln!(latex_file, "edges & {} \\\\", genome_graph.edge_count())?;
+    }
 
     // Uncompacted unitigs
     let uncompacted_unitig_amount =
@@ -116,9 +181,16 @@ pub(crate) fn verify_edge_centric(
     } else {
         warn!("{}", log_string.yellow());
     }
+    if let Some(latex_file) = latex_file.as_mut() {
+        writeln!(
+            latex_file,
+            "uncompacted unitigs & {} \\\\",
+            uncompacted_unitig_amount
+        )?;
+    }
 
     // Components
-    verify_components(&genome_graph);
+    verify_components(&genome_graph, &mut latex_file)?;
 
     info!("");
 
@@ -203,7 +275,8 @@ pub(crate) fn verify_node_centric(
     }*/
 
     // Components
-    verify_components(&genome_graph);
+    let mut latex_file: Option<std::fs::File> = None;
+    verify_components(&genome_graph, &mut latex_file)?;
 
     info!("");
 

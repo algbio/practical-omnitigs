@@ -48,9 +48,9 @@ rule make_bcalm_output_deterministic:
 
 rule verify_genome_graph:
     input: file = "data/{file}.unitigs.fa", binary = "data/target/release/cli"
-    output: ["data/{file}.unitigs.fa.verify", "data/{file}.unitigs.fa.properties"]
+    output: verification_copy = "data/{file}.unitigs.fa.verify", log =  "data/{file}.unitigs.fa.properties", latex = "data/{file}.unitigs.graphstatistics"
     conda: "config/conda-rust-env.yml"
-    shell: "data/target/release/cli --input '{input.file}' verify --kmer-size 51 --output '{output[0]}' 2>&1 | tee '{output[1]}.tmp' && mv '{output[1]}.tmp' '{output[1]}'"
+    shell: "data/target/release/cli --input '{input.file}' verify --kmer-size 51 --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
 
 rule verify_genome:
     input: file = "{file}.fna", binary = ancient("data/target/release/cli")
@@ -102,9 +102,9 @@ rule latex:
 ########################
 
 rule create_single_validation_tex:
-    input: unitigs_contigvalidator = "{file}.unitigs.contigvalidator", unitigs_quast = directory("{file}.unitigs.quast"), script = "scripts/convert_validation_outputs_to_latex.py"
+    input: unitigs_contigvalidator = "{file}.unitigs.contigvalidator", unitigs_quast = directory("{file}.unitigs.quast"), unitigs_graphstatistics = "{file}.unitigs.graphstatistics", script = "scripts/convert_validation_outputs_to_latex.py"
     output: "{file}.unitigs.tex"
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.unitigs_contigvalidator}' '{input.unitigs_quast}/report.tex' {output}"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.unitigs_contigvalidator}' '{input.unitigs_quast}/report.tex' '{input.unitigs_graphstatistics}' '{output}'"
 
 rule validate_single_file:
     input: "{file}.unitigs.pdf"
