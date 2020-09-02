@@ -4,32 +4,32 @@ use traitgraph::interface::{GraphBase, StaticGraph};
 
 /**
  * A node-centric bidirected graph.
- * That is a graph in which each node has a unique partner, and this relation is symmetric.
+ * That is a graph in which each node has a unique mirror, and this relation is symmetric.
  */
 pub trait StaticBigraph: StaticGraph {
     /**
-     * Returns the unique partner of the given node id, or `None` if the given node id has no partner node.
+     * Returns the unique mirror of the given node id, or `None` if the given node id has no mirror node.
      */
-    fn partner_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex>;
+    fn mirror_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex>;
 
     /**
-     * Returns true if each node has exactly one partner, and this relation is symmetric.
-     * This check allows nodes that are their own partner.
+     * Returns true if each node has exactly one mirror, and this relation is symmetric.
+     * This check allows nodes that are their own mirror.
      */
     fn verify_node_pairing(&self) -> bool {
         for node_index in self.node_indices() {
-            let partner_index = if let Some(partner_node) = self.partner_node(node_index) {
-                partner_node
+            let mirror_index = if let Some(mirror_node) = self.mirror_node(node_index) {
+                mirror_node
             } else {
                 return false;
             };
-            let partner_partner_index =
-                if let Some(partner_partner_node) = self.partner_node(partner_index) {
-                    partner_partner_node
+            let mirror_mirror_index =
+                if let Some(mirror_mirror_node) = self.mirror_node(mirror_index) {
+                    mirror_mirror_node
                 } else {
                     return false;
                 };
-            if node_index != partner_partner_index {
+            if node_index != mirror_mirror_index {
                 return false;
             }
         }
@@ -38,22 +38,22 @@ pub trait StaticBigraph: StaticGraph {
     }
 
     /**
-     * Returns true if each node has exactly one partner, and this relation is symmetric and irreflexive (no node is its own partner).
+     * Returns true if each node has exactly one mirror, and this relation is symmetric and irreflexive (no node is its own mirror).
      */
-    fn verify_node_pairing_without_self_partners(&self) -> bool {
+    fn verify_node_pairing_without_self_mirrors(&self) -> bool {
         for node_index in self.node_indices() {
-            let partner_index = if let Some(partner_node) = self.partner_node(node_index) {
-                partner_node
+            let mirror_index = if let Some(mirror_node) = self.mirror_node(node_index) {
+                mirror_node
             } else {
                 return false;
             };
-            let partner_partner_index =
-                if let Some(partner_partner_node) = self.partner_node(partner_index) {
-                    partner_partner_node
+            let mirror_mirror_index =
+                if let Some(mirror_mirror_node) = self.mirror_node(mirror_index) {
+                    mirror_mirror_node
                 } else {
                     return false;
                 };
-            if node_index != partner_partner_index || node_index == partner_index {
+            if node_index != mirror_mirror_index || node_index == mirror_index {
                 return false;
             }
         }
@@ -64,18 +64,18 @@ pub trait StaticBigraph: StaticGraph {
 
 /**
  * A edge-centric bidirected graph.
- * That is a graph in which each node has a unique partner, and this relation is symmetric.
+ * That is a graph in which each node has a unique mirror, and this relation is symmetric.
  */
 pub trait StaticNodeCentricBigraph: StaticBigraph {
     /**
-     * Returns the unique partner of the given edge id, or `None` if the given edge id has no partner edge.
-     * If the edge is its own reverse complement, and an partner edge with a different id exists, then the different id is returned.
+     * Returns the unique mirror of the given edge id, or `None` if the given edge id has no mirror edge.
+     * If the edge is its own reverse complement, and an mirror edge with a different id exists, then the different id is returned.
      * Otherwise, for an edge that is its own reverse complement, the given id is returned.
      */
-    fn partner_edge_node_centric(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex> {
+    fn mirror_edge_node_centric(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex> {
         let endpoints = self.edge_endpoints(edge_id);
-        let reverse_from = self.partner_node(endpoints.to_node)?;
-        let reverse_to = self.partner_node(endpoints.from_node)?;
+        let reverse_from = self.mirror_node(endpoints.to_node)?;
+        let reverse_to = self.mirror_node(endpoints.from_node)?;
         let mut result = None;
 
         for reverse_edge in self.out_neighbors_to(reverse_from, reverse_to) {
@@ -104,9 +104,9 @@ pub trait StaticNodeCentricBigraph: StaticBigraph {
     fn verify_node_mirror_property(&self) -> bool {
         for from_node in self.node_indices() {
             for to_node in self.out_neighbors(from_node) {
-                let from_node_partner = self.partner_node(from_node).unwrap();
-                let to_node_partner = self.partner_node(to_node.node_id).unwrap();
-                if self.edge_count_between(to_node_partner, from_node_partner)
+                let from_node_mirror = self.mirror_node(from_node).unwrap();
+                let to_node_mirror = self.mirror_node(to_node.node_id).unwrap();
+                if self.edge_count_between(to_node_mirror, from_node_mirror)
                     != self.edge_count_between(from_node, to_node.node_id)
                 {
                     return false;
@@ -120,21 +120,21 @@ pub trait StaticNodeCentricBigraph: StaticBigraph {
 
 /**
  * A edge-centric bidirected graph.
- * That is a graph in which each node and each edge has a unique partner, and this relation is symmetric.
+ * That is a graph in which each node and each edge has a unique mirror, and this relation is symmetric.
  */
 pub trait StaticEdgeCentricBigraph: StaticBigraph
 where
     <Self as GraphBase>::EdgeData: BidirectedData + Eq,
 {
     /**
-     * Returns the unique partner of the given edge id, or `None` if the given edge id has no partner edge.
-     * If the edge is its own reverse complement, and an partner edge with a different id exists, then the different id is returned.
+     * Returns the unique mirror of the given edge id, or `None` if the given edge id has no mirror edge.
+     * If the edge is its own reverse complement, and an mirror edge with a different id exists, then the different id is returned.
      * Otherwise, for an edge that is its own reverse complement, the given id is returned.
      */
-    fn partner_edge_edge_centric(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex> {
+    fn mirror_edge_edge_centric(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex> {
         let endpoints = self.edge_endpoints(edge_id);
-        let reverse_from = self.partner_node(endpoints.to_node)?;
-        let reverse_to = self.partner_node(endpoints.from_node)?;
+        let reverse_from = self.mirror_node(endpoints.to_node)?;
+        let reverse_to = self.mirror_node(endpoints.from_node)?;
         let edge_data = self.edge_data(edge_id);
         let mut result = None;
 
@@ -169,12 +169,12 @@ where
         for from_node in self.node_indices() {
             for neighbor in self.out_neighbors(from_node) {
                 let edge = neighbor.edge_id;
-                if let Some(mirror_edge) = self.partner_edge_edge_centric(edge) {
+                if let Some(mirror_edge) = self.mirror_edge_edge_centric(edge) {
                     let to_node = neighbor.node_id;
                     let complete_edge = (from_node, to_node, edge);
                     let mirror_complete_edge = (
-                        self.partner_node(to_node).unwrap(),
-                        self.partner_node(from_node).unwrap(),
+                        self.mirror_node(to_node).unwrap(),
+                        self.mirror_node(from_node).unwrap(),
                         mirror_edge,
                     );
 
@@ -441,8 +441,8 @@ mod test {
         let n1 = graph.add_node(NodeData(0));
         let n2 = graph.add_node(NodeData(1000));
         let n3 = graph.add_node(NodeData(500));
-        graph.set_partner_nodes(n1, n2);
-        graph.set_partner_nodes(n3, n3);
+        graph.set_mirror_nodes(n1, n2);
+        graph.set_mirror_nodes(n3, n3);
         graph.add_edge(n1, n3, EdgeData(10));
         graph.add_edge(n3, n2, EdgeData(990));
         graph.add_edge(n3, n1, EdgeData(12));

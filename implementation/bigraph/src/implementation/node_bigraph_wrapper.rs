@@ -43,8 +43,8 @@ use traitgraph::interface::{
 /// graph.add_edge(n1.clone(), n2.clone(), ());
 /// graph.add_edge(n2.clone(), n1.clone(), ());
 /// let bigraph = NodeBigraphWrapper::new(graph);
-/// assert_eq!(Some(n2.clone()), bigraph.partner_node(n1.clone()));
-/// assert_eq!(Some(n1.clone()), bigraph.partner_node(n2.clone()));
+/// assert_eq!(Some(n2.clone()), bigraph.mirror_node(n1.clone()));
+/// assert_eq!(Some(n1.clone()), bigraph.mirror_node(n2.clone()));
 /// ```
 #[derive(Debug, Clone)]
 pub struct NodeBigraphWrapper<Topology: GraphBase> {
@@ -62,7 +62,7 @@ impl<'a, Topology: GraphBase> GraphBase for NodeBigraphWrapper<Topology> {
 }
 
 impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology> {
-    fn partner_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex> {
+    fn mirror_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex> {
         self.binode_map[node_id.as_usize()].into()
     }
 }
@@ -81,21 +81,21 @@ where
         for node_index in topology.node_indices() {
             let node_data = topology.node_data(node_index);
 
-            if let Some(partner_index) = data_map.get(node_data).cloned() {
-                //assert_ne!(node_index, partner_index);
+            if let Some(mirror_index) = data_map.get(node_data).cloned() {
+                //assert_ne!(node_index, mirror_index);
                 assert!(!binode_map[node_index.as_usize()].is_valid());
-                assert!(!binode_map[partner_index.as_usize()].is_valid());
+                assert!(!binode_map[mirror_index.as_usize()].is_valid());
                 assert_eq!(
                     node_data,
-                    &topology.node_data(partner_index).reverse_complement()
+                    &topology.node_data(mirror_index).reverse_complement()
                 );
-                binode_map[node_index.as_usize()] = partner_index.into();
-                binode_map[partner_index.as_usize()] = node_index.into();
+                binode_map[node_index.as_usize()] = mirror_index.into();
+                binode_map[mirror_index.as_usize()] = node_index.into();
                 data_map.remove(node_data);
             } else {
-                let partner_data = node_data.reverse_complement();
-                //assert_ne!(&partner_data, node_data);
-                assert_eq!(None, data_map.insert(partner_data, node_index));
+                let mirror_data = node_data.reverse_complement();
+                //assert_ne!(&mirror_data, node_data);
+                assert_eq!(None, data_map.insert(mirror_data, node_index));
             }
         }
 
@@ -130,7 +130,7 @@ where
 }
 
 impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology> {
-    fn set_partner_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex) {
+    fn set_mirror_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex) {
         assert!(self.contains_node_index(a));
         assert!(self.contains_node_index(b));
         self.binode_map[a.as_usize()] = b.into();
@@ -309,10 +309,10 @@ mod tests {
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new(graph);
 
-        assert_eq!(Some(n2), bigraph.partner_node(n1));
-        assert_eq!(Some(n1), bigraph.partner_node(n2));
-        assert_eq!(Some(n4), bigraph.partner_node(n3));
-        assert_eq!(Some(n3), bigraph.partner_node(n4));
+        assert_eq!(Some(n2), bigraph.mirror_node(n1));
+        assert_eq!(Some(n1), bigraph.mirror_node(n2));
+        assert_eq!(Some(n4), bigraph.mirror_node(n3));
+        assert_eq!(Some(n3), bigraph.mirror_node(n4));
     }
 
     #[test]
@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_bigraph_creation_self_mapped_node_without_partner() {
+    fn test_bigraph_creation_self_mapped_node_without_mirror() {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
@@ -396,7 +396,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_bigraph_creation_self_mapped_node_with_partner() {
+    fn test_bigraph_creation_self_mapped_node_with_mirror() {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
@@ -444,10 +444,10 @@ mod tests {
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new_unchecked(graph);
 
-        assert_eq!(Some(n2), bigraph.partner_node(n1));
-        assert_eq!(Some(n1), bigraph.partner_node(n2));
-        assert_eq!(Some(n4), bigraph.partner_node(n3));
-        assert_eq!(Some(n3), bigraph.partner_node(n4));
+        assert_eq!(Some(n2), bigraph.mirror_node(n1));
+        assert_eq!(Some(n1), bigraph.mirror_node(n2));
+        assert_eq!(Some(n4), bigraph.mirror_node(n3));
+        assert_eq!(Some(n3), bigraph.mirror_node(n4));
     }
 
     #[test]
@@ -473,11 +473,11 @@ mod tests {
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new_unchecked(graph);
 
-        assert_eq!(Some(n2), bigraph.partner_node(n1));
-        assert_eq!(Some(n1), bigraph.partner_node(n2));
-        assert_eq!(Some(n4), bigraph.partner_node(n3));
-        assert_eq!(Some(n3), bigraph.partner_node(n4));
-        assert_eq!(None, bigraph.partner_node(n5));
+        assert_eq!(Some(n2), bigraph.mirror_node(n1));
+        assert_eq!(Some(n1), bigraph.mirror_node(n2));
+        assert_eq!(Some(n4), bigraph.mirror_node(n3));
+        assert_eq!(Some(n3), bigraph.mirror_node(n4));
+        assert_eq!(None, bigraph.mirror_node(n5));
     }
 
     #[test]
@@ -536,7 +536,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_bigraph_unchecked_creation_self_mapped_node_without_partner() {
+    fn test_bigraph_unchecked_creation_self_mapped_node_without_mirror() {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
@@ -563,7 +563,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn test_bigraph_unchecked_creation_self_mapped_node_with_partner() {
+    fn test_bigraph_unchecked_creation_self_mapped_node_with_mirror() {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
@@ -610,7 +610,7 @@ mod tests {
         graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new(graph);
-        assert!(bigraph.verify_node_pairing_without_self_partners());
+        assert!(bigraph.verify_node_pairing_without_self_mirrors());
         assert!(bigraph.verify_node_pairing());
     }
 
@@ -637,7 +637,7 @@ mod tests {
         let mut bigraph = NodeBigraphWrapper::new(graph);
         bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(4usize.into());
-        assert!(!bigraph.verify_node_pairing_without_self_partners());
+        assert!(!bigraph.verify_node_pairing_without_self_mirrors());
         assert!(bigraph.verify_node_pairing());
     }
 
@@ -664,7 +664,7 @@ mod tests {
         let mut bigraph = NodeBigraphWrapper::new(graph);
         bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(None.into());
-        assert!(!bigraph.verify_node_pairing_without_self_partners());
+        assert!(!bigraph.verify_node_pairing_without_self_mirrors());
         assert!(!bigraph.verify_node_pairing());
     }
 
@@ -691,12 +691,12 @@ mod tests {
         let mut bigraph = NodeBigraphWrapper::new(graph);
         bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(3usize.into());
-        assert!(!bigraph.verify_node_pairing_without_self_partners());
+        assert!(!bigraph.verify_node_pairing_without_self_mirrors());
         assert!(!bigraph.verify_node_pairing());
     }
 
     #[test]
-    fn test_bigraph_add_partner_nodes() {
+    fn test_bigraph_add_mirror_nodes() {
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
         impl BidirectedData for NodeData {
@@ -714,7 +714,7 @@ mod tests {
         graph.add_edge(n0, n1, ());
         let mut graph = NodeBigraphWrapper::new_unchecked(graph);
         assert!(!graph.verify_node_pairing());
-        graph.add_partner_nodes();
+        graph.add_mirror_nodes();
         assert!(graph.verify_node_pairing());
         assert_eq!(graph.node_count(), 8);
     }
