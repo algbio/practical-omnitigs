@@ -33,4 +33,10 @@ pub trait Subgraph<'a, Graph: GraphBase> {
 
     /// Removes the given edge id from the graph.
     fn remove_edge(&mut self, edge_index: Graph::EdgeIndex);
+
+    /// Returns the amount of nodes in the subgraph.
+    fn node_count(&self) -> usize;
+
+    /// Returns the amount of edges in the subgraph.
+    fn edge_count(&self) -> usize;
 }

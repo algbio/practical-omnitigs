@@ -64,4 +64,14 @@ impl<'a, Graph: ImmutableGraphContainer> Subgraph<'a, Graph> for BitVectorSubgra
         assert!(edge_index.as_usize() < self.present_edges.capacity());
         self.present_edges.remove(edge_index.as_usize());
     }
+
+    /// Returns the amount of nodes in the subgraph.
+    fn node_count(&self) -> usize {
+        self.present_nodes.len()
+    }
+
+    /// Returns the amount of edges in the subgraph.
+    fn edge_count(&self) -> usize {
+        self.present_edges.len()
+    }
 }
