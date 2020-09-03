@@ -1,16 +1,18 @@
-use crate::interface::ImmutableGraphContainer;
+use crate::interface::GraphBase;
 
 /// A subset of nodes and edges of a graph.
-/// This trait operates only on indices without being coupled to a graph instance.
 /// There is not restriction on which nodes or edges must be contained in combination, so e.g. an edge from node 1 to node 4 can be contained, even if node 1 and node 4 are both not contained.
-pub trait Subgraph<Graph: ImmutableGraphContainer> {
+pub trait Subgraph<'a, Graph: GraphBase> {
     /// Constructs a subgraph from the given graph without any nodes or edges.
     /// If not defined otherwise in the implementation, all node and edge ids of the given graph are valid arguments for the methods of this trait on the returned object.
-    fn new_empty(graph: &Graph) -> Self;
+    fn new_empty(graph: &'a Graph) -> Self;
 
     /// Constructs a subgraph from the given graph with all nodes and edges.
     /// If not defined otherwise in the implementation, all node and edge ids of the given graph are valid arguments for the methods of this trait on the returned object.
-    fn new_full(graph: &Graph) -> Self;
+    fn new_full(graph: &'a Graph) -> Self;
+
+    /// Returns a reference to the original graph.
+    fn original_graph(&self) -> &'a Graph;
 
     /// Returns true if the given node id is part of the subgraph.
     fn contains_node(&self, node_index: Graph::NodeIndex) -> bool;

@@ -1,5 +1,5 @@
 use super::traversal::{
-    AllowedForbiddenNodes, PostOrderForwardDfs, PreOrderBackwardBfs, PreOrderForwardBfs,
+    AllowedNodesForbiddenSubgraph, PostOrderForwardDfs, PreOrderBackwardBfs, PreOrderForwardBfs,
     PreOrderUndirectedBfs,
 };
 use crate::index::GraphIndex;
@@ -166,7 +166,7 @@ pub fn decompose_strongly_connected_components<Graph: StaticGraph>(
             let mut bfs = PreOrderBackwardBfs::new(graph, root_node);
 
             while let Some(node) =
-                bfs.next_with_forbidden_subgraph(&AllowedForbiddenNodes::new(&visited))
+                bfs.next_with_forbidden_subgraph(&AllowedNodesForbiddenSubgraph::new(&visited))
             {
                 let node = if let NodeOrEdge::Node(node) = node {
                     node

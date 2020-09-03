@@ -178,7 +178,7 @@ impl<
     type Item = NodeOrEdge<Graph::NodeIndex, Graph::EdgeIndex>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.next_internal(&NoForbiddenNodes)
+        self.next_internal(&NoForbiddenSubgraph)
     }
 }
 
@@ -277,8 +277,8 @@ pub trait TraversalQueueStrategy<Graph: GraphBase, Queue: BidirectedQueue<Graph:
 }
 
 /// A type implementing [ForbiddenNodes](ForbiddenNodes) that allows all nodes in a graph traversal.
-pub struct NoForbiddenNodes;
-impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for NoForbiddenNodes {
+pub struct NoForbiddenSubgraph;
+impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for NoForbiddenSubgraph {
     fn is_node_forbidden(&self, _: Graph::NodeIndex) -> bool {
         false
     }
@@ -289,15 +289,15 @@ impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for NoForbiddenNodes {
 }
 
 /// A type implementing [ForbiddenNodes](ForbiddenNodes) that allows all nodes set to true in a boolean vector.
-pub struct AllowedForbiddenNodes<'a> {
+pub struct AllowedNodesForbiddenSubgraph<'a> {
     allowed_nodes: &'a [bool],
 }
-impl<'a> AllowedForbiddenNodes<'a> {
+impl<'a> AllowedNodesForbiddenSubgraph<'a> {
     pub fn new(allowed_nodes: &'a [bool]) -> Self {
         Self { allowed_nodes }
     }
 }
-impl<'a, Graph: GraphBase> ForbiddenSubgraph<Graph> for AllowedForbiddenNodes<'a> {
+impl<'a, Graph: GraphBase> ForbiddenSubgraph<Graph> for AllowedNodesForbiddenSubgraph<'a> {
     fn is_node_forbidden(&self, node: Graph::NodeIndex) -> bool {
         !self.allowed_nodes[node.as_usize()]
     }

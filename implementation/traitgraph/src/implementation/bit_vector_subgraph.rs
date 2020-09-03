@@ -4,24 +4,31 @@ use crate::interface::ImmutableGraphContainer;
 use bitvector::BitVector;
 
 /// A subgraph that stores the presence or absence of a node or edge using bitvectors.
-pub struct BitVectorSubgraph {
+pub struct BitVectorSubgraph<'a, Graph> {
+    original_graph: &'a Graph,
     present_nodes: BitVector,
     present_edges: BitVector,
 }
 
-impl<Graph: ImmutableGraphContainer> Subgraph<Graph> for BitVectorSubgraph {
-    fn new_empty(graph: &Graph) -> Self {
+impl<'a, Graph: ImmutableGraphContainer> Subgraph<'a, Graph> for BitVectorSubgraph<'a, Graph> {
+    fn new_empty(graph: &'a Graph) -> Self {
         Self {
+            original_graph: graph,
             present_nodes: BitVector::new(graph.node_count()),
             present_edges: BitVector::new(graph.edge_count()),
         }
     }
 
-    fn new_full(graph: &Graph) -> Self {
+    fn new_full(graph: &'a Graph) -> Self {
         Self {
+            original_graph: graph,
             present_nodes: BitVector::ones(graph.node_count()),
             present_edges: BitVector::ones(graph.edge_count()),
         }
+    }
+
+    fn original_graph(&self) -> &'a Graph {
+        self.original_graph
     }
 
     fn contains_node(&self, node_index: Graph::NodeIndex) -> bool {
