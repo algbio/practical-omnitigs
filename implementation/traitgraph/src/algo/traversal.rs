@@ -307,6 +307,26 @@ impl<'a, Graph: GraphBase> ForbiddenSubgraph<Graph> for AllowedNodesForbiddenSub
     }
 }
 
+pub struct ForbiddenEdge<EdgeIndex> {
+    edge_id: EdgeIndex,
+}
+impl<EdgeIndex> ForbiddenEdge<EdgeIndex> {
+    pub fn new(forbidden_edge: EdgeIndex) -> Self {
+        Self {
+            edge_id: forbidden_edge,
+        }
+    }
+}
+impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for ForbiddenEdge<Graph::EdgeIndex> {
+    fn is_node_forbidden(&self, _: Graph::NodeIndex) -> bool {
+        false
+    }
+
+    fn is_edge_forbidden(&self, edge: Graph::EdgeIndex) -> bool {
+        edge == self.edge_id
+    }
+}
+
 pub struct ForwardNeighborStrategy;
 /*pub type NeighborsIntoNodes<NodeIndex, EdgeIndex, Neighbors> = std::iter::Map<
     <Neighbors as IntoIterator>::IntoIter,
