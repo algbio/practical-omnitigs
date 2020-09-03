@@ -17,3 +17,4 @@ license = "BSD-2-Clause"
 [dependencies]
 petgraph = "0.5"
 num-traits = "0.2"
+bitvector = "0.1"
