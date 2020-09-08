@@ -12,6 +12,7 @@ use std::iter::Map;
 
 pub use petgraph;
 
+/// Create a new graph implemented using the `petgraph::graph::Graph` type.
 pub fn new<NodeData: 'static + Clone + Debug, EdgeData: 'static + Clone + Debug>(
 ) -> impl DynamicGraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Clone + Debug {
     DiGraph::<NodeData, EdgeData, usize>::default()
@@ -134,9 +135,7 @@ impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for DiGraph<NodeData, EdgeDa
         <Self as GraphBase>::NodeIndex,
         <Self as GraphBase>::EdgeIndex,
     >;
-    type OutNeighborsTo =
-        PetgraphRestrictedNeighborTranslator<'a, EdgeData, <Self as GraphBase>::EdgeIndex>;
-    type InNeighborsFrom =
+    type EdgesBetween =
         PetgraphRestrictedNeighborTranslator<'a, EdgeData, <Self as GraphBase>::EdgeIndex>;
 
     fn out_neighbors(&'a self, node_id: <Self as GraphBase>::NodeIndex) -> Self::OutNeighbors {
@@ -157,22 +156,11 @@ impl<'a, NodeData, EdgeData: 'a> NavigableGraph<'a> for DiGraph<NodeData, EdgeDa
             })
     }
 
-    fn out_neighbors_to(
+    fn edges_between(
         &'a self,
         from_node_id: <Self as GraphBase>::NodeIndex,
         to_node_id: <Self as GraphBase>::NodeIndex,
-    ) -> Self::OutNeighborsTo {
-        debug_assert!(self.contains_node_index(from_node_id));
-        debug_assert!(self.contains_node_index(to_node_id));
-        self.edges_connecting(from_node_id.into(), to_node_id.into())
-            .map(|edge| <Self as GraphBase>::EdgeIndex::from(edge.id().index()))
-    }
-
-    fn in_neighbors_from(
-        &'a self,
-        to_node_id: <Self as GraphBase>::NodeIndex,
-        from_node_id: <Self as GraphBase>::NodeIndex,
-    ) -> Self::InNeighborsFrom {
+    ) -> Self::EdgesBetween {
         debug_assert!(self.contains_node_index(from_node_id));
         debug_assert!(self.contains_node_index(to_node_id));
         self.edges_connecting(from_node_id.into(), to_node_id.into())

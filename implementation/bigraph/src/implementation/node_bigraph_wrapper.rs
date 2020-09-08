@@ -221,8 +221,7 @@ impl<Topology: MutableGraphContainer + StaticGraph> MutableGraphContainer
 impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper<Topology> {
     type OutNeighbors = <Topology as NavigableGraph<'a>>::OutNeighbors;
     type InNeighbors = <Topology as NavigableGraph<'a>>::InNeighbors;
-    type OutNeighborsTo = <Topology as NavigableGraph<'a>>::OutNeighborsTo;
-    type InNeighborsFrom = <Topology as NavigableGraph<'a>>::InNeighborsFrom;
+    type EdgesBetween = <Topology as NavigableGraph<'a>>::EdgesBetween;
 
     fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors {
         self.topology.out_neighbors(node_id)
@@ -232,20 +231,12 @@ impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper
         self.topology.in_neighbors(node_id)
     }
 
-    fn out_neighbors_to(
+    fn edges_between(
         &'a self,
         from_node_id: Self::NodeIndex,
         to_node_id: Self::NodeIndex,
-    ) -> Self::OutNeighborsTo {
-        self.topology.out_neighbors_to(from_node_id, to_node_id)
-    }
-
-    fn in_neighbors_from(
-        &'a self,
-        to_node_id: Self::NodeIndex,
-        from_node_id: Self::NodeIndex,
-    ) -> Self::InNeighborsFrom {
-        self.topology.in_neighbors_from(to_node_id, from_node_id)
+    ) -> Self::EdgesBetween {
+        self.topology.edges_between(from_node_id, to_node_id)
     }
 }
 
