@@ -16,7 +16,7 @@ pub enum Hydrostructure<Graph: GraphBase, SubgraphType> {
 }
 
 impl<'a, Graph: StaticGraph> Hydrostructure<Graph, BitVectorSubgraph<'a, Graph>> {
-    pub fn compute(graph: &'a Graph, azb: VecEdgeWalk<Graph>) -> Self {
+    pub fn compute_with_bitvector_subgraph(graph: &'a Graph, azb: VecEdgeWalk<Graph>) -> Self {
         let r_plus = compute_hydrostructure_forward_reachability(graph, &azb);
         let r_minus = compute_hydrostructure_backward_reachability(graph, &azb);
 
@@ -37,6 +37,17 @@ impl<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>> Hydrostructure<G
     pub fn new_avertible(azb: VecEdgeWalk<Graph>) -> Self {
         Self::Avertible {
             azb
+        }
+    }
+
+    pub fn compute(graph: &'a Graph, azb: VecEdgeWalk<Graph>) -> Self {
+        let r_plus = compute_hydrostructure_forward_reachability(graph, &azb);
+        let r_minus = compute_hydrostructure_backward_reachability(graph, &azb);
+
+        if let (Some(r_plus), Some(r_minus)) = (r_plus, r_minus) {
+            Self::BridgeLike {r_plus, r_minus, azb}
+        } else {
+            Self::Avertible {azb}
         }
     }
 

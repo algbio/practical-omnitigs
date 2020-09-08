@@ -2,7 +2,6 @@ use traitgraph::algo::traversal::{
     BackwardNeighborStrategy, BfsQueueStrategy, ForbiddenEdge, ForwardNeighborStrategy,
     PreOrderTraversal, TraversalNeighborStrategy,
 };
-use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
 use traitgraph::interface::subgraph::Subgraph;
 use traitgraph::interface::{NodeOrEdge, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
@@ -39,31 +38,31 @@ pub fn compute_restricted_reachability<
 }
 
 /// Returns the forwards reachable subgraph from the tail of `edge` without using `edge`.
-pub fn compute_restricted_forward_reachability<Graph: StaticGraph>(
-    graph: &Graph,
+pub fn compute_restricted_forward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
+    graph: &'a Graph,
     edge: Graph::EdgeIndex,
-) -> impl Subgraph<Graph> {
+) -> SubgraphType {
     let start_node = graph.edge_endpoints(edge).from_node;
-    compute_restricted_reachability::<_, ForwardNeighborStrategy, BitVectorSubgraph<Graph>>(graph, start_node, edge)
+    compute_restricted_reachability::<_, ForwardNeighborStrategy, _>(graph, start_node, edge)
 }
 
 /// Returns the backwards reachable subgraph from the head of `edge` without using `edge`.
-pub fn compute_restricted_backward_reachability<Graph: StaticGraph>(
-    graph: &Graph,
+pub fn compute_restricted_backward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
+    graph: &'a Graph,
     edge: Graph::EdgeIndex,
-) -> impl Subgraph<Graph> {
+) -> SubgraphType {
     let start_node = graph.edge_endpoints(edge).to_node;
-    compute_restricted_reachability::<_, BackwardNeighborStrategy, BitVectorSubgraph<Graph>>(graph, start_node, edge)
+    compute_restricted_reachability::<_, BackwardNeighborStrategy, _>(graph, start_node, edge)
 }
 
-pub fn compute_hydrostructure_forward_reachability<'a, Graph: StaticGraph>(
+pub fn compute_hydrostructure_forward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
     graph: &'a Graph,
     azb: &VecEdgeWalk<Graph>,
-) -> Option<BitVectorSubgraph<'a, Graph>> {
+) -> Option<SubgraphType> {
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(a).to_node;
-    let mut subgraph = compute_restricted_reachability::<_, ForwardNeighborStrategy, BitVectorSubgraph<Graph>>(graph, start_node, b);
+    let mut subgraph = compute_restricted_reachability::<_, ForwardNeighborStrategy, SubgraphType>(graph, start_node, b);
 
     for edge in azb.iter().take(azb.len() - 1) {
         let node = graph.edge_endpoints(edge).to_node;
@@ -79,14 +78,14 @@ pub fn compute_hydrostructure_forward_reachability<'a, Graph: StaticGraph>(
     Some(subgraph)
 }
 
-pub fn compute_hydrostructure_backward_reachability<'a, Graph: StaticGraph>(
+pub fn compute_hydrostructure_backward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
     graph: &'a Graph,
     azb: &VecEdgeWalk<Graph>,
-) -> Option<BitVectorSubgraph<'a, Graph>> {
+) -> Option<SubgraphType> {
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(b).from_node;
-    let mut subgraph = compute_restricted_reachability::<_, BackwardNeighborStrategy, BitVectorSubgraph<Graph>>(graph, start_node, a);
+    let mut subgraph = compute_restricted_reachability::<_, BackwardNeighborStrategy, SubgraphType>(graph, start_node, a);
 
     for edge in azb.iter().skip(1) {
         let node = graph.edge_endpoints(edge).from_node;
@@ -108,6 +107,7 @@ mod tests {
     use crate::restricted_reachability::compute_restricted_forward_reachability;
     use traitgraph::interface::subgraph::Subgraph;
     use traitgraph::interface::MutableGraphContainer;
+    use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
 
     #[test]
     fn test_restricted_forward_reachability_simple() {
@@ -121,7 +121,7 @@ mod tests {
         let _e4 = graph.add_edge(n1, n0, -4);
         let e5 = graph.add_edge(n0, n2, -5);
         let _e6 = graph.add_edge(n1, n2, -6);
-        let subgraph = compute_restricted_forward_reachability(&graph, e1);
+        let subgraph: BitVectorSubgraph<_> = compute_restricted_forward_reachability(&graph, e1);
 
         assert_eq!(subgraph.node_count(), 2);
         assert!(subgraph.contains_node(n0));
@@ -144,7 +144,7 @@ mod tests {
         let _e4 = graph.add_edge(n0, n1, -4);
         let e5 = graph.add_edge(n2, n0, -5);
         let _e6 = graph.add_edge(n2, n1, -6);
-        let subgraph = compute_restricted_backward_reachability(&graph, e1);
+        let subgraph: BitVectorSubgraph<_> = compute_restricted_backward_reachability(&graph, e1);
 
         assert_eq!(subgraph.node_count(), 2);
         assert!(subgraph.contains_node(n0));
