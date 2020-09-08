@@ -20,6 +20,7 @@ where
     Graph::EdgeData: Clone,
 {
     let mut result = Vec::new();
+    // Using a vector might be faster here. We anyways only pop from one side.
     let mut nodes: LinkedList<_> = graph.node_indices().collect();
     // TODO this is not optimal. The bfs recreates a vector of all nodes all the time.
     // Instead of doing that, the bfs could reuse the order vector.
