@@ -75,6 +75,14 @@ pub type PostOrderUndirectedDfs<Graph> = DfsPostOrderTraversal<
     LinkedList<<Graph as GraphBase>::NodeIndex>,
 >;
 
+/// A generic preorder graph traversal.
+/// The traversal is generic over the graph implementation,
+/// as well as the direction of the search (`NeighborStrategy`),
+/// the order of processing (`QueueStrategy`) and the queue implementation itself (`Queue`).
+///
+/// Moreover, the traversal computes the preorder rank of each visited node.
+/// Also, the traversal operates with edge-granularity, meaning that not just nodes are returned by the `next` method, but the traversed edges of each node as well.
+/// Additionally, a forbidden subgraph can be passed using the `next_with_forbidden_subgraph` method to disable some edges and nodes in the traversal.
 pub struct PreOrderTraversal<
     'a,
     Graph: GraphBase,
@@ -99,6 +107,7 @@ impl<
         Queue: BidirectedQueue<Graph::NodeIndex>,
     > PreOrderTraversal<'a, Graph, NeighborStrategy, QueueStrategy, Queue>
 {
+    /// Creates a new traversal that operates on the given graph starting from the given node.
     pub fn new(graph: &'a Graph, start: Graph::NodeIndex) -> Self {
         let mut queue = Queue::default();
         QueueStrategy::push(&mut queue, start);
@@ -115,6 +124,7 @@ impl<
         }
     }
 
+    /// Advances the traversal, ignoring all nodes and edges forbidden by `forbidden_subgraph`.
     pub fn next_with_forbidden_subgraph<FN: ForbiddenSubgraph<Graph>>(
         &mut self,
         forbidden_subgraph: &FN,
@@ -161,12 +171,12 @@ impl<
         }
     }
 
+    /// Returns the rank of the given node, or `None` if the node has not yet been visited.
     pub fn rank_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
         let rank = self.rank[node.as_usize()];
         rank.into()
     }
 }
-
 impl<
         'a,
         Graph: StaticGraph,
@@ -182,6 +192,13 @@ impl<
     }
 }
 
+/// A generic depth first postorder graph traversal.
+/// The traversal is generic over the graph implementation,
+/// as well as the direction of the search (`NeighborStrategy`)
+/// and the queue implementation (`Queue`).
+///
+/// Moreover, the traversal computes the postorder rank of each visited node.
+/// This traversal operates with node-granularity, meaning that the `next` method returns nodes.
 pub struct DfsPostOrderTraversal<
     Graph: GraphBase,
     NeighborStrategy,
@@ -201,6 +218,7 @@ impl<
         Queue: BidirectedQueue<Graph::NodeIndex>,
     > DfsPostOrderTraversal<Graph, NeighborStrategy, Queue>
 {
+    /// Creates a new traversal that operates on the given graph, starting from the given node.
     pub fn new(graph: &Graph, start: Graph::NodeIndex) -> Self {
         let mut queue = Queue::default();
         queue.push_back(start);
@@ -214,6 +232,7 @@ impl<
         }
     }
 
+    /// Resets the traversal to start from the given node.
     pub fn reset(&mut self, start: Graph::NodeIndex) {
         self.queue.clear();
         self.queue.push_back(start);
@@ -223,6 +242,7 @@ impl<
         self.current_rank = 0.into();
     }
 
+    /// Computes and returns the next node in depth-first search postorder.
     pub fn next(&mut self, graph: &'a Graph) -> Option<Graph::NodeIndex> {
         while let Some(first) = self.queue.pop_back() {
             let rank_entry = &mut self.rank[first.as_usize()];
@@ -248,6 +268,7 @@ impl<
         None
     }
 
+    /// Returns the rank of a node in depth-first search postorder, or `None` if the node has not yet been processed completely.
     pub fn rank_of(&self, node: Graph::NodeIndex) -> Option<Graph::NodeIndex> {
         let rank = self.rank[node.as_usize()];
         rank.into()
@@ -260,23 +281,31 @@ impl<
 
 /// A type with this trait can tell if a node or edge is forbidden in a graph traversal.
 pub trait ForbiddenSubgraph<Graph: GraphBase> {
+    /// Returns true if the given node is forbidden.
     fn is_node_forbidden(&self, node: Graph::NodeIndex) -> bool;
 
+    /// Returns true if the given edge is forbidden.
     fn is_edge_forbidden(&self, edge: Graph::EdgeIndex) -> bool;
 }
 
+/// A type that defines the strategy for computing the neighborhood of a node, i.e. forward, backward or undirected.
 pub trait TraversalNeighborStrategy<'a, Graph: GraphBase> {
+    /// The iterator type used to iterate over the neighbors of a node.
     type Iterator: Iterator<Item = Neighbor<Graph::NodeIndex, Graph::EdgeIndex>>;
 
+    /// Returns an iterator over the neighbors of a given node.
     fn neighbor_iterator(graph: &'a Graph, node: Graph::NodeIndex) -> Self::Iterator;
 }
 
+/// A type that defines the order of node processing in a traversal, i.e. queue-based or stack-based.
 pub trait TraversalQueueStrategy<Graph: GraphBase, Queue: BidirectedQueue<Graph::NodeIndex>> {
+    /// Insert a node into the queue.
     fn push(queue: &mut Queue, node: Graph::NodeIndex);
+    /// Remove and return a node from the queue.
     fn pop(queue: &mut Queue) -> Option<Graph::NodeIndex>;
 }
 
-/// A type implementing [ForbiddenNodes](ForbiddenNodes) that allows all nodes in a graph traversal.
+/// A type implementing [ForbiddenSubgraph](ForbiddenSubgraph) that allows all nodes in a graph traversal.
 pub struct NoForbiddenSubgraph;
 impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for NoForbiddenSubgraph {
     fn is_node_forbidden(&self, _: Graph::NodeIndex) -> bool {
@@ -288,11 +317,12 @@ impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for NoForbiddenSubgraph {
     }
 }
 
-/// A type implementing [ForbiddenNodes](ForbiddenNodes) that allows all nodes set to true in a boolean vector.
+/// A type implementing [ForbiddenSubgraph](ForbiddenSubgraph) that allows all nodes set to true in a boolean vector.
 pub struct AllowedNodesForbiddenSubgraph<'a> {
     allowed_nodes: &'a [bool],
 }
 impl<'a> AllowedNodesForbiddenSubgraph<'a> {
+    /// Creates a new `AllowedNodesForbiddenSubgraph` with the given boolean vector that contains `true` for each allowed node and `false` for each forbidden node.
     pub fn new(allowed_nodes: &'a [bool]) -> Self {
         Self { allowed_nodes }
     }
@@ -307,10 +337,12 @@ impl<'a, Graph: GraphBase> ForbiddenSubgraph<Graph> for AllowedNodesForbiddenSub
     }
 }
 
+/// A [ForbiddenSubgraph](ForbiddenSubgraph) that forbids a single edge.
 pub struct ForbiddenEdge<EdgeIndex> {
     edge_id: EdgeIndex,
 }
 impl<EdgeIndex> ForbiddenEdge<EdgeIndex> {
+    /// Construct a new `ForbiddenEdge` that forbids the given edge.
     pub fn new(forbidden_edge: EdgeIndex) -> Self {
         Self {
             edge_id: forbidden_edge,
@@ -327,6 +359,7 @@ impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for ForbiddenEdge<Graph::EdgeInd
     }
 }
 
+/// A neighbor strategy that traverses all outgoing edges of a node.
 pub struct ForwardNeighborStrategy;
 /*pub type NeighborsIntoNodes<NodeIndex, EdgeIndex, Neighbors> = std::iter::Map<
     <Neighbors as IntoIterator>::IntoIter,
@@ -343,6 +376,7 @@ impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     }
 }
 
+/// A neighbor strategy that traverses all incoming edges of a node.
 pub struct BackwardNeighborStrategy;
 
 impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
@@ -355,8 +389,9 @@ impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     }
 }
 
+/// A neighbor strategy that traverses all incoming and all outgoing edges of a node.
 pub struct UndirectedNeighborStrategy;
-pub type InOutNeighborsChain<OutNeighbors, InNeighbors> = std::iter::Chain<
+type InOutNeighborsChain<OutNeighbors, InNeighbors> = std::iter::Chain<
     <OutNeighbors as IntoIterator>::IntoIter,
     <InNeighbors as IntoIterator>::IntoIter,
 >;
@@ -371,6 +406,7 @@ impl<'a, Graph: NavigableGraph<'a>> TraversalNeighborStrategy<'a, Graph>
     }
 }
 
+/// A queue strategy that works by the first-in first-out principle.
 pub struct BfsQueueStrategy;
 
 impl<Graph: GraphBase, Queue: BidirectedQueue<Graph::NodeIndex>>
@@ -385,6 +421,7 @@ impl<Graph: GraphBase, Queue: BidirectedQueue<Graph::NodeIndex>>
     }
 }
 
+/// A queue strategy that works by the last-in first-out principle.
 pub struct DfsQueueStrategy;
 
 impl<Graph: GraphBase, Queue: BidirectedQueue<Graph::NodeIndex>>

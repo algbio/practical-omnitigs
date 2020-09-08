@@ -11,10 +11,12 @@ pub struct Macronodes<Graph: GraphBase> {
 }
 
 impl<Graph: GraphBase> Macronodes<Graph> {
+    /// Creates a new `Macronodes` struct with the given vector of macronodes.
     pub fn new(macronodes: Vec<VecNodeWalk<Graph>>) -> Self {
         Self { macronodes }
     }
 
+    /// Returns an iterator over the macronodes in this struct.
     pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecNodeWalk<Graph>> {
         self.macronodes.iter()
     }
@@ -29,6 +31,8 @@ impl<'a, Graph: GraphBase> IntoIterator for &'a Macronodes<Graph> {
     }
 }
 
+/// A trait abstracting over the concrete algorithm used to compute macronodes.
 pub trait MacronodeAlgorithm<Graph: StaticGraph> {
+    /// Compute all macronodes in a graph.
     fn compute_macronodes(graph: &Graph) -> Macronodes<Graph>;
 }

@@ -1,17 +1,19 @@
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::StaticGraph;
 
+/// A struct storing the amounts of different types of uncompacted node-centric unitigs.
 #[derive(Debug, Eq, PartialEq, Default)]
 pub struct UncompactedNodeUnitigs {
-    /// Uncompacted unitigs of length two
+    /// Uncompacted unitigs of length two nodes.
     pub len_2: usize,
-    /// Uncompacted unitigs of length three
+    /// Uncompacted unitigs of length three nodes.
     pub len_3: usize,
-    /// Uncompacted unitigs of length four or more
+    /// Uncompacted unitigs of length four or more nodes.
     pub len_4_more: usize,
 }
 
 impl UncompactedNodeUnitigs {
+    /// Returns the total amount of uncompacted unitigs.
     pub fn total(&self) -> usize {
         self.len_2 + self.len_3 + self.len_4_more
     }

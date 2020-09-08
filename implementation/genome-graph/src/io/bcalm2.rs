@@ -15,56 +15,65 @@ use std::path::Path;
 
 error_chain! {
     foreign_links {
-        Io(std::io::Error);
-        Fmt(std::fmt::Error);
+        // For some weird reasons I don't understand, the doc comments have to be put after the item in this macro...
+        Io(std::io::Error)
+        /// An IO error.
+        ;
+        Fmt(std::fmt::Error)
+        /// An error encountered while trying to format a structure as string.
+        ;
     }
 
     errors {
+        /// A node id that cannot be parsed into `usize`.
         BCalm2IDError(id: String) {
             description("invalid node id")
             display("invalid node id: '{:?}'", id)
         }
 
+        /// The length of a sequence does not match the length given as fasta parameter.
         BCalm2LengthError(length: usize, sequence_length: usize) {
             description("the length in the description of a node does not match the length of its sequence")
             display("the length in the description of a node ({}) does not match the length of its sequence {}", length, sequence_length)
         }
 
+        /// The fasta comment contains an unknown parameter.
         BCalm2UnknownParameterError(parameter: String) {
             description("unknown parameter")
             display("unknown parameter: '{:?}'", parameter)
         }
 
+        /// The fasta comment contains a duplicate parameter.
         BCalm2DuplicateParameterError(parameter: String) {
             description("duplicate parameter")
             display("duplicate parameter: '{:?}'", parameter)
         }
 
+        /// The fasta comment contains a parameter that cannot be parsed.
         BCalm2MalformedParameterError(parameter: String) {
             description("malformed parameter")
             display("malformed parameter: '{:?}'", parameter)
         }
 
+        /// The fasta comment is missing an expected parameter.
         BCalm2MissingParameterError(parameter: String) {
             description("missing parameter")
             display("missing parameter: '{:?}'", parameter)
         }
 
+        /// A node id (from the given graph type) cannot be cast into `usize`.
         BCalm2NodeIdOutOfPrintingRange {
             description("node id is out of range (usize) for displaying")
             display("node id is out of range (usize) for displaying")
         }
 
-        BCalm2NodeIdOutOfRange {
-            description("node id is out of range (usize)")
-            display("node id is out of range (usize)")
-        }
-
+        /// A node is not mapped to a mirror node.
         BCalm2NodeWithoutMirror {
             description("node has no mirror")
             display("node has no mirror")
         }
 
+        /// An edge is not mapped to a mirror node.
         BCalm2EdgeWithoutMirror {
             description("edge has no mirror")
             display("edge has no mirror")
@@ -72,6 +81,7 @@ error_chain! {
     }
 }
 
+/// Node data of a bcalm2 node, containing only the data the is typically needed.
 #[derive(Debug)]
 pub struct BCalm2NodeData {
     // TODO
@@ -99,7 +109,7 @@ pub struct PlainBCalm2Edge {
 }
 
 impl BidirectedData for PlainBCalm2NodeData {
-    fn reverse_complement(&self) -> Self {
+    fn mirror(&self) -> Self {
         let mut result = self.clone();
         result.sequence = result.sequence.reverse_complement();
         result
@@ -262,6 +272,7 @@ impl<'a> From<&'a PlainBCalm2NodeData> for PlainBCalm2NodeData {
 ////// NODE CENTRIC IO //////
 /////////////////////////////
 
+/// Read a genome graph in bcalm2 fasta format into a node-centric representation from a file.
 pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
     P: AsRef<Path>,
     NodeData: From<PlainBCalm2NodeData> + BidirectedData,
@@ -275,6 +286,7 @@ pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
     )
 }
 
+/// Read a genome graph in bcalm2 fasta format into a node-centric representation.
 pub fn read_bigraph_from_bcalm2_as_node_centric<
     R: std::io::Read,
     NodeData: From<PlainBCalm2NodeData> + BidirectedData,
@@ -349,6 +361,7 @@ fn write_plain_bcalm2_node_data_to_bcalm2(
     Ok(result)
 }
 
+/// Write a genome graph in bcalm2 fasta format from a node-centric representation to a file.
 pub fn write_node_centric_bigraph_to_bcalm2_to_file<
     P: AsRef<Path>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
@@ -367,6 +380,7 @@ where
     )
 }
 
+/// Write a genome graph in bcalm2 fasta format from a node-centric representation.
 pub fn write_node_centric_bigraph_to_bcalm2<
     W: std::io::Write,
     NodeData,
@@ -400,7 +414,7 @@ where
             /*let mirror_node_data = PlainBCalm2NodeData::<IndexType>::from(
                 graph
                     .node_data(mirror_node_id)
-                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?,
+                    .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutMirror))?,
             );*/
             let mut out_neighbors_plus = Vec::new();
             let mut out_neighbors_minus = Vec::new();
@@ -415,7 +429,7 @@ where
                     } else {
                         graph
                             .mirror_node(neighbor.node_id)
-                            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+                            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutMirror))?
                             .as_usize()
                     },
                     output_nodes[neighbor_node_id],
@@ -431,7 +445,7 @@ where
                     } else {
                         graph
                             .mirror_node(neighbor.node_id)
-                            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeIdOutOfRange))?
+                            .ok_or_else(|| Error::from(ErrorKind::BCalm2NodeWithoutMirror))?
                             .as_usize()
                     },
                     output_nodes[neighbor_node_id],
@@ -462,6 +476,7 @@ where
 ////// EDGE CENTRIC IO //////
 /////////////////////////////
 
+/// Read a genome graph in bcalm2 fasta format into an edge-centric representation from a file.
 pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     P: AsRef<Path>,
     NodeData: Default + Clone,
@@ -506,6 +521,7 @@ where
     }
 }
 
+/// Read a genome graph in bcalm2 fasta format into an edge-centric representation.
 pub fn read_bigraph_from_bcalm2_as_edge_centric<
     R: std::io::Read,
     NodeData: Default + Clone,
@@ -524,7 +540,7 @@ where
 
     for record in reader.records() {
         let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
-        let reverse_complement = record.reverse_complement();
+        let reverse_complement = record.mirror();
 
         let pre_plus = record.sequence.prefix(node_kmer_size);
         let pre_minus = reverse_complement.sequence.prefix(node_kmer_size);
@@ -537,7 +553,7 @@ where
         let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, &succ_minus);
 
         bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
-        bigraph.add_edge(pre_minus, succ_minus, record.reverse_complement().into());
+        bigraph.add_edge(pre_minus, succ_minus, record.mirror().into());
     }
 
     assert!(bigraph.verify_node_pairing());
@@ -545,6 +561,7 @@ where
     Ok(bigraph)
 }
 
+/// Write a genome graph in bcalm2 fasta format from an edge-centric representation to a file.
 pub fn write_edge_centric_bigraph_to_bcalm2_to_file<
     P: AsRef<Path>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
@@ -563,6 +580,7 @@ where
     )
 }
 
+/// Write a genome graph in bcalm2 fasta format from an edge-centric representation.
 pub fn write_edge_centric_bigraph_to_bcalm2<
     W: std::io::Write,
     NodeData,

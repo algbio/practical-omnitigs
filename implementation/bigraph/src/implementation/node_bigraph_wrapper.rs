@@ -17,7 +17,7 @@ use traitgraph::interface::{
     StaticGraph,
 };
 
-/// Wrapper for a static graph that adds a binode mapping function.
+/// Wrapper for a static graph that adds a mirror node mapping function.
 ///
 /// Bigraphs can be represented with this struct by creating their topology as normal directed graph where each binode is split into its two parts.
 /// The binode mapping function then associates the parts with each other.
@@ -32,7 +32,7 @@ use traitgraph::interface::{
 /// #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 /// struct NodeData(i32);
 /// impl BidirectedData for NodeData {
-///     fn reverse_complement(&self) -> Self {
+///     fn mirror(&self) -> Self {
 ///         Self(1000 - self.0)
 ///     }
 /// }
@@ -48,6 +48,7 @@ use traitgraph::interface::{
 /// ```
 #[derive(Debug, Clone)]
 pub struct NodeBigraphWrapper<Topology: GraphBase> {
+    /// The underlying topology of the bigraph.
     pub topology: Topology,
     binode_map: Vec<Topology::OptionalNodeIndex>,
 }
@@ -85,15 +86,12 @@ where
                 //assert_ne!(node_index, mirror_index);
                 assert!(!binode_map[node_index.as_usize()].is_valid());
                 assert!(!binode_map[mirror_index.as_usize()].is_valid());
-                assert_eq!(
-                    node_data,
-                    &topology.node_data(mirror_index).reverse_complement()
-                );
+                assert_eq!(node_data, &topology.node_data(mirror_index).mirror());
                 binode_map[node_index.as_usize()] = mirror_index.into();
                 binode_map[mirror_index.as_usize()] = node_index.into();
                 data_map.remove(node_data);
             } else {
-                let mirror_data = node_data.reverse_complement();
+                let mirror_data = node_data.mirror();
                 //assert_ne!(&mirror_data, node_data);
                 assert_eq!(None, data_map.insert(mirror_data, node_index));
             }
@@ -221,8 +219,7 @@ impl<Topology: MutableGraphContainer + StaticGraph> MutableGraphContainer
 impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper<Topology> {
     type OutNeighbors = <Topology as NavigableGraph<'a>>::OutNeighbors;
     type InNeighbors = <Topology as NavigableGraph<'a>>::InNeighbors;
-    type OutNeighborsTo = <Topology as NavigableGraph<'a>>::OutNeighborsTo;
-    type InNeighborsFrom = <Topology as NavigableGraph<'a>>::InNeighborsFrom;
+    type EdgesBetween = <Topology as NavigableGraph<'a>>::EdgesBetween;
 
     fn out_neighbors(&'a self, node_id: Self::NodeIndex) -> Self::OutNeighbors {
         self.topology.out_neighbors(node_id)
@@ -232,20 +229,12 @@ impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper
         self.topology.in_neighbors(node_id)
     }
 
-    fn out_neighbors_to(
+    fn edges_between(
         &'a self,
         from_node_id: Self::NodeIndex,
         to_node_id: Self::NodeIndex,
-    ) -> Self::OutNeighborsTo {
-        self.topology.out_neighbors_to(from_node_id, to_node_id)
-    }
-
-    fn in_neighbors_from(
-        &'a self,
-        to_node_id: Self::NodeIndex,
-        from_node_id: Self::NodeIndex,
-    ) -> Self::InNeighborsFrom {
-        self.topology.in_neighbors_from(to_node_id, from_node_id)
+    ) -> Self::EdgesBetween {
+        self.topology.edges_between(from_node_id, to_node_id)
     }
 }
 
@@ -292,7 +281,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -321,7 +310,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -346,7 +335,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 == 4 {
                     3
                 } else if self.0 % 2 == 0 {
@@ -373,7 +362,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 == 4 {
                     4
                 } else if self.0 % 2 == 0 {
@@ -400,7 +389,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 == 4 {
                     4
                 } else if self.0 % 2 == 0 {
@@ -427,7 +416,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -455,7 +444,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -486,7 +475,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 == 4 {
                     3
                 } else if self.0 % 2 == 0 {
@@ -513,7 +502,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 == 4 {
                     3
                 } else if self.0 % 2 == 0 {
@@ -540,7 +529,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 == 4 {
                     4
                 } else if self.0 % 2 == 0 {
@@ -567,7 +556,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 == 4 {
                     4
                 } else if self.0 % 2 == 0 {
@@ -594,7 +583,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -619,7 +608,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -646,7 +635,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -673,7 +662,7 @@ mod tests {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -700,7 +689,7 @@ mod tests {
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(1000 - self.0)
             }
         }

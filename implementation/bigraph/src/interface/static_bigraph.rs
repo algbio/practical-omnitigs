@@ -78,7 +78,7 @@ pub trait StaticNodeCentricBigraph: StaticBigraph {
         let reverse_to = self.mirror_node(endpoints.from_node)?;
         let mut result = None;
 
-        for reverse_edge_id in self.out_neighbors_to(reverse_from, reverse_to) {
+        for reverse_edge_id in self.edges_between(reverse_from, reverse_to) {
             if let Some(node) = result {
                 if node == edge_id {
                     return Some(reverse_edge_id);
@@ -136,8 +136,8 @@ where
         let edge_data = self.edge_data(edge_id);
         let mut result = None;
 
-        for reverse_edge_id in self.out_neighbors_to(reverse_from, reverse_to) {
-            if &edge_data.reverse_complement() == self.edge_data(reverse_edge_id) {
+        for reverse_edge_id in self.edges_between(reverse_from, reverse_to) {
+            if &edge_data.mirror() == self.edge_data(reverse_edge_id) {
                 if let Some(node) = result {
                     if node == edge_id {
                         return Some(reverse_edge_id);
@@ -176,8 +176,7 @@ where
 
                     if edge_set.contains(&mirror_complete_edge) {
                         edge_set.remove(&mirror_complete_edge);
-                        if &self.edge_data(edge).reverse_complement() != self.edge_data(mirror_edge)
-                        {
+                        if &self.edge_data(edge).mirror() != self.edge_data(mirror_edge) {
                             return false;
                         }
                     } else {
@@ -233,7 +232,7 @@ mod test {
     struct EdgeData(usize);
 
     impl BidirectedData for EdgeData {
-        fn reverse_complement(&self) -> Self {
+        fn mirror(&self) -> Self {
             EdgeData(1000 - self.0)
         }
     }
@@ -243,7 +242,7 @@ mod test {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -271,7 +270,7 @@ mod test {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -298,7 +297,7 @@ mod test {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -335,7 +334,7 @@ mod test {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -363,7 +362,7 @@ mod test {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -391,7 +390,7 @@ mod test {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(if self.0 % 2 == 0 {
                     self.0 + 1
                 } else {
@@ -428,7 +427,7 @@ mod test {
         #[derive(Clone, Eq, PartialEq, Hash, Debug)]
         struct NodeData(i32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(1000 - self.0)
             }
         }

@@ -2,6 +2,7 @@ use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::{NodeWalk, VecNodeWalk};
 
+/// Algorithms to count uncompacted unitigs in a graph.
 pub mod uncompacted_unitigs;
 
 /// A unitig stored as sequence of nodes.
@@ -55,6 +56,7 @@ impl<Graph: GraphBase> NodeUnitig<Graph> {
     }
 }
 
+/// A structure storing a vector of node-centric unitigs.
 pub struct Unitigs<Graph: GraphBase> {
     unitigs: Vec<NodeUnitig<Graph>>,
 }
@@ -110,6 +112,7 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
         Self { unitigs }
     }
 
+    /// Returns an iterator over the nodes of this unitig.
     pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a NodeUnitig<Graph>> {
         self.unitigs.iter()
     }

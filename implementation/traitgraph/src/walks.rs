@@ -2,8 +2,10 @@ use crate::interface::{GraphBase, StaticGraph};
 
 /// A sequence of nodes in a graph, where each consecutive pair of nodes is connected by an edge.
 pub trait NodeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::NodeIndex]> {
+    /// The iterator type used to iterate over the nodes of this walk.
     type Iter: Iterator<Item = Graph::NodeIndex>;
 
+    /// Returns an iterator over the nodes of this walk.
     fn iter(&'a self) -> Self::Iter;
 
     /// Returns the length of this walk as its amount of nodes.
@@ -19,8 +21,10 @@ pub trait NodeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::NodeIndex]> {
 
 /// A sequence of edges in a graph, where each consecutive pair of edges is connected by a node.
 pub trait EdgeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::EdgeIndex]> {
+    /// The iterator type used to iterate over the edges of this walk.
     type Iter: Iterator<Item = Graph::EdgeIndex>;
 
+    /// Returns an iterator over the edges of this walk.
     fn iter(&'a self) -> Self::Iter;
 
     /// Returns the length of this walk as its amount of edges.
@@ -41,6 +45,7 @@ pub struct VecNodeWalk<Graph: GraphBase> {
 }
 
 impl<Graph: GraphBase> VecNodeWalk<Graph> {
+    /// Creates a new walk over the given node indices.
     pub fn new(walk: Vec<Graph::NodeIndex>) -> Self {
         Self { walk }
     }
@@ -63,7 +68,7 @@ impl<Graph: StaticGraph> VecNodeWalk<Graph> {
         for node_pair in self.walk.windows(2) {
             let from = node_pair[0];
             let to = node_pair[1];
-            let mut edges_between = graph.out_neighbors_to(from, to);
+            let mut edges_between = graph.edges_between(from, to);
 
             if let Some(edge) = edges_between.next() {
                 walk.push(edge);
@@ -120,6 +125,7 @@ pub struct VecEdgeWalk<Graph: GraphBase> {
 }
 
 impl<Graph: GraphBase> VecEdgeWalk<Graph> {
+    /// Creates a new walk over the given edge indices.
     pub fn new(walk: Vec<Graph::EdgeIndex>) -> Self {
         Self { walk }
     }
