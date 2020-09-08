@@ -1,0 +1,4 @@
+channels:
+        - conda-forge
+dependencies:
+        - imagemagick==7.0.10_28
