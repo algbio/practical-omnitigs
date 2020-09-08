@@ -9,4 +9,6 @@ pub mod restricted_reachability;
 /// Algorithms to compute unitigs.
 pub mod unitigs;
 
+pub mod hydrostructure;
+
 pub use traitgraph;
