@@ -53,57 +53,57 @@ impl<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>> Hydrostructure<G
 
     pub fn is_edge_river(&self, edge: Graph::EdgeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => !r_plus.contains_edge(edge) && !r_minus.contains_edge(edge),
-            Hydrostructure::Avertible {azb} => false
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => !r_plus.contains_edge(edge) && !r_minus.contains_edge(edge),
+            Hydrostructure::Avertible {azb: _} => false
         }
     }
 
     pub fn is_edge_vapor(&self, edge: Graph::EdgeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => r_plus.contains_edge(edge) && r_minus.contains_edge(edge),
-            Hydrostructure::Avertible {azb} => true
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => r_plus.contains_edge(edge) && r_minus.contains_edge(edge),
+            Hydrostructure::Avertible {azb: _} => true
         }
     }
 
     pub fn is_edge_cloud(&self, edge: Graph::EdgeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => !r_plus.contains_edge(edge) && r_minus.contains_edge(edge),
-            Hydrostructure::Avertible {azb} => false
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => !r_plus.contains_edge(edge) && r_minus.contains_edge(edge),
+            Hydrostructure::Avertible {azb: _} => false
         }
     }
 
     pub fn is_edge_sea(&self, edge: Graph::EdgeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => r_plus.contains_edge(edge) && !r_minus.contains_edge(edge),
-            Hydrostructure::Avertible {azb} => false
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => r_plus.contains_edge(edge) && !r_minus.contains_edge(edge),
+            Hydrostructure::Avertible {azb: _} => false
         }
     }
 
     pub fn is_node_river(&self, node: Graph::NodeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => !r_plus.contains_node(node) && !r_minus.contains_node(node),
-            Hydrostructure::Avertible {azb} => false
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => !r_plus.contains_node(node) && !r_minus.contains_node(node),
+            Hydrostructure::Avertible {azb: _} => false
         }
     }
 
     pub fn is_node_vapor(&self, node: Graph::NodeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => r_plus.contains_node(node) && r_minus.contains_node(node),
-            Hydrostructure::Avertible {azb} => true
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => r_plus.contains_node(node) && r_minus.contains_node(node),
+            Hydrostructure::Avertible {azb: _} => true
         }
     }
 
     pub fn is_node_cloud(&self, node: Graph::NodeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => !r_plus.contains_node(node) && r_minus.contains_node(node),
-            Hydrostructure::Avertible {azb} => false
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => !r_plus.contains_node(node) && r_minus.contains_node(node),
+            Hydrostructure::Avertible {azb: _} => false
         }
     }
 
     pub fn is_node_sea(&self, node: Graph::NodeIndex) -> bool {
         match self {
-            Hydrostructure::BridgeLike {r_plus, r_minus, azb} => r_plus.contains_node(node) && !r_minus.contains_node(node),
-            Hydrostructure::Avertible {azb} => false
+            Hydrostructure::BridgeLike {r_plus, r_minus, azb: _} => r_plus.contains_node(node) && !r_minus.contains_node(node),
+            Hydrostructure::Avertible {azb: _} => false
         }
     }
 }
