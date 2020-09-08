@@ -7,7 +7,7 @@ pub struct CirculariseGenomeCommand {
     #[clap(
         short,
         long,
-        about = "length of the prefix to append to the genome",
+        about = "The length of the prefix to append to the genome",
         default_value = "1000"
     )]
     pub circularisation_size: usize,
@@ -15,7 +15,7 @@ pub struct CirculariseGenomeCommand {
     #[clap(
         short,
         long,
-        about = "The output file, to which the graph should be written in bcalm2 format"
+        about = "The output file, to which the circularised records should be written as fasta"
     )]
     pub output: String,
 }
@@ -36,6 +36,7 @@ pub(crate) fn circularise_records(
             e
         })?
         .records();
+    info!("Creating/overwriting output file: {}", &subcommand.output);
     let mut writer = bio::io::fasta::Writer::to_file(&subcommand.output)?;
     let circularisation_size = subcommand.circularisation_size;
 

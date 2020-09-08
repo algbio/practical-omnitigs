@@ -9,6 +9,7 @@ use error_chain::{ChainedError, ExitCode};
 use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod circularise_records;
+mod filter;
 mod verify;
 mod verify_genome;
 
@@ -58,6 +59,8 @@ enum Command {
     VerifyGenome,
     #[clap(about = "Circularises each record in a genome by appending a prefix to itself")]
     CirculariseGenome(circularise_records::CirculariseGenomeCommand),
+    #[clap(about = "Filters records from a fasta file.")]
+    Filter(filter::FilterCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -68,7 +71,6 @@ fn main() {
         Ok(()) => ExitCode::code(()),
         Err(ref e) => {
             error!("{}", ChainedError::display_chain(e));
-
             1
         }
     });
@@ -98,6 +100,7 @@ fn run() -> Result<()> {
         Command::CirculariseGenome(subcommand) => {
             circularise_records::circularise_records(options, subcommand)
         }
+        Command::Filter(subcommand) => filter::filter_records(options, subcommand),
     }?;
 
     info!("Goodbye");
