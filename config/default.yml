@@ -13,11 +13,13 @@ experiments:
     k: [51]
     bcalm2_abundance_min: [1]
     circularised: [true]
+    filter_retain: "NC_002695.2"
 
   "GCF_000008025.1_ASM802v1":
     k: [51]
     bcalm2_abundance_min: [1]
     circularised: [true]
+    filter_retain: "NC_002978.6"
 
 tests:
   "GCF_000008865.2_ASM886v2":

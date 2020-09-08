@@ -90,9 +90,11 @@ rule verify_genome:
     shell: "data/target/release/cli --input '{input.file}' verify-genome 2>&1 | tee '{output.log}'"
 
 rule filter_genome:
-    input: "data/{dir}/raw.fna"
-    output: "data/{dir}/filtered.fna"
-    shell: "cp '{input}' '{output}'"
+    input: file = "data/{dir}/raw.fna", binary = "data/target/release/cli"
+    output: file = "data/{dir}/filtered.fna", log = "data/{dir}/filtered.log"
+    params: retain = lambda wildcards: "--retain '" + experiments[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments[wildcards.dir] else ""
+    conda: "config/conda-rust-env.yml"
+    shell: "data/target/release/cli --input '{input.file}' filter --output '{output.file}' {params.retain} 2>&1 | tee '{output.log}'"
 
 rule extract:
     input: "data/{dir}/raw.fna.gz"
