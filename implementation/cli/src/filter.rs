@@ -65,6 +65,8 @@ pub(crate) fn filter_records(
         warn!("Genome contains no fasta records");
     } else if records_written == 0 {
         error!("Filtered out all records");
+    } else if records_written == records_read {
+        info!("Filtered out no records, {} are present", records_written);
     } else {
         info!(
             "Filtered out {} records, now {} remain",
