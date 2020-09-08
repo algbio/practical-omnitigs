@@ -2,7 +2,7 @@
 
 """
 Convert the output of the different validation tools into a LaTeX file.
-Arguments: <ContigValidator results> <quast report.tex> <cli verify LaTeX results> <output file>
+Arguments: <ContigValidator results> <quast report.tex> <cli verify LaTeX results> <bandage png> <output file>
 """
 
 import sys
@@ -10,7 +10,8 @@ import sys
 contig_validator_file_name = sys.argv[1]
 quast_file_name = sys.argv[2]
 graph_statistics_file_name = sys.argv[3]
-output_file_name = sys.argv[4]
+bandage_png_name = sys.argv[4]
+output_file_name = sys.argv[5]
 
 ##########################
 ### Process QUAST file ###
@@ -68,11 +69,19 @@ def write_table(output_file, caption, rows):
 		output_file.write(row + '\n')
 	output_file.write(table_footer)
 
+def write_image(output_file, caption, name, natwidth, natheight):
+	pixel_pt_factor = 0.7
+	output_file.write("\\begin{figure*}\n")
+	output_file.write("\\centering\n")
+	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + name + "}\n")
+	output_file.write("\\end{figure*}\n")
+
 output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
 	\\documentclass[10pt,a4paper,twocolumn]{article}
 	\\usepackage[cm]{fullpage}
+	\\usepackage{graphicx}
 	\\begin{document}
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
@@ -88,6 +97,9 @@ write_table(output_file, "QUAST: \\# of contigs", quast_lines[0:6])
 write_table(output_file, "QUAST: total length of contigs", quast_lines[6:12])
 write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", quast_lines[12:26])
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", quast_lines[26:])
+
+output_file.write("\\newpage")
+write_image(output_file, "Bandage genome graph", bandage_png_name, 1000, 1000)
 
 
 output_file.write(
