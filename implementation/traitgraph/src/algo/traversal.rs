@@ -2,7 +2,7 @@ use crate::algo::queue::BidirectedQueue;
 use crate::index::{GraphIndex, OptionalGraphIndex};
 use crate::interface::NodeOrEdge;
 use crate::interface::{GraphBase, NavigableGraph, Neighbor, StaticGraph};
-use std::collections::LinkedList;
+use std::collections::VecDeque;
 use std::iter::IntoIterator;
 use std::marker::PhantomData;
 
@@ -12,7 +12,7 @@ pub type PreOrderForwardBfs<'a, Graph> = PreOrderTraversal<
     Graph,
     ForwardNeighborStrategy,
     BfsQueueStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A normal backward BFS in a directed graph.
 pub type PreOrderBackwardBfs<'a, Graph> = PreOrderTraversal<
@@ -20,7 +20,7 @@ pub type PreOrderBackwardBfs<'a, Graph> = PreOrderTraversal<
     Graph,
     BackwardNeighborStrategy,
     BfsQueueStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A BFS that treats each directed edge as an undirected edge, i.e. that traverses edge both in forward and backward direction.
 pub type PreOrderUndirectedBfs<'a, Graph> = PreOrderTraversal<
@@ -28,7 +28,7 @@ pub type PreOrderUndirectedBfs<'a, Graph> = PreOrderTraversal<
     Graph,
     UndirectedNeighborStrategy,
     BfsQueueStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 
 /// A normal forward DFS in a directed graph.
@@ -37,7 +37,7 @@ pub type PreOrderForwardDfs<'a, Graph> = PreOrderTraversal<
     Graph,
     ForwardNeighborStrategy,
     DfsQueueStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A normal backward DFS in a directed graph.
 pub type PreOrderBackwardDfs<'a, Graph> = PreOrderTraversal<
@@ -45,7 +45,7 @@ pub type PreOrderBackwardDfs<'a, Graph> = PreOrderTraversal<
     Graph,
     BackwardNeighborStrategy,
     DfsQueueStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A DFS that treats each directed edge as an undirected edge, i.e. that traverses edge both in forward and backward direction.
 pub type PreOrderUndirectedDfs<'a, Graph> = PreOrderTraversal<
@@ -53,26 +53,26 @@ pub type PreOrderUndirectedDfs<'a, Graph> = PreOrderTraversal<
     Graph,
     UndirectedNeighborStrategy,
     DfsQueueStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 
 /// A post-order forward DFS in a directed graph.
 pub type PostOrderForwardDfs<Graph> = DfsPostOrderTraversal<
     Graph,
     ForwardNeighborStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A post-order forward DFS in a directed graph.
 pub type PostOrderBackwardDfs<Graph> = DfsPostOrderTraversal<
     Graph,
     BackwardNeighborStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 /// A post-order forward DFS in a directed graph.
 pub type PostOrderUndirectedDfs<Graph> = DfsPostOrderTraversal<
     Graph,
     UndirectedNeighborStrategy,
-    LinkedList<<Graph as GraphBase>::NodeIndex>,
+    VecDeque<<Graph as GraphBase>::NodeIndex>,
 >;
 
 /// A generic preorder graph traversal.
@@ -122,6 +122,18 @@ impl<
             neighbor_strategy: Default::default(),
             queue_strategy: Default::default(),
         }
+    }
+
+    /// Resets the traversal to start from the given node.
+    pub fn reset(&mut self, start: Graph::NodeIndex) {
+        self.queue.clear();
+        QueueStrategy::push(&mut self.queue, start);
+        for rank in &mut self.rank {
+            *rank = Graph::OptionalNodeIndex::new_none();
+        }
+        self.rank[start.as_usize()] = Some(0).into();
+        self.current_rank = 1.into();
+        self.neighbor_iterator = None;
     }
 
     /// Advances the traversal, ignoring all nodes and edges forbidden by `forbidden_subgraph`.
@@ -441,7 +453,7 @@ mod test {
     use crate::algo::traversal::{DfsPostOrderTraversal, ForwardNeighborStrategy};
     use crate::implementation::petgraph_impl;
     use crate::interface::{MutableGraphContainer, NavigableGraph};
-    use std::collections::LinkedList;
+    use std::collections::VecDeque;
 
     #[test]
     fn test_postorder_traversal_simple() {
@@ -460,7 +472,7 @@ mod test {
         graph.add_edge(n0, n3, 17);
 
         let mut ordering =
-            DfsPostOrderTraversal::<_, ForwardNeighborStrategy, LinkedList<_>>::new(&graph, n0);
+            DfsPostOrderTraversal::<_, ForwardNeighborStrategy, VecDeque<_>>::new(&graph, n0);
         assert_eq!(
             graph.out_neighbors(n0).map(|n| n.node_id).next(),
             Some(3.into())
