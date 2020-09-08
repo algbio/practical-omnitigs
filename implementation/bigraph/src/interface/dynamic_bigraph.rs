@@ -4,12 +4,15 @@ use crate::interface::static_bigraph::StaticNodeCentricBigraph;
 use crate::interface::BidirectedData;
 use traitgraph::interface::DynamicGraph;
 
+/// A dynamic bigraph, that implements all functionalities of a `StaticBigraph` and adds the functionality
+/// to alter the underlying topology as well as the mirror node mapping.
 pub trait DynamicBigraph: DynamicGraph + StaticBigraph {
     /// Make the nodes with the given two node ids mirror nodes.
     /// This may leave the old mirrors from a and b with dangling mirror pointers.
     fn set_mirror_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex);
 }
 
+/// A node-centric dynamic bigraph that adds functionality to complete the graph with node-centric mirror nodes and edges.
 pub trait DynamicNodeCentricBigraph: DynamicBigraph + StaticNodeCentricBigraph
 where
     Self::NodeData: BidirectedData,
@@ -22,7 +25,7 @@ where
     fn add_mirror_nodes(&mut self) {
         for node_id in self.node_indices() {
             if self.mirror_node(node_id).is_none() {
-                let mirror_index = self.add_node(self.node_data(node_id).reverse_complement());
+                let mirror_index = self.add_node(self.node_data(node_id).mirror());
                 self.set_mirror_nodes(node_id, mirror_index);
             }
         }
@@ -63,6 +66,7 @@ where
     }
 }
 
+/// An edge-centric dynamic bigraph that adds functionality to complete the graph with edge-centric mirror nodes and edges.
 pub trait DynamicEdgeCentricBigraph: DynamicBigraph + StaticEdgeCentricBigraph
 where
     Self::EdgeData: BidirectedData + Eq,
@@ -82,11 +86,7 @@ where
                 if self.mirror_edge_edge_centric(edge).is_none() {
                     let mirror_from_id = self.mirror_node(to_id).unwrap();
                     let mirror_to_id = self.mirror_node(from_id).unwrap();
-                    edges.push((
-                        mirror_from_id,
-                        self.edge_data(edge).reverse_complement(),
-                        mirror_to_id,
-                    ));
+                    edges.push((mirror_from_id, self.edge_data(edge).mirror(), mirror_to_id));
                 }
             }
         }
@@ -99,7 +99,7 @@ where
 
 /*pub trait DynamicBigraphFromDigraph: DynamicBigraph + StaticBigraphFromDigraph + Sized
 where
-    Self::Topology: DynamicGraph,
+    Sel::Topology: DynamicGraph,
     Self::EdgeData: Clone,
 {
     /**
@@ -148,7 +148,7 @@ mod tests {
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(1000 - self.0)
             }
         }
@@ -186,14 +186,14 @@ mod tests {
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct NodeData(u32);
         impl BidirectedData for NodeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(1000 - self.0)
             }
         }
         #[derive(Eq, PartialEq, Debug, Hash, Clone)]
         struct EdgeData(u32);
         impl BidirectedData for EdgeData {
-            fn reverse_complement(&self) -> Self {
+            fn mirror(&self) -> Self {
                 Self(1000 - self.0)
             }
         }

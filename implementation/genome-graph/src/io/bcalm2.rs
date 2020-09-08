@@ -99,7 +99,7 @@ pub struct PlainBCalm2Edge {
 }
 
 impl BidirectedData for PlainBCalm2NodeData {
-    fn reverse_complement(&self) -> Self {
+    fn mirror(&self) -> Self {
         let mut result = self.clone();
         result.sequence = result.sequence.reverse_complement();
         result
@@ -524,7 +524,7 @@ where
 
     for record in reader.records() {
         let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
-        let reverse_complement = record.reverse_complement();
+        let reverse_complement = record.mirror();
 
         let pre_plus = record.sequence.prefix(node_kmer_size);
         let pre_minus = reverse_complement.sequence.prefix(node_kmer_size);
@@ -537,7 +537,7 @@ where
         let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, &succ_minus);
 
         bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
-        bigraph.add_edge(pre_minus, succ_minus, record.reverse_complement().into());
+        bigraph.add_edge(pre_minus, succ_minus, record.mirror().into());
     }
 
     assert!(bigraph.verify_node_pairing());
