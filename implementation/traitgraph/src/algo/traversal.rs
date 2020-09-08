@@ -124,6 +124,18 @@ impl<
         }
     }
 
+    /// Resets the traversal to start from the given node.
+    pub fn reset(&mut self, start: Graph::NodeIndex) {
+        self.queue.clear();
+        QueueStrategy::push(&mut self.queue, start);
+        for rank in &mut self.rank {
+            *rank = Graph::OptionalNodeIndex::new_none();
+        }
+        self.rank[start.as_usize()] = Some(0).into();
+        self.current_rank = 1.into();
+        self.neighbor_iterator = None;
+    }
+
     /// Advances the traversal, ignoring all nodes and edges forbidden by `forbidden_subgraph`.
     pub fn next_with_forbidden_subgraph<FN: ForbiddenSubgraph<Graph>>(
         &mut self,
