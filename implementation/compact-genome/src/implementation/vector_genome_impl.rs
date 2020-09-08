@@ -1,7 +1,11 @@
+//! A simple representation of a genome as `Vec<u8>`.
+
 use crate::interface::ascii_complement;
 use crate::interface::Genome;
 use std::iter::{Cloned, FromIterator};
 
+/// A simple representation of a genome as `Vec<u8>`.
+/// This is not very efficient, but was quick to implement.
 #[derive(Eq, PartialEq, Debug, Clone, Ord, PartialOrd, Hash)]
 pub struct VectorGenome(Vec<u8>);
 
