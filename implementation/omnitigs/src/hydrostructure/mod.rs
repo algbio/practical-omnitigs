@@ -174,4 +174,218 @@ impl<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>
             Hydrostructure::Avertible { azb: _ } => false,
         }
     }
+
+    /// Returns true if the underlying walk of the hydrostructure is _bridge-like_.
+    pub fn is_bridge_like(&self) -> bool {
+        match self {
+            Hydrostructure::BridgeLike {
+                r_plus: _,
+                r_minus: _,
+                azb: _,
+            } => true,
+            Hydrostructure::Avertible { azb: _ } => false,
+        }
+    }
+
+    /// Returns true if the underlying walk of the hydrostructure is _avertible_.
+    pub fn is_avertible(&self) -> bool {
+        match self {
+            Hydrostructure::BridgeLike {
+                r_plus: _,
+                r_minus: _,
+                azb: _,
+            } => false,
+            Hydrostructure::Avertible { azb: _ } => true,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Hydrostructure;
+    use traitgraph::implementation::petgraph_impl;
+    use traitgraph::interface::subgraph::Subgraph;
+    use traitgraph::interface::MutableGraphContainer;
+    use traitgraph::interface::WalkableGraph;
+
+    #[test]
+    fn test_hydrostructure_avertible_by_shortcut() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        let e1 = graph.add_edge(n0, n1, -1);
+        let e2 = graph.add_edge(n1, n2, -2);
+        graph.add_edge(n1, n2, -3);
+        let e4 = graph.add_edge(n2, n3, -4);
+        graph.add_edge(n3, n4, -5);
+        graph.add_edge(n3, n5, -6);
+        graph.add_edge(n4, n0, -7);
+        graph.add_edge(n5, n0, -8);
+        let hydrostructure = Hydrostructure::compute_with_bitvector_subgraph(
+            &graph,
+            graph.create_edge_walk(&[e1, e2, e4]),
+        );
+        assert!(hydrostructure.is_avertible());
+    }
+
+    #[test]
+    fn test_hydrostructure_avertible_by_sea_cloud_edge() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        let e1 = graph.add_edge(n0, n1, -1);
+        let e2 = graph.add_edge(n1, n2, -2);
+        let e3 = graph.add_edge(n2, n3, -3);
+        graph.add_edge(n3, n4, -4);
+        graph.add_edge(n3, n5, -5);
+        graph.add_edge(n4, n0, -6);
+        graph.add_edge(n5, n0, -7);
+        graph.add_edge(n4, n2, -8);
+        graph.add_edge(n1, n5, -9);
+        graph.add_edge(n5, n4, -10);
+        let hydrostructure = Hydrostructure::compute_with_bitvector_subgraph(
+            &graph,
+            graph.create_edge_walk(&[e1, e2, e3]),
+        );
+        assert!(hydrostructure.is_avertible());
+    }
+
+    #[test]
+    fn test_hydrostructure_bridge_like_by_biunivocal() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        let e1 = graph.add_edge(n0, n1, -1);
+        let e2 = graph.add_edge(n1, n2, -2);
+        let e3 = graph.add_edge(n2, n3, -3);
+        let e4 = graph.add_edge(n3, n4, -4);
+        let e5 = graph.add_edge(n3, n5, -5);
+        let e6 = graph.add_edge(n4, n0, -6);
+        let e7 = graph.add_edge(n5, n0, -7);
+        let e8 = graph.add_edge(n5, n4, -8);
+        let hydrostructure = Hydrostructure::compute_with_bitvector_subgraph(
+            &graph,
+            graph.create_edge_walk(&[e1, e2, e3]),
+        );
+        assert!(hydrostructure.is_bridge_like());
+        match hydrostructure {
+            Hydrostructure::BridgeLike {
+                r_plus,
+                r_minus,
+                azb: _,
+            } => {
+                assert!(!r_plus.contains_node(n0));
+                assert!(r_plus.contains_node(n1));
+                assert!(r_plus.contains_node(n2));
+                assert!(!r_plus.contains_node(n3));
+                assert!(!r_plus.contains_node(n4));
+                assert!(!r_plus.contains_node(n5));
+
+                assert!(r_plus.contains_edge(e1));
+                assert!(r_plus.contains_edge(e2));
+                assert!(!r_plus.contains_edge(e3));
+                assert!(!r_plus.contains_edge(e4));
+                assert!(!r_plus.contains_edge(e5));
+                assert!(!r_plus.contains_edge(e6));
+                assert!(!r_plus.contains_edge(e7));
+                assert!(!r_plus.contains_edge(e8));
+
+                assert!(!r_minus.contains_node(n0));
+                assert!(r_minus.contains_node(n1));
+                assert!(r_minus.contains_node(n2));
+                assert!(!r_minus.contains_node(n3));
+                assert!(!r_minus.contains_node(n4));
+                assert!(!r_minus.contains_node(n5));
+
+                assert!(!r_minus.contains_edge(e1));
+                assert!(r_minus.contains_edge(e2));
+                assert!(r_minus.contains_edge(e3));
+                assert!(!r_minus.contains_edge(e4));
+                assert!(!r_minus.contains_edge(e5));
+                assert!(!r_minus.contains_edge(e6));
+                assert!(!r_minus.contains_edge(e7));
+                assert!(!r_minus.contains_edge(e8));
+            }
+            _ => panic!("Not bridge like"),
+        }
+    }
+
+    #[test]
+    fn test_hydrostructure_bridge_like_non_trivial() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(0);
+        let n1 = graph.add_node(1);
+        let n2 = graph.add_node(2);
+        let n3 = graph.add_node(3);
+        let n4 = graph.add_node(4);
+        let n5 = graph.add_node(5);
+        let e1 = graph.add_edge(n0, n1, -1);
+        let e2 = graph.add_edge(n1, n2, -2);
+        let e3 = graph.add_edge(n2, n3, -3);
+        let e4 = graph.add_edge(n3, n4, -4);
+        let e5 = graph.add_edge(n3, n5, -5);
+        let e6 = graph.add_edge(n4, n0, -6);
+        let e7 = graph.add_edge(n5, n0, -7);
+        let e8 = graph.add_edge(n1, n4, -8);
+        let e9 = graph.add_edge(n5, n1, -9);
+        let hydrostructure = Hydrostructure::compute_with_bitvector_subgraph(
+            &graph,
+            graph.create_edge_walk(&[e1, e2, e3]),
+        );
+        assert!(hydrostructure.is_bridge_like());
+        match hydrostructure {
+            Hydrostructure::BridgeLike {
+                r_plus,
+                r_minus,
+                azb: _,
+            } => {
+                assert!(r_plus.contains_node(n0));
+                assert!(r_plus.contains_node(n1));
+                assert!(r_plus.contains_node(n2));
+                assert!(!r_plus.contains_node(n3));
+                assert!(r_plus.contains_node(n4));
+                assert!(!r_plus.contains_node(n5));
+
+                assert!(r_plus.contains_edge(e1));
+                assert!(r_plus.contains_edge(e2));
+                assert!(!r_plus.contains_edge(e3));
+                assert!(!r_plus.contains_edge(e4));
+                assert!(!r_plus.contains_edge(e5));
+                assert!(r_plus.contains_edge(e6));
+                assert!(!r_plus.contains_edge(e7));
+                assert!(r_plus.contains_edge(e8));
+                assert!(!r_plus.contains_edge(e9));
+
+                assert!(!r_minus.contains_node(n0));
+                assert!(r_minus.contains_node(n1));
+                assert!(r_minus.contains_node(n2));
+                assert!(r_minus.contains_node(n3));
+                assert!(!r_minus.contains_node(n4));
+                assert!(r_minus.contains_node(n5));
+
+                assert!(!r_minus.contains_edge(e1));
+                assert!(r_minus.contains_edge(e2));
+                assert!(r_minus.contains_edge(e3));
+                assert!(!r_minus.contains_edge(e4));
+                assert!(r_minus.contains_edge(e5));
+                assert!(!r_minus.contains_edge(e6));
+                assert!(!r_minus.contains_edge(e7));
+                assert!(!r_minus.contains_edge(e8));
+                assert!(r_minus.contains_edge(e9));
+            }
+            _ => panic!("Not bridge like"),
+        }
+    }
 }
