@@ -4,15 +4,15 @@ use traitgraph::algo::traversal::{
 };
 use traitgraph::interface::subgraph::Subgraph;
 use traitgraph::interface::{NodeOrEdge, StaticGraph};
-use traitgraph::walks::VecEdgeWalk;
 use traitgraph::walks::EdgeWalk;
+use traitgraph::walks::VecEdgeWalk;
 
 /// Returns the reachable subgraph from a node without using an edge e.
 pub fn compute_restricted_reachability<
     'a,
     Graph: StaticGraph,
     NeighborStrategy: TraversalNeighborStrategy<'a, Graph>,
-    SubgraphType: Subgraph<'a, Graph>
+    SubgraphType: Subgraph<'a, Graph>,
 >(
     graph: &'a Graph,
     start_node: Graph::NodeIndex,
@@ -38,7 +38,11 @@ pub fn compute_restricted_reachability<
 }
 
 /// Returns the forwards reachable subgraph from the tail of `edge` without using `edge`.
-pub fn compute_restricted_forward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
+pub fn compute_restricted_forward_reachability<
+    'a,
+    Graph: StaticGraph,
+    SubgraphType: Subgraph<'a, Graph>,
+>(
     graph: &'a Graph,
     edge: Graph::EdgeIndex,
 ) -> SubgraphType {
@@ -47,7 +51,11 @@ pub fn compute_restricted_forward_reachability<'a, Graph: StaticGraph, SubgraphT
 }
 
 /// Returns the backwards reachable subgraph from the head of `edge` without using `edge`.
-pub fn compute_restricted_backward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
+pub fn compute_restricted_backward_reachability<
+    'a,
+    Graph: StaticGraph,
+    SubgraphType: Subgraph<'a, Graph>,
+>(
     graph: &'a Graph,
     edge: Graph::EdgeIndex,
 ) -> SubgraphType {
@@ -55,14 +63,25 @@ pub fn compute_restricted_backward_reachability<'a, Graph: StaticGraph, Subgraph
     compute_restricted_reachability::<_, BackwardNeighborStrategy, _>(graph, start_node, edge)
 }
 
-pub fn compute_hydrostructure_forward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
+/// Returns either the set of nodes and edges reachable from the first edge of aZb without using aZb as a subwalk,
+/// or None, if the whole graph can be reached this way.
+///
+/// This computes `R⁺(aZb)` as defined in the hydrostructure paper.
+/// If `Some` is returned, `aZb` is _bridge-like_, and otherwise it is _avertible_.
+pub fn compute_hydrostructure_forward_reachability<
+    'a,
+    Graph: StaticGraph,
+    SubgraphType: Subgraph<'a, Graph>,
+>(
     graph: &'a Graph,
     azb: &VecEdgeWalk<Graph>,
 ) -> Option<SubgraphType> {
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(a).to_node;
-    let mut subgraph = compute_restricted_reachability::<_, ForwardNeighborStrategy, SubgraphType>(graph, start_node, b);
+    let mut subgraph = compute_restricted_reachability::<_, ForwardNeighborStrategy, SubgraphType>(
+        graph, start_node, b,
+    );
 
     for edge in azb.iter().take(azb.len() - 1) {
         let node = graph.edge_endpoints(edge).to_node;
@@ -78,14 +97,25 @@ pub fn compute_hydrostructure_forward_reachability<'a, Graph: StaticGraph, Subgr
     Some(subgraph)
 }
 
-pub fn compute_hydrostructure_backward_reachability<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>(
+/// Returns either the set of nodes and edges backwards reachable from the last edge of aZb without using aZb as a subwalk,
+/// or None, if the whole graph can be reached this way.
+///
+/// This computes `R⁻(aZb)` as defined in the hydrostructure paper.
+/// If `Some` is returned, `aZb` is _bridge-like_, and otherwise it is _avertible_.
+pub fn compute_hydrostructure_backward_reachability<
+    'a,
+    Graph: StaticGraph,
+    SubgraphType: Subgraph<'a, Graph>,
+>(
     graph: &'a Graph,
     azb: &VecEdgeWalk<Graph>,
 ) -> Option<SubgraphType> {
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(b).from_node;
-    let mut subgraph = compute_restricted_reachability::<_, BackwardNeighborStrategy, SubgraphType>(graph, start_node, a);
+    let mut subgraph = compute_restricted_reachability::<_, BackwardNeighborStrategy, SubgraphType>(
+        graph, start_node, a,
+    );
 
     for edge in azb.iter().skip(1) {
         let node = graph.edge_endpoints(edge).from_node;
@@ -105,9 +135,9 @@ pub fn compute_hydrostructure_backward_reachability<'a, Graph: StaticGraph, Subg
 mod tests {
     use crate::restricted_reachability::compute_restricted_backward_reachability;
     use crate::restricted_reachability::compute_restricted_forward_reachability;
+    use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
     use traitgraph::interface::subgraph::Subgraph;
     use traitgraph::interface::MutableGraphContainer;
-    use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
 
     #[test]
     fn test_restricted_forward_reachability_simple() {
