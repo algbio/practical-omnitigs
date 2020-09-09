@@ -280,6 +280,12 @@ mod tests {
             graph.create_edge_walk(&[e1, e2, e3]),
         );
         assert!(hydrostructure.is_bridge_like());
+
+        assert!(hydrostructure.is_edge_cloud(e3));
+        assert!(hydrostructure.is_edge_sea(e1));
+        assert!(hydrostructure.is_edge_vapor(e2));
+        assert!(hydrostructure.is_edge_river(e5));
+
         match hydrostructure {
             Hydrostructure::BridgeLike {
                 r_plus,
@@ -331,20 +337,32 @@ mod tests {
         let n3 = graph.add_node(3);
         let n4 = graph.add_node(4);
         let n5 = graph.add_node(5);
+        let n6 = graph.add_node(6);
         let e1 = graph.add_edge(n0, n1, -1);
         let e2 = graph.add_edge(n1, n2, -2);
         let e3 = graph.add_edge(n2, n3, -3);
         let e4 = graph.add_edge(n3, n4, -4);
         let e5 = graph.add_edge(n3, n5, -5);
         let e6 = graph.add_edge(n4, n0, -6);
-        let e7 = graph.add_edge(n5, n0, -7);
+        let e7 = graph.add_edge(n5, n6, -7);
         let e8 = graph.add_edge(n1, n4, -8);
         let e9 = graph.add_edge(n5, n1, -9);
+        let e10 = graph.add_edge(n6, n0, -10);
         let hydrostructure = Hydrostructure::compute_with_bitvector_subgraph(
             &graph,
             graph.create_edge_walk(&[e1, e2, e3]),
         );
         assert!(hydrostructure.is_bridge_like());
+
+        assert!(hydrostructure.is_node_cloud(n3));
+        assert!(hydrostructure.is_node_sea(n0));
+        assert!(hydrostructure.is_node_vapor(n2));
+        assert!(hydrostructure.is_node_river(n6));
+        assert!(hydrostructure.is_edge_cloud(e3));
+        assert!(hydrostructure.is_edge_sea(e1));
+        assert!(hydrostructure.is_edge_vapor(e2));
+        assert!(hydrostructure.is_edge_river(e7));
+
         match hydrostructure {
             Hydrostructure::BridgeLike {
                 r_plus,
@@ -357,6 +375,7 @@ mod tests {
                 assert!(!r_plus.contains_node(n3));
                 assert!(r_plus.contains_node(n4));
                 assert!(!r_plus.contains_node(n5));
+                assert!(!r_plus.contains_node(n6));
 
                 assert!(r_plus.contains_edge(e1));
                 assert!(r_plus.contains_edge(e2));
@@ -367,6 +386,7 @@ mod tests {
                 assert!(!r_plus.contains_edge(e7));
                 assert!(r_plus.contains_edge(e8));
                 assert!(!r_plus.contains_edge(e9));
+                assert!(!r_plus.contains_edge(e10));
 
                 assert!(!r_minus.contains_node(n0));
                 assert!(r_minus.contains_node(n1));
@@ -374,6 +394,7 @@ mod tests {
                 assert!(r_minus.contains_node(n3));
                 assert!(!r_minus.contains_node(n4));
                 assert!(r_minus.contains_node(n5));
+                assert!(!r_minus.contains_node(n6));
 
                 assert!(!r_minus.contains_edge(e1));
                 assert!(r_minus.contains_edge(e2));
@@ -384,6 +405,7 @@ mod tests {
                 assert!(!r_minus.contains_edge(e7));
                 assert!(!r_minus.contains_edge(e8));
                 assert!(r_minus.contains_edge(e9));
+                assert!(!r_minus.contains_edge(e10));
             }
             _ => panic!("Not bridge like"),
         }
