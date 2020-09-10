@@ -1,6 +1,6 @@
+use crate::macrotigs::macronodes::Macronodes;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
-use crate::macrotigs::macronodes::Macronodes;
 
 /// A maximal microtig algorithm that uses hydrostructure-based queries and requires the graph to be strongly connected.
 pub mod strongly_connected_hydrostructure_based_maximal_microtig_algorithm;
@@ -11,7 +11,7 @@ pub mod strongly_connected_hydrostructure_based_maximal_microtig_algorithm;
 /// To make connecting microtigs simpler, we therefore define a maximal microtig as ending and starting
 /// with the last edge of a _bivalent path_.
 pub struct Microtigs<Graph: GraphBase> {
-    microtigs: Vec<VecEdgeWalk<Graph>>
+    microtigs: Vec<VecEdgeWalk<Graph>>,
 }
 
 impl<Graph: GraphBase> Microtigs<Graph> {
@@ -29,5 +29,6 @@ impl<Graph: GraphBase> Microtigs<Graph> {
 /// A trait abstracting over the concrete algorithm used to compute maximal microtigs.
 pub trait MaximalMicrotigsAlgorithm<Graph: StaticGraph> {
     /// Compute the maximal microtigs of the given macronode centers.
-    fn compute_maximal_microtigs(graph: &Graph, macronodes: &Macronodes<Graph>) -> Microtigs<Graph>;
+    fn compute_maximal_microtigs(graph: &Graph, macronodes: &Macronodes<Graph>)
+        -> Microtigs<Graph>;
 }

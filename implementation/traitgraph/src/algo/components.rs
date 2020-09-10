@@ -5,14 +5,14 @@ use super::traversal::{
 use crate::index::GraphIndex;
 use crate::index::OptionalGraphIndex;
 use crate::interface::NodeOrEdge;
-use crate::interface::{MutableGraphContainer, StaticGraph};
+use crate::interface::{DynamicGraph, MutableGraphContainer, StaticGraph};
 use std::collections::LinkedList;
 
 /// Returns the weakly connected components of a graph.
 ///
 /// If the graph is empty, no WCCs are returned.
 /// Otherwise, the WCCs are cloned into new graphs, without preserving the node or edge indices.
-pub fn decompose_weakly_connected_components<Graph: Default + MutableGraphContainer + StaticGraph>(
+pub fn decompose_weakly_connected_components<Graph: Default + DynamicGraph>(
     graph: &Graph,
 ) -> Vec<Graph>
 where
