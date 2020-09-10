@@ -2,7 +2,7 @@ use crate::restricted_reachability::{
     compute_hydrostructure_backward_reachability, compute_hydrostructure_forward_reachability,
 };
 use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
-use traitgraph::interface::subgraph::Subgraph;
+use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
 
@@ -42,8 +42,11 @@ impl<'a, Graph: StaticGraph> Hydrostructure<Graph, BitVectorSubgraph<'a, Graph>>
     }
 }
 
-impl<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>
-    Hydrostructure<Graph, SubgraphType>
+impl<
+        'a,
+        Graph: 'a + StaticGraph,
+        SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
+    > Hydrostructure<Graph, SubgraphType>
 {
     /// Initialise the hydrostructure of a _bridge-like_ walk `aZb` with given sets `R⁺(aZb)`, `R⁻(aZb)`.
     pub fn new_bridge_like(
@@ -64,7 +67,7 @@ impl<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>
     }
 
     /// Compute the hydrostructure of a walk.
-    pub fn compute(graph: &'a Graph, azb: VecEdgeWalk<Graph>) -> Self {
+    pub fn compute(graph: SubgraphType::ParentGraphRef, azb: VecEdgeWalk<Graph>) -> Self {
         let r_plus = compute_hydrostructure_forward_reachability(graph, &azb);
         let r_minus = compute_hydrostructure_backward_reachability(graph, &azb);
 
@@ -204,7 +207,7 @@ impl<'a, Graph: StaticGraph, SubgraphType: Subgraph<'a, Graph>>
 mod tests {
     use super::Hydrostructure;
     use traitgraph::implementation::petgraph_impl;
-    use traitgraph::interface::subgraph::Subgraph;
+    use traitgraph::interface::subgraph::DecoratingSubgraph;
     use traitgraph::interface::MutableGraphContainer;
     use traitgraph::interface::WalkableGraph;
 

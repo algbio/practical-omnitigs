@@ -2,8 +2,8 @@ use traitgraph::algo::traversal::{
     BackwardNeighborStrategy, BfsQueueStrategy, ForbiddenEdge, ForwardNeighborStrategy,
     PreOrderTraversal, TraversalNeighborStrategy,
 };
-use traitgraph::interface::subgraph::Subgraph;
-use traitgraph::interface::{NodeOrEdge, StaticGraph};
+use traitgraph::interface::subgraph::DecoratingSubgraph;
+use traitgraph::interface::{GraphBase, NodeOrEdge, StaticGraph};
 use traitgraph::walks::EdgeWalk;
 use traitgraph::walks::VecEdgeWalk;
 
@@ -11,12 +11,12 @@ use traitgraph::walks::VecEdgeWalk;
 pub fn compute_restricted_reachability<
     'a,
     Graph: StaticGraph,
-    NeighborStrategy: TraversalNeighborStrategy<'a, Graph>,
-    SubgraphType: Subgraph<'a, Graph>,
+    NeighborStrategy: TraversalNeighborStrategy<'a, SubgraphType::ParentGraph>,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
 >(
-    graph: &'a Graph,
-    start_node: Graph::NodeIndex,
-    forbidden_edge: Graph::EdgeIndex,
+    graph: SubgraphType::ParentGraphRef,
+    start_node: <SubgraphType as GraphBase>::NodeIndex,
+    forbidden_edge: <SubgraphType as GraphBase>::EdgeIndex,
 ) -> SubgraphType {
     let mut subgraph = SubgraphType::new_empty(graph);
     let mut traversal = PreOrderTraversal::<
@@ -41,10 +41,10 @@ pub fn compute_restricted_reachability<
 pub fn compute_restricted_forward_reachability<
     'a,
     Graph: StaticGraph,
-    SubgraphType: Subgraph<'a, Graph>,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
 >(
-    graph: &'a Graph,
-    edge: Graph::EdgeIndex,
+    graph: SubgraphType::ParentGraphRef,
+    edge: <SubgraphType as GraphBase>::EdgeIndex,
 ) -> SubgraphType {
     let start_node = graph.edge_endpoints(edge).from_node;
     compute_restricted_reachability::<_, ForwardNeighborStrategy, _>(graph, start_node, edge)
@@ -54,10 +54,10 @@ pub fn compute_restricted_forward_reachability<
 pub fn compute_restricted_backward_reachability<
     'a,
     Graph: StaticGraph,
-    SubgraphType: Subgraph<'a, Graph>,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
 >(
-    graph: &'a Graph,
-    edge: Graph::EdgeIndex,
+    graph: SubgraphType::ParentGraphRef,
+    edge: <SubgraphType as GraphBase>::EdgeIndex,
 ) -> SubgraphType {
     let start_node = graph.edge_endpoints(edge).to_node;
     compute_restricted_reachability::<_, BackwardNeighborStrategy, _>(graph, start_node, edge)
@@ -71,10 +71,10 @@ pub fn compute_restricted_backward_reachability<
 pub fn compute_hydrostructure_forward_reachability<
     'a,
     Graph: StaticGraph,
-    SubgraphType: Subgraph<'a, Graph>,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
 >(
-    graph: &'a Graph,
-    azb: &VecEdgeWalk<Graph>,
+    graph: SubgraphType::ParentGraphRef,
+    azb: &VecEdgeWalk<SubgraphType::ParentGraph>,
 ) -> Option<SubgraphType> {
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
@@ -105,10 +105,10 @@ pub fn compute_hydrostructure_forward_reachability<
 pub fn compute_hydrostructure_backward_reachability<
     'a,
     Graph: StaticGraph,
-    SubgraphType: Subgraph<'a, Graph>,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
 >(
-    graph: &'a Graph,
-    azb: &VecEdgeWalk<Graph>,
+    graph: SubgraphType::ParentGraphRef,
+    azb: &VecEdgeWalk<SubgraphType::ParentGraph>,
 ) -> Option<SubgraphType> {
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
@@ -136,7 +136,7 @@ mod tests {
     use crate::restricted_reachability::compute_restricted_backward_reachability;
     use crate::restricted_reachability::compute_restricted_forward_reachability;
     use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
-    use traitgraph::interface::subgraph::Subgraph;
+    use traitgraph::interface::subgraph::DecoratingSubgraph;
     use traitgraph::interface::MutableGraphContainer;
 
     #[test]
