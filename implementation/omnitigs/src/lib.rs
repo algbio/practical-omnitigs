@@ -1,6 +1,8 @@
 //! A crate implementing different omnitig-related algorithms.
 #![warn(missing_docs)]
 
+/// Algorithms to compute the hydrostructure.
+pub mod hydrostructure;
 /// Algorithms to compute macrotigs.
 pub mod macrotigs;
 /// Algorithms related to restricted reachability queries, like our basic:
