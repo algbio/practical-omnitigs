@@ -4,8 +4,8 @@ use traitgraph::walks::VecNodeWalk;
 /// A macronode algorithm that requires the graph to be strongly connected.
 pub mod strongly_connected_macronode_algorithm;
 
-/// A struct containing the macronodes of an uncompressed graph.
-/// In an uncompressed graph, macronodes are maximal unitigs with the property that their first node has outdegree = 1, and their last node has indegree = 1.
+/// A struct containing the macronodes of an uncompressed graph, represented as walks through their uncompressed centers.
+/// In an uncompressed graph, macronode centers are maximal unitigs with the property that their first node has outdegree = 1, and their last node has indegree = 1.
 pub struct Macronodes<Graph: GraphBase> {
     macronodes: Vec<VecNodeWalk<Graph>>,
 }
