@@ -1,14 +1,14 @@
 use traitgraph::algo::traversal::{
-    BackwardNeighborStrategy, BfsQueueStrategy, ForbiddenEdge, ForwardNeighborStrategy,
-    PreOrderTraversal, TraversalNeighborStrategy,
+    BackwardNeighborStrategy, BfsQueueStrategy, ForbiddenEdge, ForbiddenNode,
+    ForwardNeighborStrategy, PreOrderTraversal, TraversalNeighborStrategy,
 };
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, NodeOrEdge, StaticGraph};
 use traitgraph::walks::EdgeWalk;
 use traitgraph::walks::VecEdgeWalk;
 
-/// Returns the reachable subgraph from a node without using an edge e.
-pub fn compute_restricted_reachability<
+/// Returns the reachable subgraph from a node without using an edge.
+pub fn compute_restricted_edge_reachability<
     'a,
     Graph: StaticGraph,
     NeighborStrategy: TraversalNeighborStrategy<'a, SubgraphType::ParentGraph>,
@@ -37,6 +37,36 @@ pub fn compute_restricted_reachability<
     subgraph
 }
 
+/// Returns the reachable subgraph from a node without using a node.
+pub fn compute_restricted_node_reachability<
+    'a,
+    Graph: StaticGraph,
+    NeighborStrategy: TraversalNeighborStrategy<'a, SubgraphType::ParentGraph>,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
+>(
+    graph: SubgraphType::ParentGraphRef,
+    start_node: <SubgraphType as GraphBase>::NodeIndex,
+    forbidden_node: <SubgraphType as GraphBase>::NodeIndex,
+) -> SubgraphType {
+    let mut subgraph = SubgraphType::new_empty(graph);
+    let mut traversal = PreOrderTraversal::<
+        _,
+        NeighborStrategy,
+        BfsQueueStrategy,
+        std::collections::VecDeque<_>,
+    >::new(graph, start_node);
+    let forbidden_node = ForbiddenNode::new(forbidden_node);
+
+    while let Some(node_or_edge) = traversal.next_with_forbidden_subgraph(&forbidden_node) {
+        match node_or_edge {
+            NodeOrEdge::Node(node) => subgraph.add_node(node),
+            NodeOrEdge::Edge(edge) => subgraph.add_edge(edge),
+        }
+    }
+
+    subgraph
+}
+
 /// Returns the forwards reachable subgraph from the tail of `edge` without using `edge`.
 pub fn compute_restricted_forward_reachability<
     'a,
@@ -47,7 +77,7 @@ pub fn compute_restricted_forward_reachability<
     edge: <SubgraphType as GraphBase>::EdgeIndex,
 ) -> SubgraphType {
     let start_node = graph.edge_endpoints(edge).from_node;
-    compute_restricted_reachability::<_, ForwardNeighborStrategy, _>(graph, start_node, edge)
+    compute_restricted_edge_reachability::<_, ForwardNeighborStrategy, _>(graph, start_node, edge)
 }
 
 /// Returns the backwards reachable subgraph from the head of `edge` without using `edge`.
@@ -60,7 +90,61 @@ pub fn compute_restricted_backward_reachability<
     edge: <SubgraphType as GraphBase>::EdgeIndex,
 ) -> SubgraphType {
     let start_node = graph.edge_endpoints(edge).to_node;
-    compute_restricted_reachability::<_, BackwardNeighborStrategy, _>(graph, start_node, edge)
+    compute_restricted_edge_reachability::<_, BackwardNeighborStrategy, _>(graph, start_node, edge)
+}
+
+/// Returns the forwards reachable subgraph from `edge` without using the tail of `edge`.
+pub fn compute_inverse_restricted_forward_reachability<
+    'a,
+    Graph: StaticGraph,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
+>(
+    graph: SubgraphType::ParentGraphRef,
+    edge: <SubgraphType as GraphBase>::EdgeIndex,
+) -> SubgraphType {
+    let forbidden_node = graph.edge_endpoints(edge).from_node;
+    let start_node = graph.edge_endpoints(edge).to_node;
+
+    // If the edge is a self loop.
+    let mut result = if start_node == forbidden_node {
+        SubgraphType::new_empty(graph)
+    } else {
+        compute_restricted_node_reachability::<_, ForwardNeighborStrategy, _>(
+            graph,
+            start_node,
+            forbidden_node,
+        )
+    };
+
+    result.add_edge(edge);
+    result
+}
+
+/// Returns the backwards reachable subgraph from `edge` without using the head of `edge`.
+pub fn compute_inverse_restricted_backward_reachability<
+    'a,
+    Graph: StaticGraph,
+    SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
+>(
+    graph: SubgraphType::ParentGraphRef,
+    edge: <SubgraphType as GraphBase>::EdgeIndex,
+) -> SubgraphType {
+    let forbidden_node = graph.edge_endpoints(edge).to_node;
+    let start_node = graph.edge_endpoints(edge).from_node;
+
+    // If the edge is a self loop.
+    let mut result = if start_node == forbidden_node {
+        SubgraphType::new_empty(graph)
+    } else {
+        compute_restricted_node_reachability::<_, BackwardNeighborStrategy, _>(
+            graph,
+            start_node,
+            forbidden_node,
+        )
+    };
+
+    result.add_edge(edge);
+    result
 }
 
 /// Returns either the set of nodes and edges reachable from the first edge of aZb without using aZb as a subwalk,
@@ -79,9 +163,10 @@ pub fn compute_hydrostructure_forward_reachability<
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(a).to_node;
-    let mut subgraph = compute_restricted_reachability::<_, ForwardNeighborStrategy, SubgraphType>(
-        graph, start_node, b,
-    );
+    let mut subgraph =
+        compute_restricted_edge_reachability::<_, ForwardNeighborStrategy, SubgraphType>(
+            graph, start_node, b,
+        );
 
     for edge in azb.iter().take(azb.len() - 1) {
         let node = graph.edge_endpoints(edge).to_node;
@@ -113,9 +198,10 @@ pub fn compute_hydrostructure_backward_reachability<
     let a = azb.iter().next().unwrap();
     let b = azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(b).from_node;
-    let mut subgraph = compute_restricted_reachability::<_, BackwardNeighborStrategy, SubgraphType>(
-        graph, start_node, a,
-    );
+    let mut subgraph =
+        compute_restricted_edge_reachability::<_, BackwardNeighborStrategy, SubgraphType>(
+            graph, start_node, a,
+        );
 
     for edge in azb.iter().skip(1) {
         let node = graph.edge_endpoints(edge).from_node;

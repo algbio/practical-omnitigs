@@ -371,6 +371,28 @@ impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for ForbiddenEdge<Graph::EdgeInd
     }
 }
 
+/// A [ForbiddenSubgraph](ForbiddenSubgraph) that forbids a single node.
+pub struct ForbiddenNode<NodeIndex> {
+    node_id: NodeIndex,
+}
+impl<NodeIndex> ForbiddenNode<NodeIndex> {
+    /// Construct a new `ForbiddenNode` that forbids the given node.
+    pub fn new(forbidden_node: NodeIndex) -> Self {
+        Self {
+            node_id: forbidden_node,
+        }
+    }
+}
+impl<Graph: GraphBase> ForbiddenSubgraph<Graph> for ForbiddenNode<Graph::NodeIndex> {
+    fn is_node_forbidden(&self, node: Graph::NodeIndex) -> bool {
+        node == self.node_id
+    }
+
+    fn is_edge_forbidden(&self, _: Graph::EdgeIndex) -> bool {
+        false
+    }
+}
+
 /// A neighbor strategy that traverses all outgoing edges of a node.
 pub struct ForwardNeighborStrategy;
 /*pub type NeighborsIntoNodes<NodeIndex, EdgeIndex, Neighbors> = std::iter::Map<
