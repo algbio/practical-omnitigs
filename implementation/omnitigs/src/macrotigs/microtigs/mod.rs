@@ -10,6 +10,7 @@ pub mod strongly_connected_hydrostructure_based_maximal_microtig_algorithm;
 /// Since we do not compress our graph, the bivalent edges that cause a microtig to end might be paths.
 /// To make connecting microtigs simpler, we therefore define a maximal microtig as ending and starting
 /// with the last edge of a _bivalent path_.
+#[derive(Clone)]
 pub struct Microtigs<Graph: GraphBase> {
     microtigs: Vec<VecEdgeWalk<Graph>>,
 }
@@ -25,6 +26,33 @@ impl<Graph: GraphBase> Microtigs<Graph> {
         self.microtigs.iter()
     }
 }
+
+impl<Graph: GraphBase> std::fmt::Debug for Microtigs<Graph>
+where
+    Graph::NodeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Microtigs[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
+    }
+}
+
+impl<Graph: GraphBase> PartialEq for Microtigs<Graph>
+where
+    Graph::EdgeIndex: PartialEq,
+{
+    fn eq(&self, rhs: &Self) -> bool {
+        self.microtigs == rhs.microtigs
+    }
+}
+
+impl<Graph: GraphBase> Eq for Microtigs<Graph> where Graph::EdgeIndex: Eq {}
 
 /// A trait abstracting over the concrete algorithm used to compute maximal microtigs.
 pub trait MaximalMicrotigsAlgorithm<Graph: StaticGraph> {

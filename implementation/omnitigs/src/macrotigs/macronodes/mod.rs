@@ -6,6 +6,7 @@ pub mod strongly_connected_macronode_algorithm;
 
 /// A struct containing the macronodes of an uncompressed graph, represented as walks through their uncompressed centers.
 /// In an uncompressed graph, macronode centers are maximal unitigs with the property that their first node has outdegree = 1, and their last node has indegree = 1.
+#[derive(Clone)]
 pub struct Macronodes<Graph: GraphBase> {
     macronodes: Vec<VecNodeWalk<Graph>>,
 }
@@ -30,6 +31,33 @@ impl<'a, Graph: GraphBase> IntoIterator for &'a Macronodes<Graph> {
         self.macronodes.iter()
     }
 }
+
+impl<Graph: GraphBase> std::fmt::Debug for Macronodes<Graph>
+where
+    Graph::NodeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Macronodes[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
+    }
+}
+
+impl<Graph: GraphBase> PartialEq for Macronodes<Graph>
+where
+    Graph::NodeIndex: PartialEq,
+{
+    fn eq(&self, rhs: &Self) -> bool {
+        self.macronodes == rhs.macronodes
+    }
+}
+
+impl<Graph: GraphBase> Eq for Macronodes<Graph> where Graph::NodeIndex: Eq {}
 
 /// A trait abstracting over the concrete algorithm used to compute macronodes.
 pub trait MacronodeAlgorithm<Graph: StaticGraph> {

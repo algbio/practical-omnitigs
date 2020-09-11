@@ -104,11 +104,18 @@ pub fn compute_inverse_restricted_forward_reachability<
 ) -> SubgraphType {
     let forbidden_node = graph.edge_endpoints(edge).from_node;
     let start_node = graph.edge_endpoints(edge).to_node;
-    let mut result: SubgraphType = compute_restricted_node_reachability::<
-        _,
-        ForwardNeighborStrategy,
-        _,
-    >(graph, start_node, forbidden_node);
+
+    // If the edge is a self loop.
+    let mut result = if start_node == forbidden_node {
+        SubgraphType::new_empty(graph)
+    } else {
+        compute_restricted_node_reachability::<_, ForwardNeighborStrategy, _>(
+            graph,
+            start_node,
+            forbidden_node,
+        )
+    };
+
     result.add_edge(edge);
     result
 }
@@ -124,11 +131,18 @@ pub fn compute_inverse_restricted_backward_reachability<
 ) -> SubgraphType {
     let forbidden_node = graph.edge_endpoints(edge).to_node;
     let start_node = graph.edge_endpoints(edge).from_node;
-    let mut result: SubgraphType = compute_restricted_node_reachability::<
-        _,
-        BackwardNeighborStrategy,
-        _,
-    >(graph, start_node, forbidden_node);
+
+    // If the edge is a self loop.
+    let mut result = if start_node == forbidden_node {
+        SubgraphType::new_empty(graph)
+    } else {
+        compute_restricted_node_reachability::<_, BackwardNeighborStrategy, _>(
+            graph,
+            start_node,
+            forbidden_node,
+        )
+    };
+
     result.add_edge(edge);
     result
 }

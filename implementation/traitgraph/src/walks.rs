@@ -39,7 +39,7 @@ pub trait EdgeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::EdgeIndex]> {
 }
 
 /// A node walk that is represented as a vector of node indices.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct VecNodeWalk<Graph: GraphBase> {
     walk: Vec<Graph::NodeIndex>,
 }
@@ -118,8 +118,24 @@ where
 
 impl<Graph: GraphBase> Eq for VecNodeWalk<Graph> where Graph::NodeIndex: Eq {}
 
+impl<Graph: GraphBase> std::fmt::Debug for VecNodeWalk<Graph>
+where
+    Graph::NodeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "NodeWalk[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
+    }
+}
+
 /// An edge walk that is represented as a vector of edge indices.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct VecEdgeWalk<Graph: GraphBase> {
     walk: Vec<Graph::EdgeIndex>,
 }
@@ -201,3 +217,19 @@ where
 }
 
 impl<Graph: GraphBase> Eq for VecEdgeWalk<Graph> where Graph::EdgeIndex: Eq {}
+
+impl<Graph: GraphBase> std::fmt::Debug for VecEdgeWalk<Graph>
+where
+    Graph::EdgeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "EdgeWalk[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
+    }
+}
