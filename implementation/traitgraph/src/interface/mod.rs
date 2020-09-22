@@ -102,7 +102,7 @@ pub trait MutableGraphContainer: GraphBase {
 }
 
 /// A graph that can be navigated, i.e. that can iterate the neighbors of its nodes.
-pub trait NavigableGraph<'a>: GraphBase {
+pub trait NavigableGraph<'a>: GraphBase + Sized {
     /// The iterator type used to iterate over the outgoing neighbors of a node.
     type OutNeighbors: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
     /// The iterator type used to iterate over the incoming neighbors of a node.

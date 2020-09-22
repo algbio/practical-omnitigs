@@ -49,6 +49,16 @@ pub trait OptionalGraphIndex<MirrorGraphIndex: GraphIndex<Self>>:
         self.as_usize().is_some()
     }
 
+    /// Returns `true` if the index is `None`.
+    fn is_none(self) -> bool {
+        self.as_usize().is_none()
+    }
+
+    /// Returns `true` if the index is `Some`.
+    fn is_some(self) -> bool {
+        self.as_usize().is_some()
+    }
+
     /// Returns a new `OptionalGraphIndex` that is marked as invalid.
     fn new_none() -> Self {
         <Self as From<Option<usize>>>::from(None)

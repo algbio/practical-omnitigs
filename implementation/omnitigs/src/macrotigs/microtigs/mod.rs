@@ -25,6 +25,27 @@ impl<Graph: GraphBase> Microtigs<Graph> {
     pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecEdgeWalk<Graph>> {
         self.microtigs.iter()
     }
+
+    /// Returns the amount of microtigs in this struct.
+    pub fn len(&self) -> usize {
+        self.microtigs.len()
+    }
+
+    /// Returns true if this struct contains no microtigs.
+    pub fn is_empty(&self) -> bool {
+        self.microtigs.is_empty()
+    }
+}
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Microtigs<Graph>
+where
+    Vec<VecEdgeWalk<Graph>>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<VecEdgeWalk<Graph>> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.microtigs.index(index)
+    }
 }
 
 impl<Graph: GraphBase> std::fmt::Debug for Microtigs<Graph>
