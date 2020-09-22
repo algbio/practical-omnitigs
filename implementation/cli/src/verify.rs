@@ -8,6 +8,9 @@ use genome_graph::bigraph::traitgraph::algo::components::{
 use genome_graph::bigraph::traitgraph::interface::{DynamicGraph, ImmutableGraphContainer};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetBCalm2NodeGraph};
 use std::io::Write;
+use omnitigs::macrotigs::macronodes::strongly_connected_macronode_algorithm::StronglyConnectedMacronodes;
+use omnitigs::macrotigs::microtigs::strongly_connected_hydrostructure_based_maximal_microtig_algorithm::StronglyConnectedHydrostructureBasedMaximalMicrotigs;
+use omnitigs::macrotigs::macronodes::MacronodeAlgorithm;
 
 #[derive(Clap)]
 pub struct VerifyEdgeCentricCommand {
@@ -134,6 +137,23 @@ where
     Ok(())
 }
 
+fn examine_macrotigs<Graph: Default + DynamicGraph, OutputWriter: std::io::Write>(
+    genome_graph: &Graph,
+    latex_file: &mut Option<OutputWriter>,
+) -> crate::Result<()> {
+    info!("\n=== Macrotigs ===\n");
+
+    let macronodes = StronglyConnectedMacronodes::compute_macronodes(genome_graph);
+    info!("{} macronodes", macronodes.len());
+    if let Some(latex_file) = latex_file {
+        writeln!(latex_file, "#macronodes & {} \\\\", macronodes.len())?;
+    }
+
+    let maximal_microtigs = StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(genome_graph, &macronodes);
+
+    Ok(())
+}
+
 pub(crate) fn verify_edge_centric(
     options: &CliOptions,
     subcommand: &VerifyEdgeCentricCommand,
@@ -191,6 +211,9 @@ pub(crate) fn verify_edge_centric(
 
     // Components
     verify_components(&genome_graph, &mut latex_file)?;
+
+    // Macrotigs
+    examine_macrotigs(&genome_graph, &mut latex_file)?;
 
     info!("");
 
