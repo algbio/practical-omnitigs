@@ -17,6 +17,16 @@ pub trait NodeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::NodeIndex]> {
     fn is_empty(&'a self) -> bool {
         self.len() == 0
     }
+
+    /// Returns the first node of this walk or `None`, if this walk is empty.
+    fn first(&'a self) -> Option<Graph::NodeIndex> {
+        self.iter().next()
+    }
+
+    /// Returns the last node of this walk or `None` if this walk is empty.
+    fn last(&'a self) -> Option<Graph::NodeIndex> {
+        self.iter().last()
+    }
 }
 
 /// A sequence of edges in a graph, where each consecutive pair of edges is connected by a node.
@@ -36,7 +46,21 @@ pub trait EdgeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::EdgeIndex]> {
     fn is_empty(&'a self) -> bool {
         self.len() == 0
     }
+
+    /// Returns the first edge of this walk or `None`, if this walk is empty.
+    fn first(&'a self) -> Option<Graph::EdgeIndex> {
+        self.iter().next()
+    }
+
+    /// Returns the last edge of this walk or `None` if this walk is empty.
+    fn last(&'a self) -> Option<Graph::EdgeIndex> {
+        self.iter().last()
+    }
 }
+
+/////////////////////////
+////// VecNodeWalk //////
+/////////////////////////
 
 /// A node walk that is represented as a vector of node indices.
 #[derive(Clone)]
@@ -133,6 +157,21 @@ where
         write!(f, "]")
     }
 }
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for VecNodeWalk<Graph>
+where
+    Vec<Graph::NodeIndex>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<Graph::NodeIndex> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.walk.index(index)
+    }
+}
+
+/////////////////////////
+////// VecEdgeWalk //////
+/////////////////////////
 
 /// An edge walk that is represented as a vector of edge indices.
 #[derive(Clone)]
@@ -231,5 +270,16 @@ where
             write!(f, ", {:?}", edge)?;
         }
         write!(f, "]")
+    }
+}
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for VecEdgeWalk<Graph>
+where
+    Vec<Graph::EdgeIndex>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<Graph::EdgeIndex> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.walk.index(index)
     }
 }
