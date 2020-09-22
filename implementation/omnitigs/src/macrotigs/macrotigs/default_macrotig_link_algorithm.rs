@@ -17,20 +17,22 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
         let mut used_microtigs = vec![false; microtigs.len()];
 
         // Prepare mapping from edges to incoming and outgoing microtigs.
-        for microtig in microtigs.iter() {
+        for (microtig_index, microtig) in microtigs.iter().enumerate() {
             assert!(!microtig.is_empty(), "Found empty microtig.");
             let first_edge = microtig.first().unwrap();
             let last_edge = microtig.last().unwrap();
 
             assert!(outgoing_microtigs[first_edge.as_usize()].is_none());
             assert!(incoming_microtigs[last_edge.as_usize()].is_none());
-            outgoing_microtigs[first_edge.as_usize()] = Some(first_edge).into();
-            incoming_microtigs[last_edge.as_usize()] = Some(last_edge).into();
+            outgoing_microtigs[first_edge.as_usize()] = Some(microtig_index).into();
+            incoming_microtigs[last_edge.as_usize()] = Some(microtig_index).into();
         }
 
         // Combine microtigs.
         for (microtig_index, microtig) in microtigs.iter().enumerate() {
             if !used_microtigs[microtig_index] {
+                println!("Using microtig {}", microtig_index);
+
                 used_microtigs[microtig_index] = true;
                 let mut macrotig = vec![microtig_index];
                 let mut current_microtig = microtig;
@@ -47,6 +49,12 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                     if let Some(incoming_microtig_index) =
                         incoming_microtigs[first_edge.as_usize()].as_usize()
                     {
+                        println!(
+                            "Found incoming microtig {} at edge {}",
+                            incoming_microtig_index,
+                            first_edge.as_usize()
+                        );
+
                         // Append incoming microtig and make it new current.
                         macrotig.push(incoming_microtig_index);
                         current_microtig = &microtigs[incoming_microtig_index];
@@ -65,7 +73,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
 
                 // Extend to the right.
                 loop {
-                    let last_edge = current_microtig.first().unwrap();
+                    let last_edge = current_microtig.last().unwrap();
 
                     // Do not extend over self bivalent edges as required by the definition of macrotigs.
                     if is_edge_self_bivalent(graph, last_edge) {
@@ -75,6 +83,12 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                     if let Some(outgoing_microtig_index) =
                         outgoing_microtigs[last_edge.as_usize()].as_usize()
                     {
+                        println!(
+                            "Found outgoing microtig {} at edge {}",
+                            outgoing_microtig_index,
+                            last_edge.as_usize()
+                        );
+
                         // Append incoming microtig and make it new current.
                         macrotig.push(outgoing_microtig_index);
                         current_microtig = &microtigs[outgoing_microtig_index];
@@ -89,7 +103,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                 }
 
                 // Combine microtigs into macrotigs.
-                let mut macrotig_walk = vec![microtigs[0][0]];
+                let mut macrotig_walk = vec![microtigs[macrotig[0]][0]];
                 for microtig_index in macrotig {
                     let microtig = &microtigs[microtig_index];
                     macrotig_walk.extend(microtig.iter().skip(1));
@@ -104,17 +118,17 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
 
 #[cfg(test)]
 mod tests {
-    /*use traitgraph::implementation::petgraph_impl;
-    use traitgraph::interface::MutableGraphContainer;
+    use traitgraph::implementation::petgraph_impl;
+    use traitgraph::interface::{MutableGraphContainer, WalkableGraph};
     use crate::macrotigs::macronodes::strongly_connected_macronode_algorithm::StronglyConnectedMacronodes;
     use crate::macrotigs::microtigs::strongly_connected_hydrostructure_based_maximal_microtig_algorithm::StronglyConnectedHydrostructureBasedMaximalMicrotigs;
     use crate::macrotigs::macronodes::MacronodeAlgorithm;
     use crate::macrotigs::microtigs::MaximalMicrotigsAlgorithm;
-    use crate::macrotigs::microtigs::Microtigs;
-    use traitgraph::interface::WalkableGraph;
+    use crate::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
+    use crate::macrotigs::macrotigs::{MaximalMacrotigsAlgorithm, Macrotigs};
 
     #[test]
-    fn test_compute_maximal_microtigs_one_secluded() {
+    fn test_compute_maximal_macrotigs_one_secluded() {
         let mut graph = petgraph_impl::new();
         let n0 = graph.add_node(());
         let n1 = graph.add_node(());
@@ -156,19 +170,22 @@ mod tests {
         let _e21 = graph.add_edge(n6, n7, ());
 
         let macronodes = dbg!(StronglyConnectedMacronodes::compute_macronodes(&graph));
-        let maximal_microtigs =
+        let maximal_microtigs = dbg!(
             StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
                 &graph,
                 &macronodes,
-            );
+            )
+        );
+        let maximal_macrotigs =
+            DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
         assert_eq!(
-            maximal_microtigs,
-            Microtigs::new(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
+            maximal_macrotigs,
+            Macrotigs::new(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
         );
     }
 
     #[test]
-    fn test_compute_maximal_microtigs_one_with_cross_bivalent() {
+    fn test_compute_maximal_macrotigs_one_with_cross_bivalent() {
         let mut graph = petgraph_impl::new();
         let n0 = graph.add_node(());
         let n1 = graph.add_node(());
@@ -229,18 +246,18 @@ mod tests {
                 &graph,
                 &macronodes,
             );
+        let maximal_macrotigs =
+            DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
         assert_eq!(
-            maximal_microtigs,
-            Microtigs::new(vec![
-                graph.create_edge_walk(&[e6, e0, e1, e2, e10, e22, e23, e24]),
-                graph.create_edge_walk(&[e24, e25]),
-                graph.create_edge_walk(&[e29, e28, e27, e26, e6]),
-            ])
+            maximal_macrotigs,
+            Macrotigs::new(vec![graph.create_edge_walk(&[
+                e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
+            ]),])
         );
     }
 
     #[test]
-    fn test_compute_maximal_microtigs_two() {
+    fn test_compute_maximal_macrotigs_two() {
         let mut graph = petgraph_impl::new();
         let n0 = graph.add_node(());
         let n1 = graph.add_node(());
@@ -269,16 +286,14 @@ mod tests {
                 &graph,
                 &macronodes,
             );
+        let maximal_macrotigs =
+            DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
         assert_eq!(
-            maximal_microtigs,
-            Microtigs::new(vec![
-                graph.create_edge_walk(&[e9, e0, e2, e4]),
-                graph.create_edge_walk(&[e10, e0, e1, e3]),
-                graph.create_edge_walk(&[e5, e7, e9]),
-                graph.create_edge_walk(&[e3, e5]),
-                graph.create_edge_walk(&[e6, e8, e10]),
-                graph.create_edge_walk(&[e4, e6]),
+            maximal_macrotigs,
+            Macrotigs::new(vec![
+                graph.create_edge_walk(&[e5, e7, e9, e0, e2, e4, e6]),
+                graph.create_edge_walk(&[e6, e8, e10, e0, e1, e3, e5]),
             ])
         );
-    }*/
+    }
 }

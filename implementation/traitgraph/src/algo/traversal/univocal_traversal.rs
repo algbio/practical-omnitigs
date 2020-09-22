@@ -126,6 +126,7 @@ impl<'a, Graph: NavigableGraph<'a>, NeighborStrategy: TraversalNeighborStrategy<
                     "Edge has more than one node as successor."
                 );
                 self.current_node = Some(next_node);
+                self.current_edge = None;
                 Some(NodeOrEdge::Edge(edge))
             }
             (None, None) => None,
@@ -138,7 +139,8 @@ pub fn is_edge_self_bivalent<'a, Graph: NavigableGraph<'a> + ImmutableGraphConta
     graph: &'a Graph,
     edge_id: Graph::EdgeIndex,
 ) -> bool {
-    let forward_iter = UnivocalIterator::new_forward(graph, NodeOrEdge::Edge(edge_id));
+    let forward_iter =
+        UnivocalIterator::new_forward_without_start(graph, NodeOrEdge::Edge(edge_id));
     let mut backward_iter = UnivocalIterator::new_backward(graph, NodeOrEdge::Edge(edge_id));
 
     let mut last_element = None;
@@ -161,4 +163,52 @@ pub fn is_edge_self_bivalent<'a, Graph: NavigableGraph<'a> + ImmutableGraphConta
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use crate::algo::traversal::univocal_traversal::is_edge_self_bivalent;
+    use crate::implementation::petgraph_impl;
+    use crate::interface::MutableGraphContainer;
+
+    #[test]
+    fn test_is_edge_self_bivalent_simple() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let n3 = graph.add_node(());
+        let n4 = graph.add_node(());
+        let e0 = graph.add_edge(n0, n1, ());
+        let e1 = graph.add_edge(n0, n2, ());
+        let e2 = graph.add_edge(n3, n0, ());
+        let e3 = graph.add_edge(n4, n0, ());
+        let e4 = graph.add_edge(n1, n3, ());
+        let e5 = graph.add_edge(n1, n3, ());
+        let e6 = graph.add_edge(n2, n4, ());
+        let e7 = graph.add_edge(n2, n4, ());
+        let e8 = graph.add_edge(n0, n0, ());
+
+        assert!(!is_edge_self_bivalent(&graph, e0));
+        assert!(!is_edge_self_bivalent(&graph, e1));
+        assert!(!is_edge_self_bivalent(&graph, e2));
+        assert!(!is_edge_self_bivalent(&graph, e3));
+        assert!(is_edge_self_bivalent(&graph, e4));
+        assert!(is_edge_self_bivalent(&graph, e5));
+        assert!(is_edge_self_bivalent(&graph, e6));
+        assert!(is_edge_self_bivalent(&graph, e7));
+        assert!(is_edge_self_bivalent(&graph, e8));
+    }
+
+    #[test]
+    fn test_is_edge_self_bivalent_cycle() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let e0 = graph.add_edge(n0, n1, ());
+        let e1 = graph.add_edge(n1, n2, ());
+        let e2 = graph.add_edge(n2, n0, ());
+
+        assert!(is_edge_self_bivalent(&graph, e0));
+        assert!(is_edge_self_bivalent(&graph, e1));
+        assert!(is_edge_self_bivalent(&graph, e2));
+    }
+}
