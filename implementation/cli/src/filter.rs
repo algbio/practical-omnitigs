@@ -1,5 +1,6 @@
 use crate::CliOptions;
 use clap::Clap;
+use std::io::Write;
 
 #[derive(Clap)]
 pub struct FilterCommand {
@@ -16,6 +17,13 @@ pub struct FilterCommand {
         about = "The output file to which the remaining records should be written in fasta format"
     )]
     pub output: String,
+
+    #[clap(
+        short,
+        long,
+        about = "If given, extract the name of the genome into the given file"
+    )]
+    pub extract_name: Option<String>,
 }
 
 pub(crate) fn filter_records(
@@ -37,6 +45,14 @@ pub(crate) fn filter_records(
         .records();
     info!("Creating/overwriting output file: {}", &subcommand.output);
     let mut writer = bio::io::fasta::Writer::to_file(&subcommand.output)?;
+    let mut name_writer = if let Some(extract_name) = &subcommand.extract_name {
+        info!("Creating/overwriting name file: {}", extract_name);
+        Some(std::io::BufWriter::new(std::fs::File::create(
+            extract_name,
+        )?))
+    } else {
+        None
+    };
 
     let mut records_read = 0;
     let mut records_written = 0;
@@ -50,14 +66,24 @@ pub(crate) fn filter_records(
             }
         };
 
-        if let Some(retain) = &subcommand.retain {
-            if record.id() == retain {
-                writer.write_record(&record)?;
-                records_written += 1;
-            }
+        let write_record = if let Some(retain) = &subcommand.retain {
+            record.id() == retain
         } else {
+            true
+        };
+
+        if write_record {
             writer.write_record(&record)?;
             records_written += 1;
+
+            if let Some(name_writer) = &mut name_writer {
+                writeln!(
+                    name_writer,
+                    "{} {}",
+                    record.id(),
+                    record.desc().unwrap_or("")
+                )?;
+            }
         }
     }
 

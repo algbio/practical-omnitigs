@@ -91,10 +91,10 @@ rule verify_genome:
 
 rule filter_genome:
     input: file = "data/{dir}/raw.fna", binary = "data/target/release/cli"
-    output: file = "data/{dir}/filtered.fna", log = "data/{dir}/filtered.log"
+    output: file = "data/{dir}/filtered.fna", genome_name = "data/{dir}/name.txt", log = "data/{dir}/filtered.log"
     params: retain = lambda wildcards: "--retain '" + experiments[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments[wildcards.dir] else ""
     conda: "config/conda-rust-env.yml"
-    shell: "data/target/release/cli --input '{input.file}' filter --output '{output.file}' {params.retain} 2>&1 | tee '{output.log}'"
+    shell: "data/target/release/cli --input '{input.file}' filter --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
 rule extract:
     input: "data/{dir}/raw.fna.gz"
@@ -177,13 +177,14 @@ rule latex:
     shell: "tectonic {input}"
 
 rule create_single_report_tex:
-    input: unitigs_contigvalidator = "data/{dir}/{file}.contigvalidator",
+    input: genome_name = "data/{dir}/name.txt",
+           unitigs_contigvalidator = "data/{dir}/{file}.contigvalidator",
            unitigs_quast = directory("data/{dir}/{file}.quast"),
            unitigs_graphstatistics = "data/{dir}/{file}.graphstatistics",
            untitigs_bandage = "data/{dir}/{file}.bandage.png",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/{file}.report.tex"
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.unitigs_contigvalidator}' '{input.unitigs_quast}/report.tex' '{input.unitigs_graphstatistics}' '{wildcards.file}.bandage.png' '{output}'"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.unitigs_contigvalidator}' '{input.unitigs_quast}/report.tex' '{input.unitigs_graphstatistics}' '{wildcards.file}.bandage.png' '{output}'"
 
 rule report_all:
     input: generate_report_targets()
