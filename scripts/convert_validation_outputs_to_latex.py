@@ -2,16 +2,25 @@
 
 """
 Convert the output of the different validation tools into a LaTeX file.
-Arguments: <ContigValidator results> <quast report.tex> <cli verify LaTeX results> <bandage png> <output file>
+Arguments: <genome name> <ContigValidator results> <quast report.tex> <cli verify LaTeX results> <bandage png> <output file>
 """
 
 import sys
 
-contig_validator_file_name = sys.argv[1]
-quast_file_name = sys.argv[2]
-graph_statistics_file_name = sys.argv[3]
-bandage_png_name = sys.argv[4]
-output_file_name = sys.argv[5]
+genome_name_file_name = sys.argv[1]
+contig_validator_file_name = sys.argv[2]
+quast_file_name = sys.argv[3]
+graph_statistics_file_name = sys.argv[4]
+bandage_png_name = sys.argv[5]
+output_file_name = sys.argv[6]
+
+#########################
+### Process name file ###
+#########################
+
+name_file = open(genome_name_file_name, 'r')
+name_lines = name_file.readlines()
+name_lines = [x.replace("_", "\\_") for x in name_lines]
 
 ##########################
 ### Process QUAST file ###
@@ -86,8 +95,14 @@ output_file.write(
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
 	\\end{description}
+	This file contains statistics about the following genome(s):
+	\\begin{itemize}
 	"""
 )
+
+for line in name_lines:
+	output_file.write("\\item " + line)
+output_file.write("\\end{itemize}\n")
 
 write_table(output_file, "Genome Graph Statistics", graph_statistics_lines)
 

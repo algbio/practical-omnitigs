@@ -145,7 +145,9 @@ fn examine_macrotigs<Graph: Default + DynamicGraph, OutputWriter: std::io::Write
     genome_graph: &Graph,
     latex_file: &mut Option<OutputWriter>,
 ) -> crate::Result<()> {
-    info!("\n=== Macrotigs ===\n");
+    info!("");
+    info!("=== Macrotigs ===");
+    info!("");
 
     let macronodes = StronglyConnectedMacronodes::compute_macronodes(genome_graph);
     info!("{} macronodes", macronodes.len());
