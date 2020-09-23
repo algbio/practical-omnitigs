@@ -13,12 +13,19 @@ pub mod strongly_connected_hydrostructure_based_maximal_microtig_algorithm;
 #[derive(Clone)]
 pub struct Microtigs<Graph: GraphBase> {
     microtigs: Vec<VecEdgeWalk<Graph>>,
+    macronodes_without_microtig_amount: usize,
 }
 
 impl<Graph: GraphBase> Microtigs<Graph> {
     /// Creates a new `Microtigs` struct with the given vector of microtigs.
-    pub fn new(microtigs: Vec<VecEdgeWalk<Graph>>) -> Self {
-        Self { microtigs }
+    pub fn new(
+        microtigs: Vec<VecEdgeWalk<Graph>>,
+        macronodes_without_microtig_amount: usize,
+    ) -> Self {
+        Self {
+            microtigs,
+            macronodes_without_microtig_amount,
+        }
     }
 
     /// Returns an iterator over the microtigs in this struct.
@@ -34,6 +41,11 @@ impl<Graph: GraphBase> Microtigs<Graph> {
     /// Returns true if this struct contains no microtigs.
     pub fn is_empty(&self) -> bool {
         self.microtigs.is_empty()
+    }
+
+    /// Returns the amount of macronodes without microtigs that were found while computing this set of microtigs.
+    pub fn macronodes_without_microtig_amount(&self) -> usize {
+        self.macronodes_without_microtig_amount
     }
 }
 

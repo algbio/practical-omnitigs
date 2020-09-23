@@ -8,6 +8,13 @@ use genome_graph::bigraph::traitgraph::algo::components::{
 use genome_graph::bigraph::traitgraph::interface::{DynamicGraph, ImmutableGraphContainer};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetBCalm2NodeGraph};
 use std::io::Write;
+use omnitigs::macrotigs::macronodes::strongly_connected_macronode_algorithm::StronglyConnectedMacronodes;
+use omnitigs::macrotigs::microtigs::strongly_connected_hydrostructure_based_maximal_microtig_algorithm::StronglyConnectedHydrostructureBasedMaximalMicrotigs;
+use omnitigs::macrotigs::macronodes::MacronodeAlgorithm;
+use omnitigs::macrotigs::microtigs::MaximalMicrotigsAlgorithm;
+use omnitigs::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
+use omnitigs::macrotigs::macrotigs::MaximalMacrotigsAlgorithm;
+use omnitigs::traitgraph::walks::EdgeWalk;
 
 #[derive(Clap)]
 pub struct VerifyEdgeCentricCommand {
@@ -134,6 +141,104 @@ where
     Ok(())
 }
 
+fn examine_macrotigs<Graph: Default + DynamicGraph, OutputWriter: std::io::Write>(
+    genome_graph: &Graph,
+    latex_file: &mut Option<OutputWriter>,
+) -> crate::Result<()> {
+    info!("\n=== Macrotigs ===\n");
+
+    let macronodes = StronglyConnectedMacronodes::compute_macronodes(genome_graph);
+    info!("{} macronodes", macronodes.len());
+    if let Some(latex_file) = latex_file {
+        writeln!(latex_file, "\\# macronodes & {} \\\\", macronodes.len())?;
+    }
+
+    let maximal_microtigs =
+        StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
+            genome_graph,
+            &macronodes,
+        );
+    let macronodes_with_microtig_amount =
+        macronodes.len() - maximal_microtigs.macronodes_without_microtig_amount();
+    let macronodes_with_microtog_percent =
+        100.0 * macronodes_with_microtig_amount as f64 / macronodes.len() as f64;
+    info!(
+        "{:.1}% of macronodes have at least one microtig",
+        macronodes_with_microtog_percent
+    );
+    if let Some(latex_file) = latex_file {
+        writeln!(
+            latex_file,
+            "\\% macronodes with at least one microtig & {:.1} \\\\",
+            macronodes_with_microtog_percent
+        )?;
+    }
+
+    let maximal_macrotigs =
+        DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(genome_graph, &maximal_microtigs);
+    let total_macrotig_len: usize = maximal_macrotigs.iter().map(|m| m.len()).sum();
+    info!("{} macrotigs", maximal_macrotigs.len());
+    info!("total macrotig length: {}", total_macrotig_len);
+    if let Some(latex_file) = latex_file {
+        writeln!(
+            latex_file,
+            "\\# macrotigs & {} \\\\",
+            maximal_macrotigs.len()
+        )?;
+        writeln!(
+            latex_file,
+            "total macrotig length & {} \\\\",
+            total_macrotig_len
+        )?;
+    }
+
+    if !maximal_macrotigs.is_empty() {
+        let max_macrotig_len = maximal_macrotigs.iter().map(|m| m.len()).max().unwrap();
+        let min_macrotig_len = maximal_macrotigs.iter().map(|m| m.len()).min().unwrap();
+        let median_macrotig_len = statistical::median(
+            &maximal_macrotigs
+                .iter()
+                .map(|m| m.len())
+                .collect::<Vec<_>>(),
+        );
+        let mean_macrotig_len = statistical::mean(
+            &maximal_macrotigs
+                .iter()
+                .map(|m| m.len() as f64)
+                .collect::<Vec<_>>(),
+        );
+
+        info!("max macrotig edge length: {}", max_macrotig_len);
+        info!("min macrotig edge length: {}", min_macrotig_len);
+        info!("median macrotig edge length: {}", median_macrotig_len);
+        info!("mean macrotig edge length: {:.1}", mean_macrotig_len);
+        if let Some(latex_file) = latex_file {
+            writeln!(
+                latex_file,
+                "max macrotig edge length & {} \\\\",
+                max_macrotig_len
+            )?;
+            writeln!(
+                latex_file,
+                "min macrotig edge length & {} \\\\",
+                min_macrotig_len
+            )?;
+            writeln!(
+                latex_file,
+                "median macrotig edge length & {} \\\\",
+                median_macrotig_len
+            )?;
+            writeln!(
+                latex_file,
+                "mean macrotig edge length & {:.1} \\\\",
+                mean_macrotig_len
+            )?;
+        }
+    }
+
+    Ok(())
+}
+
 pub(crate) fn verify_edge_centric(
     options: &CliOptions,
     subcommand: &VerifyEdgeCentricCommand,
@@ -191,6 +296,9 @@ pub(crate) fn verify_edge_centric(
 
     // Components
     verify_components(&genome_graph, &mut latex_file)?;
+
+    // Macrotigs
+    examine_macrotigs(&genome_graph, &mut latex_file)?;
 
     info!("");
 

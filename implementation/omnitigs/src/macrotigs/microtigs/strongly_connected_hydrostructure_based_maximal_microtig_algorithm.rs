@@ -23,9 +23,11 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
         macronodes: &Macronodes<Graph>,
     ) -> Microtigs<Graph> {
         let mut result = Vec::new();
+        let mut macronodes_without_microtig_amount = 0;
 
         for macronode in macronodes {
             assert!(!macronode.is_empty());
+            let mut has_microtig = false;
             let center_in_node = macronode.iter().next().unwrap();
             let center_out_node = macronode.iter().last().unwrap();
 
@@ -97,6 +99,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                         .chain(mrmo1.iter())
                         .collect::<Vec<_>>(),
                 ));
+                has_microtig = true;
             }
 
             if in_edge_candidates.len() == 1 {
@@ -149,12 +152,17 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                                 .chain(mrmo2.iter())
                                 .collect::<Vec<_>>(),
                         ));
+                        has_microtig = true;
                     }
                 }
             }
+
+            if !has_microtig {
+                macronodes_without_microtig_amount += 1;
+            }
         }
 
-        Microtigs::new(result)
+        Microtigs::new(result, macronodes_without_microtig_amount)
     }
 }
 
@@ -321,7 +329,7 @@ mod tests {
             );
         assert_eq!(
             maximal_microtigs,
-            Microtigs::new(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
+            Microtigs::new(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])], 0)
         );
     }
 
@@ -389,11 +397,14 @@ mod tests {
             );
         assert_eq!(
             maximal_microtigs,
-            Microtigs::new(vec![
-                graph.create_edge_walk(&[e6, e0, e1, e2, e10, e22, e23, e24]),
-                graph.create_edge_walk(&[e24, e25]),
-                graph.create_edge_walk(&[e29, e28, e27, e26, e6]),
-            ])
+            Microtigs::new(
+                vec![
+                    graph.create_edge_walk(&[e6, e0, e1, e2, e10, e22, e23, e24]),
+                    graph.create_edge_walk(&[e24, e25]),
+                    graph.create_edge_walk(&[e29, e28, e27, e26, e6]),
+                ],
+                0
+            )
         );
     }
 
@@ -429,14 +440,17 @@ mod tests {
             );
         assert_eq!(
             maximal_microtigs,
-            Microtigs::new(vec![
-                graph.create_edge_walk(&[e9, e0, e2, e4]),
-                graph.create_edge_walk(&[e10, e0, e1, e3]),
-                graph.create_edge_walk(&[e5, e7, e9]),
-                graph.create_edge_walk(&[e3, e5]),
-                graph.create_edge_walk(&[e6, e8, e10]),
-                graph.create_edge_walk(&[e4, e6]),
-            ])
+            Microtigs::new(
+                vec![
+                    graph.create_edge_walk(&[e9, e0, e2, e4]),
+                    graph.create_edge_walk(&[e10, e0, e1, e3]),
+                    graph.create_edge_walk(&[e5, e7, e9]),
+                    graph.create_edge_walk(&[e3, e5]),
+                    graph.create_edge_walk(&[e6, e8, e10]),
+                    graph.create_edge_walk(&[e4, e6]),
+                ],
+                0
+            )
         );
     }
 }
