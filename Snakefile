@@ -78,13 +78,13 @@ def generate_test_targets():
 ######################################
 
 rule separate_linear_and_circular:
-    input: filtered = "data/{dir}/filtered.fna", verified = "data/{dir}/is_genome_verified.log", binary = ancient("data/target/release/cli")
+    input: filtered = "data/{dir}/filtered.fna", verified = "data/{dir}/is_genome_verified.log", binary = "data/target/release/cli"
     output: circular = "data/{dir}/circular.fna", linear = "data/{dir}/linear.fna", log = "data/{dir}/separate_linear_and_circular.log"
     conda: "config/conda-rust-env.yml"
     shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli --input '{input.filtered}' circularise-genome 2>&1 --output '{output.circular}' | tee '{output.log}'"
 
 rule verify_genome:
-    input: file = "data/{dir}/filtered.fna", binary = ancient("data/target/release/cli")
+    input: file = "data/{dir}/filtered.fna", binary = "data/target/release/cli"
     output: log = "data/{dir}/is_genome_verified.log"
     conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' verify-genome 2>&1 | tee '{output.log}'"
