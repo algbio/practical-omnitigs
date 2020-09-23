@@ -2,6 +2,7 @@ use traitgraph::algo::traversal::{
     BackwardNeighborStrategy, BfsQueueStrategy, ForbiddenEdge, ForbiddenNode,
     ForwardNeighborStrategy, PreOrderTraversal, TraversalNeighborStrategy,
 };
+use traitgraph::implementation::incremental_subgraph::IncrementalSubgraph;
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, NodeOrEdge, StaticGraph};
 use traitgraph::walks::EdgeWalk;
@@ -31,6 +32,84 @@ pub fn compute_restricted_edge_reachability<
         match node_or_edge {
             NodeOrEdge::Node(node) => subgraph.add_node(node),
             NodeOrEdge::Edge(edge) => subgraph.add_edge(edge),
+        }
+    }
+
+    subgraph
+}
+
+/// Returns the reachable subgraph from a node without using an edge incrementally.
+pub fn compute_incremental_restricted_forward_edge_reachability<'a, Graph: StaticGraph>(
+    graph: &'a Graph,
+    walk: &VecEdgeWalk<Graph>,
+) -> IncrementalSubgraph<'a, Graph> {
+    let mut subgraph = IncrementalSubgraph::new_with_incremental_steps(graph, walk.len());
+    let mut traversal = PreOrderTraversal::<
+        _,
+        ForwardNeighborStrategy,
+        BfsQueueStrategy,
+        std::collections::VecDeque<_>,
+    >::new_without_start(graph);
+
+    let mut start_edge = walk
+        .first()
+        .expect("Cannot compute hydrostructure from empty walk");
+    for (edge_number, edge) in walk.iter().enumerate().skip(1) {
+        if graph.out_degree(graph.edge_endpoints(edge).from_node) <= 1 {
+            continue;
+        }
+
+        let start_node = graph.edge_endpoints(start_edge).to_node;
+        traversal.continue_traversal_from(start_node);
+        subgraph.set_current_step(edge_number);
+        let forbidden_edge = ForbiddenEdge::new(edge);
+        subgraph.add_edge(start_edge);
+        start_edge = edge;
+
+        while let Some(node_or_edge) = traversal.next_with_forbidden_subgraph(&forbidden_edge) {
+            match node_or_edge {
+                NodeOrEdge::Node(node) => subgraph.add_node(node),
+                NodeOrEdge::Edge(edge) => subgraph.add_edge(edge),
+            }
+        }
+    }
+
+    subgraph
+}
+
+/// Returns the backwards reachable subgraph from a node without using an edge incrementally.
+pub fn compute_incremental_restricted_backward_edge_reachability<'a, Graph: StaticGraph>(
+    graph: &'a Graph,
+    walk: &VecEdgeWalk<Graph>,
+) -> IncrementalSubgraph<'a, Graph> {
+    let mut subgraph = IncrementalSubgraph::new_with_incremental_steps(graph, walk.len());
+    let mut traversal = PreOrderTraversal::<
+        _,
+        BackwardNeighborStrategy,
+        BfsQueueStrategy,
+        std::collections::VecDeque<_>,
+    >::new_without_start(graph);
+
+    let mut start_edge = walk
+        .last()
+        .expect("Cannot compute hydrostructure from empty walk");
+    for (edge_number, edge) in walk.iter().rev().enumerate().skip(1) {
+        if graph.in_degree(graph.edge_endpoints(edge).to_node) <= 1 {
+            continue;
+        }
+
+        let start_node = graph.edge_endpoints(start_edge).from_node;
+        traversal.continue_traversal_from(start_node);
+        subgraph.set_current_step(edge_number);
+        let forbidden_edge = ForbiddenEdge::new(edge);
+        subgraph.add_edge(start_edge);
+        start_edge = edge;
+
+        while let Some(node_or_edge) = traversal.next_with_forbidden_subgraph(&forbidden_edge) {
+            match node_or_edge {
+                NodeOrEdge::Node(node) => subgraph.add_node(node),
+                NodeOrEdge::Edge(edge) => subgraph.add_edge(edge),
+            }
         }
     }
 

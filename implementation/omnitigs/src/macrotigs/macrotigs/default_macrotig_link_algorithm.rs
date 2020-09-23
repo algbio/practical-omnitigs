@@ -31,7 +31,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
         // Combine microtigs.
         for (microtig_index, microtig) in microtigs.iter().enumerate() {
             if !used_microtigs[microtig_index] {
-                println!("Using microtig {}", microtig_index);
+                //println!("Using microtig {}", microtig_index);
 
                 used_microtigs[microtig_index] = true;
                 let mut macrotig = vec![microtig_index];
@@ -49,11 +49,11 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                     if let Some(incoming_microtig_index) =
                         incoming_microtigs[first_edge.as_usize()].as_usize()
                     {
-                        println!(
+                        /*println!(
                             "Found incoming microtig {} at edge {}",
                             incoming_microtig_index,
                             first_edge.as_usize()
-                        );
+                        );*/
 
                         // Append incoming microtig and make it new current.
                         macrotig.push(incoming_microtig_index);
@@ -83,11 +83,11 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                     if let Some(outgoing_microtig_index) =
                         outgoing_microtigs[last_edge.as_usize()].as_usize()
                     {
-                        println!(
+                        /*println!(
                             "Found outgoing microtig {} at edge {}",
                             outgoing_microtig_index,
                             last_edge.as_usize()
-                        );
+                        );*/
 
                         // Append incoming microtig and make it new current.
                         macrotig.push(outgoing_microtig_index);
