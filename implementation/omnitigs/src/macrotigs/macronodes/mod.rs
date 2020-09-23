@@ -21,6 +21,16 @@ impl<Graph: GraphBase> Macronodes<Graph> {
     pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecNodeWalk<Graph>> {
         self.macronodes.iter()
     }
+
+    /// Returns the amount of macronodes in this struct.
+    pub fn len(&self) -> usize {
+        self.macronodes.len()
+    }
+
+    /// Returns true if there are no macronodes in this struct.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl<'a, Graph: GraphBase> IntoIterator for &'a Macronodes<Graph> {
