@@ -128,6 +128,22 @@ impl<
         }
     }
 
+    /// Creates a new traversal that operates on the given graph.
+    /// Does not start the traversal.
+    pub fn new_without_start(graph: &'a Graph) -> Self {
+        let queue = Queue::default();
+        let rank = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
+        Self {
+            graph,
+            queue,
+            rank,
+            current_rank: 0.into(),
+            neighbor_iterator: None,
+            neighbor_strategy: Default::default(),
+            queue_strategy: Default::default(),
+        }
+    }
+
     /// Resets the traversal to start from the given node.
     pub fn reset(&mut self, start: Graph::NodeIndex) {
         self.queue.clear();
@@ -138,6 +154,15 @@ impl<
         self.rank[start.as_usize()] = Some(0).into();
         self.current_rank = 1.into();
         self.neighbor_iterator = None;
+    }
+
+    /// Resets the traversal to start from the given node without resetting the visited nodes.
+    pub fn continue_traversal_from(&mut self, start: Graph::NodeIndex) {
+        assert!(self.queue.is_empty());
+        assert!(self.neighbor_iterator.is_none());
+        QueueStrategy::push(&mut self.queue, start);
+        self.rank[start.as_usize()] = Some(self.current_rank).into();
+        self.current_rank = self.current_rank + 1;
     }
 
     /// Advances the traversal, ignoring all nodes and edges forbidden by `forbidden_subgraph`.

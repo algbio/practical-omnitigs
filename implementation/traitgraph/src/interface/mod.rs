@@ -82,7 +82,7 @@ pub trait ImmutableGraphContainer: GraphBase {
 }
 
 /// A container that allows adding and removing nodes and edges.
-pub trait MutableGraphContainer: GraphBase {
+pub trait MutableGraphContainer: ImmutableGraphContainer {
     /// Adds a new node with the given `NodeData` to the graph.
     fn add_node(&mut self, node_data: Self::NodeData) -> Self::NodeIndex;
 
@@ -102,7 +102,7 @@ pub trait MutableGraphContainer: GraphBase {
 }
 
 /// A graph that can be navigated, i.e. that can iterate the neighbors of its nodes.
-pub trait NavigableGraph<'a>: GraphBase + Sized {
+pub trait NavigableGraph<'a>: ImmutableGraphContainer + Sized {
     /// The iterator type used to iterate over the outgoing neighbors of a node.
     type OutNeighbors: Iterator<Item = Neighbor<Self::NodeIndex, Self::EdgeIndex>>;
     /// The iterator type used to iterate over the incoming neighbors of a node.
@@ -140,6 +140,16 @@ pub trait NavigableGraph<'a>: GraphBase + Sized {
     /// Returns true if the given node has indegree > 1 and outdegree > 1.
     fn is_bivalent_node(&'a self, node_id: Self::NodeIndex) -> bool {
         self.in_degree(node_id) > 1 && self.out_degree(node_id) > 1
+    }
+
+    /// Returns true if the given edge's tail has outdegree > 1.
+    fn is_split_edge(&'a self, edge_id: Self::EdgeIndex) -> bool {
+        self.out_degree(self.edge_endpoints(edge_id).from_node) > 1
+    }
+
+    /// Returns true if the given edge's head has indegree > 1.
+    fn is_join_edge(&'a self, edge_id: Self::EdgeIndex) -> bool {
+        self.in_degree(self.edge_endpoints(edge_id).to_node) > 1
     }
 }
 

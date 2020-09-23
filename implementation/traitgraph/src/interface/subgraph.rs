@@ -52,12 +52,12 @@ pub trait DecoratingSubgraph {
 impl<T: DecoratingSubgraph> GraphBase for T {
     type NodeData = <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::NodeData;
     type EdgeData = <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::EdgeData;
-    type NodeIndex = <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::NodeIndex;
-    type EdgeIndex = <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::EdgeIndex;
     type OptionalNodeIndex =
         <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::OptionalNodeIndex;
     type OptionalEdgeIndex =
         <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::OptionalEdgeIndex;
+    type NodeIndex = <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::NodeIndex;
+    type EdgeIndex = <<Self as DecoratingSubgraph>::ParentGraph as GraphBase>::EdgeIndex;
 }
 
 impl<T: DecoratingSubgraph> ImmutableGraphContainer for T
@@ -122,7 +122,7 @@ where
 
 impl<'a, T: 'a + DecoratingSubgraph> NavigableGraph<'a> for T
 where
-    T::ParentGraph: ImmutableGraphContainer + NavigableGraph<'a>,
+    T::ParentGraph: ImmutableGraphContainer + for<'b> NavigableGraph<'b>,
 {
     //type OutNeighbors = <<Self as DecoratingSubgraph>::ParentGraph as NavigableGraph<'a>>::OutNeighbors;//std::iter::Filter<<<Self as DecoratingSubgraph>::ParentGraph as NavigableGraph<'a>>::OutNeighbors, fn(&Neighbor<<Self as GraphBase>::NodeIndex,<Self as GraphBase>::EdgeIndex>)->bool>;
     type OutNeighbors = EdgeFilteredNeighborIterator<
