@@ -1,6 +1,10 @@
-use crate::macrotigs::microtigs::Microtigs;
+use crate::macrotigs::microtigs::{Microtigs, MaximalMicrotigsAlgorithm};
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
+use crate::macrotigs::macronodes::strongly_connected_macronode_algorithm::StronglyConnectedMacronodes;
+use crate::macrotigs::microtigs::strongly_connected_hydrostructure_based_maximal_microtig_algorithm::StronglyConnectedHydrostructureBasedMaximalMicrotigs;
+use crate::macrotigs::macronodes::MacronodeAlgorithm;
+use crate::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
 
 /// An algorithm to link maximal microtigs into maximal macrotigs.
 pub mod default_macrotig_link_algorithm;
@@ -9,6 +13,19 @@ pub mod default_macrotig_link_algorithm;
 #[derive(Clone)]
 pub struct Macrotigs<Graph: GraphBase> {
     macrotigs: Vec<VecEdgeWalk<Graph>>,
+}
+
+impl<Graph: StaticGraph> Macrotigs<Graph> {
+    /// Computes the maximal macrotigs of the given graph.
+    pub fn compute(graph: &Graph) -> Self {
+        let macronodes = StronglyConnectedMacronodes::compute_macronodes(graph);
+        let maximal_microtigs =
+            StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
+                graph,
+                &macronodes,
+            );
+        DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(graph, &maximal_microtigs)
+    }
 }
 
 impl<Graph: GraphBase> Macrotigs<Graph> {
