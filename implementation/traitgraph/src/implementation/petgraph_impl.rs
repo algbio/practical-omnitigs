@@ -68,7 +68,7 @@ impl<NodeData, EdgeData> ImmutableGraphContainer for DiGraph<NodeData, EdgeData,
         self.edge_weight_mut(edge_id.into()).unwrap()
     }
 
-    fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
+    fn contains_edge_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
         self.edges_connecting(from.into(), to.into())
             .next()
             .is_some()

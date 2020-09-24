@@ -19,6 +19,9 @@ pub trait DecoratingSubgraph {
     /// If not defined otherwise in the implementation, all node and edge ids of the given graph are valid arguments for the methods of this trait on the returned object.
     fn new_full(graph: Self::ParentGraphRef) -> Self;
 
+    /// Removes all nodes and edges from the subgraph.
+    fn clear(&mut self);
+
     /// Returns a reference to the original graph.
     fn parent_graph(&self) -> &Self::ParentGraph;
 
@@ -104,7 +107,7 @@ where
         unimplemented!("Cannot access parent graph mutably")
     }
 
-    fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
+    fn contains_edge_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
         self.edge_count_between(from, to) > 0
     }
 

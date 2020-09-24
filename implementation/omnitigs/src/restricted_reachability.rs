@@ -55,10 +55,6 @@ pub fn compute_incremental_restricted_forward_edge_reachability<'a, Graph: Stati
         .first()
         .expect("Cannot compute hydrostructure from empty walk");
     for (edge_number, edge) in walk.iter().enumerate().skip(1) {
-        if graph.out_degree(graph.edge_endpoints(edge).from_node) <= 1 {
-            continue;
-        }
-
         let start_node = graph.edge_endpoints(start_edge).to_node;
         traversal.continue_traversal_from(start_node);
         subgraph.set_current_step(edge_number);
@@ -94,10 +90,6 @@ pub fn compute_incremental_restricted_backward_edge_reachability<'a, Graph: Stat
         .last()
         .expect("Cannot compute hydrostructure from empty walk");
     for (edge_number, edge) in walk.iter().rev().enumerate().skip(1) {
-        if graph.in_degree(graph.edge_endpoints(edge).to_node) <= 1 {
-            continue;
-        }
-
         let start_node = graph.edge_endpoints(start_edge).from_node;
         traversal.continue_traversal_from(start_node);
         subgraph.set_current_step(edge_number);

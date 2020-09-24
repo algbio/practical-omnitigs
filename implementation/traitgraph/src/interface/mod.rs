@@ -65,7 +65,7 @@ pub trait ImmutableGraphContainer: GraphBase {
     fn edge_data_mut(&mut self, edge_id: Self::EdgeIndex) -> &mut Self::EdgeData;
 
     /// Returns true if the graph contains an edge `(from, to)`.
-    fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool;
+    fn contains_edge_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool;
 
     /// Returns the amount of edges `(from, to)`.
     fn edge_count_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> usize;

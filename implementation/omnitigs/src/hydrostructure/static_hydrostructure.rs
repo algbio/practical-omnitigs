@@ -145,17 +145,6 @@ impl<
             StaticHydrostructure::Avertible { azb: _ } => false,
         }
     }
-
-    fn is_avertible(&self) -> bool {
-        match self {
-            StaticHydrostructure::BridgeLike {
-                r_plus: _,
-                r_minus: _,
-                azb: _,
-            } => false,
-            StaticHydrostructure::Avertible { azb: _ } => true,
-        }
-    }
 }
 
 #[cfg(test)]

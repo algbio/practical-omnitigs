@@ -39,16 +39,16 @@ impl<'a, Graph: ImmutableGraphContainer> IncrementalSubgraph<'a, Graph> {
         self.current_step = current_step;
     }
 
-    /// Return the nodes that are added in the given incremental step.
-    pub fn new_nodes(&self, step: IntegerType) -> &Vec<Graph::NodeIndex> {
-        assert!(step < self.new_nodes.len());
-        &self.new_nodes[step]
+    /// Return the nodes that are added in the current incremental step.
+    pub fn new_nodes(&self) -> &Vec<Graph::NodeIndex> {
+        assert!(self.current_step < self.new_nodes.len());
+        &self.new_nodes[self.current_step]
     }
 
-    /// Return the edges that are added in the given incremental step.
-    pub fn new_edges(&self, step: IntegerType) -> &Vec<Graph::EdgeIndex> {
-        assert!(step < self.new_edges.len());
-        &self.new_edges[step]
+    /// Return the edges that are added in the current incremental step.
+    pub fn new_edges(&self) -> &Vec<Graph::EdgeIndex> {
+        assert!(self.current_step < self.new_edges.len());
+        &self.new_edges[self.current_step]
     }
 }
 
@@ -72,6 +72,21 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for IncrementalSubgr
     /// Not implemented for this type.
     fn new_full(_graph: Self::ParentGraphRef) -> Self {
         unimplemented!()
+    }
+
+    fn clear(&mut self) {
+        for node in &mut self.present_nodes {
+            *node = IntegerType::max_value();
+        }
+        for edge in &mut self.present_edges {
+            *edge = IntegerType::max_value();
+        }
+        for nodes in &mut self.new_nodes {
+            nodes.clear();
+        }
+        for edges in &mut self.new_edges {
+            edges.clear();
+        }
     }
 
     fn parent_graph(&self) -> &Self::ParentGraph {

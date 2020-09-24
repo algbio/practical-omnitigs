@@ -177,8 +177,8 @@ impl<Topology: ImmutableGraphContainer> ImmutableGraphContainer for NodeBigraphW
         self.topology.edge_data_mut(edge_id)
     }
 
-    fn contains_edge(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
-        self.topology.contains_edge(from, to)
+    fn contains_edge_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> bool {
+        self.topology.contains_edge_between(from, to)
     }
 
     fn edge_count_between(&self, from: Self::NodeIndex, to: Self::NodeIndex) -> usize {
