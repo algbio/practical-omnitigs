@@ -55,6 +55,21 @@ where
     fn suffix(&self, len: usize) -> Self {
         Self::from_iter(self.into_iter().skip(self.len() - len))
     }
+
+    /// Returns the genome as nucleotide string.
+    fn as_string(&self) -> String {
+        String::from_utf8(self.into_vec())
+            .expect("Genome contains non-utf8 characters (It should be ASCII only).")
+    }
+}
+
+/// A genome string that can be extended with another genome string.
+pub trait ExtendableGenome: Genome
+where
+    for<'a> &'a Self: IntoIterator<Item = u8>,
+{
+    /// Append the elements of the given source to this genome.
+    fn extend<ExtensionSource: IntoIterator<Item = u8>>(&mut self, extension: ExtensionSource);
 }
 
 /// Returns the complement of the given genome char.

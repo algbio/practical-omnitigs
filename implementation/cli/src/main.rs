@@ -10,6 +10,7 @@ use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod circularise_records;
 mod filter;
+mod omnitigs;
 mod verify;
 mod verify_genome;
 
@@ -48,19 +49,21 @@ struct CliOptions {
 #[derive(Clap)]
 enum Command {
     #[clap(
-        about = "Prints statistics about the input graph, and saves it back to disc for verification purposes if --output is given"
+        about = "Prints statistics about the input graph, and saves it back to disc for verification purposes if --output is given."
     )]
     Verify(verify::VerifyEdgeCentricCommand),
     #[clap(
-        about = "Same as verify, but loads the input graph node-centric instead of edge-centric"
+        about = "Same as verify, but loads the input graph node-centric instead of edge-centric."
     )]
     VerifyNodeCentric(verify::VerifyNodeCentricCommand),
-    #[clap(about = "Verifies that no record of the genome contains illegal characters")]
+    #[clap(about = "Verifies that no record of the genome contains illegal characters.")]
     VerifyGenome,
-    #[clap(about = "Circularises each record in a genome by appending a prefix to itself")]
+    #[clap(about = "Circularises each record in a genome by appending a prefix to itself.")]
     CirculariseGenome(circularise_records::CirculariseGenomeCommand),
     #[clap(about = "Filters records from a fasta file.")]
     Filter(filter::FilterCommand),
+    #[clap(about = "Computes the maximal omnitigs of the input graph.")]
+    ComputeOmnitigs(omnitigs::ComputeOmnitigsCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -101,6 +104,7 @@ fn run() -> Result<()> {
             circularise_records::circularise_records(options, subcommand)
         }
         Command::Filter(subcommand) => filter::filter_records(options, subcommand),
+        Command::ComputeOmnitigs(subcommand) => omnitigs::compute_omnitigs(options, subcommand),
     }?;
 
     info!("Goodbye");
