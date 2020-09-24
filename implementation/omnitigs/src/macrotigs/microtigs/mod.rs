@@ -17,8 +17,16 @@ pub struct Microtigs<Graph: GraphBase> {
 }
 
 impl<Graph: GraphBase> Microtigs<Graph> {
+    /// Creates a new empty `Microtigs` struct.
+    pub fn new_with_statistics(macronodes_without_microtig_amount: usize) -> Self {
+        Self {
+            microtigs: Default::default(),
+            macronodes_without_microtig_amount,
+        }
+    }
+
     /// Creates a new `Microtigs` struct with the given vector of microtigs.
-    pub fn new(
+    pub fn from_vec_with_statistics(
         microtigs: Vec<VecEdgeWalk<Graph>>,
         macronodes_without_microtig_amount: usize,
     ) -> Self {
@@ -46,6 +54,15 @@ impl<Graph: GraphBase> Microtigs<Graph> {
     /// Returns the amount of macronodes without microtigs that were found while computing this set of microtigs.
     pub fn macronodes_without_microtig_amount(&self) -> usize {
         self.macronodes_without_microtig_amount
+    }
+}
+
+impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Microtigs<Graph> {
+    fn from(microtigs: Vec<VecEdgeWalk<Graph>>) -> Self {
+        Self {
+            microtigs,
+            macronodes_without_microtig_amount: 0,
+        }
     }
 }
 

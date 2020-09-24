@@ -162,7 +162,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
             }
         }
 
-        Microtigs::new(result, macronodes_without_microtig_amount)
+        Microtigs::from_vec_with_statistics(result, macronodes_without_microtig_amount)
     }
 }
 
@@ -329,7 +329,7 @@ mod tests {
             );
         assert_eq!(
             maximal_microtigs,
-            Microtigs::new(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])], 0)
+            Microtigs::from(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
         );
     }
 
@@ -397,14 +397,11 @@ mod tests {
             );
         assert_eq!(
             maximal_microtigs,
-            Microtigs::new(
-                vec![
-                    graph.create_edge_walk(&[e6, e0, e1, e2, e10, e22, e23, e24]),
-                    graph.create_edge_walk(&[e24, e25]),
-                    graph.create_edge_walk(&[e29, e28, e27, e26, e6]),
-                ],
-                0
-            )
+            Microtigs::from(vec![
+                graph.create_edge_walk(&[e6, e0, e1, e2, e10, e22, e23, e24]),
+                graph.create_edge_walk(&[e24, e25]),
+                graph.create_edge_walk(&[e29, e28, e27, e26, e6]),
+            ])
         );
     }
 
@@ -440,17 +437,14 @@ mod tests {
             );
         assert_eq!(
             maximal_microtigs,
-            Microtigs::new(
-                vec![
-                    graph.create_edge_walk(&[e9, e0, e2, e4]),
-                    graph.create_edge_walk(&[e10, e0, e1, e3]),
-                    graph.create_edge_walk(&[e5, e7, e9]),
-                    graph.create_edge_walk(&[e3, e5]),
-                    graph.create_edge_walk(&[e6, e8, e10]),
-                    graph.create_edge_walk(&[e4, e6]),
-                ],
-                0
-            )
+            Microtigs::from(vec![
+                graph.create_edge_walk(&[e9, e0, e2, e4]),
+                graph.create_edge_walk(&[e10, e0, e1, e3]),
+                graph.create_edge_walk(&[e5, e7, e9]),
+                graph.create_edge_walk(&[e3, e5]),
+                graph.create_edge_walk(&[e6, e8, e10]),
+                graph.create_edge_walk(&[e4, e6]),
+            ])
         );
     }
 }

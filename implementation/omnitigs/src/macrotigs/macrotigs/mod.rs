@@ -10,7 +10,7 @@ use crate::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacroti
 pub mod default_macrotig_link_algorithm;
 
 /// A structure containing macrotigs of a graph.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Macrotigs<Graph: GraphBase> {
     macrotigs: Vec<VecEdgeWalk<Graph>>,
 }
@@ -29,9 +29,11 @@ impl<Graph: StaticGraph> Macrotigs<Graph> {
 }
 
 impl<Graph: GraphBase> Macrotigs<Graph> {
-    /// Creates a new `Macrotigs` struct with the given vector of macrotigs.
-    pub fn new(macrotigs: Vec<VecEdgeWalk<Graph>>) -> Self {
-        Self { macrotigs }
+    /// Creates a new empty `Macrotigs` struct.
+    pub fn new() -> Self {
+        Self {
+            macrotigs: Default::default(),
+        }
     }
 
     /// Returns an iterator over the macrotigs in this struct.
@@ -47,6 +49,12 @@ impl<Graph: GraphBase> Macrotigs<Graph> {
     /// Returns true if this struct contains no macrotigs.
     pub fn is_empty(&self) -> bool {
         self.macrotigs.is_empty()
+    }
+}
+
+impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Macrotigs<Graph> {
+    fn from(macrotigs: Vec<VecEdgeWalk<Graph>>) -> Self {
+        Self { macrotigs }
     }
 }
 

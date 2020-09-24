@@ -17,7 +17,7 @@ impl<Graph: StaticGraph> MacronodeAlgorithm<Graph> for StronglyConnectedMacronod
             })
             .map(NodeUnitig::into_node_walk)
             .collect();
-        Macronodes::new(macronodes)
+        Macronodes::from(macronodes)
     }
 }
 

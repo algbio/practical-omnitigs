@@ -10,7 +10,7 @@ use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
 
 /// A structure containing omnitigs of a graph.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Omnitigs<Graph: GraphBase> {
     omnitigs: Vec<VecEdgeWalk<Graph>>,
 }
@@ -28,9 +28,11 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
 }
 
 impl<Graph: GraphBase> Omnitigs<Graph> {
-    /// Creates a new `Omnitigs` struct with the given vector of omnitigs.
-    pub fn new(omnitigs: Vec<VecEdgeWalk<Graph>>) -> Self {
-        Self { omnitigs }
+    /// Creates a new empty `Omnitigs` struct.
+    pub fn new() -> Self {
+        Self {
+            omnitigs: Default::default(),
+        }
     }
 
     /// Returns an iterator over the omnitigs in this struct.
@@ -51,6 +53,12 @@ impl<Graph: GraphBase> Omnitigs<Graph> {
     /// Adds the given omnitig to this struct.
     pub fn push(&mut self, omnitig: VecEdgeWalk<Graph>) {
         self.omnitigs.push(omnitig);
+    }
+}
+
+impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Omnitigs<Graph> {
+    fn from(omnitigs: Vec<VecEdgeWalk<Graph>>) -> Self {
+        Self { omnitigs }
     }
 }
 
