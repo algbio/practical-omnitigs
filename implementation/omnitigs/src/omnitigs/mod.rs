@@ -1,3 +1,5 @@
+/// An algorithm to extract the maximal trivial omnitigs.
+pub mod default_trivial_omnitigs;
 /// An algorithm to extract non-trivial omnitigs from macrotigs using the incremental hydrostructure.
 pub mod incremental_hydrostructure_macrotig_based_non_trivial_omnitigs;
 
@@ -30,6 +32,11 @@ impl<Graph: GraphBase> Omnitigs<Graph> {
     /// Returns true if this struct contains no omnitigs.
     pub fn is_empty(&self) -> bool {
         self.omnitigs.is_empty()
+    }
+
+    /// Adds the given omnitig to this struct.
+    pub fn push(&mut self, omnitig: VecEdgeWalk<Graph>) {
+        self.omnitigs.push(omnitig);
     }
 }
 
