@@ -6,15 +6,17 @@ pub mod strongly_connected_macronode_algorithm;
 
 /// A struct containing the macronodes of an uncompressed graph, represented as walks through their uncompressed centers.
 /// In an uncompressed graph, macronode centers are maximal unitigs with the property that their first node has outdegree = 1, and their last node has indegree = 1.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Macronodes<Graph: GraphBase> {
     macronodes: Vec<VecNodeWalk<Graph>>,
 }
 
 impl<Graph: GraphBase> Macronodes<Graph> {
-    /// Creates a new `Macronodes` struct with the given vector of macronodes.
-    pub fn new(macronodes: Vec<VecNodeWalk<Graph>>) -> Self {
-        Self { macronodes }
+    /// Creates a new empty `Macronodes` struct.
+    pub fn new() -> Self {
+        Self {
+            macronodes: Default::default(),
+        }
     }
 
     /// Returns an iterator over the macronodes in this struct.
@@ -30,6 +32,12 @@ impl<Graph: GraphBase> Macronodes<Graph> {
     /// Returns true if there are no macronodes in this struct.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+}
+
+impl<Graph: GraphBase> From<Vec<VecNodeWalk<Graph>>> for Macronodes<Graph> {
+    fn from(macronodes: Vec<VecNodeWalk<Graph>>) -> Self {
+        Self { macronodes }
     }
 }
 

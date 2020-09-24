@@ -112,7 +112,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
             }
         }
 
-        Macrotigs::new(result)
+        Macrotigs::from(result)
     }
 }
 
@@ -180,7 +180,7 @@ mod tests {
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
         assert_eq!(
             maximal_macrotigs,
-            Macrotigs::new(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
+            Macrotigs::from(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
         );
     }
 
@@ -250,7 +250,7 @@ mod tests {
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
         assert_eq!(
             maximal_macrotigs,
-            Macrotigs::new(vec![graph.create_edge_walk(&[
+            Macrotigs::from(vec![graph.create_edge_walk(&[
                 e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
             ]),])
         );
@@ -290,7 +290,7 @@ mod tests {
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
         assert_eq!(
             maximal_macrotigs,
-            Macrotigs::new(vec![
+            Macrotigs::from(vec![
                 graph.create_edge_walk(&[e5, e7, e9, e0, e2, e4, e6]),
                 graph.create_edge_walk(&[e6, e8, e10, e0, e1, e3, e5]),
             ])

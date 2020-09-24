@@ -11,6 +11,7 @@ use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 mod circularise_records;
 mod filter;
 mod omnitigs;
+mod trivial_omnitigs;
 mod verify;
 mod verify_genome;
 
@@ -64,6 +65,8 @@ enum Command {
     Filter(filter::FilterCommand),
     #[clap(about = "Computes the maximal omnitigs of the input graph.")]
     ComputeOmnitigs(omnitigs::ComputeOmnitigsCommand),
+    #[clap(about = "Computes the maximal trivial omnitigs of the input graph.")]
+    ComputeTrivialOmnitigs(trivial_omnitigs::ComputeTrivialOmnitigsCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -105,6 +108,9 @@ fn run() -> Result<()> {
         }
         Command::Filter(subcommand) => filter::filter_records(options, subcommand),
         Command::ComputeOmnitigs(subcommand) => omnitigs::compute_omnitigs(options, subcommand),
+        Command::ComputeTrivialOmnitigs(subcommand) => {
+            trivial_omnitigs::compute_trivial_omnitigs(options, subcommand)
+        }
     }?;
 
     info!("Goodbye");
