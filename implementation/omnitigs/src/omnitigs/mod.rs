@@ -4,6 +4,8 @@ pub mod default_trivial_omnitigs;
 pub mod incremental_hydrostructure_macrotig_based_non_trivial_omnitigs;
 
 use crate::macrotigs::macrotigs::Macrotigs;
+use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
+use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
 
@@ -11,6 +13,18 @@ use traitgraph::walks::VecEdgeWalk;
 #[derive(Clone)]
 pub struct Omnitigs<Graph: GraphBase> {
     omnitigs: Vec<VecEdgeWalk<Graph>>,
+}
+
+impl<Graph: StaticGraph> Omnitigs<Graph> {
+    /// Computes the maximal omnitigs of the given graph.
+    pub fn compute(graph: &Graph) -> Self {
+        let maximal_macrotigs = Macrotigs::compute(graph);
+        let maximal_non_trivial_omnitigs = IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm::compute_maximal_non_trivial_omnitigs(graph, &maximal_macrotigs);
+        DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
+            graph,
+            maximal_non_trivial_omnitigs,
+        )
+    }
 }
 
 impl<Graph: GraphBase> Omnitigs<Graph> {
