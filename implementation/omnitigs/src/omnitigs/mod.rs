@@ -25,6 +25,11 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
             maximal_non_trivial_omnitigs,
         )
     }
+
+    /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
+    pub fn compute_trivial_only(graph: &Graph) -> Self {
+        DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::new())
+    }
 }
 
 impl<Graph: GraphBase> Omnitigs<Graph> {
