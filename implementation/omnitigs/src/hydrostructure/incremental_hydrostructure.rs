@@ -34,6 +34,8 @@ pub struct IncrementalHydrostructure<'a, Graph: GraphBase> {
 
 impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
     /// Compute the incremental hydrostructure of a walk.
+    /// Sets the fingers to cover the whole walk.
+    ///
     /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
     pub fn compute(graph: &'a Graph, walk: VecEdgeWalk<Graph>) -> Self {
         assert!(
@@ -53,6 +55,80 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
             walk,
         };
         result.reset_fingers();
+        result
+    }
+
+    /// Compute the incremental hydrostructure of a walk.
+    /// Sets the fingers to the given values.
+    ///
+    /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
+    /// Also panics if the fingers are set outside of the walk or the left finger is not left of the right finger.
+    pub fn compute_and_set_fingers_to(
+        graph: &'a Graph,
+        walk: VecEdgeWalk<Graph>,
+        left_finger: usize,
+        right_finger: usize,
+    ) -> Self {
+        assert!(
+            walk.len() >= 2,
+            "The hydrostructure is defined only for walks of at least two edges."
+        );
+        assert!(
+            left_finger < right_finger,
+            "Left finger must be smaller than the right finger."
+        );
+        assert!(
+            right_finger < walk.len(),
+            "Thr right finger must be inside the walk."
+        );
+        let r_plus = compute_incremental_restricted_forward_edge_reachability(graph, &walk);
+        let r_minus = compute_incremental_restricted_backward_edge_reachability(graph, &walk);
+        let mut result = Self {
+            left_finger,
+            right_finger,
+            rightmost_split: None,
+            rightmost_join: None,
+            vapor_is_path_tracker: SubgraphIsPathTracker::new_with_empty_subgraph(graph),
+            r_plus,
+            r_minus,
+            walk,
+        };
+        result.reset_fingers();
+        result
+    }
+
+    /// Compute the incremental hydrostructure of a walk.
+    /// Sets the fingers to the first and second edge.
+    ///
+    /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
+    pub fn compute_and_set_fingers_left(graph: &'a Graph, walk: VecEdgeWalk<Graph>) -> Self {
+        assert!(
+            walk.len() >= 2,
+            "The hydrostructure is defined only for walks of at least two edges."
+        );
+        let mut r_plus = compute_incremental_restricted_forward_edge_reachability(graph, &walk);
+        let mut r_minus = compute_incremental_restricted_backward_edge_reachability(graph, &walk);
+        r_plus.set_current_step(1);
+        r_minus.set_current_step(walk.len() - 1);
+        let mut result = Self {
+            left_finger: 0,
+            right_finger: 1,
+            rightmost_split: if graph.is_split_edge(walk[1]) {
+                Some(1)
+            } else {
+                None
+            },
+            rightmost_join: if graph.is_join_edge(walk[0]) {
+                Some(0)
+            } else {
+                None
+            },
+            vapor_is_path_tracker: SubgraphIsPathTracker::new_with_empty_subgraph(graph),
+            r_plus,
+            r_minus,
+            walk,
+        };
+        result.reset_vapor_is_path_tracker();
         result
     }
 
@@ -80,26 +156,25 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
     }
 
     fn reset_vapor_is_path_tracker(&mut self) {
-        // TODO The following is potentially slow.
-        // While clearing occurs only if necessary, it is not specifically optimised for clearing a nearly empty graph (Doing this might introduce other overheads again though).
-        // Moreover, the checks for r_plus and r_minus are slower than necessary, since they need to check if the node or edge is in a subwalk of our walk.
         self.vapor_is_path_tracker.clear();
         for node in self.r_plus.parent_graph().node_indices() {
-            if self.is_node_r_plus_bridge_like(node) && self.is_node_r_minus_bridge_like(node) {
+            if self.r_plus.contains_node(node) && self.r_minus.contains_node(node) {
                 self.vapor_is_path_tracker.add_node(node);
             }
         }
         for edge in self.r_plus.parent_graph().edge_indices() {
-            if self.is_edge_r_plus_bridge_like(edge) && self.is_edge_r_minus_bridge_like(edge) {
+            if self.r_plus.contains_edge(edge) && self.r_minus.contains_edge(edge) {
                 self.vapor_is_path_tracker.add_edge(edge);
             }
         }
-
-        println!("After reset vapor: {:?}", self.vapor_is_path_tracker);
     }
 
     /// When setting the fingers to arbitrary values, this computes the correct values for the rightmost split and join and the vapor_is_path_tracker.
     fn reset_fingers(&mut self) {
+        self.r_minus
+            .set_current_step(self.walk.len() - 1 - self.left_finger);
+        self.r_plus.set_current_step(self.right_finger);
+
         self.reset_rightmost_split_join();
         self.reset_vapor_is_path_tracker();
     }
@@ -114,9 +189,6 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
         );
         self.left_finger = left_finger;
         self.right_finger = right_finger;
-        self.r_minus
-            .set_current_step(self.walk.len() - 1 - left_finger);
-        self.r_plus.set_current_step(right_finger);
         self.reset_fingers();
     }
 
@@ -125,8 +197,6 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
     pub fn set_left_finger(&mut self, left_finger: usize) {
         assert!(left_finger < self.walk.len() && left_finger < self.right_finger);
         self.left_finger = left_finger;
-        self.r_minus
-            .set_current_step(self.walk.len() - 1 - left_finger);
         self.reset_fingers();
     }
 
@@ -168,7 +238,6 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
     pub fn set_right_finger(&mut self, right_finger: usize) {
         assert!(right_finger < self.walk.len() && self.left_finger < right_finger);
         self.right_finger = right_finger;
-        self.r_plus.set_current_step(right_finger);
         self.reset_fingers();
     }
 
@@ -200,7 +269,6 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
             self.rightmost_split = Some(self.right_finger);
         }
 
-        println!("{:?}", self.vapor_is_path_tracker);
         for node in self.r_plus.new_nodes() {
             if self.r_minus.contains_node(*node) {
                 self.vapor_is_path_tracker.add_node(*node);
@@ -580,19 +648,19 @@ mod tests {
             let mut incremental_hydrostructure =
                 IncrementalHydrostructure::compute(&graph, macrotig.clone());
             for subwalk_len in 2..macrotig.len() {
-                println!("Setting initial fingers for subwalk len {}", subwalk_len);
+                //println!("Setting initial fingers for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_both_fingers(0, subwalk_len - 1);
                 for offset in 0..(macrotig.len() - subwalk_len) {
                     let subwalk: VecEdgeWalk<_> =
                         graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
-                    println!("{:?}", subwalk);
-                    println!(
+                    //println!("{:?}", subwalk);
+                    /*println!(
                         "has rightmost split/join: {:?}/{:?}; left/right finger: {}/{}",
                         incremental_hydrostructure.rightmost_split,
                         incremental_hydrostructure.rightmost_join,
                         incremental_hydrostructure.left_finger,
                         incremental_hydrostructure.right_finger
-                    );
+                    );*/
                     let static_hydrostructure =
                         StaticHydrostructure::compute_with_bitvector_subgraph(
                             &graph,
@@ -639,15 +707,15 @@ mod tests {
                     }
 
                     if offset < (macrotig.len() - subwalk_len) - 1 {
-                        println!(
+                        /*println!(
                             "Before incrementing fingers: {:?}",
                             incremental_hydrostructure.vapor_is_path_tracker
-                        );
+                        );*/
                         incremental_hydrostructure.increment_right_finger();
-                        println!(
+                        /*println!(
                             "Before incrementing left finger: {:?}",
                             incremental_hydrostructure.vapor_is_path_tracker
-                        );
+                        );*/
                         incremental_hydrostructure.increment_left_finger();
                     }
                 }
