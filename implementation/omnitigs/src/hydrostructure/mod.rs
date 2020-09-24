@@ -3,6 +3,8 @@
 pub mod incremental_hydrostructure;
 /// A static implementation of the hydrostructure for a walk.
 pub mod static_hydrostructure;
+/// A type that keeps counts about nodes and edges in a subgraph to dynamically determine if the subgraph is a path.
+pub mod subgraph_is_path_tracker;
 
 /// The hydrostructure of a walk `W` as defined in the hydrostructure paper.
 pub trait Hydrostructure<NodeIndex: Copy, EdgeIndex: Copy> {
@@ -18,7 +20,9 @@ pub trait Hydrostructure<NodeIndex: Copy, EdgeIndex: Copy> {
     /// Returns true if `W` is bridge-like.
     fn is_bridge_like(&self) -> bool;
     /// Returns true if `W` is avertible.
-    fn is_avertible(&self) -> bool;
+    fn is_avertible(&self) -> bool {
+        !self.is_bridge_like()
+    }
 
     /// Returns true if the given node is in the river.
     fn is_node_river(&self, node: NodeIndex) -> bool {

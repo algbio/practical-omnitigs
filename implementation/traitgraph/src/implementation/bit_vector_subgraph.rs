@@ -30,6 +30,11 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for BitVectorSubgrap
         }
     }
 
+    fn clear(&mut self) {
+        self.present_nodes.clear();
+        self.present_edges.clear();
+    }
+
     fn parent_graph(&self) -> &Self::ParentGraph {
         self.parent_graph
     }

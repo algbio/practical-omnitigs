@@ -50,7 +50,7 @@ where
             for out_neighbor in graph.out_neighbors(node) {
                 let neighbor_id = out_neighbor.node_id;
                 debug_assert!(
-                    graph.contains_edge(node, neighbor_id),
+                    graph.contains_edge_between(node, neighbor_id),
                     "f: Edge missing: ({:?}, {:?})",
                     node,
                     neighbor_id
@@ -73,7 +73,7 @@ where
                     continue;
                 }
                 debug_assert!(
-                    graph.contains_edge(neighbor_id, node),
+                    graph.contains_edge_between(neighbor_id, node),
                     "r: Edge missing: ({:?}, {:?})",
                     neighbor_id,
                     node
