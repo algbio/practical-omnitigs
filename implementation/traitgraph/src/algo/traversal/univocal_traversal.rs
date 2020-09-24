@@ -1,7 +1,8 @@
 use crate::algo::traversal::{
     BackwardNeighborStrategy, ForwardNeighborStrategy, TraversalNeighborStrategy,
 };
-use crate::interface::{GraphBase, ImmutableGraphContainer, NavigableGraph, NodeOrEdge};
+use crate::interface::{GraphBase, NavigableGraph, NodeOrEdge, StaticGraph};
+use crate::walks::VecEdgeWalk;
 use std::marker::PhantomData;
 
 /// An iterator over the univocal extension of a node or edge.
@@ -135,10 +136,7 @@ impl<'a, Graph: NavigableGraph<'a>, NeighborStrategy: TraversalNeighborStrategy<
 }
 
 /// Returns true if the given edge is self-bivalent in the given graph, i.e. its univocal extension repeats a node.
-pub fn is_edge_self_bivalent<'a, Graph: NavigableGraph<'a> + ImmutableGraphContainer>(
-    graph: &'a Graph,
-    edge_id: Graph::EdgeIndex,
-) -> bool {
+pub fn is_edge_self_bivalent<Graph: StaticGraph>(graph: &Graph, edge_id: Graph::EdgeIndex) -> bool {
     let forward_iter =
         UnivocalIterator::new_forward_without_start(graph, NodeOrEdge::Edge(edge_id));
     let mut backward_iter = UnivocalIterator::new_backward(graph, NodeOrEdge::Edge(edge_id));
@@ -160,6 +158,43 @@ pub fn is_edge_self_bivalent<'a, Graph: NavigableGraph<'a> + ImmutableGraphConta
         "Forward univocal extension is empty, but should at least contain the start edge itself",
     );
     backward_iter.any(|e| e == last_element)
+}
+
+/// Compute the univocal extension of a walk.
+/// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first edge of W and R the longest univocal walk from the last edge of W.
+pub fn univocal_extension<Graph: StaticGraph>(
+    graph: &Graph,
+    walk: &[Graph::EdgeIndex],
+) -> VecEdgeWalk<Graph> {
+    assert!(
+        !walk.is_empty(),
+        "Cannot compute the univocal extension of an empty walk."
+    );
+
+    let mut result = Vec::new();
+    for node_or_edge in UnivocalIterator::new_backward_without_start(
+        graph,
+        NodeOrEdge::Edge(*walk.first().unwrap()),
+    ) {
+        match node_or_edge {
+            NodeOrEdge::Node(_) => {}
+            NodeOrEdge::Edge(edge) => result.push(edge),
+        }
+    }
+
+    result.reverse();
+    result.extend(walk);
+
+    for node_or_edge in
+        UnivocalIterator::new_forward_without_start(graph, NodeOrEdge::Edge(*walk.last().unwrap()))
+    {
+        match node_or_edge {
+            NodeOrEdge::Node(_) => {}
+            NodeOrEdge::Edge(edge) => result.push(edge),
+        }
+    }
+
+    VecEdgeWalk::new(result)
 }
 
 #[cfg(test)]

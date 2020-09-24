@@ -13,13 +13,13 @@ use traitgraph::walks::VecEdgeWalk;
 /// The hydrostructure for a walk `W`.
 /// This hydrostructure implementation is incremental, meaning that it is valid for any subwalk of `W`.
 /// The subwalk can be adjusted using the left and right finger.
-pub struct IncrementalHydrostructure<'a, Graph: GraphBase> {
+pub struct IncrementalHydrostructure<'graph, 'walk, Graph: GraphBase> {
     /// An incremental version of the set `R⁺(W)` for each split of the underlying walk.
-    r_plus: IncrementalSubgraph<'a, Graph>,
+    r_plus: IncrementalSubgraph<'graph, Graph>,
     /// An incremental version of the set `R⁻(W)` for each join of the underlying walk.
-    r_minus: IncrementalSubgraph<'a, Graph>,
+    r_minus: IncrementalSubgraph<'graph, Graph>,
     /// The walk the incremental hydrostructure corresponds to.
-    walk: VecEdgeWalk<Graph>,
+    walk: &'walk VecEdgeWalk<Graph>,
     /// The first edge of the walk for which the hydrostructure should be valid.
     left_finger: usize,
     /// The last edge of the walk for which the hydrostructure should be valid.
@@ -29,15 +29,15 @@ pub struct IncrementalHydrostructure<'a, Graph: GraphBase> {
     /// The rightmost join edge in `[left_finger ... right_finger - 1]`.
     rightmost_join: Option<usize>,
     /// Track if the vapor is a path.
-    vapor_is_path_tracker: SubgraphIsPathTracker<'a, Graph>,
+    vapor_is_path_tracker: SubgraphIsPathTracker<'graph, Graph>,
 }
 
-impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
+impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'graph, 'walk, Graph> {
     /// Compute the incremental hydrostructure of a walk.
     /// Sets the fingers to cover the whole walk.
     ///
     /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
-    pub fn compute(graph: &'a Graph, walk: VecEdgeWalk<Graph>) -> Self {
+    pub fn compute(graph: &'graph Graph, walk: &'walk VecEdgeWalk<Graph>) -> Self {
         assert!(
             walk.len() >= 2,
             "The hydrostructure is defined only for walks of at least two edges."
@@ -64,8 +64,8 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
     /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
     /// Also panics if the fingers are set outside of the walk or the left finger is not left of the right finger.
     pub fn compute_and_set_fingers_to(
-        graph: &'a Graph,
-        walk: VecEdgeWalk<Graph>,
+        graph: &'graph Graph,
+        walk: &'walk VecEdgeWalk<Graph>,
         left_finger: usize,
         right_finger: usize,
     ) -> Self {
@@ -101,7 +101,10 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
     /// Sets the fingers to the first and second edge.
     ///
     /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
-    pub fn compute_and_set_fingers_left(graph: &'a Graph, walk: VecEdgeWalk<Graph>) -> Self {
+    pub fn compute_and_set_fingers_left(
+        graph: &'graph Graph,
+        walk: &'walk VecEdgeWalk<Graph>,
+    ) -> Self {
         assert!(
             walk.len() >= 2,
             "The hydrostructure is defined only for walks of at least two edges."
@@ -286,6 +289,11 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
         self.right_finger + 1 < self.walk.len()
     }
 
+    /// Returns the subwalk from the left to the right finger (inclusive).
+    pub fn current_walk(&self) -> &[Graph::EdgeIndex] {
+        &self.walk[self.left_finger..self.right_finger + 1]
+    }
+
     /// Returns true if the given node is in the path between left and right finger.
     fn is_node_in_trivial_r_plus_r_minus(&self, node: <Graph as GraphBase>::NodeIndex) -> bool {
         self.walk
@@ -351,8 +359,8 @@ impl<'a, Graph: 'a + StaticGraph> IncrementalHydrostructure<'a, Graph> {
     }
 }
 
-impl<'a, Graph: 'a + StaticGraph> Hydrostructure<Graph::NodeIndex, Graph::EdgeIndex>
-    for IncrementalHydrostructure<'a, Graph>
+impl<'graph, 'walk, Graph: 'graph + StaticGraph> Hydrostructure<Graph::NodeIndex, Graph::EdgeIndex>
+    for IncrementalHydrostructure<'graph, 'walk, Graph>
 {
     fn is_node_r_plus(&self, node: <Graph as GraphBase>::NodeIndex) -> bool {
         if self.is_bridge_like() {
@@ -417,8 +425,8 @@ mod tests {
         let e0 = graph.add_edge(n0, n1, ());
         let e1 = graph.add_edge(n1, n2, ());
 
-        let incremental_hydrostructure =
-            IncrementalHydrostructure::compute(&graph, graph.create_edge_walk(&[e0, e1]));
+        let walk = graph.create_edge_walk(&[e0, e1]);
+        let incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_river(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
         assert!(incremental_hydrostructure.is_node_vapor(n1));
@@ -437,8 +445,8 @@ mod tests {
         let e1 = graph.add_edge(n1, n2, ());
         let e2 = graph.add_edge(n2, n3, ());
 
-        let mut incremental_hydrostructure =
-            IncrementalHydrostructure::compute(&graph, graph.create_edge_walk(&[e0, e1, e2]));
+        let walk = graph.create_edge_walk(&[e0, e1, e2]);
+        let mut incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_river(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
         assert!(incremental_hydrostructure.is_node_vapor(n1));
@@ -486,8 +494,8 @@ mod tests {
         let e2 = graph.add_edge(n1, n2, ());
         let e3 = graph.add_edge(n2, n0, ());
 
-        let mut incremental_hydrostructure =
-            IncrementalHydrostructure::compute(&graph, graph.create_edge_walk(&[e0, e1, e2]));
+        let walk = graph.create_edge_walk(&[e0, e1, e2]);
+        let mut incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_vapor(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
         assert!(incremental_hydrostructure.is_edge_vapor(e1));
@@ -535,8 +543,8 @@ mod tests {
         let e2 = graph.add_edge(n2, n2, ());
         let e3 = graph.add_edge(n2, n0, ());
 
-        let mut incremental_hydrostructure =
-            IncrementalHydrostructure::compute(&graph, graph.create_edge_walk(&[e0, e1, e2]));
+        let walk = graph.create_edge_walk(&[e0, e1, e2]);
+        let mut incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_edge_sea(e3));
         assert!(incremental_hydrostructure.is_node_sea(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
@@ -646,7 +654,7 @@ mod tests {
 
         for macrotig in maximal_macrotigs.iter() {
             let mut incremental_hydrostructure =
-                IncrementalHydrostructure::compute(&graph, macrotig.clone());
+                IncrementalHydrostructure::compute(&graph, macrotig);
             for subwalk_len in 2..macrotig.len() {
                 //println!("Setting initial fingers for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_both_fingers(0, subwalk_len - 1);
@@ -796,7 +804,7 @@ mod tests {
 
         for macrotig in maximal_macrotigs.iter() {
             let mut incremental_hydrostructure =
-                IncrementalHydrostructure::compute(&graph, macrotig.clone());
+                IncrementalHydrostructure::compute(&graph, macrotig);
             for subwalk_len in 2..macrotig.len() {
                 //println!("Setting initial left finger for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_left_finger(0);
