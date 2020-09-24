@@ -90,12 +90,18 @@ pub struct BCalm2NodeData {
 /// The raw node data of a bcalm2 node, including edge information and redundant information (sequence length).
 #[derive(Debug, Clone)]
 pub struct PlainBCalm2NodeData {
-    id: usize,
-    sequence: VectorGenome,
-    length: usize,
-    total_abundance: usize,
-    mean_abundance: f64,
-    edges: Vec<PlainBCalm2Edge>,
+    /// The numeric id of the bcalm2 node.
+    pub id: usize,
+    /// The sequence of the bcalm2 node.
+    pub sequence: VectorGenome,
+    /// The length of the sequence of the bcalm2 node.
+    pub length: usize,
+    /// The total k-mer abundance of the sequence of the bcalm2 node.
+    pub total_abundance: usize,
+    /// The mean k-mer abundance of the sequence of the bcalm2 node.
+    pub mean_abundance: f64,
+    /// The edges stored at the bcalm2 node.
+    pub edges: Vec<PlainBCalm2Edge>,
 }
 
 /// The raw edge information of a bcalm2 node.

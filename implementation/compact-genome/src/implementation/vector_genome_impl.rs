@@ -1,7 +1,7 @@
 //! A simple representation of a genome as `Vec<u8>`.
 
 use crate::interface::ascii_complement;
-use crate::interface::Genome;
+use crate::interface::{ExtendableGenome, Genome};
 use std::iter::{Cloned, FromIterator};
 
 /// A simple representation of a genome as `Vec<u8>`.
@@ -24,6 +24,12 @@ impl Genome for VectorGenome {
 
     fn len(&self) -> usize {
         self.0.len()
+    }
+}
+
+impl ExtendableGenome for VectorGenome {
+    fn extend<ExtensionSource: IntoIterator<Item = u8>>(&mut self, extension: ExtensionSource) {
+        self.0.extend(extension)
     }
 }
 
@@ -55,6 +61,17 @@ impl<'a> FromIterator<&'a u8> for VectorGenome {
 impl FromIterator<u8> for VectorGenome {
     fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
+    }
+}
+
+impl<IndexType> std::ops::Index<IndexType> for VectorGenome
+where
+    Vec<u8>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<u8> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.0.index(index)
     }
 }
 

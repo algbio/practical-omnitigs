@@ -1,7 +1,9 @@
 use crate::interface::{GraphBase, StaticGraph};
 
 /// A sequence of nodes in a graph, where each consecutive pair of nodes is connected by an edge.
-pub trait NodeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::NodeIndex]> {
+pub trait NodeWalk<'a, Graph: GraphBase>:
+    for<'b> From<&'b [Graph::NodeIndex]> + std::ops::Index<usize, Output = Graph::NodeIndex>
+{
     /// The iterator type used to iterate over the nodes of this walk.
     type Iter: Iterator<Item = Graph::NodeIndex>;
 
@@ -30,7 +32,9 @@ pub trait NodeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::NodeIndex]> {
 }
 
 /// A sequence of edges in a graph, where each consecutive pair of edges is connected by a node.
-pub trait EdgeWalk<'a, Graph: GraphBase>: for<'b> From<&'b [Graph::EdgeIndex]> {
+pub trait EdgeWalk<'a, Graph: GraphBase>:
+    for<'b> From<&'b [Graph::EdgeIndex]> + std::ops::Index<usize, Output = Graph::EdgeIndex>
+{
     /// The iterator type used to iterate over the edges of this walk.
     type Iter: Iterator<Item = Graph::EdgeIndex>;
 
