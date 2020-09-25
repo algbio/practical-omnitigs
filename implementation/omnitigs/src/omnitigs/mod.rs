@@ -6,13 +6,155 @@ pub mod incremental_hydrostructure_macrotig_based_non_trivial_omnitigs;
 use crate::macrotigs::macrotigs::Macrotigs;
 use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
 use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
+use bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
+use bigraph::interface::BidirectedData;
+use traitgraph::algo::traversal::univocal_traversal::univocal_extension_with_original_offset;
+use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
-use traitgraph::walks::VecEdgeWalk;
+use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
+
+/// An omnitig with information about its heart.
+#[derive(Clone)]
+pub struct Omnitig<Graph: GraphBase> {
+    omnitig: VecEdgeWalk<Graph>,
+    first_heart_edge: usize,
+    last_heart_edge: usize,
+}
+
+impl<Graph: StaticGraph> Omnitig<Graph> {
+    /// Computes the omnitig from the given omnitig heart.
+    /// Does not check if the given walk is actually an omnitig heart.
+    pub fn compute_from_heart(graph: &Graph, heart: &[Graph::EdgeIndex]) -> Self {
+        let (first_heart_edge, univocal_extension) =
+            univocal_extension_with_original_offset(graph, heart);
+        let last_heart_edge = first_heart_edge + heart.len() - 1;
+        Self::new(univocal_extension, first_heart_edge, last_heart_edge)
+    }
+
+    /// Computes the omnitig from the given superwalk of an non-trivial omnitig heart.
+    /// The superwalk must still be a subwalk of the omnitig.
+    /// Does not check if the given walk is actually an omnitig heart.
+    /// Panics if the superwalk of the non-trivial omnitig heart does not have its first join edge before its last split edge.
+    pub fn compute_from_non_trivial_heart_superwalk(
+        graph: &Graph,
+        heart_superwalk: &[Graph::EdgeIndex],
+    ) -> Self {
+        let mut omnitig = Self::compute_from_heart(graph, heart_superwalk);
+        while !graph.is_join_edge(omnitig[omnitig.first_heart_edge]) {
+            omnitig.first_heart_edge += 1;
+            assert!(
+                omnitig.first_heart_edge < omnitig.last_heart_edge,
+                "First join is not before last split"
+            );
+        }
+        while !graph.is_split_edge(omnitig[omnitig.last_heart_edge]) {
+            omnitig.last_heart_edge -= 1;
+            assert!(
+                omnitig.first_heart_edge < omnitig.last_heart_edge,
+                "First join is not before last split"
+            );
+        }
+        omnitig
+    }
+}
+
+impl<Graph: GraphBase> Omnitig<Graph> {
+    /// Construct an `Omnitig` with the given attributes.
+    pub fn new(edges: VecEdgeWalk<Graph>, first_heart_edge: usize, last_heart_edge: usize) -> Self {
+        Self {
+            omnitig: edges,
+            first_heart_edge,
+            last_heart_edge,
+        }
+    }
+
+    /// Returns an iterator over the edges in the heart of this omnitig.
+    pub fn iter_heart<'a>(&'a self) -> impl 'a + Iterator<Item = Graph::EdgeIndex> {
+        self.omnitig
+            .iter()
+            .take(self.last_heart_edge + 1)
+            .skip(self.first_heart_edge)
+    }
+
+    /// Returns a slice of the heart edges of this omnitig.
+    pub fn heart(&self) -> &[Graph::EdgeIndex] {
+        &self.omnitig[self.first_heart_edge..=self.last_heart_edge]
+    }
+
+    /// Returns the amount of omnitigs in this struct.
+    pub fn len_heart(&self) -> usize {
+        self.heart().len()
+    }
+}
+
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for Omnitig<Graph>
+where
+    Graph::EdgeIndex: 'a,
+{
+    type Iter = std::iter::Cloned<std::slice::Iter<'a, Graph::EdgeIndex>>;
+
+    fn iter(&'a self) -> Self::Iter {
+        self.omnitig.iter()
+    }
+}
+
+impl<Graph: GraphBase> PartialEq for Omnitig<Graph>
+where
+    Graph::EdgeIndex: PartialEq,
+{
+    fn eq(&self, rhs: &Self) -> bool {
+        self.omnitig == rhs.omnitig
+            && self.first_heart_edge == rhs.first_heart_edge
+            && self.last_heart_edge == rhs.last_heart_edge
+    }
+}
+
+impl<Graph: GraphBase> Eq for Omnitig<Graph> where Graph::EdgeIndex: Eq {}
+
+impl<Graph: GraphBase> std::fmt::Debug for Omnitig<Graph>
+where
+    Graph::EdgeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Omnitig[")?;
+        if let Some((i, first)) = self.iter().enumerate().next() {
+            if i == self.first_heart_edge {
+                write!(f, "|")?;
+            }
+            write!(f, "{:?}", first)?;
+            if i == self.last_heart_edge {
+                write!(f, "|")?;
+            }
+        }
+        for (i, edge) in self.iter().enumerate().skip(1) {
+            write!(f, ", ")?;
+            if i == self.first_heart_edge {
+                write!(f, "|")?;
+            }
+            write!(f, "{:?}", edge)?;
+            if i == self.last_heart_edge {
+                write!(f, "|")?;
+            }
+        }
+        write!(f, "]")
+    }
+}
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Omnitig<Graph>
+where
+    Vec<Graph::EdgeIndex>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<Graph::EdgeIndex> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.omnitig.index(index)
+    }
+}
 
 /// A structure containing omnitigs of a graph.
 #[derive(Clone, Default)]
 pub struct Omnitigs<Graph: GraphBase> {
-    omnitigs: Vec<VecEdgeWalk<Graph>>,
+    omnitigs: Vec<Omnitig<Graph>>,
 }
 
 impl<Graph: StaticGraph> Omnitigs<Graph> {
@@ -32,6 +174,71 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
     }
 }
 
+impl<Graph: StaticEdgeCentricBigraph> Omnitigs<Graph>
+where
+    Graph::EdgeData: BidirectedData + Eq,
+{
+    /// Retains only one direction of each pair of reverse-complemental omnitigs.
+    ///
+    /// Note: I am not sure if this method is correct in all cases, but it will panic if it finds a case where it is not correct.
+    ///       For practical genomes it seems to work.
+    pub fn remove_reverse_complements(&mut self, graph: &Graph) {
+        // Maps from edges to omnitigs that have this edge as first edge in their heart.
+        let mut first_heart_edge_map = vec![usize::max_value(); graph.edge_count()];
+        for (i, omnitig) in self.iter().enumerate() {
+            let first_heart_edge = omnitig.iter_heart().next().expect("Omnitig has no heart");
+            // I am not sure if the following assumption is correct.
+            assert_eq!(
+                first_heart_edge_map[first_heart_edge.as_usize()],
+                usize::max_value(),
+                "Found two omnitigs hearts starting with the same edge."
+            );
+            first_heart_edge_map[first_heart_edge.as_usize()] = i;
+        }
+
+        let mut retain_indices = Vec::with_capacity(self.len());
+        for (i, omnitig) in self.iter().enumerate() {
+            let reverse_complement_first_heart_edge = graph
+                .mirror_edge_edge_centric(
+                    omnitig.iter_heart().last().expect("Omnitig has no heart."),
+                )
+                .expect("Edge has no reverse complement.");
+            let reverse_complement_candidate_index =
+                first_heart_edge_map[reverse_complement_first_heart_edge.as_usize()];
+            if reverse_complement_candidate_index < i {
+                let reverse_complement_candidate = &self[reverse_complement_candidate_index];
+                for (edge, reverse_complement_edge) in omnitig
+                    .iter()
+                    .zip(reverse_complement_candidate.iter().rev())
+                {
+                    // I am not sure if the following assumption is correct.
+                    assert_eq!(
+                        edge,
+                        graph
+                            .mirror_edge_edge_centric(reverse_complement_edge)
+                            .expect("Edge has no reverse complement."),
+                        "Found reverse complement candidate, but it is not a reverse complement."
+                    );
+                }
+            } else {
+                retain_indices.push(i);
+            }
+        }
+
+        let mut omnitigs = Vec::new();
+        std::mem::swap(&mut omnitigs, &mut self.omnitigs);
+        for (i, omnitig) in omnitigs.into_iter().enumerate() {
+            if self.omnitigs.len() == retain_indices.len() {
+                break;
+            }
+
+            if i == retain_indices[self.omnitigs.len()] {
+                self.omnitigs.push(omnitig);
+            }
+        }
+    }
+}
+
 impl<Graph: GraphBase> Omnitigs<Graph> {
     /// Creates a new empty `Omnitigs` struct.
     pub fn new() -> Self {
@@ -41,7 +248,7 @@ impl<Graph: GraphBase> Omnitigs<Graph> {
     }
 
     /// Returns an iterator over the omnitigs in this struct.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecEdgeWalk<Graph>> {
+    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a Omnitig<Graph>> {
         self.omnitigs.iter()
     }
 
@@ -56,22 +263,22 @@ impl<Graph: GraphBase> Omnitigs<Graph> {
     }
 
     /// Adds the given omnitig to this struct.
-    pub fn push(&mut self, omnitig: VecEdgeWalk<Graph>) {
+    pub fn push(&mut self, omnitig: Omnitig<Graph>) {
         self.omnitigs.push(omnitig);
     }
 }
 
-impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Omnitigs<Graph> {
-    fn from(omnitigs: Vec<VecEdgeWalk<Graph>>) -> Self {
+impl<Graph: GraphBase> From<Vec<Omnitig<Graph>>> for Omnitigs<Graph> {
+    fn from(omnitigs: Vec<Omnitig<Graph>>) -> Self {
         Self { omnitigs }
     }
 }
 
 impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Omnitigs<Graph>
 where
-    Vec<VecEdgeWalk<Graph>>: std::ops::Index<IndexType>,
+    Vec<Omnitig<Graph>>: std::ops::Index<IndexType>,
 {
-    type Output = <Vec<VecEdgeWalk<Graph>> as std::ops::Index<IndexType>>::Output;
+    type Output = <Vec<Omnitig<Graph>> as std::ops::Index<IndexType>>::Output;
 
     fn index(&self, index: IndexType) -> &Self::Output {
         self.omnitigs.index(index)
@@ -126,7 +333,7 @@ pub trait TrivialOmnitigAlgorithm<Graph: StaticGraph> {
 
 #[cfg(test)]
 mod tests {
-    use crate::omnitigs::Omnitigs;
+    use crate::omnitigs::{Omnitig, Omnitigs};
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::MutableGraphContainer;
     use traitgraph::interface::WalkableGraph;
@@ -191,18 +398,22 @@ mod tests {
         assert_eq!(
             maximal_trivial_omnitigs,
             Omnitigs::from(vec![
-                graph.create_edge_walk(&[e0, e1, e4, e20]),
-                graph.create_edge_walk(&[e0, e1, e5, e21]),
-                graph.create_edge_walk(&[e28, e27, e26, e6, e0, e1]),
-                graph.create_edge_walk(&[e14, e7, e0, e1]),
-                graph.create_edge_walk(&[e15, e8, e0, e1]),
-                graph.create_edge_walk(&[e16, e9, e0, e1]),
-                graph.create_edge_walk(&[e0, e1, e2, e10, e22, e23, e24]),
-                graph.create_edge_walk(&[e0, e1, e2, e11, e17]),
-                graph.create_edge_walk(&[e0, e1, e3, e12, e18]),
-                graph.create_edge_walk(&[e0, e1, e3, e13, e19]),
-                graph.create_edge_walk(&[e25]),
-                graph.create_edge_walk(&[e29]),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e4, e20]), 2, 3),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e5, e21]), 2, 3),
+                Omnitig::new(graph.create_edge_walk(&[e28, e27, e26, e6, e0, e1]), 0, 3),
+                Omnitig::new(graph.create_edge_walk(&[e14, e7, e0, e1]), 0, 1),
+                Omnitig::new(graph.create_edge_walk(&[e15, e8, e0, e1]), 0, 1),
+                Omnitig::new(graph.create_edge_walk(&[e16, e9, e0, e1]), 0, 1),
+                Omnitig::new(
+                    graph.create_edge_walk(&[e0, e1, e2, e10, e22, e23, e24]),
+                    3,
+                    6
+                ),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e2, e11, e17]), 3, 4),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e3, e12, e18]), 3, 4),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e3, e13, e19]), 3, 4),
+                Omnitig::new(graph.create_edge_walk(&[e25]), 0, 0),
+                Omnitig::new(graph.create_edge_walk(&[e29]), 0, 0),
             ])
         );
     }

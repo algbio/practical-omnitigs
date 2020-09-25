@@ -166,6 +166,17 @@ pub fn univocal_extension<Graph: StaticGraph>(
     graph: &Graph,
     walk: &[Graph::EdgeIndex],
 ) -> VecEdgeWalk<Graph> {
+    univocal_extension_with_original_offset(graph, walk).1
+}
+
+/// Compute the univocal extension of a walk.
+/// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first edge of W and R the longest univocal walk from the last edge of W.
+///
+/// Additionally to the univocal extension, this function returns the offset of the original walk in the univocal extension as usize.
+pub fn univocal_extension_with_original_offset<Graph: StaticGraph>(
+    graph: &Graph,
+    walk: &[Graph::EdgeIndex],
+) -> (usize, VecEdgeWalk<Graph>) {
     assert!(
         !walk.is_empty(),
         "Cannot compute the univocal extension of an empty walk."
@@ -183,6 +194,7 @@ pub fn univocal_extension<Graph: StaticGraph>(
     }
 
     result.reverse();
+    let original_offset = result.len();
     result.extend(walk);
 
     for node_or_edge in
@@ -194,7 +206,7 @@ pub fn univocal_extension<Graph: StaticGraph>(
         }
     }
 
-    VecEdgeWalk::new(result)
+    (original_offset, VecEdgeWalk::new(result))
 }
 
 #[cfg(test)]

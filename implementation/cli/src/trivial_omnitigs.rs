@@ -35,7 +35,9 @@ pub(crate) fn compute_trivial_omnitigs(
         )?;
 
     info!("Computing maximal trivial omnitigs");
-    let maximal_omnitigs = Omnitigs::compute_trivial_only(&genome_graph);
+    let mut maximal_omnitigs = Omnitigs::compute_trivial_only(&genome_graph);
+    info!("Removing reverse complements");
+    maximal_omnitigs.remove_reverse_complements(&genome_graph);
     info!(
         "Storing maximal trivial omnitigs as fasta to '{}'",
         subcommand.output
