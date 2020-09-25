@@ -1,4 +1,4 @@
-use crate::omnitigs::{Omnitigs, TrivialOmnitigAlgorithm};
+use crate::omnitigs::{Omnitig, Omnitigs, TrivialOmnitigAlgorithm};
 use bitvector::BitVector;
 use traitgraph::algo::traversal::univocal_traversal::{univocal_extension, UnivocalIterator};
 use traitgraph::index::GraphIndex;
@@ -68,8 +68,26 @@ impl<Graph: StaticGraph> TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmniti
             for edge in trivial_omnitig.iter() {
                 used_edges.insert(edge.as_usize());
             }
+            let last_split_edge = trivial_omnitig
+                .iter()
+                .enumerate()
+                .filter(|(_, e)| graph.is_split_edge(*e))
+                .map(|(i, _)| i)
+                .last()
+                .unwrap_or(0);
+            let first_join_edge = trivial_omnitig
+                .iter()
+                .enumerate()
+                .filter(|(_, e)| graph.is_join_edge(*e))
+                .map(|(i, _)| i)
+                .next()
+                .unwrap_or(trivial_omnitig.len() - 1);
 
-            omnitigs.push(trivial_omnitig);
+            omnitigs.push(Omnitig::new(
+                trivial_omnitig,
+                last_split_edge,
+                first_join_edge,
+            ));
         }
 
         omnitigs
@@ -88,7 +106,7 @@ mod tests {
     use traitgraph::interface::WalkableGraph;
     use traitgraph::interface::MutableGraphContainer;
     use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
-    use crate::omnitigs::{MacrotigBasedNonTrivialOmnitigAlgorithm, Omnitigs, TrivialOmnitigAlgorithm};
+    use crate::omnitigs::{MacrotigBasedNonTrivialOmnitigAlgorithm, Omnitigs, TrivialOmnitigAlgorithm, Omnitig};
     use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
 
     #[test]
@@ -166,9 +184,21 @@ mod tests {
         assert_eq!(
             maximal_non_trivial_omnitigs,
             Omnitigs::from(vec![
-                graph.create_edge_walk(&[e29, e28, e27, e26, e6, e0, e1]),
-                graph.create_edge_walk(&[e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24]),
-                graph.create_edge_walk(&[e0, e1, e2, e10, e22, e23, e24, e25]),
+                Omnitig::new(
+                    graph.create_edge_walk(&[e29, e28, e27, e26, e6, e0, e1]),
+                    0,
+                    1
+                ),
+                Omnitig::new(
+                    graph.create_edge_walk(&[e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24]),
+                    3,
+                    7
+                ),
+                Omnitig::new(
+                    graph.create_edge_walk(&[e0, e1, e2, e10, e22, e23, e24, e25]),
+                    6,
+                    7
+                ),
             ])
         );
 
@@ -179,17 +209,29 @@ mod tests {
         assert_eq!(
             maximal_omnitigs,
             Omnitigs::from(vec![
-                graph.create_edge_walk(&[e29, e28, e27, e26, e6, e0, e1]),
-                graph.create_edge_walk(&[e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24]),
-                graph.create_edge_walk(&[e0, e1, e2, e10, e22, e23, e24, e25]),
-                graph.create_edge_walk(&[e0, e1, e4, e20]),
-                graph.create_edge_walk(&[e0, e1, e5, e21]),
-                graph.create_edge_walk(&[e14, e7, e0, e1]),
-                graph.create_edge_walk(&[e15, e8, e0, e1]),
-                graph.create_edge_walk(&[e16, e9, e0, e1]),
-                graph.create_edge_walk(&[e0, e1, e2, e11, e17]),
-                graph.create_edge_walk(&[e0, e1, e3, e12, e18]),
-                graph.create_edge_walk(&[e0, e1, e3, e13, e19]),
+                Omnitig::new(
+                    graph.create_edge_walk(&[e29, e28, e27, e26, e6, e0, e1]),
+                    0,
+                    1
+                ),
+                Omnitig::new(
+                    graph.create_edge_walk(&[e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24]),
+                    3,
+                    7
+                ),
+                Omnitig::new(
+                    graph.create_edge_walk(&[e0, e1, e2, e10, e22, e23, e24, e25]),
+                    6,
+                    7
+                ),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e4, e20]), 2, 3),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e5, e21]), 2, 3),
+                Omnitig::new(graph.create_edge_walk(&[e14, e7, e0, e1]), 0, 1),
+                Omnitig::new(graph.create_edge_walk(&[e15, e8, e0, e1]), 0, 1),
+                Omnitig::new(graph.create_edge_walk(&[e16, e9, e0, e1]), 0, 1),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e2, e11, e17]), 3, 4),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e3, e12, e18]), 3, 4),
+                Omnitig::new(graph.create_edge_walk(&[e0, e1, e3, e13, e19]), 3, 4),
             ])
         );
     }

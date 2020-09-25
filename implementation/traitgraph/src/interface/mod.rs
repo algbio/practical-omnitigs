@@ -157,28 +157,36 @@ pub trait NavigableGraph<'a>: ImmutableGraphContainer + Sized {
 /// This is the factory pattern, where a graph is a factory for walks.
 pub trait WalkableGraph: GraphBase + Sized {
     /// Create a node-centric walk over the given nodes in this graph.
-    fn create_node_walk<WalkType: for<'a> NodeWalk<'a, Self>>(
+    fn create_node_walk<'w, WalkType: for<'a> NodeWalk<'a, Self> + From<&'w [Self::NodeIndex]>>(
         &self,
-        walk: &[Self::NodeIndex],
+        walk: &'w [Self::NodeIndex],
     ) -> WalkType {
         WalkType::from(&walk)
     }
 
     /// Create an empty node-centric walk in this graph.
-    fn create_empty_node_walk<WalkType: for<'a> NodeWalk<'a, Self>>(&self) -> WalkType {
+    fn create_empty_node_walk<
+        WalkType: for<'a> NodeWalk<'a, Self> + for<'w> From<&'w [Self::NodeIndex]>,
+    >(
+        &self,
+    ) -> WalkType {
         self.create_node_walk(&[])
     }
 
     /// Create an edge-centric walk over the given edges in this graph.
-    fn create_edge_walk<WalkType: for<'a> EdgeWalk<'a, Self>>(
+    fn create_edge_walk<'w, WalkType: for<'a> EdgeWalk<'a, Self> + From<&'w [Self::EdgeIndex]>>(
         &self,
-        walk: &[Self::EdgeIndex],
+        walk: &'w [Self::EdgeIndex],
     ) -> WalkType {
         WalkType::from(&walk)
     }
 
     /// Create an empty edge-centric walk in this graph.
-    fn create_empty_edge_walk<WalkType: for<'a> EdgeWalk<'a, Self>>(&self) -> WalkType {
+    fn create_empty_edge_walk<
+        WalkType: for<'a> EdgeWalk<'a, Self> + for<'w> From<&'w [Self::EdgeIndex]>,
+    >(
+        &self,
+    ) -> WalkType {
         self.create_edge_walk(&[])
     }
 }

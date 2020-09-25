@@ -2,7 +2,7 @@ use crate::interface::{GraphBase, StaticGraph};
 
 /// A sequence of nodes in a graph, where each consecutive pair of nodes is connected by an edge.
 pub trait NodeWalk<'a, Graph: GraphBase>:
-    for<'b> From<&'b [Graph::NodeIndex]> + std::ops::Index<usize, Output = Graph::NodeIndex>
+    std::ops::Index<usize, Output = Graph::NodeIndex>
 {
     /// The iterator type used to iterate over the nodes of this walk.
     type Iter: Iterator<Item = Graph::NodeIndex>;
@@ -33,7 +33,7 @@ pub trait NodeWalk<'a, Graph: GraphBase>:
 
 /// A sequence of edges in a graph, where each consecutive pair of edges is connected by a node.
 pub trait EdgeWalk<'a, Graph: GraphBase>:
-    for<'b> From<&'b [Graph::EdgeIndex]> + std::ops::Index<usize, Output = Graph::EdgeIndex>
+    std::ops::Index<usize, Output = Graph::EdgeIndex>
 {
     /// The iterator type used to iterate over the edges of this walk.
     type Iter: Iterator<Item = Graph::EdgeIndex>;
@@ -84,7 +84,9 @@ impl<Graph: StaticGraph> VecNodeWalk<Graph> {
     /// If there is a consecutive pair of nodes with a multiedge, then None is returned.
     /// If this walk contains less than two nodes, then None is returned.
     /// If there is a consecutive pair of node not connected by an edge, then this method panics.
-    pub fn clone_as_edge_walk<ResultWalk: for<'a> EdgeWalk<'a, Graph>>(
+    pub fn clone_as_edge_walk<
+        ResultWalk: for<'a> EdgeWalk<'a, Graph> + for<'a> From<&'a [Graph::EdgeIndex]>,
+    >(
         &self,
         graph: &Graph,
     ) -> Option<ResultWalk> {
@@ -194,7 +196,9 @@ impl<Graph: StaticGraph> VecEdgeWalk<Graph> {
     /// Returns the node walk represented by this edge walk.
     /// If this walk contains no edge, then None is returned.
     /// If there is a consecutive pair of edges not connected by a node, then this method panics.
-    pub fn clone_as_node_walk<ResultWalk: for<'a> NodeWalk<'a, Graph>>(
+    pub fn clone_as_node_walk<
+        ResultWalk: for<'a> NodeWalk<'a, Graph> + for<'a> From<&'a [Graph::NodeIndex]>,
+    >(
         &self,
         graph: &Graph,
     ) -> Option<ResultWalk> {
