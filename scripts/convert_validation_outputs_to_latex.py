@@ -2,17 +2,38 @@
 
 """
 Convert the output of the different validation tools into a LaTeX file.
-Arguments: <genome name> <ContigValidator results> <quast report.tex> <cli verify LaTeX results> <bandage png> <output file>
+Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> [<label> <experiment prefix> ...] 
 """
 
 import sys
 
 genome_name_file_name = sys.argv[1]
-contig_validator_file_name = sys.argv[2]
-quast_file_name = sys.argv[3]
-graph_statistics_file_name = sys.argv[4]
-bandage_png_name = sys.argv[5]
-output_file_name = sys.argv[6]
+graph_statistics_file_name = sys.argv[2]
+bandage_png_name = sys.argv[3]
+output_file_name = sys.argv[4]
+
+experiments = []
+
+for i in range(5, len(sys.argv), 2):
+	if i + 1 >= len(sys.argv):
+		print("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
+		exit(1)
+
+	experiments.append((sys.argv[i], sys.argv[i + 1]))
+
+def append_latex_table_second_column(table, appendix):
+	if len(table) == 0:
+		return appendix
+
+	result = []
+	for tl, al in zip(table, appendix):
+		tl = tl.strip()
+		if tl[-2:] == "\\\\":
+			tl = tl[:-2] # Remove trailing new line backslashes
+
+		al = al[al.index("&"):] # Remove line titles
+		result.append(tl + al)
+	return result
 
 #########################
 ### Process name file ###
@@ -26,23 +47,46 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 ### Process QUAST file ###
 ##########################
 
-quast_file = open(quast_file_name, 'r')
-quast_lines = quast_file.readlines()
-quast_lines = [x.strip() for x in quast_lines]
-quast_lines = [x.replace("\\hline", "") for x in quast_lines]
-quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
+def read_quast_file(prefix):
+	quast_file = open(prefix + ".quast/report.tex", 'r')
+	quast_lines = quast_file.readlines()
+	quast_lines = [x.strip() for x in quast_lines]
+	quast_lines = [x.replace("\\hline", "") for x in quast_lines]
+	quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
+	return quast_lines
+
+headline = "Parameter"
+quast_table = []
+for (label, prefix) in experiments:
+	headline += " & " + label
+	table = read_quast_file(prefix)
+	quast_table = append_latex_table_second_column(quast_table, table)
+
+quast_table = [headline + "\\\\ \\hline"] + quast_table
+
 
 ####################################
 ### Process ContigValidator file ###
 ####################################
 
-contig_validator_file = open(contig_validator_file_name, 'r')
-contig_validator_lines = contig_validator_file.readlines()
-contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
-contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
-contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
-contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
-contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
+def read_contig_validator_file(prefix):
+	contig_validator_file = open(prefix + ".contigvalidator", 'r')
+	contig_validator_lines = contig_validator_file.readlines()
+	contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
+	contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
+	contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
+	contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
+	contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
+	return contig_validator_lines
+
+headline = "Parameter"
+contig_validator_table = []
+for (label, prefix) in experiments:
+	headline += " & " + label
+	table = read_contig_validator_file(prefix)
+	contig_validator_table = append_latex_table_second_column(contig_validator_table, table)
+
+contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
 
 #########################################
 ### Process CLI graph statistics file ###
@@ -50,21 +94,31 @@ contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("
 
 graph_statistics_file = open(graph_statistics_file_name, 'r')
 graph_statistics_lines = graph_statistics_file.readlines()
-graph_statistics_lines = [x.strip() for x in graph_statistics_lines]
+graph_statistics_table = ["Parameter & Value \\\\ \\hline"] + [x.strip() for x in graph_statistics_lines]
 
 ########################
 ### Build LaTeX file ###
 ########################
 
-def table_header(caption):
-	return """
+def table_header(caption, column_count):
+	#header = """
+	#\\begin{table}[ht]
+	#\\begin{center}
+	#\\caption{""" + caption + """}
+	#\\begin{tabular}{|l*{1}{|r}|}
+	#\\hline
+	#"""
+	header = """
 	\\begin{table}[ht]
 	\\begin{center}
 	\\caption{""" + caption + """}
-	\\begin{tabular}{|l*{1}{|r}|}
+	\\begin{tabular}{|l*{1}|"""
+	for _ in range(column_count):
+		header += "r"
+	header += """|}
 	\\hline
-	Parameter & Value \\\\ \\hline
 	"""
+	return header
 
 table_footer = """\\hline
 	\\end{tabular}
@@ -72,8 +126,8 @@ table_footer = """\\hline
 	\\end{table}
 	"""
 
-def write_table(output_file, caption, rows):
-	output_file.write(table_header(caption))
+def write_table(output_file, caption, column_count, rows):
+	output_file.write(table_header(caption, column_count))
 	for row in rows:
 		output_file.write(row + '\n')
 	output_file.write(table_footer)
@@ -88,7 +142,7 @@ def write_image(output_file, caption, name, natwidth, natheight):
 output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
-	\\documentclass[10pt,a4paper,twocolumn]{article}
+	\\documentclass[10pt,a4paper]{article}
 	\\usepackage[cm]{fullpage}
 	\\usepackage{graphicx}
 	\\begin{document}
@@ -104,14 +158,14 @@ for line in name_lines:
 	output_file.write("\\item " + line)
 output_file.write("\\end{itemize}\n")
 
-write_table(output_file, "Genome Graph Statistics", graph_statistics_lines)
+write_table(output_file, "Genome Graph Statistics", 1, graph_statistics_table)
 
-write_table(output_file, "ContigValidator", contig_validator_lines)
+write_table(output_file, "ContigValidator", len(experiments), contig_validator_table)
 
-write_table(output_file, "QUAST: \\# of contigs", quast_lines[0:6])
-write_table(output_file, "QUAST: total length of contigs", quast_lines[6:12])
-write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", quast_lines[12:26])
-write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", quast_lines[26:])
+write_table(output_file, "QUAST: \\# of contigs", len(experiments), quast_table[0:7])
+write_table(output_file, "QUAST: total length of contigs", len(experiments), [quast_table[0]] + quast_table[7:13])
+write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[13:27])
+write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
 
 output_file.write("\\newpage")
 write_image(output_file, "Bandage genome graph", bandage_png_name, 1000, 1000)

@@ -37,7 +37,7 @@ def create_experiment_path(experiment):
     return "data/" + experiment + "/"
 
 def create_report_path(experiment, circularised, k, bcalm2_abundance_min):
-    return "data/" + experiment + "/" + ("circular" if circularised else "linear") + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + "-unitigs.report.pdf"
+    return "data/" + experiment + "/" + ("circular" if circularised else "linear") + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + ".report.pdf"
 
 def _generate_read_sim_targets_(experiment, config):
     path = create_experiment_path(experiment)
@@ -48,14 +48,25 @@ def _generate_bcalm2_targets_(experiment, config):
     for target in _generate_read_sim_targets_(experiment, config):
         for k in config["k"]:
             for bcalm2_abundance_min in config["bcalm2_abundance_min"]:
-                    yield target + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + "-unitigs"
+                    yield target + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + ".unitigs"
+
+def _generate_bcalm2_parameterisation_targets_(experiment, config):
+    for target in _generate_read_sim_targets_(experiment, config):
+        for k in config["k"]:
+            for bcalm2_abundance_min in config["bcalm2_abundance_min"]:
+                    yield target + ".k" + str(k) + "-a" + str(bcalm2_abundance_min)
+
+def _generate_algorithm_targets_(experiment, config):
+    for target in _generate_bcalm2_parameterisation_targets_(experiment, config):
+        for algorithm in config["algorithm"]:
+            yield target + "." + algorithm
 
 def _generate_report_targets_(experiment, config):
-        for target in _generate_bcalm2_targets_(experiment, config):
+        for target in _generate_bcalm2_parameterisation_targets_(experiment, config):
             yield target + ".report.pdf"
 
 def _generate_test_targets_(experiment, config):
-        for target in _generate_bcalm2_targets_(experiment, config):
+        for target in _generate_algorithm_targets_(experiment, config):
             yield target + ".is_tested"
 
 def generate_report_targets():
@@ -115,12 +126,28 @@ rule download_experiment_file:
 rule build_rust_release:
     input: "data/is_rust_tested.log"
     output: "data/target/release/cli"
+    conda: "config/conda-rust-env.yml"
     shell: "RUSTFLAGS=\"-C target-cpu=native\" cargo build --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
     output: touch("data/is_rust_tested.log")
+    conda: "config/conda-rust-env.yml"
     shell: "cargo test --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
+
+########################
+###### Algorithms ######
+########################
+
+rule compute_omnitigs:
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log"
+    shell: "'{input.binary}' --input '{input.file}' compute-omnitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
+
+rule compute_trivial_omnitigs:
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log"
+    shell: "'{input.binary}' --input '{input.file}' compute-trivial-omnitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -130,19 +157,19 @@ rule test:
     input: generate_test_targets()
 
 rule test_single_file:
-    input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.verify",
-           deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.deterministic"
-    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.is_tested")
+    input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.verify",
+           deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.deterministic"
+    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.is_tested")
     shell: "cmp --silent {input.verify} {input.deterministic}"
 
 rule make_bcalm_output_deterministic:
-    input: file = "data/{dir}/{file}-unitigs.fa", script = "scripts/make_bcalm_output_deterministic.py"
-    output: file = "data/{dir}/{file}-unitigs.fa.deterministic"
+    input: file = "data/{dir}/{file}.unitigs.fa", script = "scripts/make_bcalm_output_deterministic.py"
+    output: file = "data/{dir}/{file}.unitigs.fa.deterministic"
     shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output.file}'"
 
 rule verify_genome_graph:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa", binary = "data/target/release/cli"
-    output: verification_copy = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.verify", log =  "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.properties", latex = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.graphstatistics"
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa", binary = "data/target/release/cli"
+    output: verification_copy = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.verify", log =  "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.properties", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.graphstatistics"
     conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' verify --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
 
@@ -156,14 +183,14 @@ rule selftest:
 
 rule bcalm2:
     input: genome = "data/{dir}/{file}.fna"
-    output: unitigs = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}-unitigs.fa",
-    #params: tmp = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}-unitigs.bcalm2-tmp/"
+    output: unitigs = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.unitigs.fa",
+    #params: tmp = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.unitigs.bcalm2-tmp/"
     conda: "config/conda-bcalm2-env.yml"
     shell: 
         """
         bcalm -in '{input.genome}' -out '{output.unitigs}' -kmer-size {wildcards.k} -abundance-min {wildcards.abundance_min}
         mv '{output.unitigs}.unitigs.fa' '{output.unitigs}'
-        rm data/{wildcards.dir}/{wildcards.file}.k{wildcards.k}-a{wildcards.abundance_min}-unitigs.*.glue.*
+        rm data/{wildcards.dir}/{wildcards.file}.k{wildcards.k}-a{wildcards.abundance_min}.unitigs.*.glue.*
         """
 
 ###############################
@@ -178,13 +205,18 @@ rule latex:
 
 rule create_single_report_tex:
     input: genome_name = "data/{dir}/name.txt",
-           unitigs_contigvalidator = "data/{dir}/{file}.contigvalidator",
-           unitigs_quast = directory("data/{dir}/{file}.quast"),
-           unitigs_graphstatistics = "data/{dir}/{file}.graphstatistics",
-           untitigs_bandage = "data/{dir}/{file}.bandage.png",
+           unitigs_contigvalidator = "data/{dir}/{file}.unitigs.contigvalidator",
+           unitigs_quast = directory("data/{dir}/{file}.unitigs.quast"),
+           omnitigs_contigvalidator = "data/{dir}/{file}.omnitigs.contigvalidator",
+           omnitigs_quast = directory("data/{dir}/{file}.omnitigs.quast"),
+           trivialomnitigs_contigvalidator = "data/{dir}/{file}.trivialomnitigs.contigvalidator",
+           trivialomnitigs_quast = directory("data/{dir}/{file}.trivialomnitigs.quast"),
+           unitigs_graphstatistics = "data/{dir}/{file}.unitigs.graphstatistics",
+           untitigs_bandage = "data/{dir}/{file}.unitigs.bandage.png",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/{file}.report.tex"
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.unitigs_contigvalidator}' '{input.unitigs_quast}/report.tex' '{input.unitigs_graphstatistics}' '{wildcards.file}.bandage.png' '{output}'"
+    params: prefix = "data/{dir}/{file}"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.unitigs_graphstatistics}' '{wildcards.file}.unitigs.bandage.png' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule report_all:
     input: generate_report_targets()
@@ -228,20 +260,20 @@ rule install_contig_validator:
 
 rule run_contig_validator:
     input: cv = directory("external-software/ContigValidator"),
-        reads = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa",
+        reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
         reference = "data/{dir}/{file}.fna"
-    output: result = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.contigvalidator",
-        exact_alignments = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.exact"),
-        bwa_bam = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.bwa.bam"),
-        bwa_bam_bai = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.bwa.bam.bai"),
-        fn_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.fn.kmc_pre"),
-        fn_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.fn.kmc_suf"),
-        fp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.fp.kmc_pre"),
-        fp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.fp.kmc_suf"),
-        kmc_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.kmc.kmc_pre"),
-        kmc_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.kmc.kmc_suf"),
-        tp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.tp.kmc_pre"),
-        tp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa.tp.kmc_suf")
+    output: result = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.contigvalidator",
+        exact_alignments = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.exact"),
+        bwa_bam = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.bwa.bam"),
+        bwa_bam_bai = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.bwa.bam.bai"),
+        fn_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fn.kmc_pre"),
+        fn_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fn.kmc_suf"),
+        fp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fp.kmc_pre"),
+        fp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fp.kmc_suf"),
+        kmc_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.kmc.kmc_pre"),
+        kmc_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.kmc.kmc_suf"),
+        tp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_pre"),
+        tp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_suf")
     conda: "config/conda-contigvalidator-env.yml"
     shell:
         """
@@ -254,9 +286,9 @@ rule run_contig_validator:
 ###################
 
 rule run_quast:
-    input: reads = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa",
+    input: reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
         reference = "data/{dir}/{file}.fna"
-    output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.quast")
+    output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
     shell: "quast -o {output.report} -r {input.reference} {input.reads}"
 
@@ -276,9 +308,9 @@ rule download_bcalm2_gfa_converter:
         """
 
 rule convert_bcalm2_output_to_gfa:
-    input: fa = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.fa",
+    input: fa = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
         converter = "external-software/scripts/convertToGFA.py"
-    output: gfa = "data/{dir}/{file}.k{k}-a{abundance_min}-unitigs.gfa"
+    output: gfa = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.gfa"
     shell: "external-software/scripts/convertToGFA.py {input.fa} {output.gfa} {wildcards.k}"
 
 rule bandage:

@@ -1,28 +1,32 @@
 use_conda: true
 
-# The test file must be given without file endings.
-test_file: "GCF_000008865.2_ASM886v2_genomic"
-experiment_file_urls: [
-  "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz",
-  "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/025/GCF_000008025.1_ASM802v1/GCF_000008025.1_ASM802v1_genomic.fna.gz",
-  #"https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz", contains holes
-]
-
 experiments:
   "GCF_000008865.2_ASM886v2":
-    k: [51]
+    k: [31, 51]
     bcalm2_abundance_min: [1]
     circularised: [true]
     filter_retain: "NC_002695.2"
+    algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
   "GCF_000008025.1_ASM802v1":
     k: [51]
     bcalm2_abundance_min: [1]
     circularised: [true]
     filter_retain: "NC_002978.6"
+    algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+
+  "GRCh38_latest":
+    k: [51]
+    bcalm2_abundance_min: [1]
+    circularised: [true]
+    filter_retain: "NC_000010.11"
+    algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+    url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
 
 tests:
   "GCF_000008865.2_ASM886v2":
     k: [51]
     bcalm2_abundance_min: [1]
     circularised: [true]
+    filter_retain: "NC_002695.2"
+    algorithm: ["unitigs"]
