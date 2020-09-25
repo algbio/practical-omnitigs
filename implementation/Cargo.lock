@@ -797,6 +797,7 @@ checksum = "1ab52be62400ca80aa00285d25253d7f7c437b7375c4de678f5405d3afe82ca5"
 name = "omnitigs"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "bigraph",
  "bitvector",
  "traitgraph",
 ]

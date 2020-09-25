@@ -6,7 +6,10 @@ pub mod incremental_hydrostructure_macrotig_based_non_trivial_omnitigs;
 use crate::macrotigs::macrotigs::Macrotigs;
 use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
 use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
+use bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
+use bigraph::interface::BidirectedData;
 use traitgraph::algo::traversal::univocal_traversal::univocal_extension_with_original_offset;
+use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
 
@@ -168,6 +171,71 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     pub fn compute_trivial_only(graph: &Graph) -> Self {
         DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::new())
+    }
+}
+
+impl<Graph: StaticEdgeCentricBigraph> Omnitigs<Graph>
+where
+    Graph::EdgeData: BidirectedData + Eq,
+{
+    /// Retains only one direction of each pair of reverse-complemental omnitigs.
+    ///
+    /// Note: I am not sure if this method is correct in all cases, but it will panic if it finds a case where it is not correct.
+    ///       For practical genomes it seems to work.
+    pub fn remove_reverse_complements(&mut self, graph: &Graph) {
+        // Maps from edges to omnitigs that have this edge as first edge in their heart.
+        let mut first_heart_edge_map = vec![usize::max_value(); graph.edge_count()];
+        for (i, omnitig) in self.iter().enumerate() {
+            let first_heart_edge = omnitig.iter_heart().next().expect("Omnitig has no heart");
+            // I am not sure if the following assumption is correct.
+            assert_eq!(
+                first_heart_edge_map[first_heart_edge.as_usize()],
+                usize::max_value(),
+                "Found two omnitigs hearts starting with the same edge."
+            );
+            first_heart_edge_map[first_heart_edge.as_usize()] = i;
+        }
+
+        let mut retain_indices = Vec::with_capacity(self.len());
+        for (i, omnitig) in self.iter().enumerate() {
+            let reverse_complement_first_heart_edge = graph
+                .mirror_edge_edge_centric(
+                    omnitig.iter_heart().last().expect("Omnitig has no heart."),
+                )
+                .expect("Edge has no reverse complement.");
+            let reverse_complement_candidate_index =
+                first_heart_edge_map[reverse_complement_first_heart_edge.as_usize()];
+            if reverse_complement_candidate_index < i {
+                let reverse_complement_candidate = &self[reverse_complement_candidate_index];
+                for (edge, reverse_complement_edge) in omnitig
+                    .iter()
+                    .zip(reverse_complement_candidate.iter().rev())
+                {
+                    // I am not sure if the following assumption is correct.
+                    assert_eq!(
+                        edge,
+                        graph
+                            .mirror_edge_edge_centric(reverse_complement_edge)
+                            .expect("Edge has no reverse complement."),
+                        "Found reverse complement candidate, but it is not a reverse complement."
+                    );
+                }
+            } else {
+                retain_indices.push(i);
+            }
+        }
+
+        let mut omnitigs = Vec::new();
+        std::mem::swap(&mut omnitigs, &mut self.omnitigs);
+        for (i, omnitig) in omnitigs.into_iter().enumerate() {
+            if self.omnitigs.len() == retain_indices.len() {
+                break;
+            }
+
+            if i == retain_indices[self.omnitigs.len()] {
+                self.omnitigs.push(omnitig);
+            }
+        }
     }
 }
 

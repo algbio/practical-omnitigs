@@ -16,4 +16,5 @@ license = "BSD-2-Clause"
 
 [dependencies]
 traitgraph = {path = "../traitgraph", version = "0.1.0"}
+bigraph = {path = "../bigraph", version = "0.1.0"}
 bitvector = "0.1"
