@@ -10,6 +10,8 @@ configfile: "config/default.yml"
 if 'use_conda' in config and config['use_conda']:
     workflow.use_conda = True
 
+workflow.global_resources["contigvalidator"] = 1
+
 # Preprocess experiments configuration
 experiments = config["experiments"]
 tests = config["tests"]
@@ -255,6 +257,8 @@ rule install_contig_validator:
         cd external-software
         git clone --recursive https://github.com/mayankpahadia1993/ContigValidator.git
         cd ContigValidator/src
+        echo 'count_kmers: count_kmers_kmc' >> Makefile
+        sed -i 's\\count_kmers: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\count_kmers_kmc: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\g' Makefile
         LIBRARY_PATH="../../sdsl-lite/lib" CPATH="../../sdsl-lite/include" make
         """
 
@@ -275,6 +279,8 @@ rule run_contig_validator:
         tp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_pre"),
         tp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_suf")
     conda: "config/conda-contigvalidator-env.yml"
+    resources:
+      contigvalidator = 1
     shell:
         """
         cd external-software/ContigValidator
