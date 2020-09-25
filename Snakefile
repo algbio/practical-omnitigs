@@ -157,9 +157,9 @@ rule test:
     input: generate_test_targets()
 
 rule test_single_file:
-    input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.verify",
-           deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.deterministic"
-    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.is_tested")
+    input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.verify",
+           deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.deterministic"
+    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.is_tested")
     shell: "cmp --silent {input.verify} {input.deterministic}"
 
 rule make_bcalm_output_deterministic:

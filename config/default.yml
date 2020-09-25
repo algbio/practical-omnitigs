@@ -29,4 +29,4 @@ tests:
     bcalm2_abundance_min: [1]
     circularised: [true]
     filter_retain: "NC_002695.2"
-    algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+    algorithm: ["unitigs"]
