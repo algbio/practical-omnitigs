@@ -14,6 +14,7 @@ mod omnitigs;
 mod trivial_omnitigs;
 mod verify;
 mod verify_genome;
+mod unitigs;
 
 error_chain! {
     foreign_links {
@@ -67,6 +68,8 @@ enum Command {
     ComputeOmnitigs(omnitigs::ComputeOmnitigsCommand),
     #[clap(about = "Computes the maximal trivial omnitigs of the input graph.")]
     ComputeTrivialOmnitigs(trivial_omnitigs::ComputeTrivialOmnitigsCommand),
+    #[clap(about = "Computes the maximal unitigs of the input graph.")]
+    ComputeUnitigs(unitigs::ComputeUnitigsCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -111,6 +114,7 @@ fn run() -> Result<()> {
         Command::ComputeTrivialOmnitigs(subcommand) => {
             trivial_omnitigs::compute_trivial_omnitigs(options, subcommand)
         }
+        Command::ComputeUnitigs(subcommand) => unitigs::compute_unitigs(options, subcommand),
     }?;
 
     info!("Goodbye");

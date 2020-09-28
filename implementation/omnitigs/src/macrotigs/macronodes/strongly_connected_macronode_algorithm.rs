@@ -8,7 +8,7 @@ pub struct StronglyConnectedMacronodes;
 
 impl<Graph: StaticGraph> MacronodeAlgorithm<Graph> for StronglyConnectedMacronodes {
     fn compute_macronodes(graph: &Graph) -> Macronodes<Graph> {
-        let unitigs = NodeUnitigs::new(graph);
+        let unitigs = NodeUnitigs::compute(graph);
         let macronodes: Vec<_> = unitigs
             .into_iter()
             .filter(|unitig| {

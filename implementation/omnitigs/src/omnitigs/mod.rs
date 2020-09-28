@@ -164,9 +164,10 @@ where
 }
 
 /// A structure containing omnitigs of a graph.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Omnitigs<Graph: GraphBase> {
     omnitigs: Vec<Omnitig<Graph>>,
+    omnitigs_per_macrotig: Vec<usize>,
 }
 
 impl<Graph: StaticGraph> Omnitigs<Graph> {
@@ -182,7 +183,7 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
 
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     pub fn compute_trivial_only(graph: &Graph) -> Self {
-        DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::new())
+        DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
     }
 }
 
@@ -252,10 +253,11 @@ where
 }
 
 impl<Graph: GraphBase> Omnitigs<Graph> {
-    /// Creates a new empty `Omnitigs` struct.
-    pub fn new() -> Self {
+    /// Creates a new `Omnitigs` struct from the given omnitigs and statistics.
+    pub fn new(omnitigs: Vec<Omnitig<Graph>>, omnitigs_per_macrotig: Vec<usize>) -> Self {
         Self {
-            omnitigs: Default::default(),
+            omnitigs,
+            omnitigs_per_macrotig,
         }
     }
 
@@ -278,11 +280,25 @@ impl<Graph: GraphBase> Omnitigs<Graph> {
     pub fn push(&mut self, omnitig: Omnitig<Graph>) {
         self.omnitigs.push(omnitig);
     }
+
+    /// Returns a slice of omnitig counts per macrotig.
+    pub fn omnitigs_per_macrotig(&self) -> &[usize] {
+        &self.omnitigs_per_macrotig
+    }
+}
+
+impl<Graph: GraphBase> Default for Omnitigs<Graph> {
+    fn default() -> Self {
+        Self {
+            omnitigs: Default::default(),
+            omnitigs_per_macrotig: Default::default(),
+        }
+    }
 }
 
 impl<Graph: GraphBase> From<Vec<Omnitig<Graph>>> for Omnitigs<Graph> {
     fn from(omnitigs: Vec<Omnitig<Graph>>) -> Self {
-        Self { omnitigs }
+        Self { omnitigs, omnitigs_per_macrotig: Default::default() }
     }
 }
 

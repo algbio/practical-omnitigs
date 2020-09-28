@@ -2,6 +2,8 @@ use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecNodeWalk;
 use traitsequence::interface::Sequence;
+use bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
+use bigraph::interface::BidirectedData;
 
 /// Algorithms to count uncompacted unitigs in a graph.
 pub mod uncompacted_unitigs;
@@ -101,7 +103,7 @@ impl<Graph: StaticGraph> NodeUnitigs<Graph> {
     /// That means that parallel edges are counted as separate unitig each, and single nodes are counted as unitigs as well.
     ///
     /// If the graph is a cycle, it outputs an arbitrary subwalk.
-    pub fn new(graph: &Graph) -> Self {
+    pub fn compute(graph: &Graph) -> Self {
         let mut used_edges = vec![false; graph.edge_count()];
         let mut unitigs = Vec::new();
 
@@ -144,12 +146,95 @@ impl<Graph: StaticGraph> NodeUnitigs<Graph> {
 
         Self { unitigs }
     }
+}
 
-    /// Returns an iterator over the nodes of this unitig.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a NodeUnitig<Graph>> {
-        self.unitigs.iter()
+impl<Graph: StaticEdgeCentricBigraph> Unitigs<Graph>
+    where
+        Graph::EdgeData: BidirectedData + Eq,
+{
+    /// Retains only one direction of each pair of reverse-complemental unitigs.
+    pub fn remove_reverse_complements(&mut self, graph: &Graph) {
+        // Maps from edges to unitigs that have this edge as first edge.
+        let mut first_edge_map = vec![usize::max_value(); graph.edge_count()];
+        todo!("Compute and store unitigs edge centric instead of node-centric.")
+        /*let edge_unitigs = self.unitigs.iter().map(|u| u.walk.clone_as_edge_walk());
+        for (i, unitig) in self.iter().enumerate() {
+            let first_edge = unitig.iter().next().expect("Unitig is empty");
+            assert_eq!(
+                first_edge_map[first_edge.as_usize()],
+                usize::max_value(),
+                "Found two unitigs starting with the same edge."
+            );
+            first_edge_map[first_edge.as_usize()] = i;
+        }
+
+        let mut retain_indices = Vec::with_capacity(self.len());
+        for (i, unitig) in self.iter().enumerate() {
+            let reverse_complement_first_edge = graph
+                .mirror_edge_edge_centric(
+                    unitig.iter().last().expect("Unitig has no heart."),
+                )
+                .expect("Edge has no reverse complement.");
+            let reverse_complement_candidate_index =
+                first_edge_map[reverse_complement_first_edge.as_usize()];
+            if reverse_complement_candidate_index < i {
+                let reverse_complement_candidate = &self[reverse_complement_candidate_index];
+                for (edge, reverse_complement_edge) in unitig
+                    .iter()
+                    .zip(reverse_complement_candidate.iter().rev())
+                {
+                    assert_eq!(
+                        edge,
+                        graph
+                            .mirror_edge_edge_centric(reverse_complement_edge)
+                            .expect("Edge has no reverse complement."),
+                        "Found reverse complement candidate, but it is not a reverse complement."
+                    );
+                }
+            } else {
+                retain_indices.push(i);
+            }
+        }
+
+        let mut omnitigs = Vec::new();
+        std::mem::swap(&mut omnitigs, &mut self.omnitigs);
+        for (i, omnitig) in omnitigs.into_iter().enumerate() {
+            if self.omnitigs.len() == retain_indices.len() {
+                break;
+            }
+
+            if i == retain_indices[self.omnitigs.len()] {
+                self.omnitigs.push(omnitig);
+            }
+        }*/
     }
 }
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Unitigs<Graph>
+    where
+        Vec<NodeUnitig<Graph>>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<NodeUnitig<Graph>> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.unitigs.index(index)
+    }
+}
+
+impl<Graph: GraphBase> std::fmt::Debug for Unitigs<Graph>
+    where
+        Graph::NodeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Unitigs[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
+    }
 
 impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>> for NodeUnitigs<Graph>
 where
@@ -255,7 +340,7 @@ mod test {
         let e10 = graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
 
-        let unitigs = NodeUnitigs::new(&graph);
+        let unitigs = NodeUnitigs::compute(&graph);
         let mut unitigs_iter = unitigs.iter();
         assert_eq!(
             unitigs_iter.next(),

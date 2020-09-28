@@ -15,7 +15,8 @@ impl<Graph: StaticGraph> MacrotigBasedNonTrivialOmnitigAlgorithm<Graph>
         graph: &Graph,
         macrotigs: &Macrotigs<Graph>,
     ) -> Omnitigs<Graph> {
-        let mut result = Vec::new();
+        let mut omnitigs = Vec::new();
+        let mut omnitigs_per_macrotig = Vec::new();
 
         for macrotig in macrotigs.iter() {
             assert!(
@@ -26,6 +27,7 @@ impl<Graph: StaticGraph> MacrotigBasedNonTrivialOmnitigAlgorithm<Graph>
             // This reallocates memory every loop. It might make sense to allow to reuse the same structures for multiple walks.
             let mut incremental_hydrostructure =
                 IncrementalHydrostructure::compute_and_set_fingers_left(graph, macrotig);
+            let mut omnitigs_per_macrotig_current = 0;
 
             // On a macrotig we can assume that length-2 walks are always bridge-like.
             while incremental_hydrostructure.can_increment_right_finger()
@@ -37,22 +39,26 @@ impl<Graph: StaticGraph> MacrotigBasedNonTrivialOmnitigAlgorithm<Graph>
                     if incremental_hydrostructure.is_avertible() {
                         let omnitig = incremental_hydrostructure.current_walk();
                         let omnitig = &omnitig[0..omnitig.len() - 1];
-                        result.push(Omnitig::compute_from_non_trivial_heart_superwalk(
+                        omnitigs.push(Omnitig::compute_from_non_trivial_heart_superwalk(
                             graph, omnitig,
                         ));
+                        omnitigs_per_macrotig_current += 1;
                     }
                 } else {
                     incremental_hydrostructure.increment_left_finger();
                 }
             }
 
-            result.push(Omnitig::compute_from_non_trivial_heart_superwalk(
+            omnitigs.push(Omnitig::compute_from_non_trivial_heart_superwalk(
                 graph,
                 incremental_hydrostructure.current_walk(),
             ));
+            omnitigs_per_macrotig_current += 1;
+
+            omnitigs_per_macrotig.push(omnitigs_per_macrotig_current);
         }
 
-        Omnitigs::from(result)
+        Omnitigs::new(omnitigs, omnitigs_per_macrotig)
     }
 }
 
