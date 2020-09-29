@@ -1,5 +1,6 @@
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecNodeWalk;
+use traitsequence::interface::Sequence;
 
 /// A macronode algorithm that requires the graph to be strongly connected.
 pub mod strongly_connected_macronode_algorithm;
@@ -18,20 +19,33 @@ impl<Graph: GraphBase> Macronodes<Graph> {
             macronodes: Default::default(),
         }
     }
+}
 
-    /// Returns an iterator over the macronodes in this struct.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecNodeWalk<Graph>> {
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, VecNodeWalk<Graph>> for Macronodes<Graph> {
+    type Iterator = std::slice::Iter<'a, VecNodeWalk<Graph>>;
+    type IteratorMut = std::slice::IterMut<'a, VecNodeWalk<Graph>>;
+
+    fn iter(&'a self) -> Self::Iterator {
         self.macronodes.iter()
     }
 
-    /// Returns the amount of macronodes in this struct.
-    pub fn len(&self) -> usize {
-        self.macronodes.len()
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.macronodes.iter_mut()
     }
 
-    /// Returns true if there are no macronodes in this struct.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
+    fn len(&self) -> usize {
+        self.macronodes.len()
+    }
+}
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Macronodes<Graph>
+where
+    Vec<VecNodeWalk<Graph>>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<VecNodeWalk<Graph>> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.macronodes.index(index)
     }
 }
 

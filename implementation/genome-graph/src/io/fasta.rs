@@ -44,7 +44,7 @@ pub fn write_walks_as_fasta<
 
         let mut sequence = graph.edge_data(walk[0]).sequence.clone();
         for edge in walk.iter().skip(1) {
-            let edge_sequence = &graph.edge_data(edge).sequence[kmer_size - 1..];
+            let edge_sequence = &graph.edge_data(*edge).sequence[kmer_size - 1..];
             sequence.extend(edge_sequence.iter().copied());
         }
 

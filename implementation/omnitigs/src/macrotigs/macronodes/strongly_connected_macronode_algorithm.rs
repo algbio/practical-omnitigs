@@ -1,19 +1,20 @@
 use super::{MacronodeAlgorithm, Macronodes};
-use crate::unitigs::{NodeUnitig, Unitigs};
+use crate::unitigs::{NodeUnitig, NodeUnitigs};
 use traitgraph::interface::StaticGraph;
+use traitsequence::interface::Sequence;
 
 /// Compute the macronodes of a strongly connected graph.
 pub struct StronglyConnectedMacronodes;
 
 impl<Graph: StaticGraph> MacronodeAlgorithm<Graph> for StronglyConnectedMacronodes {
     fn compute_macronodes(graph: &Graph) -> Macronodes<Graph> {
-        let unitigs = Unitigs::new(graph);
+        let unitigs = NodeUnitigs::new(graph);
         let macronodes: Vec<_> = unitigs
             .into_iter()
             .filter(|unitig| {
-                (graph.out_degree(unitig.iter().next().unwrap()) == 1
-                    && graph.in_degree(unitig.iter().last().unwrap()) == 1)
-                    || (unitig.len() == 1 && graph.is_bivalent_node(unitig.iter().next().unwrap()))
+                (graph.out_degree(*unitig.iter().next().unwrap()) == 1
+                    && graph.in_degree(*unitig.iter().last().unwrap()) == 1)
+                    || (unitig.len() == 1 && graph.is_bivalent_node(*unitig.iter().next().unwrap()))
             })
             .map(NodeUnitig::into_node_walk)
             .collect();
@@ -27,6 +28,7 @@ mod tests {
     use crate::macrotigs::macronodes::MacronodeAlgorithm;
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::{MutableGraphContainer, WalkableGraph};
+    use traitsequence::interface::Sequence;
 
     #[test]
     fn test_compute_macronodes_complex_graph() {

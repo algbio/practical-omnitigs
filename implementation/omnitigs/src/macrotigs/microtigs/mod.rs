@@ -1,6 +1,7 @@
 use crate::macrotigs::macronodes::Macronodes;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
+use traitsequence::interface::Sequence;
 
 /// A maximal microtig algorithm that uses hydrostructure-based queries and requires the graph to be strongly connected.
 pub mod strongly_connected_hydrostructure_based_maximal_microtig_algorithm;
@@ -36,33 +37,26 @@ impl<Graph: GraphBase> Microtigs<Graph> {
         }
     }
 
-    /// Returns an iterator over the microtigs in this struct.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecEdgeWalk<Graph>> {
-        self.microtigs.iter()
-    }
-
-    /// Returns the amount of microtigs in this struct.
-    pub fn len(&self) -> usize {
-        self.microtigs.len()
-    }
-
-    /// Returns true if this struct contains no microtigs.
-    pub fn is_empty(&self) -> bool {
-        self.microtigs.is_empty()
-    }
-
     /// Returns the amount of macronodes without microtigs that were found while computing this set of microtigs.
     pub fn macronodes_without_microtig_amount(&self) -> usize {
         self.macronodes_without_microtig_amount
     }
 }
 
-impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Microtigs<Graph> {
-    fn from(microtigs: Vec<VecEdgeWalk<Graph>>) -> Self {
-        Self {
-            microtigs,
-            macronodes_without_microtig_amount: 0,
-        }
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, VecEdgeWalk<Graph>> for Microtigs<Graph> {
+    type Iterator = std::slice::Iter<'a, VecEdgeWalk<Graph>>;
+    type IteratorMut = std::slice::IterMut<'a, VecEdgeWalk<Graph>>;
+
+    fn iter(&'a self) -> Self::Iterator {
+        self.microtigs.iter()
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.microtigs.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.microtigs.len()
     }
 }
 
@@ -74,6 +68,15 @@ where
 
     fn index(&self, index: IndexType) -> &Self::Output {
         self.microtigs.index(index)
+    }
+}
+
+impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Microtigs<Graph> {
+    fn from(microtigs: Vec<VecEdgeWalk<Graph>>) -> Self {
+        Self {
+            microtigs,
+            macronodes_without_microtig_amount: 0,
+        }
     }
 }
 

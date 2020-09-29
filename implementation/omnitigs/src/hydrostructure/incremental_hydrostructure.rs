@@ -7,8 +7,8 @@ use crate::restricted_reachability::{
 use traitgraph::implementation::incremental_subgraph::IncrementalSubgraph;
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, StaticGraph};
-use traitgraph::walks::EdgeWalk;
 use traitgraph::walks::VecEdgeWalk;
+use traitsequence::interface::Sequence;
 
 /// The hydrostructure for a walk `W`.
 /// This hydrostructure implementation is incremental, meaning that it is valid for any subwalk of `W`.
@@ -143,7 +143,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             .take(self.right_finger + 1)
             .skip(self.left_finger + 1)
             .rev()
-            .filter(|(_, e)| self.r_plus.parent_graph().is_split_edge(*e))
+            .filter(|(_, e)| self.r_plus.parent_graph().is_split_edge(**e))
             .map(|(n, _)| n)
             .next();
         self.rightmost_join = self
@@ -153,7 +153,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             .take(self.right_finger)
             .skip(self.left_finger)
             .rev()
-            .filter(|(_, e)| self.r_plus.parent_graph().is_join_edge(*e))
+            .filter(|(_, e)| self.r_plus.parent_graph().is_join_edge(**e))
             .map(|(n, _)| n)
             .next();
     }
@@ -300,7 +300,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             .iter()
             .take(self.right_finger)
             .skip(self.left_finger)
-            .map(|e| self.r_plus.parent_graph().edge_endpoints(e).to_node)
+            .map(|e| self.r_plus.parent_graph().edge_endpoints(*e).to_node)
             .any(|n| n == node)
     }
 
@@ -310,7 +310,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             .iter()
             .take(self.right_finger)
             .skip(self.left_finger)
-            .any(|e| e == edge)
+            .any(|e| *e == edge)
     }
 
     /// Returns true if the given edge is any of the edges of the (inclusive) subwalk from left to right finger, except for the first one.
@@ -319,7 +319,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             .iter()
             .take(self.right_finger + 1)
             .skip(self.left_finger + 1)
-            .any(|e| e == edge)
+            .any(|e| *e == edge)
     }
 
     /// Check if a node is in r_plus under the assumption that the current walk is bridge-like.
@@ -412,9 +412,10 @@ mod tests {
     use crate::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
     use crate::macrotigs::macrotigs::{MaximalMacrotigsAlgorithm, Macrotigs};
     use crate::hydrostructure::incremental_hydrostructure::IncrementalHydrostructure;
-    use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
+    use traitgraph::walks::VecEdgeWalk;
     use crate::hydrostructure::static_hydrostructure::StaticHydrostructure;
     use crate::hydrostructure::Hydrostructure;
+    use traitsequence::interface::Sequence;
 
     #[test]
     fn test_incremental_hydrostructure_path_2() {

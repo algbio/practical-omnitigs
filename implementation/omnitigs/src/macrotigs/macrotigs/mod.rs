@@ -5,6 +5,7 @@ use crate::macrotigs::macronodes::strongly_connected_macronode_algorithm::Strong
 use crate::macrotigs::microtigs::strongly_connected_hydrostructure_based_maximal_microtig_algorithm::StronglyConnectedHydrostructureBasedMaximalMicrotigs;
 use crate::macrotigs::macronodes::MacronodeAlgorithm;
 use crate::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
+use traitsequence::interface::Sequence;
 
 /// An algorithm to link maximal microtigs into maximal macrotigs.
 pub mod default_macrotig_link_algorithm;
@@ -35,26 +36,22 @@ impl<Graph: GraphBase> Macrotigs<Graph> {
             macrotigs: Default::default(),
         }
     }
+}
 
-    /// Returns an iterator over the macrotigs in this struct.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a VecEdgeWalk<Graph>> {
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, VecEdgeWalk<Graph>> for Macrotigs<Graph> {
+    type Iterator = std::slice::Iter<'a, VecEdgeWalk<Graph>>;
+    type IteratorMut = std::slice::IterMut<'a, VecEdgeWalk<Graph>>;
+
+    fn iter(&'a self) -> Self::Iterator {
         self.macrotigs.iter()
     }
 
-    /// Returns the amount of macrotigs in this struct.
-    pub fn len(&self) -> usize {
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.macrotigs.iter_mut()
+    }
+
+    fn len(&self) -> usize {
         self.macrotigs.len()
-    }
-
-    /// Returns true if this struct contains no macrotigs.
-    pub fn is_empty(&self) -> bool {
-        self.macrotigs.is_empty()
-    }
-}
-
-impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Macrotigs<Graph> {
-    fn from(macrotigs: Vec<VecEdgeWalk<Graph>>) -> Self {
-        Self { macrotigs }
     }
 }
 
@@ -66,6 +63,12 @@ where
 
     fn index(&self, index: IndexType) -> &Self::Output {
         self.macrotigs.index(index)
+    }
+}
+
+impl<Graph: GraphBase> From<Vec<VecEdgeWalk<Graph>>> for Macrotigs<Graph> {
+    fn from(macrotigs: Vec<VecEdgeWalk<Graph>>) -> Self {
+        Self { macrotigs }
     }
 }
 

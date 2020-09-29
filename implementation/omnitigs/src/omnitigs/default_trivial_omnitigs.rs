@@ -3,7 +3,7 @@ use bitvector::BitVector;
 use traitgraph::algo::traversal::univocal_traversal::{univocal_extension, UnivocalIterator};
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{NodeOrEdge, StaticGraph};
-use traitgraph::walks::EdgeWalk;
+use traitsequence::interface::Sequence;
 
 /// An algorithm to extract trivial omnitigs.
 pub struct DefaultTrivialOmnitigAlgorithm;
@@ -71,14 +71,14 @@ impl<Graph: StaticGraph> TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmniti
             let last_split_edge = trivial_omnitig
                 .iter()
                 .enumerate()
-                .filter(|(_, e)| graph.is_split_edge(*e))
+                .filter(|(_, e)| graph.is_split_edge(**e))
                 .map(|(i, _)| i)
                 .last()
                 .unwrap_or(0);
             let first_join_edge = trivial_omnitig
                 .iter()
                 .enumerate()
-                .filter(|(_, e)| graph.is_join_edge(*e))
+                .filter(|(_, e)| graph.is_join_edge(**e))
                 .map(|(i, _)| i)
                 .next()
                 .unwrap_or(trivial_omnitig.len() - 1);

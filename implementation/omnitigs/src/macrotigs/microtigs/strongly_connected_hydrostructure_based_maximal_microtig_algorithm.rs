@@ -8,9 +8,8 @@ use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::NavigableGraph;
 use traitgraph::interface::StaticGraph;
-use traitgraph::walks::EdgeWalk;
-use traitgraph::walks::NodeWalk;
 use traitgraph::walks::VecEdgeWalk;
+use traitsequence::interface::Sequence;
 
 /// Compute the maximal microtigs of a strongly connected graph using hydrostructure-based queries.
 pub struct StronglyConnectedHydrostructureBasedMaximalMicrotigs;
@@ -28,8 +27,8 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
         for macronode in macronodes {
             assert!(!macronode.is_empty());
             let mut has_microtig = false;
-            let center_in_node = macronode.iter().next().unwrap();
-            let center_out_node = macronode.iter().last().unwrap();
+            let center_in_node = *macronode.iter().next().unwrap();
+            let center_out_node = *macronode.iter().last().unwrap();
 
             //////////////////////////////////////////
             //// Compute right-maximal microtigs. ////
@@ -62,7 +61,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
             let mrmo1 = if let Some(mlmo1) = &mlmo1 {
                 extend_right_micro_omnitig(
                     graph,
-                    mlmo1
+                    *mlmo1
                         .iter()
                         .nth(mlmo1.len() - macronode.len() - 1)
                         .expect("Found left-micro omnitig, but it appears to be too short."),
@@ -97,6 +96,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                         .iter()
                         .take(mlmo1.len() - macronode.len() - 1)
                         .chain(mrmo1.iter())
+                        .copied()
                         .collect::<Vec<_>>(),
                 ));
                 has_microtig = true;
@@ -105,7 +105,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
             if in_edge_candidates.len() == 1 {
                 let in_edge = *in_edge_candidates.first().unwrap();
                 let skip = if let Some(mrmo1) = &mrmo1 {
-                    in_edge == mrmo1.iter().next().unwrap()
+                    in_edge == *mrmo1.iter().next().unwrap()
                 } else {
                     // TODO I am not sure if we actually cannot skip in this case. Not skipping is not wrong though, might just be slower.
                     false
@@ -116,7 +116,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                     let mlmo2 = if let Some(mrmo2) = &mrmo2 {
                         extend_left_micro_omnitig(
                             graph,
-                            mrmo2.iter().nth(macronode.len()).expect(
+                            *mrmo2.iter().nth(macronode.len()).expect(
                                 "Found right-micro omnitig, but it appears to be too short.",
                             ),
                         )
@@ -150,6 +150,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                                 .iter()
                                 .take(mlmo2.len() - macronode.len() - 1)
                                 .chain(mrmo2.iter())
+                                .copied()
                                 .collect::<Vec<_>>(),
                         ));
                         has_microtig = true;

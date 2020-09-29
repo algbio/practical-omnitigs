@@ -1,12 +1,13 @@
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
-use traitgraph::walks::{NodeWalk, VecNodeWalk};
+use traitgraph::walks::VecNodeWalk;
+use traitsequence::interface::Sequence;
 
 /// Algorithms to count uncompacted unitigs in a graph.
 pub mod uncompacted_unitigs;
 
 /// A unitig stored as sequence of nodes.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct NodeUnitig<Graph: GraphBase> {
     /// Store the unitig as a node-centric walk.
     /// This allows unitigs that are a single node to be stored.
@@ -27,11 +28,6 @@ impl<Graph: GraphBase> NodeUnitig<Graph> {
         }
     }
 
-    /// Returns an iterator over the nodes of this unitig.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = Graph::NodeIndex> {
-        self.walk.iter()
-    }
-
     /// Returns the single edge field of this unitig.
     /// The field is `Some` if this unitig has exactly two nodes.
     /// In this case, the two nodes might be connected by multiple edges, so then this field serves as disambiguation between the edges.
@@ -44,24 +40,61 @@ impl<Graph: GraphBase> NodeUnitig<Graph> {
     pub fn into_node_walk(self) -> VecNodeWalk<Graph> {
         self.walk
     }
+}
 
-    /// Returns the length of this unitigs as its amount of nodes.
-    pub fn len(&self) -> usize {
-        self.walk.len()
+impl<'a, Graph: GraphBase> Sequence<'a, Graph::NodeIndex> for NodeUnitig<Graph>
+where
+    Graph::NodeIndex: 'a,
+{
+    type Iterator = std::slice::Iter<'a, Graph::NodeIndex>;
+    type IteratorMut = std::slice::IterMut<'a, Graph::NodeIndex>;
+
+    fn iter(&'a self) -> Self::Iterator {
+        self.walk.iter()
     }
 
-    /// Returns true if this unitig contains no nodes.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.walk.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.walk.len()
+    }
+}
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for NodeUnitig<Graph>
+where
+    VecNodeWalk<Graph>: std::ops::Index<IndexType>,
+{
+    type Output = <VecNodeWalk<Graph> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.walk.index(index)
+    }
+}
+
+impl<Graph: GraphBase> std::fmt::Debug for NodeUnitig<Graph>
+where
+    Graph::NodeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "NodeUnitig[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
     }
 }
 
 /// A structure storing a vector of node-centric unitigs.
-pub struct Unitigs<Graph: GraphBase> {
+pub struct NodeUnitigs<Graph: GraphBase> {
     unitigs: Vec<NodeUnitig<Graph>>,
 }
 
-impl<Graph: StaticGraph> Unitigs<Graph> {
+impl<Graph: StaticGraph> NodeUnitigs<Graph> {
     /// Computes the maximal unitigs of a graph.
     ///
     /// The unitigs are computed both node- and edge-centric.
@@ -118,7 +151,54 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
     }
 }
 
-impl<Graph: GraphBase> IntoIterator for Unitigs<Graph> {
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>> for NodeUnitigs<Graph>
+where
+    Graph::NodeIndex: 'a,
+{
+    type Iterator = std::slice::Iter<'a, NodeUnitig<Graph>>;
+    type IteratorMut = std::slice::IterMut<'a, NodeUnitig<Graph>>;
+
+    fn iter(&'a self) -> Self::Iterator {
+        self.unitigs.iter()
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.unitigs.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.unitigs.len()
+    }
+}
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for NodeUnitigs<Graph>
+where
+    Vec<NodeUnitig<Graph>>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<NodeUnitig<Graph>> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.unitigs.index(index)
+    }
+}
+
+impl<Graph: GraphBase> std::fmt::Debug for NodeUnitigs<Graph>
+where
+    Graph::NodeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "NodeUnitigs[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
+    }
+}
+
+impl<Graph: GraphBase> IntoIterator for NodeUnitigs<Graph> {
     type Item = NodeUnitig<Graph>;
     type IntoIter = std::vec::IntoIter<NodeUnitig<Graph>>;
 
@@ -146,7 +226,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use super::{NodeUnitig, Unitigs};
+    use super::{NodeUnitig, NodeUnitigs};
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::{MutableGraphContainer, WalkableGraph};
 
@@ -175,7 +255,7 @@ mod test {
         let e10 = graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
 
-        let unitigs = Unitigs::new(&graph);
+        let unitigs = NodeUnitigs::new(&graph);
         let mut unitigs_iter = unitigs.iter();
         assert_eq!(
             unitigs_iter.next(),
