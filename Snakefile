@@ -142,14 +142,19 @@ rule test_rust:
 ########################
 
 rule compute_omnitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", binary = "data/target/release/cli"
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log"
     shell: "'{input.binary}' --input '{input.file}' compute-omnitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", binary = "data/target/release/cli"
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log"
     shell: "'{input.binary}' --input '{input.file}' compute-trivial-omnitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
+
+rule compute_unitigs:
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log"
+    shell: "'{input.binary}' --input '{input.file}' compute-unitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -159,14 +164,14 @@ rule test:
     input: generate_test_targets()
 
 rule test_single_file:
-    input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.verify",
-           deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.deterministic"
-    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.is_tested")
+    input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify",
+           deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.deterministic"
+    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.is_tested")
     shell: "cmp --silent {input.verify} {input.deterministic}"
 
 rule make_bcalm_output_deterministic:
-    input: file = "data/{dir}/{file}.unitigs.fa", script = "scripts/make_bcalm_output_deterministic.py"
-    output: file = "data/{dir}/{file}.unitigs.fa.deterministic"
+    input: file = "data/{dir}/{file}.bcalm2.fa", script = "scripts/make_bcalm_output_deterministic.py"
+    output: file = "data/{dir}/{file}.bcalm2.fa.deterministic"
     shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output.file}'"
 
 rule verify_genome_graph:
@@ -185,14 +190,14 @@ rule selftest:
 
 rule bcalm2:
     input: genome = "data/{dir}/{file}.fna"
-    output: unitigs = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.unitigs.fa",
+    output: unitigs = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.bcalm2.fa",
     #params: tmp = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.unitigs.bcalm2-tmp/"
     conda: "config/conda-bcalm2-env.yml"
     shell: 
         """
         bcalm -in '{input.genome}' -out '{output.unitigs}' -kmer-size {wildcards.k} -abundance-min {wildcards.abundance_min}
         mv '{output.unitigs}.unitigs.fa' '{output.unitigs}'
-        rm data/{wildcards.dir}/{wildcards.file}.k{wildcards.k}-a{wildcards.abundance_min}.unitigs.*.glue.*
+        rm data/{wildcards.dir}/{wildcards.file}.k{wildcards.k}-a{wildcards.abundance_min}.bcalm2.*.glue.*
         """
 
 ###############################
