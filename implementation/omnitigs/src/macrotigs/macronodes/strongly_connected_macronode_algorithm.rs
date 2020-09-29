@@ -1,5 +1,5 @@
 use super::{MacronodeAlgorithm, Macronodes};
-use crate::unitigs::{NodeUnitig, Unitigs};
+use crate::unitigs::{NodeUnitig, NodeUnitigs};
 use traitgraph::interface::StaticGraph;
 use traitsequence::interface::Sequence;
 
@@ -8,7 +8,7 @@ pub struct StronglyConnectedMacronodes;
 
 impl<Graph: StaticGraph> MacronodeAlgorithm<Graph> for StronglyConnectedMacronodes {
     fn compute_macronodes(graph: &Graph) -> Macronodes<Graph> {
-        let unitigs = Unitigs::new(graph);
+        let unitigs = NodeUnitigs::new(graph);
         let macronodes: Vec<_> = unitigs
             .into_iter()
             .filter(|unitig| {

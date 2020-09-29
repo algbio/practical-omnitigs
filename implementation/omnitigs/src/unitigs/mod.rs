@@ -90,11 +90,11 @@ where
 }
 
 /// A structure storing a vector of node-centric unitigs.
-pub struct Unitigs<Graph: GraphBase> {
+pub struct NodeUnitigs<Graph: GraphBase> {
     unitigs: Vec<NodeUnitig<Graph>>,
 }
 
-impl<Graph: StaticGraph> Unitigs<Graph> {
+impl<Graph: StaticGraph> NodeUnitigs<Graph> {
     /// Computes the maximal unitigs of a graph.
     ///
     /// The unitigs are computed both node- and edge-centric.
@@ -151,9 +151,9 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
     }
 }
 
-impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>> for Unitigs<Graph>
-    where
-        Graph::NodeIndex: 'a,
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>> for NodeUnitigs<Graph>
+where
+    Graph::NodeIndex: 'a,
 {
     type Iterator = std::slice::Iter<'a, NodeUnitig<Graph>>;
     type IteratorMut = std::slice::IterMut<'a, NodeUnitig<Graph>>;
@@ -171,9 +171,9 @@ impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>> for Unitigs<Grap
     }
 }
 
-impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Unitigs<Graph>
-    where
-        Vec<NodeUnitig<Graph>>: std::ops::Index<IndexType>,
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for NodeUnitigs<Graph>
+where
+    Vec<NodeUnitig<Graph>>: std::ops::Index<IndexType>,
 {
     type Output = <Vec<NodeUnitig<Graph>> as std::ops::Index<IndexType>>::Output;
 
@@ -182,9 +182,9 @@ impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Unitigs<Graph>
     }
 }
 
-impl<Graph: GraphBase> std::fmt::Debug for Unitigs<Graph>
-    where
-        Graph::NodeIndex: std::fmt::Debug,
+impl<Graph: GraphBase> std::fmt::Debug for NodeUnitigs<Graph>
+where
+    Graph::NodeIndex: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "NodeUnitigs[")?;
@@ -198,7 +198,7 @@ impl<Graph: GraphBase> std::fmt::Debug for Unitigs<Graph>
     }
 }
 
-impl<Graph: GraphBase> IntoIterator for Unitigs<Graph> {
+impl<Graph: GraphBase> IntoIterator for NodeUnitigs<Graph> {
     type Item = NodeUnitig<Graph>;
     type IntoIter = std::vec::IntoIter<NodeUnitig<Graph>>;
 
@@ -226,7 +226,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use super::{NodeUnitig, Unitigs};
+    use super::{NodeUnitig, NodeUnitigs};
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::{MutableGraphContainer, WalkableGraph};
 
@@ -255,7 +255,7 @@ mod test {
         let e10 = graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
 
-        let unitigs = Unitigs::new(&graph);
+        let unitigs = NodeUnitigs::new(&graph);
         let mut unitigs_iter = unitigs.iter();
         assert_eq!(
             unitigs_iter.next(),
