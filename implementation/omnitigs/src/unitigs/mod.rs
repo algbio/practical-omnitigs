@@ -6,10 +6,11 @@ use traitgraph::walks::{NodeWalk, VecNodeWalk};
 pub mod uncompacted_unitigs;
 
 /// A unitig stored as sequence of nodes.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Sequence)]
 pub struct NodeUnitig<Graph: GraphBase> {
     /// Store the unitig as a node-centric walk.
     /// This allows unitigs that are a single node to be stored.
+    #[inner_sequence]
     walk: VecNodeWalk<Graph>,
     /// If a unitig has just a single edge, this edge might be a multiedge.
     /// In this case, this field is required to uniquely identify the unitig.

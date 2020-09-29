@@ -801,6 +801,7 @@ dependencies = [
  "bitvector",
  "traitgraph",
  "traitsequence",
+ "traitsequence-derive",
 ]
 
 [[package]]
@@ -930,6 +931,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f5f085b5d71e2188cb8271e5da0161ad52c3f227a661a3c135fdf28e258b12"
 dependencies = [
  "unicode-xid 0.2.1",
+]
+
+[[package]]
+name = "proc_macro_roids"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06675fa2c577f52bcf77fbb511123927547d154faa08097cc012c66ec3c9611a"
+dependencies = [
+ "proc-macro2 1.0.19",
+ "quote 1.0.7",
+ "syn 1.0.39",
 ]
 
 [[package]]
@@ -1464,6 +1476,14 @@ dependencies = [
 [[package]]
 name = "traitsequence"
 version = "0.1.0-alpha.0"
+
+[[package]]
+name = "traitsequence-derive"
+version = "0.1.0-alpha.0"
+dependencies = [
+ "proc_macro_roids",
+ "syn 1.0.39",
+]
 
 [[package]]
 name = "unicode-segmentation"

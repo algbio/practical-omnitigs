@@ -18,4 +18,5 @@ license = "BSD-2-Clause"
 traitgraph = {path = "../traitgraph", version = "0.1.0"}
 bigraph = {path = "../bigraph", version = "0.1.0"}
 traitsequence = {path = "../traitsequence", version = "0.1.0-alpha.0"}
+traitsequence-derive = {path = "../traitsequence-derive", version = "0.1.0-alpha.0"}
 bitvector = "0.1"
