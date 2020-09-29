@@ -298,7 +298,10 @@ impl<Graph: GraphBase> Default for Omnitigs<Graph> {
 
 impl<Graph: GraphBase> From<Vec<Omnitig<Graph>>> for Omnitigs<Graph> {
     fn from(omnitigs: Vec<Omnitig<Graph>>) -> Self {
-        Self { omnitigs, omnitigs_per_macrotig: Default::default() }
+        Self {
+            omnitigs,
+            omnitigs_per_macrotig: Default::default(),
+        }
     }
 }
 

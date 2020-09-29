@@ -12,9 +12,9 @@ mod circularise_records;
 mod filter;
 mod omnitigs;
 mod trivial_omnitigs;
+mod unitigs;
 mod verify;
 mod verify_genome;
-mod unitigs;
 
 error_chain! {
     foreign_links {
