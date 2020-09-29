@@ -108,13 +108,13 @@ pub(crate) fn compute_omnitigs(
         median_omnitigs_per_macrotig
     );
     info!(
-        "Mean non-trivial omnitigs per macrotig: {}",
+        "Mean non-trivial omnitigs per macrotig: {:.1}",
         mean_omnitigs_per_macrotig
     );
     info!("Minimum edge length: {}", min_omnitig_len);
     info!("Maximum edge length: {}", max_omnitig_len);
     info!("Median edge length: {}", median_omnitigs_len);
-    info!("Mean edge length: {}", mean_omnitig_len);
+    info!("Mean edge length: {:.1}", mean_omnitig_len);
 
     if let Some(latex_file) = &mut latex_file {
         writeln!(
@@ -134,7 +134,7 @@ pub(crate) fn compute_omnitigs(
         )?;
         writeln!(
             latex_file,
-            "mean non-trivial omnitigs per macrotig & {} \\\\",
+            "mean non-trivial omnitigs per macrotig & {:.1} \\\\",
             mean_omnitigs_per_macrotig
         )?;
         writeln!(latex_file, "min edge length & {} \\\\", min_omnitig_len)?;
@@ -144,7 +144,11 @@ pub(crate) fn compute_omnitigs(
             "median edge length & {} \\\\",
             median_omnitigs_len
         )?;
-        writeln!(latex_file, "mean edge length & {} \\\\", mean_omnitig_len)?;
+        writeln!(
+            latex_file,
+            "mean edge length & {:.1} \\\\",
+            mean_omnitig_len
+        )?;
     }
 
     info!("");

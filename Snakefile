@@ -143,18 +143,18 @@ rule test_rust:
 
 rule compute_omnitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log"
-    shell: "'{input.binary}' --input '{input.file}' compute-omnitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
+    shell: "'{input.binary}' --input '{input.file}' compute-omnitigs --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log"
-    shell: "'{input.binary}' --input '{input.file}' compute-trivial-omnitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
+    shell: "'{input.binary}' --input '{input.file}' compute-trivial-omnitigs --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log"
-    shell: "'{input.binary}' --input '{input.file}' compute-unitigs --kmer-size {wildcards.k} --output '{output.file}' 2>&1 | tee '{output.log}'"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
+    shell: "'{input.binary}' --input '{input.file}' compute-unitigs --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -175,8 +175,8 @@ rule make_bcalm_output_deterministic:
     shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output.file}'"
 
 rule verify_genome_graph:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa", binary = "data/target/release/cli"
-    output: verification_copy = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.verify", log =  "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.properties", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.graphstatistics"
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
+    output: verification_copy = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify", log =  "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.properties", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.graphstatistics"
     conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' verify --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
 
@@ -212,18 +212,21 @@ rule latex:
 
 rule create_single_report_tex:
     input: genome_name = "data/{dir}/name.txt",
+           unitigs = "data/{dir}/{file}.unitigs.tex",
            unitigs_contigvalidator = "data/{dir}/{file}.unitigs.contigvalidator",
            unitigs_quast = directory("data/{dir}/{file}.unitigs.quast"),
+           omnitigs = "data/{dir}/{file}.omnitigs.tex",
            omnitigs_contigvalidator = "data/{dir}/{file}.omnitigs.contigvalidator",
            omnitigs_quast = directory("data/{dir}/{file}.omnitigs.quast"),
+           trivialomnitigs = "data/{dir}/{file}.trivialomnitigs.tex",
            trivialomnitigs_contigvalidator = "data/{dir}/{file}.trivialomnitigs.contigvalidator",
            trivialomnitigs_quast = directory("data/{dir}/{file}.trivialomnitigs.quast"),
-           unitigs_graphstatistics = "data/{dir}/{file}.unitigs.graphstatistics",
-           untitigs_bandage = "data/{dir}/{file}.unitigs.bandage.png",
+           graphstatistics = "data/{dir}/{file}.bcalm2.graphstatistics",
+           bcalm2_bandage = "data/{dir}/{file}.bcalm2.bandage.png",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/{file}.report.tex"
     params: prefix = "data/{dir}/{file}"
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.unitigs_graphstatistics}' '{wildcards.file}.unitigs.bandage.png' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{wildcards.file}.unitigs.bandage.png' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule report_all:
     input: generate_report_targets()

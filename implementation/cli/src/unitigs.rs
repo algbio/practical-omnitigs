@@ -71,7 +71,7 @@ pub(crate) fn compute_unitigs(
     info!("Minimum edge length: {}", min_unitig_len);
     info!("Maximum edge length: {}", max_unitig_len);
     info!("Median edge length: {}", median_unitig_len);
-    info!("Mean edge length: {}", mean_unitig_len);
+    info!("Mean edge length: {:.1}", mean_unitig_len);
 
     if let Some(latex_file) = &mut latex_file {
         writeln!(
@@ -97,7 +97,7 @@ pub(crate) fn compute_unitigs(
             "median edge length & {} \\\\",
             median_unitig_len
         )?;
-        writeln!(latex_file, "mean edge length & {} \\\\", mean_unitig_len)?;
+        writeln!(latex_file, "mean edge length & {:.1} \\\\", mean_unitig_len)?;
     }
 
     info!("");
