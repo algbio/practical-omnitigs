@@ -12,6 +12,7 @@ use traitgraph::algo::traversal::univocal_traversal::univocal_extension_with_ori
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
+use traitsequence::interface::Sequence;
 
 /// An omnitig with information about its heart.
 #[derive(Clone)]
@@ -69,7 +70,7 @@ impl<Graph: GraphBase> Omnitig<Graph> {
     }
 
     /// Returns an iterator over the edges in the heart of this omnitig.
-    pub fn iter_heart<'a>(&'a self) -> impl 'a + Iterator<Item = Graph::EdgeIndex> {
+    pub fn iter_heart<'a>(&'a self) -> impl 'a + Iterator<Item = &'a Graph::EdgeIndex> {
         self.omnitig
             .iter()
             .take(self.last_heart_edge + 1)
@@ -87,14 +88,25 @@ impl<Graph: GraphBase> Omnitig<Graph> {
     }
 }
 
-impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for Omnitig<Graph>
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for Omnitig<Graph> where Graph::EdgeIndex: 'a {}
+
+impl<'a, Graph: GraphBase> Sequence<'a, Graph::EdgeIndex> for Omnitig<Graph>
 where
     Graph::EdgeIndex: 'a,
 {
-    type Iter = std::iter::Cloned<std::slice::Iter<'a, Graph::EdgeIndex>>;
+    type Iterator = <VecEdgeWalk<Graph> as Sequence<'a, Graph::EdgeIndex>>::Iterator;
+    type IteratorMut = <VecEdgeWalk<Graph> as Sequence<'a, Graph::EdgeIndex>>::IteratorMut;
 
-    fn iter(&'a self) -> Self::Iter {
+    fn iter(&'a self) -> Self::Iterator {
         self.omnitig.iter()
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.omnitig.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.omnitig.len()
     }
 }
 
@@ -200,7 +212,7 @@ where
         for (i, omnitig) in self.iter().enumerate() {
             let reverse_complement_first_heart_edge = graph
                 .mirror_edge_edge_centric(
-                    omnitig.iter_heart().last().expect("Omnitig has no heart."),
+                    *omnitig.iter_heart().last().expect("Omnitig has no heart."),
                 )
                 .expect("Edge has no reverse complement.");
             let reverse_complement_candidate_index =
@@ -213,9 +225,9 @@ where
                 {
                     // I am not sure if the following assumption is correct.
                     assert_eq!(
-                        edge,
+                        *edge,
                         graph
-                            .mirror_edge_edge_centric(reverse_complement_edge)
+                            .mirror_edge_edge_centric(*reverse_complement_edge)
                             .expect("Edge has no reverse complement."),
                         "Found reverse complement candidate, but it is not a reverse complement."
                     );

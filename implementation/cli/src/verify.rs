@@ -14,7 +14,7 @@ use omnitigs::macrotigs::macronodes::MacronodeAlgorithm;
 use omnitigs::macrotigs::microtigs::MaximalMicrotigsAlgorithm;
 use omnitigs::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
 use omnitigs::macrotigs::macrotigs::MaximalMacrotigsAlgorithm;
-use omnitigs::traitgraph::walks::EdgeWalk;
+use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct VerifyEdgeCentricCommand {

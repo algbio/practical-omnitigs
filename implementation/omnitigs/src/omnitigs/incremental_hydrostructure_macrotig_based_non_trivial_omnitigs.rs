@@ -3,7 +3,7 @@ use crate::hydrostructure::Hydrostructure;
 use crate::macrotigs::macrotigs::Macrotigs;
 use crate::omnitigs::{MacrotigBasedNonTrivialOmnitigAlgorithm, Omnitig, Omnitigs};
 use traitgraph::interface::StaticGraph;
-use traitgraph::walks::EdgeWalk;
+use traitsequence::interface::Sequence;
 
 /// A macrotig-based non-trivial omnitig algorithm that uses the incremental hydrostructure.
 pub struct IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;

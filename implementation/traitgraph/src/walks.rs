@@ -1,65 +1,18 @@
 use crate::interface::{GraphBase, StaticGraph};
+use traitsequence::interface::Sequence;
 
 /// A sequence of nodes in a graph, where each consecutive pair of nodes is connected by an edge.
-pub trait NodeWalk<'a, Graph: GraphBase>:
-    std::ops::Index<usize, Output = Graph::NodeIndex>
+pub trait NodeWalk<'a, Graph: GraphBase>: Sequence<'a, Graph::NodeIndex>
+where
+    Graph::NodeIndex: 'a,
 {
-    /// The iterator type used to iterate over the nodes of this walk.
-    type Iter: Iterator<Item = Graph::NodeIndex>;
-
-    /// Returns an iterator over the nodes of this walk.
-    fn iter(&'a self) -> Self::Iter;
-
-    /// Returns the length of this walk as its amount of nodes.
-    fn len(&'a self) -> usize {
-        self.iter().count()
-    }
-
-    /// Returns true if this walk contains no nodes.
-    fn is_empty(&'a self) -> bool {
-        self.len() == 0
-    }
-
-    /// Returns the first node of this walk or `None`, if this walk is empty.
-    fn first(&'a self) -> Option<Graph::NodeIndex> {
-        self.iter().next()
-    }
-
-    /// Returns the last node of this walk or `None` if this walk is empty.
-    fn last(&'a self) -> Option<Graph::NodeIndex> {
-        self.iter().last()
-    }
 }
 
 /// A sequence of edges in a graph, where each consecutive pair of edges is connected by a node.
-pub trait EdgeWalk<'a, Graph: GraphBase>:
-    std::ops::Index<usize, Output = Graph::EdgeIndex>
+pub trait EdgeWalk<'a, Graph: GraphBase>: Sequence<'a, Graph::EdgeIndex>
+where
+    Graph::EdgeIndex: 'a,
 {
-    /// The iterator type used to iterate over the edges of this walk.
-    type Iter: Iterator<Item = Graph::EdgeIndex>;
-
-    /// Returns an iterator over the edges of this walk.
-    fn iter(&'a self) -> Self::Iter;
-
-    /// Returns the length of this walk as its amount of edges.
-    fn len(&'a self) -> usize {
-        self.iter().count()
-    }
-
-    /// Returns true if this walk contains no edges.
-    fn is_empty(&'a self) -> bool {
-        self.len() == 0
-    }
-
-    /// Returns the first edge of this walk or `None`, if this walk is empty.
-    fn first(&'a self) -> Option<Graph::EdgeIndex> {
-        self.iter().next()
-    }
-
-    /// Returns the last edge of this walk or `None` if this walk is empty.
-    fn last(&'a self) -> Option<Graph::EdgeIndex> {
-        self.iter().last()
-    }
 }
 
 /////////////////////////
@@ -114,14 +67,25 @@ impl<Graph: StaticGraph> VecNodeWalk<Graph> {
     }
 }
 
-impl<'a, Graph: GraphBase> NodeWalk<'a, Graph> for VecNodeWalk<Graph>
+impl<'a, Graph: GraphBase> NodeWalk<'a, Graph> for VecNodeWalk<Graph> where Graph::NodeIndex: 'a {}
+
+impl<'a, Graph: GraphBase> Sequence<'a, Graph::NodeIndex> for VecNodeWalk<Graph>
 where
     Graph::NodeIndex: 'a,
 {
-    type Iter = std::iter::Cloned<std::slice::Iter<'a, Graph::NodeIndex>>;
+    type Iterator = std::slice::Iter<'a, Graph::NodeIndex>;
+    type IteratorMut = std::slice::IterMut<'a, Graph::NodeIndex>;
 
-    fn iter(&'a self) -> Self::Iter {
-        self.walk.iter().cloned()
+    fn iter(&'a self) -> Self::Iterator {
+        self.walk.iter()
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.walk.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.walk.len()
     }
 }
 
@@ -231,14 +195,25 @@ impl<Graph: StaticGraph> VecEdgeWalk<Graph> {
     }
 }
 
-impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for VecEdgeWalk<Graph>
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for VecEdgeWalk<Graph> where Graph::EdgeIndex: 'a {}
+
+impl<'a, Graph: GraphBase> Sequence<'a, Graph::EdgeIndex> for VecEdgeWalk<Graph>
 where
     Graph::EdgeIndex: 'a,
 {
-    type Iter = std::iter::Cloned<std::slice::Iter<'a, Graph::EdgeIndex>>;
+    type Iterator = std::slice::Iter<'a, Graph::EdgeIndex>;
+    type IteratorMut = std::slice::IterMut<'a, Graph::EdgeIndex>;
 
-    fn iter(&'a self) -> Self::Iter {
-        self.walk.iter().cloned()
+    fn iter(&'a self) -> Self::Iterator {
+        self.walk.iter()
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.walk.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.walk.len()
     }
 }
 

@@ -5,8 +5,8 @@ use traitgraph::algo::traversal::{
 use traitgraph::implementation::incremental_subgraph::IncrementalSubgraph;
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, NodeOrEdge, StaticGraph};
-use traitgraph::walks::EdgeWalk;
 use traitgraph::walks::VecEdgeWalk;
+use traitsequence::interface::Sequence;
 
 /// Returns the reachable subgraph from a node without using an edge.
 pub fn compute_restricted_edge_reachability<
@@ -51,10 +51,10 @@ pub fn compute_incremental_restricted_forward_edge_reachability<'a, Graph: Stati
         std::collections::VecDeque<_>,
     >::new_without_start(graph);
 
-    let mut start_edge = walk
+    let mut start_edge = *walk
         .first()
         .expect("Cannot compute hydrostructure from empty walk");
-    for (edge_number, edge) in walk.iter().enumerate().skip(1) {
+    for (edge_number, &edge) in walk.iter().enumerate().skip(1) {
         let start_node = graph.edge_endpoints(start_edge).to_node;
         traversal.continue_traversal_from(start_node);
         subgraph.set_current_step(edge_number);
@@ -86,10 +86,10 @@ pub fn compute_incremental_restricted_backward_edge_reachability<'a, Graph: Stat
         std::collections::VecDeque<_>,
     >::new_without_start(graph);
 
-    let mut start_edge = walk
+    let mut start_edge = *walk
         .last()
         .expect("Cannot compute hydrostructure from empty walk");
-    for (edge_number, edge) in walk.iter().rev().enumerate().skip(1) {
+    for (edge_number, &edge) in walk.iter().rev().enumerate().skip(1) {
         let start_node = graph.edge_endpoints(start_edge).from_node;
         traversal.continue_traversal_from(start_node);
         subgraph.set_current_step(edge_number);
@@ -231,15 +231,15 @@ pub fn compute_hydrostructure_forward_reachability<
     graph: SubgraphType::ParentGraphRef,
     azb: &VecEdgeWalk<SubgraphType::ParentGraph>,
 ) -> Option<SubgraphType> {
-    let a = azb.iter().next().unwrap();
-    let b = azb.iter().last().unwrap();
+    let a = *azb.iter().next().unwrap();
+    let b = *azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(a).to_node;
     let mut subgraph =
         compute_restricted_edge_reachability::<_, ForwardNeighborStrategy, SubgraphType>(
             graph, start_node, b,
         );
 
-    for edge in azb.iter().take(azb.len() - 1) {
+    for &edge in azb.iter().take(azb.len() - 1) {
         let node = graph.edge_endpoints(edge).to_node;
         for incoming in graph.in_neighbors(node) {
             let incoming = incoming.edge_id;
@@ -266,15 +266,15 @@ pub fn compute_hydrostructure_backward_reachability<
     graph: SubgraphType::ParentGraphRef,
     azb: &VecEdgeWalk<SubgraphType::ParentGraph>,
 ) -> Option<SubgraphType> {
-    let a = azb.iter().next().unwrap();
-    let b = azb.iter().last().unwrap();
+    let a = *azb.iter().next().unwrap();
+    let b = *azb.iter().last().unwrap();
     let start_node = graph.edge_endpoints(b).from_node;
     let mut subgraph =
         compute_restricted_edge_reachability::<_, BackwardNeighborStrategy, SubgraphType>(
             graph, start_node, a,
         );
 
-    for edge in azb.iter().skip(1) {
+    for &edge in azb.iter().skip(1) {
         let node = graph.edge_endpoints(edge).from_node;
         for outgoing in graph.out_neighbors(node) {
             let outgoing = outgoing.edge_id;

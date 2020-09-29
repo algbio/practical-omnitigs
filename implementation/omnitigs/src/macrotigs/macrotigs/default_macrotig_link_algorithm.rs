@@ -4,7 +4,7 @@ use traitgraph::algo::traversal::univocal_traversal::is_edge_self_bivalent;
 use traitgraph::index::GraphIndex;
 use traitgraph::index::OptionalGraphIndex;
 use traitgraph::interface::StaticGraph;
-use traitgraph::walks::EdgeWalk;
+use traitsequence::interface::Sequence;
 
 /// Compute the maximal microtigs of a strongly connected graph using hydrostructure-based queries.
 pub struct DefaultMacrotigLinkAlgorithm;
@@ -42,7 +42,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                     let first_edge = current_microtig.first().unwrap();
 
                     // Do not extend over self bivalent edges as required by the definition of macrotigs.
-                    if is_edge_self_bivalent(graph, first_edge) {
+                    if is_edge_self_bivalent(graph, *first_edge) {
                         break;
                     }
 
@@ -76,7 +76,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                     let last_edge = current_microtig.last().unwrap();
 
                     // Do not extend over self bivalent edges as required by the definition of macrotigs.
-                    if is_edge_self_bivalent(graph, last_edge) {
+                    if is_edge_self_bivalent(graph, *last_edge) {
                         break;
                     }
 

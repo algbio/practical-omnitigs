@@ -1,6 +1,7 @@
 use super::{MacronodeAlgorithm, Macronodes};
 use crate::unitigs::{NodeUnitig, Unitigs};
 use traitgraph::interface::StaticGraph;
+use traitsequence::interface::Sequence;
 
 /// Compute the macronodes of a strongly connected graph.
 pub struct StronglyConnectedMacronodes;
@@ -11,9 +12,9 @@ impl<Graph: StaticGraph> MacronodeAlgorithm<Graph> for StronglyConnectedMacronod
         let macronodes: Vec<_> = unitigs
             .into_iter()
             .filter(|unitig| {
-                (graph.out_degree(unitig.iter().next().unwrap()) == 1
-                    && graph.in_degree(unitig.iter().last().unwrap()) == 1)
-                    || (unitig.len() == 1 && graph.is_bivalent_node(unitig.iter().next().unwrap()))
+                (graph.out_degree(*unitig.iter().next().unwrap()) == 1
+                    && graph.in_degree(*unitig.iter().last().unwrap()) == 1)
+                    || (unitig.len() == 1 && graph.is_bivalent_node(*unitig.iter().next().unwrap()))
             })
             .map(NodeUnitig::into_node_walk)
             .collect();
