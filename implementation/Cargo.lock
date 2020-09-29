@@ -800,6 +800,7 @@ dependencies = [
  "bigraph",
  "bitvector",
  "traitgraph",
+ "traitsequence",
 ]
 
 [[package]]
@@ -1459,6 +1460,10 @@ dependencies = [
  "num-traits",
  "petgraph 0.5.1",
 ]
+
+[[package]]
+name = "traitsequence"
+version = "0.1.0-alpha.0"
 
 [[package]]
 name = "unicode-segmentation"
