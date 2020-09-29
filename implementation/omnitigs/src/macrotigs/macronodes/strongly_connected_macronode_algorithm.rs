@@ -28,6 +28,7 @@ mod tests {
     use crate::macrotigs::macronodes::MacronodeAlgorithm;
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::{MutableGraphContainer, WalkableGraph};
+    use traitsequence::interface::Sequence;
 
     #[test]
     fn test_compute_macronodes_complex_graph() {
