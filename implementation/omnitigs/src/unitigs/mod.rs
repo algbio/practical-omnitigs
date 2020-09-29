@@ -151,6 +151,53 @@ impl<Graph: StaticGraph> Unitigs<Graph> {
     }
 }
 
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>> for Unitigs<Graph>
+    where
+        Graph::NodeIndex: 'a,
+{
+    type Iterator = std::slice::Iter<'a, NodeUnitig<Graph>>;
+    type IteratorMut = std::slice::IterMut<'a, NodeUnitig<Graph>>;
+
+    fn iter(&'a self) -> Self::Iterator {
+        self.unitigs.iter()
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.unitigs.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.unitigs.len()
+    }
+}
+
+impl<Graph: GraphBase, IndexType> std::ops::Index<IndexType> for Unitigs<Graph>
+    where
+        Vec<NodeUnitig<Graph>>: std::ops::Index<IndexType>,
+{
+    type Output = <Vec<NodeUnitig<Graph>> as std::ops::Index<IndexType>>::Output;
+
+    fn index(&self, index: IndexType) -> &Self::Output {
+        self.unitigs.index(index)
+    }
+}
+
+impl<Graph: GraphBase> std::fmt::Debug for Unitigs<Graph>
+    where
+        Graph::NodeIndex: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "NodeUnitigs[")?;
+        if let Some(first) = self.iter().next() {
+            write!(f, "{:?}", first)?;
+        }
+        for edge in self.iter().skip(1) {
+            write!(f, ", {:?}", edge)?;
+        }
+        write!(f, "]")
+    }
+}
+
 impl<Graph: GraphBase> IntoIterator for Unitigs<Graph> {
     type Item = NodeUnitig<Graph>;
     type IntoIter = std::vec::IntoIter<NodeUnitig<Graph>>;
