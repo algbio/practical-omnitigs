@@ -112,8 +112,8 @@ where
         if scc_amount_per_wcc.is_empty() {
             writeln!(latex_file, "max SCCs per WCC & N/A \\\\")?;
             writeln!(latex_file, "min SCCs per WCC & N/A \\\\")?;
-            writeln!(latex_file, "average SCCs per WCC & N/A \\\\")?;
             writeln!(latex_file, "median SCCs per WCC & N/A \\\\")?;
+            writeln!(latex_file, "mean SCCs per WCC & N/A \\\\")?;
         } else {
             writeln!(
                 latex_file,
@@ -127,13 +127,13 @@ where
             )?;
             writeln!(
                 latex_file,
-                "mean SCCs per WCC & {} \\\\",
-                statistical::mean(&scc_amount_per_wcc_float)
+                "median SCCs per WCC & {} \\\\",
+                statistical::median(&scc_amount_per_wcc_float)
             )?;
             writeln!(
                 latex_file,
-                "median SCCs per WCC & {} \\\\",
-                statistical::median(&scc_amount_per_wcc_float)
+                "mean SCCs per WCC & {} \\\\",
+                statistical::mean(&scc_amount_per_wcc_float)
             )?;
         }
     }
@@ -246,6 +246,7 @@ pub(crate) fn verify_edge_centric(
     subcommand: &VerifyEdgeCentricCommand,
 ) -> crate::Result<()> {
     let mut latex_file = if let Some(latex_file_name) = &subcommand.latex {
+        info!("Creating/truncating LaTeX file");
         Some(std::io::BufWriter::new(std::fs::File::create(
             latex_file_name,
         )?))

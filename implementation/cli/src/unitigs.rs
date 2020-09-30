@@ -1,12 +1,12 @@
 use crate::CliOptions;
 use clap::Clap;
 use genome_graph::types::PetBCalm2EdgeGraph;
-use omnitigs::omnitigs::Omnitigs;
+use omnitigs::unitigs::EdgeUnitigs;
 use std::io::Write;
 use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
-pub struct ComputeTrivialOmnitigsCommand {
+pub struct ComputeUnitigsCommand {
     #[clap(
         short,
         long,
@@ -17,7 +17,7 @@ pub struct ComputeTrivialOmnitigsCommand {
     #[clap(
         short,
         long,
-        about = "The file the trivial omnitigs are stored into in fasta format."
+        about = "The file the unitigs are stored into in fasta format."
     )]
     pub output: String,
 
@@ -29,9 +29,9 @@ pub struct ComputeTrivialOmnitigsCommand {
     pub latex: Option<String>,
 }
 
-pub(crate) fn compute_trivial_omnitigs(
+pub(crate) fn compute_unitigs(
     options: &CliOptions,
-    subcommand: &ComputeTrivialOmnitigsCommand,
+    subcommand: &ComputeUnitigsCommand,
 ) -> crate::Result<()> {
     let mut latex_file = if let Some(latex_file_name) = &subcommand.latex {
         info!("Creating/truncating LaTeX file");
@@ -52,34 +52,26 @@ pub(crate) fn compute_trivial_omnitigs(
             subcommand.kmer_size,
         )?;
 
-    info!("Computing maximal trivial omnitigs");
-    let mut maximal_omnitigs = Omnitigs::compute_trivial_only(&genome_graph);
+    info!("Computing maximal unitigs");
+    let mut unitigs = EdgeUnitigs::compute(&genome_graph);
     info!("Removing reverse complements");
-    maximal_omnitigs.remove_reverse_complements(&genome_graph);
+    unitigs.remove_reverse_complements(&genome_graph);
 
     info!("");
-    info!(" === Trivial Omnitig Statistics === ");
+    info!(" === Unitig Statistics === ");
     info!("");
 
-    let min_omnitig_len = maximal_omnitigs.iter().map(Sequence::len).min().unwrap();
-    let max_omnitig_len = maximal_omnitigs.iter().map(Sequence::len).max().unwrap();
-    let median_omnitigs_len = statistical::median(
-        &maximal_omnitigs
-            .iter()
-            .map(Sequence::len)
-            .collect::<Vec<_>>(),
-    );
-    let mean_omnitig_len = statistical::mean(
-        &maximal_omnitigs
-            .iter()
-            .map(|o| o.len() as f64)
-            .collect::<Vec<_>>(),
-    );
+    let min_unitig_len = unitigs.iter().map(Sequence::len).min().unwrap();
+    let max_unitig_len = unitigs.iter().map(Sequence::len).max().unwrap();
+    let median_unitig_len =
+        statistical::median(&unitigs.iter().map(Sequence::len).collect::<Vec<_>>());
+    let mean_unitig_len =
+        statistical::mean(&unitigs.iter().map(|o| o.len() as f64).collect::<Vec<_>>());
 
-    info!("Minimum edge length: {}", min_omnitig_len);
-    info!("Maximum edge length: {}", max_omnitig_len);
-    info!("Median edge length: {}", median_omnitigs_len);
-    info!("Mean edge length: {:.1}", mean_omnitig_len);
+    info!("Minimum edge length: {}", min_unitig_len);
+    info!("Maximum edge length: {}", max_unitig_len);
+    info!("Median edge length: {}", median_unitig_len);
+    info!("Mean edge length: {:.1}", mean_unitig_len);
 
     if let Some(latex_file) = &mut latex_file {
         writeln!(
@@ -98,29 +90,22 @@ pub(crate) fn compute_trivial_omnitigs(
             latex_file,
             "mean non-trivial omnitigs per macrotig & N/A \\\\"
         )?;
-        writeln!(latex_file, "min edge length & {} \\\\", min_omnitig_len)?;
-        writeln!(latex_file, "max edge length & {} \\\\", max_omnitig_len)?;
+        writeln!(latex_file, "min edge length & {} \\\\", min_unitig_len)?;
+        writeln!(latex_file, "max edge length & {} \\\\", max_unitig_len)?;
         writeln!(
             latex_file,
             "median edge length & {} \\\\",
-            median_omnitigs_len
+            median_unitig_len
         )?;
-        writeln!(
-            latex_file,
-            "mean edge length & {:.1} \\\\",
-            mean_omnitig_len
-        )?;
+        writeln!(latex_file, "mean edge length & {:.1} \\\\", mean_unitig_len)?;
     }
 
     info!("");
-    info!(
-        "Storing maximal trivial omnitigs as fasta to '{}'",
-        subcommand.output
-    );
+    info!("Storing unitigs as fasta to '{}'", subcommand.output);
     genome_graph::io::fasta::write_walks_as_fasta_file(
         &genome_graph,
         subcommand.kmer_size,
-        maximal_omnitigs.iter(),
+        unitigs.iter(),
         &subcommand.output,
     )?;
 

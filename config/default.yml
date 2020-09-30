@@ -15,13 +15,13 @@ experiments:
     filter_retain: "NC_002978.6"
     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
-  "GRCh38_latest":
-    k: [51]
-    bcalm2_abundance_min: [1]
-    circularised: [true]
-    filter_retain: "NC_000010.11"
-    algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-    url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
+  #"GRCh38_latest":
+  #  k: [51]
+  #  bcalm2_abundance_min: [1]
+  #  circularised: [true]
+  #  filter_retain: "NC_000010.11"
+  #  algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #  url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
 
 tests:
   "GCF_000008865.2_ASM886v2":

@@ -43,8 +43,27 @@ name_file = open(genome_name_file_name, 'r')
 name_lines = name_file.readlines()
 name_lines = [x.replace("_", "\\_") for x in name_lines]
 
+###############################
+### Process algorithm files ###
+###############################
+
+def read_algorithm_file(prefix):
+	algorithm_file = open(prefix + ".tex")
+	algorithm_lines = algorithm_file.readlines()
+	return algorithm_lines
+
+headline = "Parameter"
+algorithm_table = []
+for label, prefix in experiments:
+	headline += " & " + label
+	table = read_algorithm_file(prefix)
+	algorithm_table = append_latex_table_second_column(algorithm_table, table)
+
+algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
+
+
 ##########################
-### Process QUAST file ###
+### Process QUAST files ###
 ##########################
 
 def read_quast_file(prefix):
@@ -66,7 +85,7 @@ quast_table = [headline + "\\\\ \\hline"] + quast_table
 
 
 ####################################
-### Process ContigValidator file ###
+### Process ContigValidator files ###
 ####################################
 
 def read_contig_validator_file(prefix):
@@ -89,7 +108,7 @@ for (label, prefix) in experiments:
 contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
 
 #########################################
-### Process CLI graph statistics file ###
+### Process CLI graph statistics files ###
 #########################################
 
 graph_statistics_file = open(graph_statistics_file_name, 'r')
@@ -159,6 +178,8 @@ for line in name_lines:
 output_file.write("\\end{itemize}\n")
 
 write_table(output_file, "Genome Graph Statistics", 1, graph_statistics_table)
+
+write_table(output_file, "Algorithm Statistics", len(experiments), algorithm_table)
 
 write_table(output_file, "ContigValidator", len(experiments), contig_validator_table)
 
