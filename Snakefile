@@ -50,7 +50,7 @@ def _generate_bcalm2_targets_(experiment, config):
     for target in _generate_read_sim_targets_(experiment, config):
         for k in config["k"]:
             for bcalm2_abundance_min in config["bcalm2_abundance_min"]:
-                    yield target + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + ".unitigs"
+                    yield target + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + ".bcalm2"
 
 def _generate_bcalm2_parameterisation_targets_(experiment, config):
     for target in _generate_read_sim_targets_(experiment, config):
@@ -162,6 +162,10 @@ rule compute_unitigs:
 
 rule test:
     input: generate_test_targets()
+
+rule test_algorithm:
+    input: "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.is_tested"
+    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.is_tested")
 
 rule test_single_file:
     input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify",
