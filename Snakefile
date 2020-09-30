@@ -230,7 +230,7 @@ rule create_single_report_tex:
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/{file}.report.tex"
     params: prefix = "data/{dir}/{file}"
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{wildcards.file}.unitigs.bandage.png' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '../../{input.bcalm2_bandage}' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule report_all:
     input: generate_report_targets()
@@ -326,9 +326,9 @@ rule download_bcalm2_gfa_converter:
         """
 
 rule convert_bcalm2_output_to_gfa:
-    input: fa = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
+    input: fa = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
         converter = "external-software/scripts/convertToGFA.py"
-    output: gfa = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.gfa"
+    output: gfa = "data/{dir}/{file}.k{k}-a{abundance_min}.{bcalm2.gfa"
     shell: "external-software/scripts/convertToGFA.py {input.fa} {output.gfa} {wildcards.k}"
 
 rule bandage:
