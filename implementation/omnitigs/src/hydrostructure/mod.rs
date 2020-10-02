@@ -3,8 +3,6 @@
 pub mod incremental_hydrostructure;
 /// A static implementation of the hydrostructure for a walk.
 pub mod static_hydrostructure;
-/// A type that keeps counts about nodes and edges in a subgraph to dynamically determine if the subgraph is a path.
-pub mod subgraph_is_path_tracker;
 
 /// The hydrostructure of a walk `W` as defined in the hydrostructure paper.
 pub trait Hydrostructure<NodeIndex: Copy, EdgeIndex: Copy> {

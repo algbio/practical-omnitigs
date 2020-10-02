@@ -1,3 +1,4 @@
+use crate::hydrostructure::incremental_hydrostructure::IncrementalSafetyTracker;
 use traitgraph::implementation::bit_vector_subgraph::BitVectorSubgraph;
 use traitgraph::implementation::incremental_subgraph::IncrementalSubgraph;
 use traitgraph::index::GraphIndex;
@@ -5,12 +6,12 @@ use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::ImmutableGraphContainer;
 use traitgraph::interface::{GraphBase, NavigableGraph, StaticGraph};
 
-/// A structure to dynamically track if a subgraph is a path.
+/// A structure to dynamically track if the vapor is a path.
 /// This structure takes O(|Edges|) time to construct and offers an O(1) query if the subgraph is a path.
 /// Inserting and removing each node and edge of the graph once in any order takes O(|Edges|) time.
 ///
 /// All runtimes assume that the endpoints of an edge can be retrieved in O(1).
-pub struct SubgraphIsPathTracker<'a, Graph> {
+pub struct VaporIsPathTracker<'a, Graph> {
     subgraph: BitVectorSubgraph<'a, Graph>,
     node_in_edges: Vec<usize>,
     node_out_edges: Vec<usize>,
@@ -20,9 +21,8 @@ pub struct SubgraphIsPathTracker<'a, Graph> {
     join_node_count: usize,
 }
 
-impl<'a, Graph: StaticGraph> SubgraphIsPathTracker<'a, Graph> {
-    /// Creates a new instance assuming that the given subgraph type is empty.
-    pub fn new_with_empty_subgraph(graph: &'a Graph) -> Self {
+impl<'a, Graph: StaticGraph> IncrementalSafetyTracker<'a, Graph> for VaporIsPathTracker<'a, Graph> {
+    fn new_with_empty_subgraph(graph: &'a Graph) -> Self {
         Self {
             node_in_edges: vec![0; graph.node_count()],
             node_out_edges: vec![0; graph.node_count()],
@@ -34,8 +34,7 @@ impl<'a, Graph: StaticGraph> SubgraphIsPathTracker<'a, Graph> {
         }
     }
 
-    /// Remove all nodes and edges from the subgraph.
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         if DecoratingSubgraph::node_count(&self.subgraph) == 0
             && DecoratingSubgraph::edge_count(&self.subgraph) == 0
         {
@@ -55,6 +54,65 @@ impl<'a, Graph: StaticGraph> SubgraphIsPathTracker<'a, Graph> {
         self.join_node_count = 0;
     }
 
+    fn reset(&mut self, r_plus: &IncrementalSubgraph<Graph>, r_minus: &IncrementalSubgraph<Graph>) {
+        self.clear();
+        for node in r_plus.parent_graph().node_indices() {
+            if r_plus.contains_node(node) && r_minus.contains_node(node) {
+                self.add_node(node);
+            }
+        }
+        for edge in r_plus.parent_graph().edge_indices() {
+            if r_plus.contains_edge(edge) && r_minus.contains_edge(edge) {
+                self.add_edge(edge);
+            }
+        }
+    }
+
+    fn add_incremental_subgraph_step(
+        &mut self,
+        r_plus: &IncrementalSubgraph<Graph>,
+        r_minus: &IncrementalSubgraph<Graph>,
+    ) {
+        for node in r_plus.new_nodes() {
+            if r_minus.contains_node(*node) {
+                self.add_node(*node);
+            }
+        }
+        for edge in r_plus.new_edges() {
+            if r_minus.contains_edge(*edge) {
+                self.add_edge(*edge);
+            }
+        }
+    }
+
+    fn remove_incremental_subgraph_step(
+        &mut self,
+        _r_plus: &IncrementalSubgraph<Graph>,
+        r_minus: &IncrementalSubgraph<Graph>,
+    ) {
+        for node in r_minus.new_nodes() {
+            if self.contains_node(*node) {
+                self.remove_node(*node);
+            }
+        }
+        for edge in r_minus.new_edges() {
+            if self.contains_edge(*edge) {
+                self.remove_edge(*edge);
+            }
+        }
+    }
+
+    /// Returns true if the subgraph is a path.
+    /// Empty graphs are not counted as paths.
+    fn is_safe(&self) -> bool {
+        self.source_count == 1
+            && self.sink_count == 1
+            && self.split_node_count == 0
+            && self.join_node_count == 0
+    }
+}
+
+impl<'a, Graph: StaticGraph> VaporIsPathTracker<'a, Graph> {
     /// Returns true if the given node is in the subgraph.
     pub fn contains_node(&self, node: <Graph as GraphBase>::NodeIndex) -> bool {
         self.subgraph.contains_node(node)
@@ -200,54 +258,15 @@ impl<'a, Graph: StaticGraph> SubgraphIsPathTracker<'a, Graph> {
             self.sink_count -= 1;
         }
     }
-
-    /// Add the nodes and edges from the current step of the incremental subgraph.
-    pub fn add_incremental_subgraph_step(
-        &mut self,
-        incremental_subgraph: &IncrementalSubgraph<Graph>,
-    ) {
-        for node in incremental_subgraph.new_nodes() {
-            self.add_node(*node);
-        }
-        for edge in incremental_subgraph.new_edges() {
-            self.add_edge(*edge);
-        }
-    }
-
-    /// Remove the nodes and edges from the current step of the incremental subgraph.
-    pub fn remove_incremental_subgraph_step(
-        &mut self,
-        incremental_subgraph: &IncrementalSubgraph<Graph>,
-    ) {
-        for node in incremental_subgraph.new_nodes() {
-            if self.contains_node(*node) {
-                self.remove_node(*node);
-            }
-        }
-        for edge in incremental_subgraph.new_edges() {
-            if self.contains_edge(*edge) {
-                self.remove_edge(*edge);
-            }
-        }
-    }
-
-    /// Returns true if the subgraph is a path.
-    /// Empty graphs are not counted as paths.
-    pub fn is_path(&self) -> bool {
-        self.source_count == 1
-            && self.sink_count == 1
-            && self.split_node_count == 0
-            && self.join_node_count == 0
-    }
 }
 
-impl<'a, Graph: ImmutableGraphContainer> std::fmt::Debug for SubgraphIsPathTracker<'a, Graph>
+impl<'a, Graph: ImmutableGraphContainer> std::fmt::Debug for VaporIsPathTracker<'a, Graph>
 where
     Graph::NodeIndex: std::fmt::Debug,
     Graph::EdgeIndex: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "SubgraphIsPathTracker[nodes: [")?;
+        write!(f, "VaporIsPathTracker[nodes: [")?;
 
         let mut once = true;
         for node in self.subgraph.parent_graph().node_indices() {
