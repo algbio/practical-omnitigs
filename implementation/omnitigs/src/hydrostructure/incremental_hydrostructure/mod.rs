@@ -401,9 +401,10 @@ impl<
     }
 
     fn is_bridge_like(&self) -> bool {
-        self.rightmost_join.is_none()
-            || self.rightmost_split.is_none()
-            || self.safety_tracker.is_safe()
+        self.safety_tracker.is_safe(
+            self.rightmost_split.is_none(),
+            self.rightmost_join.is_none(),
+        )
     }
 }
 
@@ -433,7 +434,7 @@ pub trait IncrementalSafetyTracker<'a, Graph: GraphBase> {
     );
 
     /// Returns true if the safety tracker indicates that the current subwalk is safe.
-    fn is_safe(&self) -> bool;
+    fn is_safe(&self, is_forward_univocal: bool, is_backward_univocal: bool) -> bool;
 }
 
 #[cfg(test)]

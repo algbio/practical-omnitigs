@@ -104,11 +104,13 @@ impl<'a, Graph: StaticGraph> IncrementalSafetyTracker<'a, Graph> for VaporIsPath
 
     /// Returns true if the subgraph is a path.
     /// Empty graphs are not counted as paths.
-    fn is_safe(&self) -> bool {
-        self.source_count == 1
-            && self.sink_count == 1
-            && self.split_node_count == 0
-            && self.join_node_count == 0
+    fn is_safe(&self, is_forward_univocal: bool, is_backward_univocal: bool) -> bool {
+        is_forward_univocal
+            || is_backward_univocal
+            || (self.source_count == 1
+                && self.sink_count == 1
+                && self.split_node_count == 0
+                && self.join_node_count == 0)
     }
 }
 

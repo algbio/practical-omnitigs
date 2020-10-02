@@ -55,7 +55,11 @@ impl<
             .remove_incremental_subgraph_step(r_plus, r_minus);
     }
 
-    fn is_safe(&self) -> bool {
-        self.safety_tracker_1.is_safe() && self.safety_tracker_2.is_safe()
+    fn is_safe(&self, is_forward_univocal: bool, is_backward_univocal: bool) -> bool {
+        self.safety_tracker_1
+            .is_safe(is_forward_univocal, is_backward_univocal)
+            && self
+                .safety_tracker_2
+                .is_safe(is_forward_univocal, is_backward_univocal)
     }
 }
