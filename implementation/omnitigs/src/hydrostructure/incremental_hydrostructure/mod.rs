@@ -13,6 +13,8 @@ use vapor_is_path_tracker::VaporIsPathTracker;
 
 /// A type that combines two safety trackers under conjunction.
 pub mod conjunctive_safety_tracker;
+/// A type that keeps counts of the nodes in the different hydrostructure components to dynamically determine if they contain nodes.
+pub mod node_centric_component_tracker;
 /// A type that keeps counts about nodes and edges in a subgraph to dynamically determine if the subgraph is a path.
 pub mod vapor_is_path_tracker;
 
