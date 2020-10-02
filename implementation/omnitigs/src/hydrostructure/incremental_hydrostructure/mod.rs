@@ -15,10 +15,19 @@ pub mod conjunctive_safety_tracker;
 /// A type that keeps counts about nodes and edges in a subgraph to dynamically determine if the subgraph is a path.
 pub mod vapor_is_path_tracker;
 
+/// An incremental hydrostructure that checks if a subwalk is bridge-like.
+pub type BridgeLikeIncrementalHydrostructure<'graph, 'walk, Graph> =
+    IncrementalHydrostructure<'graph, 'walk, Graph, VaporIsPathTracker<'graph, Graph>>;
+
 /// The hydrostructure for a walk `W`.
 /// This hydrostructure implementation is incremental, meaning that it is valid for any subwalk of `W`.
 /// The subwalk can be adjusted using the left and right finger.
-pub struct IncrementalHydrostructure<'graph, 'walk, Graph: GraphBase> {
+pub struct IncrementalHydrostructure<
+    'graph,
+    'walk,
+    Graph: GraphBase,
+    SafetyTracker: IncrementalSafetyTracker<'graph, Graph>,
+> {
     /// An incremental version of the set `R⁺(W)` for each split of the underlying walk.
     r_plus: IncrementalSubgraph<'graph, Graph>,
     /// An incremental version of the set `R⁻(W)` for each join of the underlying walk.
@@ -33,11 +42,17 @@ pub struct IncrementalHydrostructure<'graph, 'walk, Graph: GraphBase> {
     rightmost_split: Option<usize>,
     /// The rightmost join edge in `[left_finger ... right_finger - 1]`.
     rightmost_join: Option<usize>,
-    /// Track if the vapor is a path.
-    vapor_is_path_tracker: VaporIsPathTracker<'graph, Graph>,
+    /// Track if the current subwalk is safe.
+    safety_tracker: SafetyTracker,
 }
 
-impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'graph, 'walk, Graph> {
+impl<
+        'graph,
+        'walk,
+        Graph: 'graph + StaticGraph,
+        SafetyTracker: IncrementalSafetyTracker<'graph, Graph>,
+    > IncrementalHydrostructure<'graph, 'walk, Graph, SafetyTracker>
+{
     /// Compute the incremental hydrostructure of a walk.
     /// Sets the fingers to cover the whole walk.
     ///
@@ -54,7 +69,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             right_finger: walk.len() - 1,
             rightmost_split: None,
             rightmost_join: None,
-            vapor_is_path_tracker: VaporIsPathTracker::new_with_empty_subgraph(graph),
+            safety_tracker: SafetyTracker::new_with_empty_subgraph(graph),
             r_plus,
             r_minus,
             walk,
@@ -93,7 +108,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             right_finger,
             rightmost_split: None,
             rightmost_join: None,
-            vapor_is_path_tracker: VaporIsPathTracker::new_with_empty_subgraph(graph),
+            safety_tracker: SafetyTracker::new_with_empty_subgraph(graph),
             r_plus,
             r_minus,
             walk,
@@ -131,14 +146,12 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             } else {
                 None
             },
-            vapor_is_path_tracker: VaporIsPathTracker::new_with_empty_subgraph(graph),
+            safety_tracker: SafetyTracker::new_with_empty_subgraph(graph),
             r_plus,
             r_minus,
             walk,
         };
-        result
-            .vapor_is_path_tracker
-            .reset(&result.r_plus, &result.r_minus);
+        result.safety_tracker.reset(&result.r_plus, &result.r_minus);
         result
     }
 
@@ -172,8 +185,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
         self.r_plus.set_current_step(self.right_finger);
 
         self.reset_rightmost_split_join();
-        self.vapor_is_path_tracker
-            .reset(&self.r_plus, &self.r_minus);
+        self.safety_tracker.reset(&self.r_plus, &self.r_minus);
     }
 
     /// Set the left and right finger to the specified values.
@@ -205,7 +217,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
     /// Increments the left finger.
     /// Panics if the increment moves the left finger past the end of the walk.
     pub fn increment_left_finger(&mut self) {
-        self.vapor_is_path_tracker
+        self.safety_tracker
             .remove_incremental_subgraph_step(&self.r_plus, &self.r_minus);
 
         self.left_finger += 1;
@@ -266,7 +278,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
             self.rightmost_split = Some(self.right_finger);
         }
 
-        self.vapor_is_path_tracker
+        self.safety_tracker
             .add_incremental_subgraph_step(&self.r_plus, &self.r_minus);
     }
 
@@ -345,8 +357,13 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> IncrementalHydrostructure<'grap
     }
 }
 
-impl<'graph, 'walk, Graph: 'graph + StaticGraph> Hydrostructure<Graph::NodeIndex, Graph::EdgeIndex>
-    for IncrementalHydrostructure<'graph, 'walk, Graph>
+impl<
+        'graph,
+        'walk,
+        Graph: 'graph + StaticGraph,
+        SafetyTracker: IncrementalSafetyTracker<'graph, Graph>,
+    > Hydrostructure<Graph::NodeIndex, Graph::EdgeIndex>
+    for IncrementalHydrostructure<'graph, 'walk, Graph, SafetyTracker>
 {
     fn is_node_r_plus(&self, node: <Graph as GraphBase>::NodeIndex) -> bool {
         if self.is_bridge_like() {
@@ -383,7 +400,7 @@ impl<'graph, 'walk, Graph: 'graph + StaticGraph> Hydrostructure<Graph::NodeIndex
     fn is_bridge_like(&self) -> bool {
         self.rightmost_join.is_none()
             || self.rightmost_split.is_none()
-            || self.vapor_is_path_tracker.is_safe()
+            || self.safety_tracker.is_safe()
     }
 }
 
@@ -426,7 +443,7 @@ mod tests {
     use crate::macrotigs::microtigs::MaximalMicrotigsAlgorithm;
     use crate::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
     use crate::macrotigs::macrotigs::{MaximalMacrotigsAlgorithm, Macrotigs};
-    use crate::hydrostructure::incremental_hydrostructure::IncrementalHydrostructure;
+    use crate::hydrostructure::incremental_hydrostructure::{BridgeLikeIncrementalHydrostructure};
     use traitgraph::walks::VecEdgeWalk;
     use crate::hydrostructure::static_hydrostructure::StaticHydrostructure;
     use crate::hydrostructure::Hydrostructure;
@@ -442,7 +459,8 @@ mod tests {
         let e1 = graph.add_edge(n1, n2, ());
 
         let walk = graph.create_edge_walk(&[e0, e1]);
-        let incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
+        let incremental_hydrostructure =
+            BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_river(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
         assert!(incremental_hydrostructure.is_node_vapor(n1));
@@ -462,7 +480,8 @@ mod tests {
         let e2 = graph.add_edge(n2, n3, ());
 
         let walk = graph.create_edge_walk(&[e0, e1, e2]);
-        let mut incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
+        let mut incremental_hydrostructure =
+            BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_river(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
         assert!(incremental_hydrostructure.is_node_vapor(n1));
@@ -511,7 +530,8 @@ mod tests {
         let e3 = graph.add_edge(n2, n0, ());
 
         let walk = graph.create_edge_walk(&[e0, e1, e2]);
-        let mut incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
+        let mut incremental_hydrostructure =
+            BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_vapor(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
         assert!(incremental_hydrostructure.is_edge_vapor(e1));
@@ -560,7 +580,8 @@ mod tests {
         let e3 = graph.add_edge(n2, n0, ());
 
         let walk = graph.create_edge_walk(&[e0, e1, e2]);
-        let mut incremental_hydrostructure = IncrementalHydrostructure::compute(&graph, &walk);
+        let mut incremental_hydrostructure =
+            BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_edge_sea(e3));
         assert!(incremental_hydrostructure.is_node_sea(n0));
         assert!(incremental_hydrostructure.is_edge_sea(e0));
@@ -670,7 +691,7 @@ mod tests {
 
         for macrotig in maximal_macrotigs.iter() {
             let mut incremental_hydrostructure =
-                IncrementalHydrostructure::compute(&graph, macrotig);
+                BridgeLikeIncrementalHydrostructure::compute(&graph, macrotig);
             for subwalk_len in 2..macrotig.len() {
                 //println!("Setting initial fingers for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_both_fingers(0, subwalk_len - 1);
@@ -820,7 +841,7 @@ mod tests {
 
         for macrotig in maximal_macrotigs.iter() {
             let mut incremental_hydrostructure =
-                IncrementalHydrostructure::compute(&graph, macrotig);
+                BridgeLikeIncrementalHydrostructure::compute(&graph, macrotig);
             for subwalk_len in 2..macrotig.len() {
                 //println!("Setting initial left finger for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_left_finger(0);
