@@ -9,6 +9,7 @@ use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
 use traitsequence::interface::Sequence;
 use vapor_is_path_tracker::VaporIsPathTracker;
+//use crate::hydrostructure::incremental_hydrostructure::conjunctive_safety_tracker::ConjunctiveSafetyTracker;
 
 /// A type that combines two safety trackers under conjunction.
 pub mod conjunctive_safety_tracker;
@@ -18,6 +19,8 @@ pub mod vapor_is_path_tracker;
 /// An incremental hydrostructure that checks if a subwalk is bridge-like.
 pub type BridgeLikeIncrementalHydrostructure<'graph, 'walk, Graph> =
     IncrementalHydrostructure<'graph, 'walk, Graph, VaporIsPathTracker<'graph, Graph>>;
+
+//pub type NodeBridgeLikeIncrementalHydrostructure<'graph, 'walk, Graph> = IncrementalHydrostructure<'graph, 'walk, Graph, ConjunctiveSafetyTracker<VaporIsPathTracker<'graph, Graph>, todo!()>>;
 
 /// The hydrostructure for a walk `W`.
 /// This hydrostructure implementation is incremental, meaning that it is valid for any subwalk of `W`.
