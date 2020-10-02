@@ -8,7 +8,6 @@ use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
 use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
 use bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
 use bigraph::interface::BidirectedData;
-use traitgraph::algo::traversal::univocal_traversal::univocal_extension_with_original_offset;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
@@ -27,7 +26,7 @@ impl<Graph: StaticGraph> Omnitig<Graph> {
     /// Does not check if the given walk is actually an omnitig heart.
     pub fn compute_from_heart(graph: &Graph, heart: &[Graph::EdgeIndex]) -> Self {
         let (first_heart_edge, univocal_extension) =
-            univocal_extension_with_original_offset(graph, heart);
+            heart.compute_univocal_extension_with_original_offset(graph);
         let last_heart_edge = first_heart_edge + heart.len() - 1;
         Self::new(univocal_extension, first_heart_edge, last_heart_edge)
     }

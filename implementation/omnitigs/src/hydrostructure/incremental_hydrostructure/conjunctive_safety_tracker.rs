@@ -62,4 +62,9 @@ impl<
                 .safety_tracker_2
                 .is_safe(is_forward_univocal, is_backward_univocal)
     }
+
+    fn does_safety_equal_bridge_like() -> bool {
+        SafetyTracker1::does_safety_equal_bridge_like()
+            && SafetyTracker2::does_safety_equal_bridge_like()
+    }
 }

@@ -136,4 +136,8 @@ impl<'a, Graph: ImmutableGraphContainer> IncrementalSafetyTracker<'a, Graph>
             self.river_node_count > 0 || (self.cloud_node_count > 0 && self.sea_node_count > 0)
         }
     }
+
+    fn does_safety_equal_bridge_like() -> bool {
+        false
+    }
 }

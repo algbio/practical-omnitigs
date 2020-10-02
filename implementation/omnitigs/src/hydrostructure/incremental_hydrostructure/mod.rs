@@ -1,3 +1,5 @@
+use crate::hydrostructure::incremental_hydrostructure::conjunctive_safety_tracker::ConjunctiveSafetyTracker;
+use crate::hydrostructure::incremental_hydrostructure::node_centric_component_tracker::NodeCentricComponentTracker;
 use crate::hydrostructure::Hydrostructure;
 use crate::restricted_reachability::{
     compute_incremental_restricted_backward_edge_reachability,
@@ -9,7 +11,6 @@ use traitgraph::interface::{GraphBase, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
 use traitsequence::interface::Sequence;
 use vapor_is_path_tracker::VaporIsPathTracker;
-//use crate::hydrostructure::incremental_hydrostructure::conjunctive_safety_tracker::ConjunctiveSafetyTracker;
 
 /// A type that combines two safety trackers under conjunction.
 pub mod conjunctive_safety_tracker;
@@ -22,7 +23,14 @@ pub mod vapor_is_path_tracker;
 pub type BridgeLikeIncrementalHydrostructure<'graph, 'walk, Graph> =
     IncrementalHydrostructure<'graph, 'walk, Graph, VaporIsPathTracker<'graph, Graph>>;
 
-//pub type NodeBridgeLikeIncrementalHydrostructure<'graph, 'walk, Graph> = IncrementalHydrostructure<'graph, 'walk, Graph, ConjunctiveSafetyTracker<VaporIsPathTracker<'graph, Graph>, todo!()>>;
+/// An incremental hydrostructure that checks if the node sequence (including the tail of the last arc and the head of the first arc)
+/// of a subwalk is safe in the node-visible node-covering 1-closed walk model.
+pub type NodeBridgeLikeIncrementalHydrostructure<'graph, 'walk, Graph> = IncrementalHydrostructure<
+    'graph,
+    'walk,
+    Graph,
+    ConjunctiveSafetyTracker<VaporIsPathTracker<'graph, Graph>, NodeCentricComponentTracker>,
+>;
 
 /// The hydrostructure for a walk `W`.
 /// This hydrostructure implementation is incremental, meaning that it is valid for any subwalk of `W`.
@@ -360,6 +368,14 @@ impl<
             self.is_edge_in_trivial_r_minus(edge)
         }
     }
+
+    /// Returns true if the current subwalk is safe according to the incremental safety tracker.
+    pub fn is_safe(&self) -> bool {
+        self.safety_tracker.is_safe(
+            self.rightmost_split.is_none(),
+            self.rightmost_join.is_none(),
+        )
+    }
 }
 
 impl<
@@ -403,10 +419,11 @@ impl<
     }
 
     fn is_bridge_like(&self) -> bool {
-        self.safety_tracker.is_safe(
-            self.rightmost_split.is_none(),
-            self.rightmost_join.is_none(),
-        )
+        if SafetyTracker::does_safety_equal_bridge_like() {
+            self.is_safe()
+        } else {
+            unimplemented!("The safety tracker used is not equivalent to a bridge-like check.")
+        }
     }
 }
 
@@ -437,6 +454,11 @@ pub trait IncrementalSafetyTracker<'a, Graph: GraphBase> {
 
     /// Returns true if the safety tracker indicates that the current subwalk is safe.
     fn is_safe(&self, is_forward_univocal: bool, is_backward_univocal: bool) -> bool;
+
+    /// May return true if the `is_safe` function returns true if and only if a subwalk is bridge-like.
+    /// It is not required to return true for all types, but for types where it does return true
+    /// the equivalence above must hold.
+    fn does_safety_equal_bridge_like() -> bool;
 }
 
 #[cfg(test)]

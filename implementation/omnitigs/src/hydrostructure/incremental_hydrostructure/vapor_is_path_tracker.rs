@@ -112,6 +112,10 @@ impl<'a, Graph: StaticGraph> IncrementalSafetyTracker<'a, Graph> for VaporIsPath
                 && self.split_node_count == 0
                 && self.join_node_count == 0)
     }
+
+    fn does_safety_equal_bridge_like() -> bool {
+        true
+    }
 }
 
 impl<'a, Graph: StaticGraph> VaporIsPathTracker<'a, Graph> {
