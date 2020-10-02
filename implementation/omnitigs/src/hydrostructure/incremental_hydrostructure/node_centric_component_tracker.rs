@@ -35,10 +35,30 @@ impl<'a, Graph: ImmutableGraphContainer> IncrementalSafetyTracker<'a, Graph>
         IncrementalSafetyTracker::<'a, Graph>::clear(self);
         for node in r_plus.parent_graph().node_indices() {
             match (r_plus.contains_node(node), r_minus.contains_node(node)) {
-                (true, true) => self.vapor_node_count += 1,
-                (true, false) => self.sea_node_count += 1,
-                (false, true) => self.cloud_node_count += 1,
-                (false, false) => self.river_node_count += 1,
+                (true, true) => {
+                    self.vapor_node_count = self
+                        .vapor_node_count
+                        .checked_add(1)
+                        .expect("Overflow in node count")
+                }
+                (true, false) => {
+                    self.sea_node_count = self
+                        .sea_node_count
+                        .checked_add(1)
+                        .expect("Overflow in node count")
+                }
+                (false, true) => {
+                    self.cloud_node_count = self
+                        .cloud_node_count
+                        .checked_add(1)
+                        .expect("Overflow in node count")
+                }
+                (false, false) => {
+                    self.river_node_count = self
+                        .river_node_count
+                        .checked_add(1)
+                        .expect("Overflow in node count")
+                }
             }
         }
     }
@@ -50,11 +70,23 @@ impl<'a, Graph: ImmutableGraphContainer> IncrementalSafetyTracker<'a, Graph>
     ) {
         for node in r_plus.new_nodes() {
             if r_minus.contains_node(*node) {
-                self.cloud_node_count -= 1;
-                self.vapor_node_count += 1;
+                self.cloud_node_count = self
+                    .cloud_node_count
+                    .checked_sub(1)
+                    .expect("Overflow in node count");
+                self.vapor_node_count = self
+                    .vapor_node_count
+                    .checked_add(1)
+                    .expect("Overflow in node count");
             } else {
-                self.river_node_count -= 1;
-                self.sea_node_count += 1;
+                self.river_node_count = self
+                    .river_node_count
+                    .checked_sub(1)
+                    .expect("Overflow in node count");
+                self.sea_node_count = self
+                    .sea_node_count
+                    .checked_add(1)
+                    .expect("Overflow in node count");
             }
         }
     }
@@ -66,17 +98,42 @@ impl<'a, Graph: ImmutableGraphContainer> IncrementalSafetyTracker<'a, Graph>
     ) {
         for node in r_minus.new_nodes() {
             if r_plus.contains_node(*node) {
-                self.vapor_node_count -= 1;
-                self.sea_node_count += 1;
+                self.vapor_node_count = self
+                    .vapor_node_count
+                    .checked_sub(1)
+                    .expect("Overflow in node count");
+                self.sea_node_count = self
+                    .sea_node_count
+                    .checked_add(1)
+                    .expect("Overflow in node count");
             } else {
-                self.cloud_node_count -= 1;
-                self.river_node_count += 1;
+                self.cloud_node_count = self
+                    .cloud_node_count
+                    .checked_sub(1)
+                    .expect("Overflow in node count");
+                self.river_node_count = self
+                    .river_node_count
+                    .checked_add(1)
+                    .expect("Overflow in node count");
             }
         }
     }
 
-    fn is_safe(&self, _is_forward_univocal: bool, _is_backward_univocal: bool) -> bool {
+    fn is_safe(&self, is_forward_univocal: bool, is_backward_univocal: bool) -> bool {
         // We assume that the walk is bridge-like.
-        todo!()
+        if is_forward_univocal && is_backward_univocal {
+            // If the walk is biunivocal then the head of its end is a node in the river.
+            true
+        } else if is_forward_univocal {
+            // If the walk is forward-univocal, then all nodes in the sea fall into the river temporarily.
+            // Also, the sea is then empty, so the sea-cloud condition does not hold.
+            self.river_node_count + self.sea_node_count > 0
+        } else if is_backward_univocal {
+            // If the walk is backward-univocal, then all nodes in the cloud fall into the river temporarily.
+            // Also, the cloud is then empty, so the sea-cloud condition does not hold.
+            self.river_node_count + self.cloud_node_count > 0
+        } else {
+            self.river_node_count > 0 || (self.cloud_node_count > 0 && self.sea_node_count > 0)
+        }
     }
 }
