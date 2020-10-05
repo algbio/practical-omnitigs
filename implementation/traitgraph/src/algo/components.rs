@@ -2,6 +2,7 @@ use super::traversal::{
     AllowedNodesForbiddenSubgraph, PostOrderForwardDfs, PreOrderBackwardBfs, PreOrderForwardBfs,
     PreOrderUndirectedBfs,
 };
+use crate::algo::traversal::ForbiddenEdge;
 use crate::index::GraphIndex;
 use crate::index::OptionalGraphIndex;
 use crate::interface::NodeOrEdge;
@@ -120,6 +121,43 @@ pub fn is_strongly_connected<Graph: StaticGraph>(graph: &Graph) -> bool {
     let mut traversal_node_count = 0;
 
     for node_or_edge in traversal {
+        if let NodeOrEdge::Node(_) = node_or_edge {
+            traversal_node_count += 1;
+        }
+    }
+
+    if traversal_node_count != graph.node_count() {
+        debug_assert!(traversal_node_count < graph.node_count());
+        return false;
+    }
+
+    true
+}
+
+/// Returns true if the given edge is a strong bridge.
+/// Note that this function assumes that the graph is strongly connected, and always returns true otherwise.
+pub fn is_strong_bridge<Graph: StaticGraph>(graph: &Graph, edge: Graph::EdgeIndex) -> bool {
+    debug_assert!(is_strongly_connected(graph));
+
+    let mut traversal = PreOrderForwardBfs::new(graph, graph.node_indices().next().unwrap());
+    let forbidden_edge = ForbiddenEdge::new(edge);
+    let mut traversal_node_count = 0;
+
+    while let Some(node_or_edge) = traversal.next_with_forbidden_subgraph(&forbidden_edge) {
+        if let NodeOrEdge::Node(_) = node_or_edge {
+            traversal_node_count += 1;
+        }
+    }
+
+    if traversal_node_count != graph.node_count() {
+        debug_assert!(traversal_node_count < graph.node_count());
+        return false;
+    }
+
+    let mut traversal = PreOrderBackwardBfs::new(graph, graph.node_indices().next().unwrap());
+    let mut traversal_node_count = 0;
+
+    while let Some(node_or_edge) = traversal.next_with_forbidden_subgraph(&forbidden_edge) {
         if let NodeOrEdge::Node(_) = node_or_edge {
             traversal_node_count += 1;
         }
