@@ -151,6 +151,16 @@ pub trait NavigableGraph<'a>: ImmutableGraphContainer + Sized {
     fn is_join_edge(&'a self, edge_id: Self::EdgeIndex) -> bool {
         self.in_degree(self.edge_endpoints(edge_id).to_node) > 1
     }
+
+    /// Returns true if the given node has outdegree > 1.
+    fn is_split_node(&'a self, node_id: Self::NodeIndex) -> bool {
+        self.out_degree(node_id) > 1
+    }
+
+    /// Returns true if the given node has indegree > 1.
+    fn is_join_node(&'a self, node_id: Self::NodeIndex) -> bool {
+        self.in_degree(node_id) > 1
+    }
 }
 
 /// A helper trait to get the correct walk type from a graph.

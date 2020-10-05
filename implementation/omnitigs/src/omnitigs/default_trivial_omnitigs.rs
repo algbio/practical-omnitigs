@@ -1,8 +1,9 @@
 use crate::omnitigs::{Omnitig, Omnitigs, TrivialOmnitigAlgorithm};
 use bitvector::BitVector;
-use traitgraph::algo::traversal::univocal_traversal::{univocal_extension, UnivocalIterator};
+use traitgraph::algo::traversal::univocal_traversal::UnivocalIterator;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{NodeOrEdge, StaticGraph};
+use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
 use traitsequence::interface::Sequence;
 
 /// An algorithm to extract trivial omnitigs.
@@ -64,7 +65,7 @@ impl<Graph: StaticGraph> TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmniti
                 continue;
             }
 
-            let trivial_omnitig = univocal_extension(graph, &[edge]);
+            let trivial_omnitig: VecEdgeWalk<Graph> = [edge].compute_univocal_extension(graph);
             for edge in trivial_omnitig.iter() {
                 used_edges.insert(edge.as_usize());
             }
@@ -110,7 +111,7 @@ mod tests {
     use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
 
     #[test]
-    fn test_compute_non_trivial_omnitigs_simple() {
+    fn test_compute_omnitigs_simple() {
         let mut graph = petgraph_impl::new();
         let n0 = graph.add_node(());
         let n1 = graph.add_node(());

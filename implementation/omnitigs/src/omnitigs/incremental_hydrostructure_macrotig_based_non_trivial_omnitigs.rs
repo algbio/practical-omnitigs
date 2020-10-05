@@ -1,5 +1,4 @@
-use crate::hydrostructure::incremental_hydrostructure::IncrementalHydrostructure;
-use crate::hydrostructure::Hydrostructure;
+use crate::hydrostructure::incremental_hydrostructure::BridgeLikeIncrementalHydrostructure;
 use crate::macrotigs::macrotigs::Macrotigs;
 use crate::omnitigs::{MacrotigBasedNonTrivialOmnitigAlgorithm, Omnitig, Omnitigs};
 use traitgraph::interface::StaticGraph;
@@ -26,17 +25,17 @@ impl<Graph: StaticGraph> MacrotigBasedNonTrivialOmnitigAlgorithm<Graph>
 
             // This reallocates memory every loop. It might make sense to allow to reuse the same structures for multiple walks.
             let mut incremental_hydrostructure =
-                IncrementalHydrostructure::compute_and_set_fingers_left(graph, macrotig);
+                BridgeLikeIncrementalHydrostructure::compute_and_set_fingers_left(graph, macrotig);
             let mut omnitigs_per_macrotig_current = 0;
 
             // On a macrotig we can assume that length-2 walks are always bridge-like.
             while incremental_hydrostructure.can_increment_right_finger()
-                || incremental_hydrostructure.is_avertible()
+                || !incremental_hydrostructure.is_safe()
             {
-                if incremental_hydrostructure.is_bridge_like() {
+                if incremental_hydrostructure.is_safe() {
                     incremental_hydrostructure.increment_right_finger();
 
-                    if incremental_hydrostructure.is_avertible() {
+                    if !incremental_hydrostructure.is_safe() {
                         let omnitig = incremental_hydrostructure.current_walk();
                         let omnitig = &omnitig[0..omnitig.len() - 1];
                         omnitigs.push(Omnitig::compute_from_non_trivial_heart_superwalk(
