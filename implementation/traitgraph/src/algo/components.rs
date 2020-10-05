@@ -151,7 +151,7 @@ pub fn is_strong_bridge<Graph: StaticGraph>(graph: &Graph, edge: Graph::EdgeInde
 
     if traversal_node_count != graph.node_count() {
         debug_assert!(traversal_node_count < graph.node_count());
-        return false;
+        return true;
     }
 
     let mut traversal = PreOrderBackwardBfs::new(graph, graph.node_indices().next().unwrap());
@@ -165,10 +165,10 @@ pub fn is_strong_bridge<Graph: StaticGraph>(graph: &Graph, edge: Graph::EdgeInde
 
     if traversal_node_count != graph.node_count() {
         debug_assert!(traversal_node_count < graph.node_count());
-        return false;
+        return true;
     }
 
-    true
+    false
 }
 
 /// Returns the strongly connected components of a graph.

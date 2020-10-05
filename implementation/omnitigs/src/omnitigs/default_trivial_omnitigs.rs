@@ -111,7 +111,7 @@ mod tests {
     use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
 
     #[test]
-    fn test_compute_non_trivial_omnitigs_simple() {
+    fn test_compute_omnitigs_simple() {
         let mut graph = petgraph_impl::new();
         let n0 = graph.add_node(());
         let n1 = graph.add_node(());

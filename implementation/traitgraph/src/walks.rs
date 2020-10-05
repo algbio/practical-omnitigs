@@ -135,6 +135,15 @@ where
 
         Some(ResultWalk::from(walk))
     }
+
+    /// Returns true if this is a proper subwalk of the given walk.
+    /// Proper means that the walks are not equal.
+    fn is_proper_subwalk_of(&'a self, other: &Self) -> bool
+    where
+        Graph::NodeIndex: Eq,
+    {
+        self.is_proper_subsequence_of(other)
+    }
 }
 
 /// A sequence of edges in a graph, where each consecutive pair of edges is connected by a node.
@@ -268,6 +277,15 @@ where
         walk.push(graph.edge_endpoints(self.last().cloned().unwrap()).to_node);
 
         Some(ResultWalk::from(walk))
+    }
+
+    /// Returns true if this is a proper subwalk of the given walk.
+    /// Proper means that the walks are not equal.
+    fn is_proper_subwalk_of(&'a self, other: &Self) -> bool
+    where
+        Graph::EdgeIndex: Eq,
+    {
+        self.is_proper_subsequence_of(other)
     }
 }
 

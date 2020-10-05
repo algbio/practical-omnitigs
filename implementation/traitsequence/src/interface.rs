@@ -28,4 +28,30 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
     fn last(&'a self) -> Option<&Item> {
         self.iter().last()
     }
+
+    /// Returns true if this is a proper subsequence of the given sequence.
+    /// Proper means that the sequences are not equal.
+    fn is_proper_subsequence_of(&'a self, other: &Self) -> bool
+    where
+        Item: Eq,
+    {
+        if self.len() >= other.len() {
+            return false;
+        }
+
+        for start_index in 0..=other.len() - self.len() {
+            let mut found_subsequence = true;
+            for index in 0..self.len() {
+                if self[index] != other[start_index + index] {
+                    found_subsequence = false;
+                    break;
+                }
+            }
+            if found_subsequence {
+                return true;
+            }
+        }
+
+        false
+    }
 }

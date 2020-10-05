@@ -296,4 +296,26 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn test_cycle_with_central_bypass() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let n3 = graph.add_node(());
+
+        let _e0 = graph.add_edge(n0, n1, ());
+        let e1 = graph.add_edge(n1, n2, ());
+        let e2 = graph.add_edge(n2, n3, ());
+        let e3 = graph.add_edge(n3, n1, ());
+        let e4 = graph.add_edge(n3, n0, ());
+        let e5 = graph.add_edge(n0, n2, ());
+
+        let maximal_macrotigs = Macrotigs::compute(&graph);
+        assert_eq!(
+            maximal_macrotigs,
+            Macrotigs::from(vec![graph.create_edge_walk(&[e3, e1, e2, e4, e5])])
+        );
+    }
 }
