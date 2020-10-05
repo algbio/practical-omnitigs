@@ -348,4 +348,72 @@ mod tests {
             vec![graph.create_node_walk(&[n1, n2, n3, n0]),]
         );
     }
+
+    #[test]
+    fn test_trivial_node_heart() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+
+        let e0 = graph.add_edge(n0, n1, ());
+        let e1 = graph.add_edge(n1, n0, ());
+        let e2 = graph.add_edge(n0, n0, ());
+
+        let maximal_macrotigs = Macrotigs::compute(&graph);
+        assert_eq!(
+            maximal_macrotigs,
+            Macrotigs::from(vec![
+                graph.create_edge_walk(&[e1, e2]),
+                graph.create_edge_walk(&[e2, e0, e1]),
+            ])
+        );
+
+        let maximal_node_centric_omnitigs =
+            compute_maximal_node_covering_node_visible_one_circular_safe_walks(
+                &graph,
+                &maximal_macrotigs,
+            );
+        assert_eq!(
+            maximal_node_centric_omnitigs,
+            vec![graph.create_node_walk(&[n0, n1, n0])]
+        );
+    }
+
+    #[test]
+    fn test_trivial_sea_cloud_node() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let n3 = graph.add_node(());
+
+        let e0 = graph.add_edge(n0, n1, ());
+        let e1 = graph.add_edge(n1, n2, ());
+        let e2 = graph.add_edge(n2, n3, ());
+        let e3 = graph.add_edge(n3, n0, ());
+        let e4 = graph.add_edge(n1, n0, ());
+        let e5 = graph.add_edge(n3, n2, ());
+
+        let maximal_macrotigs = Macrotigs::compute(&graph);
+        assert_eq!(
+            maximal_macrotigs,
+            Macrotigs::from(vec![
+                graph.create_edge_walk(&[e5, e2, e3, e0, e4]),
+                graph.create_edge_walk(&[e4, e0, e1, e2, e5]),
+            ])
+        );
+
+        let maximal_node_centric_omnitigs =
+            compute_maximal_node_covering_node_visible_one_circular_safe_walks(
+                &graph,
+                &maximal_macrotigs,
+            );
+        assert_eq!(
+            maximal_node_centric_omnitigs,
+            vec![
+                graph.create_node_walk(&[n2, n3, n0, n1]),
+                graph.create_node_walk(&[n0, n1, n2, n3]),
+            ],
+        );
+    }
 }
