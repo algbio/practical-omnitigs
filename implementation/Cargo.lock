@@ -1460,6 +1460,7 @@ dependencies = [
  "criterion",
  "num-traits",
  "petgraph 0.5.1",
+ "rand 0.7.3",
  "traitsequence",
 ]
 

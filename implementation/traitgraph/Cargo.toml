@@ -19,6 +19,7 @@ petgraph = "0.5"
 num-traits = "0.2"
 bitvector = "0.1"
 traitsequence = {path = "../traitsequence", version = "0.1.0-alpha.0"}
+rand = "0.7"
 
 [dev-dependencies]
 criterion = "0.3"
