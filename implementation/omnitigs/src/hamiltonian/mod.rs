@@ -384,7 +384,9 @@ where
             for neighbor in graph.out_neighbors(node) {
                 if let Some(result_neighbor_node) = node_id_map[neighbor.node_id.as_usize()].into()
                 {
-                    result.add_edge(result_node, result_neighbor_node, Default::default());
+                    if !result.contains_edge_between(result_node, result_neighbor_node) {
+                        result.add_edge(result_node, result_neighbor_node, Default::default());
+                    }
                 }
             }
         }
@@ -402,7 +404,8 @@ mod tests {
         create_random_graph, create_random_hamiltonian_graph,
     };
     use traitgraph::implementation::petgraph_impl;
-    use traitgraph::interface::MutableGraphContainer;
+    use traitgraph::interface::{MutableGraphContainer, ImmutableGraphContainer};
+    use traitgraph::algo::components::is_strongly_connected;
 
     #[test]
     fn test_random_hamiltonian_graphs() {
@@ -414,6 +417,10 @@ mod tests {
             create_random_hamiltonian_graph(&mut graph, 20, 1.0, &mut random);
             let reduced = preprocess_hamiltonian_circuit(&graph);
             assert!(reduced.is_some());
+            if let Some(reduced) = reduced {
+                assert!(reduced.node_count() <= graph.node_count(), "{} <= {}", reduced.node_count(), graph.node_count());
+                assert!(reduced.edge_count() <= graph.edge_count(), "{} <= {}", reduced.edge_count(), graph.edge_count());
+            }
         }
     }
 
@@ -428,12 +435,53 @@ mod tests {
             create_random_graph(&mut graph, 20, 1.0, &mut random);
             let reduced = preprocess_hamiltonian_circuit(&graph);
             result.push(reduced.is_some());
+            if let Some(reduced) = reduced {
+                assert!(reduced.node_count() <= graph.node_count(), "{} <= {}", reduced.node_count(), graph.node_count());
+                assert!(reduced.edge_count() <= graph.edge_count(), "{} <= {}", reduced.edge_count(), graph.edge_count());
+            }
         }
 
         // This assertion is dependent on the random generator used and might fail if its implementation changes.
         assert_eq!(
             result,
             vec![true, true, true, true, true, false, false, true, true, true]
+        );
+    }
+
+    #[test]
+    fn test_random_strongly_connected_graphs() {
+        let mut graph = petgraph_impl::new::<(), ()>();
+        let mut random = StdRng::seed_from_u64(0);
+
+        let mut result = Vec::new();
+        let mut result_node_fraction = Vec::new();
+        let mut result_edge_fraction = Vec::new();
+        while result.len() < 10 {
+            graph.clear();
+            create_random_graph(&mut graph, 20, 1.0, &mut random);
+            if !is_strongly_connected(&graph) {
+                continue;
+            }
+
+            let reduced = preprocess_hamiltonian_circuit(&graph);
+            result.push(reduced.is_some());
+            if let Some(reduced) = reduced {
+                assert!(reduced.node_count() <= graph.node_count(), "{} <= {}", reduced.node_count(), graph.node_count());
+                assert!(reduced.edge_count() <= graph.edge_count(), "{} <= {}", reduced.edge_count(), graph.edge_count());
+                result_node_fraction.push(Some(reduced.edge_count() as f64 / graph.edge_count() as f64));
+                result_edge_fraction.push(Some(reduced.node_count() as f64 / graph.node_count() as f64));
+            } else {
+                result_node_fraction.push(None);
+                result_edge_fraction.push(None);
+            }
+        }
+
+        println!("node fraction: {:?}", result_node_fraction);
+        println!("edge fraction: {:?}", result_edge_fraction);
+        // This assertion is dependent on the random generator used and might fail if its implementation changes.
+        assert_eq!(
+            result,
+            vec![true, true, true, true, true, true, true, true, true, true]
         );
     }
 }

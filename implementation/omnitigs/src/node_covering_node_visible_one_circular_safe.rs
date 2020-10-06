@@ -42,18 +42,13 @@ where
     for macrotig in macrotigs.iter() {
         let univocal_extension =
             EdgeWalk::compute_univocal_extension::<VecEdgeWalk<Graph>>(macrotig, graph);
-        dbg!(&univocal_extension);
         for edge in univocal_extension.iter() {
             used_edges.insert(edge.as_usize());
         }
-        safe_walks.extend(dbg!(
+        safe_walks.extend(
             compute_maximal_node_covering_node_visible_one_circular_safe_subwalks(graph, &macrotig)
-        ));
+        );
     }
-
-    used_edges.iter().for_each(|i| print!("{}", i));
-    println!();
-    println!("Switching to trivial walks");
 
     for edge in graph.edge_indices() {
         if used_edges.contains(edge.as_usize())
@@ -64,17 +59,16 @@ where
 
         let trivial_omnitig: VecEdgeWalk<Graph> =
             EdgeWalk::compute_univocal_extension((vec![edge]).as_slice(), graph);
-        dbg!(&trivial_omnitig);
         for edge in trivial_omnitig.iter() {
             used_edges.insert(edge.as_usize());
         }
 
-        safe_walks.extend(dbg!(
+        safe_walks.extend(
             compute_maximal_node_covering_node_visible_one_circular_safe_subwalks(
                 graph,
                 &trivial_omnitig,
             )
-        ));
+        );
     }
 
     // This algorithm might produce non-maximal safe walks, therefore we need to filter them.

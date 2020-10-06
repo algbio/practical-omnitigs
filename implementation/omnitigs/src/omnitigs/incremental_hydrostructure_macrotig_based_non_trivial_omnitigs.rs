@@ -131,7 +131,7 @@ mod tests {
         let e28 = graph.add_edge(n18, n19, ());
         let e29 = graph.add_edge(n18, n18, ());
 
-        let macronodes = dbg!(StronglyConnectedMacronodes::compute_macronodes(&graph));
+        let macronodes = StronglyConnectedMacronodes::compute_macronodes(&graph);
         let maximal_microtigs =
             StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
                 &graph,
