@@ -110,6 +110,10 @@ impl<NodeData, EdgeData> MutableGraphContainer for DiGraph<NodeData, EdgeData, u
     fn remove_edge(&mut self, edge_id: Self::EdgeIndex) -> Option<EdgeData> {
         self.remove_edge(edge_id.into())
     }
+
+    fn clear(&mut self) {
+        self.clear();
+    }
 }
 
 type PetgraphNeighborTranslator<'a, EdgeData, NodeIndex, EdgeIndex> = Map<

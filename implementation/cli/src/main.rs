@@ -3,6 +3,8 @@
 extern crate error_chain;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate scan_fmt;
 
 use clap::Clap;
 use error_chain::{ChainedError, ExitCode};
@@ -10,6 +12,7 @@ use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod circularise_records;
 mod filter;
+mod hamcircuit;
 mod omnitigs;
 mod trivial_omnitigs;
 mod unitigs;
@@ -70,6 +73,8 @@ enum Command {
     ComputeTrivialOmnitigs(trivial_omnitigs::ComputeTrivialOmnitigsCommand),
     #[clap(about = "Computes the maximal unitigs of the input graph.")]
     ComputeUnitigs(unitigs::ComputeUnitigsCommand),
+    #[clap(about = "Preprocesses instances of the hamiltonian circuit problem.")]
+    HamCircuit(hamcircuit::HamCircuitCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -115,6 +120,7 @@ fn run() -> Result<()> {
             trivial_omnitigs::compute_trivial_omnitigs(options, subcommand)
         }
         Command::ComputeUnitigs(subcommand) => unitigs::compute_unitigs(options, subcommand),
+        Command::HamCircuit(subcommand) => hamcircuit::hamcircuit(options, subcommand),
     }?;
 
     info!("Goodbye");

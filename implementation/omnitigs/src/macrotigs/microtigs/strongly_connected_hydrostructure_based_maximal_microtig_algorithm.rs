@@ -322,7 +322,7 @@ mod tests {
         let _e20 = graph.add_edge(n5, n7, ());
         let _e21 = graph.add_edge(n6, n7, ());
 
-        let macronodes = dbg!(StronglyConnectedMacronodes::compute_macronodes(&graph));
+        let macronodes = StronglyConnectedMacronodes::compute_macronodes(&graph);
         let maximal_microtigs =
             StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
                 &graph,
@@ -390,7 +390,7 @@ mod tests {
         let e28 = graph.add_edge(n18, n19, ());
         let e29 = graph.add_edge(n18, n18, ());
 
-        let macronodes = dbg!(StronglyConnectedMacronodes::compute_macronodes(&graph));
+        let macronodes = StronglyConnectedMacronodes::compute_macronodes(&graph);
         let maximal_microtigs =
             StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
                 &graph,
@@ -430,7 +430,7 @@ mod tests {
         let e9 = graph.add_edge(n4, n0, ());
         let e10 = graph.add_edge(n5, n0, ());
 
-        let macronodes = dbg!(StronglyConnectedMacronodes::compute_macronodes(&graph));
+        let macronodes = StronglyConnectedMacronodes::compute_macronodes(&graph);
         let maximal_microtigs =
             StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
                 &graph,

@@ -99,6 +99,9 @@ pub trait MutableGraphContainer: ImmutableGraphContainer {
 
     /// Removes the edge with the given id from the graph.
     fn remove_edge(&mut self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeData>;
+
+    /// Removes all nodes and edges from the graph.
+    fn clear(&mut self);
 }
 
 /// A graph that can be navigated, i.e. that can iterate the neighbors of its nodes.
