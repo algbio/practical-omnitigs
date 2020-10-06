@@ -17,7 +17,46 @@ tsplog_preprocessed_lines = open(file_name_prefix + ".preprocessed.tsplog", 'r')
 
 report_file = open(file_name_prefix + ".report", 'w')
 
-quit()
+for line in preprocesslog_lines:
+	if "Preprocessing removed" in line:
+		line = "Preprocessing removed" + line.strip().split("Preprocessing removed")[1]
+		report_file.write(line + "\n")
+
+raw_number_of_nodes = -1
+raw_optimal_solution = -1
+for line in tsplog_raw_lines:
+	if "Number of Nodes: " in line:
+		line = line.strip()[18:]
+		raw_number_of_nodes = int(round(float(line)))
+
+	if "Optimal Solution: " in line:
+		line = line.strip()[19:]
+		raw_optimal_solution = int(round(float(line)))
+
+preprocessed_number_of_nodes = -1
+preprocessed_optimal_solution = -1
+for line in tsplog_preprocessed_lines:
+	if "Number of Nodes: " in line:
+		line = line.strip()[18:]
+		preprocessed_number_of_nodes = int(round(float(line)))
+
+	if "Optimal Solution: " in line:
+		line = line.strip()[19:]
+		preprocessed_optimal_solution = int(round(float(line)))
+
+raw_hamiltonian = raw_number_of_nodes == raw_optimal_solution
+preprocessed_hamiltonian = preprocessed_number_of_nodes == preprocessed_optimal_solution
+
+if raw_hamiltonian != preprocessed_hamiltonian:
+	print("Difference between hamiltonianess of raw and preprocessed graph.")
+	report_file.write("Error: Difference in hamiltonianess")
+	sys.exit(1)
+else:
+	report_file.write("Hamiltonianess matches")
+
+
+sys.exit()
+
 
 experiments = []
 

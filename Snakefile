@@ -11,6 +11,7 @@ if 'use_conda' in config and config['use_conda']:
     workflow.use_conda = True
 
 workflow.global_resources["contigvalidator"] = 1
+workflow.global_resources["concorde"] = 1
 
 # Preprocess experiments configuration
 experiments = config["experiments"]
@@ -341,6 +342,36 @@ rule bandage:
     conda: "config/conda-bandage-env.yml"
     shell: "Bandage image {input} {output} --width 1000 --height 1000"
 
+######################
+###### Concorde ######
+######################
+
+rule install_concorde:
+    output: "external-software/concorde/TSP/concorde"
+    conda: "config/conda-download-env.yml"
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    # Download and unpack concorde
+    wget http://www.math.uwaterloo.ca/tsp/concorde/downloads/codes/src/co031219.tgz
+    tar -xf co031219.tgz
+    cd concorde
+
+    # Fix whatever incompatible libraries
+    sed -i "s/h->h_addr/h->h_addr_list[0]/g" UTIL/safe_io.c
+
+    # Download QSOpt
+    wget https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.PIC.a
+    mv qsopt.PIC.a qsopt.a
+    wget https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.h
+
+    # Build concorde
+    QSOPT=$(pwd)
+    CC="gcc" CFLAGS="-g -O3" LDFLAGS="-g -O3" ./configure --with-qsopt="$QSOPT"
+    make
+    """
+
 ########################
 ###### HamCircuit ######
 ########################
@@ -354,6 +385,12 @@ rule ten_hamcircuits:
 rule hundred_hamcircuits:
     input: generate_hamcircuit_targets(100)
 
+rule thousand_hamcircuits:
+    input: generate_hamcircuit_targets(1000)
+
+rule tenthousand_hamcircuits:
+    input: generate_hamcircuit_targets(10000)
+
 rule hamcircuit_report:
     input: preprocesslog = "data/hamcircuit/{name}.preprocesslog",
            solution_raw = "data/hamcircuit/{name}.raw.sol",
@@ -361,21 +398,27 @@ rule hamcircuit_report:
            tsplog_raw = "data/hamcircuit/{name}.raw.tsplog",
            tsplog_preprocessed = "data/hamcircuit/{name}.preprocessed.tsplog"
     output: report = "data/hamcircuit/{name}.report"
-    shell: "scripts/generate_hamcircuit_report.py 'data/hamcircuit/{name}'"
+    shell: "scripts/generate_hamcircuit_report.py 'data/hamcircuit/{wildcards.name}'"
 
 rule hamcircuit_compute_tsp:
-    input: tsp = "data/hamcircuit/{name}.tsp"
+    input: tsp = "data/hamcircuit/{name}.tsp", binary = "external-software/concorde/TSP/concorde"
     output: solution = "data/hamcircuit/{name}.sol", tsplog = "data/hamcircuit/{name}.tsplog"
-    conda: "config/conda-concorde-env.yml"
+    resources:
+      concorde = 1
     shell: """
     cd data/hamcircuit
     LINES=$(wc -l '{wildcards.name}.tsp')
     LINES=($LINES)
     LINES=${{LINES[0]}}
-    concorde -u $LINES '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
+    '../../{input.binary}' -u $LINES -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
     """
 
 rule hamcircuit_generate:
     input: binary = "data/target/release/cli"
     output: tsp_raw = "data/hamcircuit/{name}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.preprocesslog"
-    shell: "'{input.binary}' --input none ham-circuit --random n20+c1.0 --output-raw '{output.tsp_raw}' --output-preprocessed '{output.tsp_preprocessed}' 2>&1 | tee '{output.preprocesslog}'"
+    shell: """
+    '{input.binary}' --input none ham-circuit --random n20+c1.0 --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
+    mv '{output.tsp_raw}.tmp' '{output.tsp_raw}'
+    mv '{output.tsp_preprocessed}.tmp' '{output.tsp_preprocessed}'
+    mv '{output.preprocesslog}.tmp' '{output.preprocesslog}'
+    """
