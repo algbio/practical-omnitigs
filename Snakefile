@@ -86,6 +86,10 @@ def generate_test_targets():
         for target in _generate_test_targets_(experiment, config):
             yield target
 
+def generate_hamcircuit_targets(amount):
+    for i in range(amount):
+        yield "data/hamcircuit/random-" + str(i) + ".report"
+
 ######################################
 ###### Input Genome Preparation ######
 ######################################
@@ -336,3 +340,42 @@ rule bandage:
     output: "{file}.bandage.png"
     conda: "config/conda-bandage-env.yml"
     shell: "Bandage image {input} {output} --width 1000 --height 1000"
+
+########################
+###### HamCircuit ######
+########################
+
+rule single_hamcircuit:
+    input: generate_hamcircuit_targets(1)
+
+rule ten_hamcircuits:
+    input: generate_hamcircuit_targets(10)
+
+rule hundred_hamcircuits:
+    input: generate_hamcircuit_targets(100)
+
+rule hamcircuit_report:
+    input: preprocesslog = "data/hamcircuit/{name}.preprocesslog",
+           solution_raw = "data/hamcircuit/{name}.raw.sol",
+           solution_preprocessed = "data/hamcircuit/{name}.preprocessed.sol",
+           tsplog_raw = "data/hamcircuit/{name}.raw.tsplog",
+           tsplog_preprocessed = "data/hamcircuit/{name}.preprocessed.tsplog"
+    output: report = "data/hamcircuit/{name}.report"
+    shell: "scripts/generate_hamcircuit_report.py 'data/hamcircuit/{name}'"
+
+rule hamcircuit_compute_tsp:
+    input: tsp = "data/hamcircuit/{name}.tsp"
+    output: solution = "data/hamcircuit/{name}.sol", tsplog = "data/hamcircuit/{name}.tsplog"
+    conda: "config/conda-concorde-env.yml"
+    shell: """
+    cd data/hamcircuit
+    LINES=$(wc -l '{wildcards.name}.tsp')
+    LINES=($LINES)
+    LINES=${{LINES[0]}}
+    concorde -u $LINES '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
+    """
+
+rule hamcircuit_generate:
+    input: binary = "data/target/release/cli"
+    output: tsp_raw = "data/hamcircuit/{name}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.preprocesslog"
+    shell: "'{input.binary}' --input none ham-circuit --random n20+c1.0 --output-raw '{output.tsp_raw}' --output-preprocessed '{output.tsp_preprocessed}' 2>&1 | tee '{output.preprocesslog}'"
