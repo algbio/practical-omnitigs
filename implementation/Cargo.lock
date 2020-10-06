@@ -280,6 +280,8 @@ dependencies = [
  "genome-graph",
  "log",
  "omnitigs",
+ "rand 0.7.3",
+ "scan_fmt",
  "simplelog",
  "statistical",
  "traitsequence",
@@ -1209,6 +1211,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "scan_fmt"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "248286eec0f55678879ef1caec3d76276643ebcb5460d8cb6e732ef40f50aabe"
+dependencies = [
+ "regex",
 ]
 
 [[package]]

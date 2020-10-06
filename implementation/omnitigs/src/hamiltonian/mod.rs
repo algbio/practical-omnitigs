@@ -400,12 +400,12 @@ mod tests {
     use crate::hamiltonian::preprocess_hamiltonian_circuit;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use traitgraph::algo::components::is_strongly_connected;
     use traitgraph::algo::predefined_graphs::{
         create_random_graph, create_random_hamiltonian_graph,
     };
     use traitgraph::implementation::petgraph_impl;
-    use traitgraph::interface::{MutableGraphContainer, ImmutableGraphContainer};
-    use traitgraph::algo::components::is_strongly_connected;
+    use traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
 
     #[test]
     fn test_random_hamiltonian_graphs() {
@@ -418,8 +418,18 @@ mod tests {
             let reduced = preprocess_hamiltonian_circuit(&graph);
             assert!(reduced.is_some());
             if let Some(reduced) = reduced {
-                assert!(reduced.node_count() <= graph.node_count(), "{} <= {}", reduced.node_count(), graph.node_count());
-                assert!(reduced.edge_count() <= graph.edge_count(), "{} <= {}", reduced.edge_count(), graph.edge_count());
+                assert!(
+                    reduced.node_count() <= graph.node_count(),
+                    "{} <= {}",
+                    reduced.node_count(),
+                    graph.node_count()
+                );
+                assert!(
+                    reduced.edge_count() <= graph.edge_count(),
+                    "{} <= {}",
+                    reduced.edge_count(),
+                    graph.edge_count()
+                );
             }
         }
     }
@@ -436,8 +446,18 @@ mod tests {
             let reduced = preprocess_hamiltonian_circuit(&graph);
             result.push(reduced.is_some());
             if let Some(reduced) = reduced {
-                assert!(reduced.node_count() <= graph.node_count(), "{} <= {}", reduced.node_count(), graph.node_count());
-                assert!(reduced.edge_count() <= graph.edge_count(), "{} <= {}", reduced.edge_count(), graph.edge_count());
+                assert!(
+                    reduced.node_count() <= graph.node_count(),
+                    "{} <= {}",
+                    reduced.node_count(),
+                    graph.node_count()
+                );
+                assert!(
+                    reduced.edge_count() <= graph.edge_count(),
+                    "{} <= {}",
+                    reduced.edge_count(),
+                    graph.edge_count()
+                );
             }
         }
 
@@ -466,10 +486,24 @@ mod tests {
             let reduced = preprocess_hamiltonian_circuit(&graph);
             result.push(reduced.is_some());
             if let Some(reduced) = reduced {
-                assert!(reduced.node_count() <= graph.node_count(), "{} <= {}", reduced.node_count(), graph.node_count());
-                assert!(reduced.edge_count() <= graph.edge_count(), "{} <= {}", reduced.edge_count(), graph.edge_count());
-                result_node_fraction.push(Some(reduced.edge_count() as f64 / graph.edge_count() as f64));
-                result_edge_fraction.push(Some(reduced.node_count() as f64 / graph.node_count() as f64));
+                assert!(
+                    reduced.node_count() <= graph.node_count(),
+                    "{} <= {}",
+                    reduced.node_count(),
+                    graph.node_count()
+                );
+                assert!(
+                    reduced.edge_count() <= graph.edge_count(),
+                    "{} <= {}",
+                    reduced.edge_count(),
+                    graph.edge_count()
+                );
+                result_node_fraction.push(Some(
+                    reduced.edge_count() as f64 / graph.edge_count() as f64,
+                ));
+                result_edge_fraction.push(Some(
+                    reduced.node_count() as f64 / graph.node_count() as f64,
+                ));
             } else {
                 result_node_fraction.push(None);
                 result_edge_fraction.push(None);

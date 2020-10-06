@@ -8,5 +8,7 @@ pub mod implementation;
 /// Traits and a default implementation for graph indices.
 pub mod index;
 pub mod interface;
+/// Methods for reading and writing graphs.
+pub mod io;
 /// Traits and implementations of node- and edge-centric walks.
 pub mod walks;

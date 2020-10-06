@@ -174,8 +174,7 @@ mod tests {
             StronglyConnectedHydrostructureBasedMaximalMicrotigs::compute_maximal_microtigs(
                 &graph,
                 &macronodes,
-            )
-        ;
+            );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
         assert_eq!(

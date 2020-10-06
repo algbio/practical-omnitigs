@@ -46,7 +46,7 @@ where
             used_edges.insert(edge.as_usize());
         }
         safe_walks.extend(
-            compute_maximal_node_covering_node_visible_one_circular_safe_subwalks(graph, &macrotig)
+            compute_maximal_node_covering_node_visible_one_circular_safe_subwalks(graph, &macrotig),
         );
     }
 
@@ -67,7 +67,7 @@ where
             compute_maximal_node_covering_node_visible_one_circular_safe_subwalks(
                 graph,
                 &trivial_omnitig,
-            )
+            ),
         );
     }
 
