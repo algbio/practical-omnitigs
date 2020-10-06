@@ -380,7 +380,14 @@ where
             }
         }
 
-        println!("Used walks is now: {:?}", used_walks.iter().enumerate().map(|(i, _)| i).collect::<Vec<_>>());
+        println!(
+            "Used walks is now: {:?}",
+            used_walks
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        );
 
         // Collect walk indices and remove mappings.
         let mut walk_indices = vec![first_walk_index];
@@ -404,7 +411,14 @@ where
         }
 
         println!("Found walk indices to merge walk: {:?}", &walk_indices);
-        println!("Used walks is now: {:?}", used_walks.iter().enumerate().map(|(i, _)| i).collect::<Vec<_>>());
+        println!(
+            "Used walks is now: {:?}",
+            used_walks
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        );
 
         if circular {
             assert!(
