@@ -416,6 +416,7 @@ rule hamcircuit_compute_tsp:
 rule hamcircuit_generate:
     input: binary = "data/target/release/cli"
     output: tsp_raw = "data/hamcircuit/{name}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.preprocesslog"
+    shadow: "shallow"
     shell: """
     '{input.binary}' --input none ham-circuit --random n20+c1.0 --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
     mv '{output.tsp_raw}.tmp' '{output.tsp_raw}'
