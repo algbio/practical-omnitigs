@@ -1,5 +1,6 @@
 use crate::interface::DynamicGraph;
 use rand::seq::IteratorRandom;
+use rand::Rng;
 
 /// Adds a binary tree to the given graph.
 /// The first added node is the root of the tree.
@@ -44,10 +45,11 @@ fn create_binary_tree_recursively<Graph: DynamicGraph>(
 /// Creates a random hamiltonian graph with the given amount of nodes.
 /// Assumes that the graph is empty.
 /// The amount of arcs will be `c * n * (log(n) + log(log(n)))`, where `n` is the amount of nodes.
-pub fn create_random_hamiltonian_graph<Graph: DynamicGraph>(
+pub fn create_random_hamiltonian_graph<Graph: DynamicGraph, Random: Rng>(
     graph: &mut Graph,
     node_amount: usize,
     c: f64,
+    random: &mut Random,
 ) where
     Graph::NodeData: Default,
     Graph::EdgeData: Default,
@@ -74,21 +76,15 @@ pub fn create_random_hamiltonian_graph<Graph: DynamicGraph>(
 
     let node_amount_f64 = node_amount as f64;
     let target_edge_amount =
-        c * node_amount_f64 * (node_amount_f64.ln() + node_amount_f64.ln().ln());
+        c * node_amount_f64 * (node_amount_f64.ln().max(1.0) + node_amount_f64.ln().ln().max(0.0));
     let target_edge_amount = target_edge_amount.round() as usize;
     assert!(
         target_edge_amount >= node_amount && target_edge_amount <= node_amount * (node_amount - 1)
     );
 
     while graph.edge_count() < target_edge_amount {
-        let n1 = graph
-            .node_indices()
-            .choose(&mut rand::thread_rng())
-            .unwrap();
-        let n2 = graph
-            .node_indices()
-            .choose(&mut rand::thread_rng())
-            .unwrap();
+        let n1 = graph.node_indices().choose(random).unwrap();
+        let n2 = graph.node_indices().choose(random).unwrap();
 
         if n1 != n2 && !graph.contains_edge_between(n1, n2) {
             graph.add_edge(n1, n2, Default::default());
@@ -99,8 +95,12 @@ pub fn create_random_hamiltonian_graph<Graph: DynamicGraph>(
 /// Creates a random graph with the given amount of nodes.
 /// Assumes that the graph is empty.
 /// The amount of arcs will be `c * n * (log(n) + log(log(n)))`, where `n` is the amount of nodes.
-pub fn create_random_graph<Graph: DynamicGraph>(graph: &mut Graph, node_amount: usize, c: f64)
-where
+pub fn create_random_graph<Graph: DynamicGraph, Random: Rng>(
+    graph: &mut Graph,
+    node_amount: usize,
+    c: f64,
+    random: &mut Random,
+) where
     Graph::NodeData: Default,
     Graph::EdgeData: Default,
 {
@@ -114,21 +114,15 @@ where
 
     let node_amount_f64 = node_amount as f64;
     let target_edge_amount =
-        c * node_amount_f64 * (node_amount_f64.ln() + node_amount_f64.ln().ln());
+        c * node_amount_f64 * (node_amount_f64.ln().max(1.0) + node_amount_f64.ln().ln().max(0.0));
     let target_edge_amount = target_edge_amount.round() as usize;
     assert!(
         target_edge_amount >= node_amount && target_edge_amount <= node_amount * (node_amount - 1)
     );
 
     while graph.edge_count() < target_edge_amount {
-        let n1 = graph
-            .node_indices()
-            .choose(&mut rand::thread_rng())
-            .unwrap();
-        let n2 = graph
-            .node_indices()
-            .choose(&mut rand::thread_rng())
-            .unwrap();
+        let n1 = graph.node_indices().choose(random).unwrap();
+        let n2 = graph.node_indices().choose(random).unwrap();
 
         if n1 != n2 && !graph.contains_edge_between(n1, n2) {
             graph.add_edge(n1, n2, Default::default());

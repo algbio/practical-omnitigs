@@ -800,6 +800,7 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "bigraph",
  "bitvector",
+ "rand 0.7.3",
  "traitgraph",
  "traitsequence",
 ]

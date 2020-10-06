@@ -214,6 +214,11 @@ impl<Topology: MutableGraphContainer + StaticGraph> MutableGraphContainer
     fn remove_edge(&mut self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeData> {
         self.topology.remove_edge(edge_id)
     }
+
+    fn clear(&mut self) {
+        self.topology.clear();
+        self.binode_map.clear();
+    }
 }
 
 impl<'a, Topology: NavigableGraph<'a>> NavigableGraph<'a> for NodeBigraphWrapper<Topology> {

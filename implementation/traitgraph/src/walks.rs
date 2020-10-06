@@ -302,7 +302,6 @@ impl<'a, 'b, Graph: GraphBase> EdgeWalk<'a, Graph> for [Graph::EdgeIndex] where 
 /////////////////////////
 
 /// A node walk that is represented as a vector of node indices.
-#[derive(Clone)]
 pub struct VecNodeWalk<Graph: GraphBase> {
     walk: Vec<Graph::NodeIndex>,
 }
@@ -386,12 +385,22 @@ where
     }
 }
 
+impl<Graph: GraphBase> Clone for VecNodeWalk<Graph>
+where
+    Vec<Graph::NodeIndex>: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            walk: self.walk.clone(),
+        }
+    }
+}
+
 /////////////////////////
 ////// VecEdgeWalk //////
 /////////////////////////
 
 /// An edge walk that is represented as a vector of edge indices.
-#[derive(Clone)]
 pub struct VecEdgeWalk<Graph: GraphBase> {
     walk: Vec<Graph::EdgeIndex>,
 }
@@ -472,5 +481,16 @@ where
 
     fn index(&self, index: IndexType) -> &Self::Output {
         self.walk.index(index)
+    }
+}
+
+impl<Graph: GraphBase> Clone for VecEdgeWalk<Graph>
+where
+    Vec<Graph::EdgeIndex>: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            walk: self.walk.clone(),
+        }
     }
 }

@@ -193,9 +193,7 @@ fn do_walks_cover_all_nodes<Graph: ImmutableGraphContainer>(
 
 /// Returns a reduced graph that is hamiltonian if and only if the input graph is hamiltonian,
 /// or returns `None` if the graph can be proven to not be hamiltonian (which equals to the reduction being impossible).
-pub fn preprocess_hamiltonian_circuit<Graph: DynamicGraph + Clone + Default>(
-    graph: &Graph,
-) -> Option<Graph>
+pub fn preprocess_hamiltonian_circuit<Graph: DynamicGraph + Default>(graph: &Graph) -> Option<Graph>
 where
     Graph::NodeIndex: 'static,
     Graph::NodeData: Default,
@@ -206,11 +204,15 @@ where
     }
 
     if is_cycle(graph) {
-        return Some(graph.clone());
+        let mut result = Graph::default();
+        result.add_node(Default::default());
+        return Some(result);
     }
 
     if graph.node_count() <= 1 {
-        return Some(graph.clone());
+        let mut result = Graph::default();
+        result.add_node(Default::default());
+        return Some(result);
     }
 
     let safe_walks = compute_maximal_node_covering_node_visible_one_circular_safe_walks(
@@ -338,7 +340,7 @@ where
                     merged_walk
                         .forward_merge_iter_assume_mergeable(&safe_walks[walk_index])
                         .copied()
-                        .collect(),
+                        .collect::<Vec<_>>(),
                 );
             }
             merged_walks.push(merged_walk);
@@ -380,7 +382,8 @@ where
     for node in graph.node_indices() {
         if let Some(result_node) = node_id_map[node.as_usize()].into() {
             for neighbor in graph.out_neighbors(node) {
-                if let Some(result_neighbor_node) = node_id_map[neighbor.node_id.as_usize()].into() {
+                if let Some(result_neighbor_node) = node_id_map[neighbor.node_id.as_usize()].into()
+                {
                     result.add_edge(result_node, result_neighbor_node, Default::default());
                 }
             }
@@ -388,4 +391,49 @@ where
     }
 
     Some(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::hamiltonian::preprocess_hamiltonian_circuit;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
+    use traitgraph::algo::predefined_graphs::{
+        create_random_graph, create_random_hamiltonian_graph,
+    };
+    use traitgraph::implementation::petgraph_impl;
+    use traitgraph::interface::MutableGraphContainer;
+
+    #[test]
+    fn test_random_hamiltonian_graphs() {
+        let mut graph = petgraph_impl::new::<(), ()>();
+        let mut random = StdRng::seed_from_u64(0);
+
+        for _ in 0..10 {
+            graph.clear();
+            create_random_hamiltonian_graph(&mut graph, 20, 1.0, &mut random);
+            let reduced = preprocess_hamiltonian_circuit(&graph);
+            assert!(reduced.is_some());
+        }
+    }
+
+    #[test]
+    fn test_random_graphs() {
+        let mut graph = petgraph_impl::new::<(), ()>();
+        let mut random = StdRng::seed_from_u64(0);
+
+        let mut result = Vec::new();
+        for _ in 0..10 {
+            graph.clear();
+            create_random_graph(&mut graph, 20, 1.0, &mut random);
+            let reduced = preprocess_hamiltonian_circuit(&graph);
+            result.push(reduced.is_some());
+        }
+
+        // This assertion is dependent on the random generator used and might fail if its implementation changes.
+        assert_eq!(
+            result,
+            vec![true, true, true, true, true, false, false, true, true, true]
+        );
+    }
 }
