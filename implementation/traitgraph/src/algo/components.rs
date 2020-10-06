@@ -279,6 +279,11 @@ where
     result
 }
 
+/// Returns true if the given graph is a cycle.
+pub fn is_cycle<Graph: StaticGraph>(graph: &Graph) -> bool {
+    is_strongly_connected(graph) && graph.node_count() == graph.edge_count()
+}
+
 #[cfg(test)]
 mod tests {
     use crate::algo::components::{

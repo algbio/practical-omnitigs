@@ -54,4 +54,50 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
 
         false
     }
+
+    /// Returns true if this sequence contains the given item.
+    fn contains(&'a self, item: &Item) -> bool
+    where
+        Item: Eq,
+    {
+        self.iter().any(|i| item == i)
+    }
+
+    /// Returns an iterator over this sequence merged before the given other sequence under the assumption that the sequences can be merged this way.
+    /// A merge is possible if a non-empty suffix of this sequence equals a non-empty prefix of the other sequence.
+    ///
+    /// The method panics if this sequence does not contain the first item of the other sequence or the other sequence is empty.
+    /// The method does not fail if the sequences are not mergeable for other reasons.
+    fn forward_merge_iter_assume_mergeable(
+        &'a self,
+        suffix: &'a Self,
+    ) -> std::iter::Chain<Self::Iterator, std::iter::Skip<Self::Iterator>>
+    where
+        Item: Eq,
+    {
+        let first_item_index = self
+            .iter()
+            .enumerate()
+            .filter(|(_, i)| *i == suffix.first().expect("The given sequence is empty."))
+            .map(|(i, _)| i)
+            .next()
+            .expect("This sequence does not contain the first item of the given sequence.");
+        self.iter()
+            .chain(suffix.iter().skip(self.len() - first_item_index))
+    }
+
+    /// Returns an iterator over this sequence merged after the given other sequence under the assumption that the sequences can be merged this way.
+    /// A merge is possible if a non-empty prefix of this sequence equals a non-empty suffix of the other sequence.
+    ///
+    /// The method panics if the other sequence does not contain the first item of this sequence or this sequence is empty.
+    /// The method does not fail if the sequences are not mergeable for other reasons.
+    fn backward_merge_iter_assume_mergeable(
+        &'a self,
+        suffix: &'a Self,
+    ) -> std::iter::Chain<Self::Iterator, std::iter::Skip<Self::Iterator>>
+    where
+        Item: Eq,
+    {
+        suffix.forward_merge_iter_assume_mergeable(self)
+    }
 }
