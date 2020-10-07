@@ -17,7 +17,7 @@ tsplog_preprocessed_lines = open(file_name_prefix + ".preprocessed.tsplog", 'r')
 
 report_file = open(file_name_prefix + ".report", 'w')
 
-
+preprocessing_running_time = -1
 for line in preprocesslog_lines:
 	if "Preprocessing removed" in line:
 		line = "Preprocessing removed" + line.strip().split("Preprocessing removed")[1]
@@ -25,6 +25,9 @@ for line in preprocesslog_lines:
 
 	if "Preprocessing the graph revealed that it is not hamiltonian" in line:
 		report_file.write("Preprocessing the graph revealed that it is not hamiltonian\n")
+
+	if "Preprocessing took" in line:
+		preprocessing_running_time = float(line.split("Preprocessing took")[1].split("seconds")[0].strip())
 
 raw_number_of_nodes = -1
 raw_optimal_solution = -1
@@ -57,6 +60,10 @@ for line in tsplog_preprocessed_lines:
 	if "Total Running Time: " in line and "(seconds)" in line:
 		line = line.strip()[19:].strip().split(" ")[0].strip()
 		preprocessed_tsp_running_time = float(line)
+
+if preprocessing_running_time == -1:
+	print("Missing number preprocessing_running_time")
+	sys.exit(1)
 
 if raw_number_of_nodes == -1:
 	print("Missing number raw_number_of_nodes")
@@ -99,3 +106,5 @@ else:
 
 report_file.write("Raw TSP Runtime: " + str(raw_tsp_running_time) + "\n")
 report_file.write("Preprocessed TSP Runtime: " + str(preprocessed_tsp_running_time) + "\n")
+report_file.write("Preprocessing Runtime: " + str(preprocessing_running_time) + "\n")
+report_file.write("Preprocessed Total Runtime: " + str(preprocessing_running_time + preprocessed_tsp_running_time) + "\n")

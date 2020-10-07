@@ -15,6 +15,7 @@ use omnitigs::traitgraph::interface::ImmutableGraphContainer;
 use omnitigs::traitgraph::interface::MutableGraphContainer;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
+use std::time::Instant;
 
 #[derive(Clap)]
 pub struct HamCircuitCommand {
@@ -98,7 +99,11 @@ pub(crate) fn hamcircuit(
     }
 
     info!("Preprocessing for the Hamiltonian circuit problem");
+    let start_time = Instant::now();
     let preprocessed = preprocess_hamiltonian_circuit(&graph);
+    let duration = Instant::now() - start_time;
+    info!("Preprocessing took {:.1} seconds", duration.as_secs_f64());
+
     if let Some(preprocessed) = preprocessed {
         info!(
             "Preprocessing removed {:.1}% of nodes and {:.1}% of arcs",
