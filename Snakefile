@@ -410,12 +410,28 @@ rule hundred_hamcircuits_n100_c1_0:
     input: generate_hamcircuit_targets(100, 100, 1.0)
     output: touch("data/hamcircuit/tested.100.n100-c1.0.touch")
 
-rule hundred_hamcircuits_n100_c0_5:
-    input: generate_hamcircuit_targets(100, 100, 0.5)
-    output: touch("data/hamcircuit/tested.100.n100-c0.5.touch")
+rule hundred_hamcircuits_n100_c0_9:
+    input: generate_hamcircuit_targets(100, 100, 0.9)
+    output: touch("data/hamcircuit/tested.100.n100-c0.9.touch")
+
+rule hundred_hamcircuits_n100_c0_8:
+    input: generate_hamcircuit_targets(100, 100, 0.8)
+    output: touch("data/hamcircuit/tested.100.n100-c0.8.touch")
+
+rule hundred_hamcircuits_n100_c0_7:
+    input: generate_hamcircuit_targets(100, 100, 0.7)
+    output: touch("data/hamcircuit/tested.100.n100-c0.7.touch")
+
+rule hundred_hamcircuits_n100_c0_6:
+    input: generate_hamcircuit_targets(100, 100, 0.6)
+    output: touch("data/hamcircuit/tested.100.n100-c0.6.touch")
 
 rule hundred_hamcircuits_n100_call:
-    input: ["data/hamcircuit/tested.100.n100-c1.0.touch", "data/hamcircuit/tested.100.n100-c0.5.touch"]
+    input: "data/hamcircuit/tested.100.n100-c1.0.touch",
+           "data/hamcircuit/tested.100.n100-c0.9.touch",
+           "data/hamcircuit/tested.100.n100-c0.8.touch",
+           "data/hamcircuit/tested.100.n100-c0.7.touch",
+           "data/hamcircuit/tested.100.n100-c0.6.touch"
 
 rule hamcircuit_overall_report:
     input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
