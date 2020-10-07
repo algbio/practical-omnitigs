@@ -307,32 +307,48 @@ where
                     WalkOverlap::Forward => {
                         let old_value =
                             forward_mergeable_walks.insert(walk_index, other_walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged after a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                         let old_value =
                             backward_mergeable_walks.insert(other_walk_index, walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged before a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                     }
                     WalkOverlap::Backward => {
                         let old_value =
                             forward_mergeable_walks.insert(other_walk_index, walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged after a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                         let old_value =
                             backward_mergeable_walks.insert(walk_index, other_walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged before a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                     }
                     WalkOverlap::Both => {
                         let old_value =
                             forward_mergeable_walks.insert(walk_index, other_walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged after a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                         let old_value =
                             backward_mergeable_walks.insert(other_walk_index, walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged before a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                         let old_value =
                             forward_mergeable_walks.insert(other_walk_index, walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged after a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                         let old_value =
                             backward_mergeable_walks.insert(walk_index, other_walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged before a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                     }
                     WalkOverlap::None => {
                         harmless_pairs.insert(walk_index, other_walk_index);
