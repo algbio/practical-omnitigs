@@ -417,16 +417,16 @@ rule hundred_hamcircuits_n200_call:
     input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n300_call:
-    input: expand("data/hamcircuit/tested.100.n300-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+    input: expand("data/hamcircuit/tested.100.n300-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n400_call:
-    input: expand("data/hamcircuit/tested.100.n400-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+    input: expand("data/hamcircuit/tested.100.n400-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n500_call:
-    input: expand("data/hamcircuit/tested.100.n500-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+    input: expand("data/hamcircuit/tested.100.n500-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n600_call:
-    input: expand("data/hamcircuit/tested.100.n600-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+    input: expand("data/hamcircuit/tested.100.n600-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_nall_call:
     input: expand("data/hamcircuit/tested.100.n{n}-c{c}.touch", n = [100, 200, 300, 400, 500, 600], c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
@@ -460,7 +460,7 @@ rule hamcircuit_compute_tsp:
     LINES=($LINES)
     LINES=${{LINES[0]}}
     UB=$((LINES * 5 + 1))
-    '../../{input.binary}' -u $UB -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
+    '../../{input.binary}' -u ${{UB}}.5 -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
     """
 
 rule hamcircuit_generate:
