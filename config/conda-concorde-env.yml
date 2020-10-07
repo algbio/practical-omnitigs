@@ -1,5 +1,0 @@
-channels:
-        - lpcdrp
-        - conda-forge
-dependencies:
-        - concorde==2003.12.19

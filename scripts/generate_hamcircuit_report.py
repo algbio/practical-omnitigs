@@ -44,8 +44,8 @@ for line in tsplog_preprocessed_lines:
 		line = line.strip()[19:]
 		preprocessed_optimal_solution = int(round(float(line)))
 
-raw_hamiltonian = raw_number_of_nodes == raw_optimal_solution
-preprocessed_hamiltonian = preprocessed_number_of_nodes == preprocessed_optimal_solution
+raw_hamiltonian = raw_number_of_nodes * 5 == raw_optimal_solution
+preprocessed_hamiltonian = preprocessed_number_of_nodes * 5 == preprocessed_optimal_solution
 
 if raw_hamiltonian != preprocessed_hamiltonian:
 	print("Difference between hamiltonianess of raw and preprocessed graph.")

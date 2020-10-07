@@ -4,7 +4,7 @@ use genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected;
 use genome_graph::bigraph::traitgraph::algo::predefined_graphs::create_random_graph;
 use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
 use genome_graph::bigraph::traitgraph::io::{
-    read_hamcircuit_from_concorde_tsp, write_hamcircuit_as_concorde_tsp,
+    read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp,
 };
 use omnitigs::hamiltonian::preprocess_hamiltonian_circuit;
 use omnitigs::macrotigs::macrotigs::Macrotigs;
@@ -59,7 +59,7 @@ pub(crate) fn hamcircuit(
         info!("Reading graph from input file: '{}'", &options.input);
         let input_file = File::open(&options.input).expect("Input file does not exist");
         let mut input_reader = BufReader::new(input_file);
-        read_hamcircuit_from_concorde_tsp(&mut graph, &mut input_reader);
+        read_hamcircuit_from_tsplib_tsp(&mut graph, &mut input_reader);
     };
 
     info!("Opening raw output file: '{}'", subcommand.output_raw);
@@ -73,7 +73,7 @@ pub(crate) fn hamcircuit(
     let mut output_preprocessed_writer = BufWriter::new(output_preprocessed_file);
 
     info!("Writing raw graph");
-    write_hamcircuit_as_concorde_tsp(&graph, &mut output_raw_writer);
+    write_hamcircuit_as_tsplib_tsp(&graph, &mut output_raw_writer);
     output_raw_writer.flush().unwrap();
     drop(output_raw_writer);
 
@@ -98,7 +98,7 @@ pub(crate) fn hamcircuit(
         );
 
         info!("Writing preprocessed graph");
-        write_hamcircuit_as_concorde_tsp(&preprocessed, &mut output_preprocessed_writer);
+        write_hamcircuit_as_tsplib_tsp(&preprocessed, &mut output_preprocessed_writer);
     } else {
         info!("Preprocessing the graph revealed that it is not hamiltonian");
         info!("Writing dummy graph");
@@ -110,7 +110,7 @@ pub(crate) fn hamcircuit(
         graph.add_edge(n1, n2, ());
         graph.add_edge(n2, n1, ());
         graph.add_edge(n1, n0, ());
-        write_hamcircuit_as_concorde_tsp(&graph, &mut output_preprocessed_writer);
+        write_hamcircuit_as_tsplib_tsp(&graph, &mut output_preprocessed_writer);
     }
 
     Ok(())
