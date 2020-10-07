@@ -406,32 +406,27 @@ rule tenthousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10000, 20, 1.0)
     output: touch("data/hamcircuit/tested.10000.n20-c1.0.touch")
 
-rule hundred_hamcircuits_n100_c1_0:
-    input: generate_hamcircuit_targets(100, 100, 1.0)
-    output: touch("data/hamcircuit/tested.100.n100-c1.0.touch")
-
-rule hundred_hamcircuits_n100_c0_9:
-    input: generate_hamcircuit_targets(100, 100, 0.9)
-    output: touch("data/hamcircuit/tested.100.n100-c0.9.touch")
-
-rule hundred_hamcircuits_n100_c0_8:
-    input: generate_hamcircuit_targets(100, 100, 0.8)
-    output: touch("data/hamcircuit/tested.100.n100-c0.8.touch")
-
-rule hundred_hamcircuits_n100_c0_7:
-    input: generate_hamcircuit_targets(100, 100, 0.7)
-    output: touch("data/hamcircuit/tested.100.n100-c0.7.touch")
-
-rule hundred_hamcircuits_n100_c0_6:
-    input: generate_hamcircuit_targets(100, 100, 0.6)
-    output: touch("data/hamcircuit/tested.100.n100-c0.6.touch")
+rule k_hamcircuits_n_c:
+    input: lambda wildcards: generate_hamcircuit_targets(int(wildcards.k), int(wildcards.n), float(wildcards.c))
+    output: touch("data/hamcircuit/tested.{k}.n{n}-c{c}.touch")
 
 rule hundred_hamcircuits_n100_call:
-    input: "data/hamcircuit/tested.100.n100-c1.0.touch",
-           "data/hamcircuit/tested.100.n100-c0.9.touch",
-           "data/hamcircuit/tested.100.n100-c0.8.touch",
-           "data/hamcircuit/tested.100.n100-c0.7.touch",
-           "data/hamcircuit/tested.100.n100-c0.6.touch"
+    input: expand("data/hamcircuit/tested.100.n100-c{c}.touch", c = [0.6, 0.7, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n200_call:
+    input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.7, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n300_call:
+    input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.7, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n400_call:
+    input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.7, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n500_call:
+    input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.7, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n600_call:
+    input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.7, 0.8, 0.9, 1.0])
 
 rule hamcircuit_overall_report:
     input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
