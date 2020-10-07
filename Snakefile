@@ -386,22 +386,25 @@ rule install_concorde:
 ###### HamCircuit ######
 ########################
 
-rule single_hamcircuit:
+rule single_hamcircuit_n20_c1_0:
     input: generate_hamcircuit_targets(1, 20, 1.0)
 
-rule ten_hamcircuits:
+rule ten_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10, 20, 1.0)
 
-rule hundred_hamcircuits:
+rule hundred_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(100, 20, 1.0)
 
-rule thousand_hamcircuits:
+rule thousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(1000, 20, 1.0)
 
-rule tenthousand_hamcircuits:
+rule tenthousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10000, 20, 1.0)
 
-rule hamcircuit_overall_report:
+rule hundred_hamcircuits_n100_c1_0:
+    input: generate_hamcircuit_targets(100, 100, 1.0)
+
+rule hamcircuit_overall_report_n20_c1:
     input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
     output: "data/hamcircuit/{name}.0-{max}.n{n}-c{c}.overallreport"
     shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}' '{wildcards.n}' '{wildcards.c}'"
