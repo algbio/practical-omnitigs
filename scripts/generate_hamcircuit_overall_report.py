@@ -21,6 +21,9 @@ preprocessed_total_runtime = 0.0
 preprocessing_solved = 0
 preprocessing_removed_nodes = 0.0
 preprocessing_removed_edges = 0.0
+safe_walk_count = 0
+long_safe_walk_count = 0
+non_trivial_safe_walk_count = 0
 
 for i in range(amount):
 	file = open(file_name_prefix + "-" + str(i) + ".n" + str(n) + "-c" + str(c) + ".report", 'r')
@@ -51,6 +54,15 @@ for i in range(amount):
 		if "Preprocessed Total Runtime: " in line:
 			preprocessed_total_runtime += float(line.strip()[27:])
 
+		if "Safe walks: " in line:
+			safe_walk_count += int(line.split(":").strip())
+
+		if "Safe walks length > 2: " in line:
+			long_safe_walk_count += int(line.split(":").strip())
+
+		if "Non-trivial safe walks: " in line:
+			non_trivial_safe_walk_count += int(line.split(":").strip())
+
 report_file = open(file_name_prefix + ".0-" + str(maxn) + ".n" + str(n) + "-c" + str(c) + ".overallreport", 'w')
 
 report_file.write("Hamiltonian fraction: {:.1f}%\n".format(float(hamiltonian_graphs) / float(amount) * 100.0))
@@ -61,3 +73,6 @@ report_file.write("Average raw TSP runtime: {:.1f} seconds\n".format(raw_tsp_run
 report_file.write("Preprocessing solved cases: {:.1f}%\n".format(float(preprocessing_solved) / float(amount) * 100.0))
 report_file.write("Preprocessing removed average nodes in unsolved cases: {:.1f}%\n".format(preprocessing_removed_nodes / (amount - preprocessing_solved)))
 report_file.write("Preprocessing removed average edges in unsolved cases: {:.1f}%\n".format(preprocessing_removed_edges / (amount - preprocessing_solved)))
+report_file.write("Average # strong bridges: {:.2f}\n".format(float(safe_walk_count - long_safe_walk_count) / float(amount)))
+report_file.write("Average # trivial safe walks (len > 2): {:.2f}\n".format(float(long_safe_walk_count - non_trivial_safe_walk_count) / float(amount)))
+report_file.write("Average # non-trivial safe walks: {:.2f}\n".format(float(non_trivial_safe_walk_count) / float(amount)))

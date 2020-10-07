@@ -45,6 +45,14 @@ where
         }
     }
 
+    /// Returns true if this walk is non-trivial.
+    fn is_non_trivial(&'a self, graph: &Graph) -> bool
+    where
+        Graph: StaticGraph,
+    {
+        self.compute_trivial_heart(graph).is_none()
+    }
+
     /// Computes the univocal extension of this walk.
     /// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first node of W and R the longest univocal walk from the last node of W.
     fn compute_univocal_extension<ResultWalk: From<Vec<Graph::NodeIndex>>>(
@@ -186,6 +194,14 @@ where
         } else {
             None
         }
+    }
+
+    /// Returns true if this walk is non-trivial.
+    fn is_non_trivial(&'a self, graph: &Graph) -> bool
+    where
+        Graph: StaticGraph,
+    {
+        self.compute_trivial_heart(graph).is_none()
     }
 
     /// Compute the univocal extension of a walk.

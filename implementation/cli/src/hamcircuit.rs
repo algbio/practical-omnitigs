@@ -13,9 +13,11 @@ use omnitigs::macrotigs::macrotigs::Macrotigs;
 use omnitigs::node_covering_node_visible_one_circular_safe::compute_maximal_node_covering_node_visible_one_circular_safe_walks;
 use omnitigs::traitgraph::interface::ImmutableGraphContainer;
 use omnitigs::traitgraph::interface::MutableGraphContainer;
+use omnitigs::traitgraph::walks::NodeWalk;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::time::Instant;
+use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct HamCircuitCommand {
@@ -97,6 +99,17 @@ pub(crate) fn hamcircuit(
     for walk in &safe_walks {
         info!("{:?}", walk);
     }
+    info!(
+        "Found {} safe walks of length > 2",
+        safe_walks.iter().filter(|walk| walk.len() > 2).count()
+    );
+    info!(
+        "Found {} non-trivial safe walks",
+        safe_walks
+            .iter()
+            .filter(|walk| walk.is_non_trivial(&graph))
+            .count()
+    );
 
     info!("Preprocessing for the Hamiltonian circuit problem");
     let start_time = Instant::now();

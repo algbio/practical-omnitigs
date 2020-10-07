@@ -29,6 +29,15 @@ for line in preprocesslog_lines:
 	if "Preprocessing took" in line:
 		preprocessing_running_time = float(line.split("Preprocessing took")[1].split("seconds")[0].strip())
 
+	if "Found" in line and "safe walks" in line and "safe walks of length > 2" not in line:
+		report_file.write("Safe walks: " + line.strip().split("Found")[1].split("safe")[0].strip())
+
+	if "Found" in line and "safe walks of length > 2" in line:
+		report_file.write("Safe walks length > 2: " + line.strip().split("Found")[1].split("safe")[0].strip())
+
+	if "Found" in line and "non-trivial safe walks" in line:
+		report_file.write("Non-trivial safe walks: " + line.strip().split("Found")[1].split("non-trivial")[0].strip())
+
 raw_number_of_nodes = -1
 raw_optimal_solution = -1
 raw_tsp_running_time = -1
