@@ -54,10 +54,10 @@ pub(crate) fn hamcircuit(
             }
             loop_count += 1;
             if loop_count == 10 {
-                info!("Did not find a strongly connected graph after 10 attempts, using n = {} and c = {} (which translates to a edge/node ration of {:.2}%)",
+                info!("Did not find a strongly connected graph after 10 attempts, using n = {} and c = {} (which translates to a. edge/node ration of {:.2}%)",
                       node_count,
                       c_value,
-                      compute_m_from_n_and_c(node_count, c_value) as f64 * 100.0
+                      compute_m_from_n_and_c(node_count, c_value) as f64 / node_count as f64 * 100.0
                 );
             }
         }
