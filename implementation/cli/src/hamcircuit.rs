@@ -1,7 +1,9 @@
 use crate::CliOptions;
 use clap::Clap;
 use genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected;
-use genome_graph::bigraph::traitgraph::algo::predefined_graphs::create_random_graph;
+use genome_graph::bigraph::traitgraph::algo::predefined_graphs::{
+    compute_m_from_n_and_c, create_random_graph,
+};
 use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
 use genome_graph::bigraph::traitgraph::io::{
     read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp,
@@ -11,8 +13,11 @@ use omnitigs::macrotigs::macrotigs::Macrotigs;
 use omnitigs::node_covering_node_visible_one_circular_safe::compute_maximal_node_covering_node_visible_one_circular_safe_walks;
 use omnitigs::traitgraph::interface::ImmutableGraphContainer;
 use omnitigs::traitgraph::interface::MutableGraphContainer;
+use omnitigs::traitgraph::walks::NodeWalk;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
+use std::time::Instant;
+use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct HamCircuitCommand {
@@ -41,12 +46,21 @@ pub(crate) fn hamcircuit(
 
     if let Some(random) = &subcommand.random {
         let (node_count, c_value) = scan_fmt!(random, "n{d}+c{f}", usize, f64).expect("Could not parse argument of random. Make sure it fulfills the format in the help message.");
+        let mut loop_count = 0;
 
         loop {
             graph.clear();
             create_random_graph(&mut graph, node_count, c_value, &mut rand::thread_rng());
             if is_strongly_connected(&graph) {
                 break;
+            }
+            loop_count += 1;
+            if loop_count == 10 {
+                info!("Did not find a strongly connected graph after 10 attempts, using n = {} and c = {} (which translates to a. edge/node ration of {:.2}%)",
+                      node_count,
+                      c_value,
+                      compute_m_from_n_and_c(node_count, c_value) as f64 / node_count as f64 * 100.0
+                );
             }
         }
 
@@ -85,9 +99,24 @@ pub(crate) fn hamcircuit(
     for walk in &safe_walks {
         info!("{:?}", walk);
     }
+    info!(
+        "Found {} safe walks of length > 2",
+        safe_walks.iter().filter(|walk| walk.len() > 2).count()
+    );
+    info!(
+        "Found {} non-trivial safe walks",
+        safe_walks
+            .iter()
+            .filter(|walk| walk.is_non_trivial(&graph))
+            .count()
+    );
 
     info!("Preprocessing for the Hamiltonian circuit problem");
+    let start_time = Instant::now();
     let preprocessed = preprocess_hamiltonian_circuit(&graph);
+    let duration = Instant::now() - start_time;
+    info!("Preprocessing took {:.1} seconds", duration.as_secs_f64());
+
     if let Some(preprocessed) = preprocessed {
         info!(
             "Preprocessing removed {:.1}% of nodes and {:.1}% of arcs",

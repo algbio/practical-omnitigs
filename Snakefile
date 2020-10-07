@@ -386,20 +386,53 @@ rule install_concorde:
 ###### HamCircuit ######
 ########################
 
-rule single_hamcircuit:
+rule single_hamcircuit_n20_c1_0:
     input: generate_hamcircuit_targets(1, 20, 1.0)
+    output: touch("data/hamcircuit/tested.1.n20-c1.0.touch")
 
-rule ten_hamcircuits:
+rule ten_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10, 20, 1.0)
+    output: touch("data/hamcircuit/tested.10.n20-c1.0.touch")
 
-rule hundred_hamcircuits:
+rule hundred_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(100, 20, 1.0)
+    output: touch("data/hamcircuit/tested.100.n20-c1.0.touch")
 
-rule thousand_hamcircuits:
+rule thousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(1000, 20, 1.0)
+    output: touch("data/hamcircuit/tested.1000.n20-c1.0.touch")
 
-rule tenthousand_hamcircuits:
+rule tenthousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10000, 20, 1.0)
+    output: touch("data/hamcircuit/tested.10000.n20-c1.0.touch")
+
+rule hundred_hamcircuits_n300_c0_65:
+    input: "data/hamcircuit/tested.100.n300-c0.65.touch"
+
+rule k_hamcircuits_n_c:
+    input: lambda wildcards: generate_hamcircuit_targets(int(wildcards.k), int(wildcards.n), float(wildcards.c))
+    output: touch("data/hamcircuit/tested.{k}.n{n}-c{c}.touch")
+
+rule hundred_hamcircuits_n100_call:
+    input: expand("data/hamcircuit/tested.100.n100-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n200_call:
+    input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n300_call:
+    input: expand("data/hamcircuit/tested.100.n300-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n400_call:
+    input: expand("data/hamcircuit/tested.100.n400-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n500_call:
+    input: expand("data/hamcircuit/tested.100.n500-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_n600_call:
+    input: expand("data/hamcircuit/tested.100.n600-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+
+rule hundred_hamcircuits_nall_call:
+    input: expand("data/hamcircuit/tested.100.n{n}-c{c}.touch", n = [100, 200, 300, 400, 500, 600], c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
 
 rule hamcircuit_overall_report:
     input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
@@ -430,7 +463,7 @@ rule hamcircuit_compute_tsp:
     LINES=($LINES)
     LINES=${{LINES[0]}}
     UB=$((LINES * 5 + 1))
-    '../../{input.binary}' -u $UB -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
+    '../../{input.binary}' -u ${{UB}}.5 -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
     """
 
 rule hamcircuit_generate:

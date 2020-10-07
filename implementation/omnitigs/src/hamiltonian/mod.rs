@@ -476,6 +476,8 @@ where
     let mut result = Graph::default();
     let mut node_id_map = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
     let mut processed_nodes = BitVector::new(graph.node_count());
+    let mut in_only_nodes = BitVector::new(graph.node_count());
+    let mut out_only_nodes = BitVector::new(graph.node_count());
 
     // Add merged walks as edges into the result graph.
     for walk in &merged_walks {
@@ -492,6 +494,8 @@ where
         result.add_edge(result_first_node, result_last_node, Default::default());
         node_id_map[walk.first().unwrap().as_usize()] = Some(result_first_node).into();
         node_id_map[walk.last().unwrap().as_usize()] = Some(result_last_node).into();
+        in_only_nodes.insert(walk.first().unwrap().as_usize());
+        out_only_nodes.insert(walk.last().unwrap().as_usize());
     }
 
     // Add nodes that are not part of any merged walk to the result graph.
@@ -503,12 +507,15 @@ where
     }
 
     // Add edges between non-deleted nodes.
-    for node in graph.node_indices() {
-        if let Some(result_node) = node_id_map[node.as_usize()].into() {
-            for neighbor in graph.out_neighbors(node) {
-                if let Some(result_neighbor_node) = node_id_map[neighbor.node_id.as_usize()].into()
-                {
-                    if !result.contains_edge_between(result_node, result_neighbor_node) {
+    for n1 in graph.node_indices() {
+        if let Some(result_node) = node_id_map[n1.as_usize()].into() {
+            for neighbor in graph.out_neighbors(n1) {
+                let n2 = neighbor.node_id;
+                if let Some(result_neighbor_node) = node_id_map[n2.as_usize()].into() {
+                    if !result.contains_edge_between(result_node, result_neighbor_node)
+                        && !in_only_nodes.contains(n1.as_usize())
+                        && !out_only_nodes.contains(n2.as_usize())
+                    {
                         result.add_edge(result_node, result_neighbor_node, Default::default());
                     }
                 }

@@ -25,7 +25,9 @@ where
             }
         }
 
-        if last_split < first_join && (last_split > 0 || first_join < self.len() - 1) {
+        if last_split < first_join
+            && (last_split > 0 || first_join < self.len() - 1 || self.len() == 2)
+        {
             Some((last_split, first_join))
         } else {
             None
@@ -43,6 +45,14 @@ where
         } else {
             None
         }
+    }
+
+    /// Returns true if this walk is non-trivial.
+    fn is_non_trivial(&'a self, graph: &Graph) -> bool
+    where
+        Graph: StaticGraph,
+    {
+        self.compute_trivial_heart(graph).is_none()
     }
 
     /// Computes the univocal extension of this walk.
@@ -168,7 +178,9 @@ where
             }
         }
 
-        if last_split <= first_join && (last_split > 0 || first_join < self.len() - 1) {
+        if last_split <= first_join
+            && (last_split > 0 || first_join < self.len() - 1 || self.len() == 1)
+        {
             Some((last_split, first_join))
         } else {
             None
@@ -186,6 +198,14 @@ where
         } else {
             None
         }
+    }
+
+    /// Returns true if this walk is non-trivial.
+    fn is_non_trivial(&'a self, graph: &Graph) -> bool
+    where
+        Graph: StaticGraph,
+    {
+        self.compute_trivial_heart(graph).is_none()
     }
 
     /// Compute the univocal extension of a walk.

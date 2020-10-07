@@ -42,6 +42,14 @@ fn create_binary_tree_recursively<Graph: DynamicGraph>(
     create_binary_tree_recursively(graph, depth - 1, r);
 }
 
+/// Computes the amount of edges in a graph with n nodes, given the hamiltonian edge factor c.
+pub fn compute_m_from_n_and_c(n: usize, c: f64) -> usize {
+    let node_amount_f64 = n as f64;
+    let target_edge_amount =
+        c * node_amount_f64 * (node_amount_f64.ln().max(1.0) + node_amount_f64.ln().ln().max(0.0));
+    target_edge_amount.round() as usize
+}
+
 /// Creates a random hamiltonian graph with the given amount of nodes.
 /// Assumes that the graph is empty.
 /// The amount of arcs will be `c * n * (log(n) + log(log(n)))`, where `n` is the amount of nodes.
@@ -74,12 +82,14 @@ pub fn create_random_hamiltonian_graph<Graph: DynamicGraph, Random: Rng>(
         Default::default(),
     );
 
-    let node_amount_f64 = node_amount as f64;
-    let target_edge_amount =
-        c * node_amount_f64 * (node_amount_f64.ln().max(1.0) + node_amount_f64.ln().ln().max(0.0));
-    let target_edge_amount = target_edge_amount.round() as usize;
+    let target_edge_amount = compute_m_from_n_and_c(node_amount, c);
     assert!(
-        target_edge_amount >= node_amount && target_edge_amount <= node_amount * (node_amount - 1)
+        target_edge_amount >= node_amount && target_edge_amount <= node_amount * (node_amount - 1),
+        "node_amount <= target_edge_amount <= node_amount * (node_amount - 1): {} <= {} <= {} (c: {})",
+        node_amount,
+        target_edge_amount,
+        node_amount * (node_amount - 1),
+        c,
     );
 
     while graph.edge_count() < target_edge_amount {
@@ -112,10 +122,7 @@ pub fn create_random_graph<Graph: DynamicGraph, Random: Rng>(
         graph.add_node(Default::default());
     }
 
-    let node_amount_f64 = node_amount as f64;
-    let target_edge_amount =
-        c * node_amount_f64 * (node_amount_f64.ln().max(1.0) + node_amount_f64.ln().ln().max(0.0));
-    let target_edge_amount = target_edge_amount.round() as usize;
+    let target_edge_amount = compute_m_from_n_and_c(node_amount, c);
     assert!(
         target_edge_amount >= node_amount && target_edge_amount <= node_amount * (node_amount - 1)
     );
