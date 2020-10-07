@@ -406,6 +406,9 @@ rule tenthousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10000, 20, 1.0)
     output: touch("data/hamcircuit/tested.10000.n20-c1.0.touch")
 
+rule hundred_hamcircuits_n300_c0_65:
+    input: "data/hamcircuit/tested.100.n300-c0.65.touch"
+
 rule k_hamcircuits_n_c:
     input: lambda wildcards: generate_hamcircuit_targets(int(wildcards.k), int(wildcards.n), float(wildcards.c))
     output: touch("data/hamcircuit/tested.{k}.n{n}-c{c}.touch")
