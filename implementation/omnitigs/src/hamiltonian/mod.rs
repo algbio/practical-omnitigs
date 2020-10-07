@@ -9,6 +9,7 @@ use traitgraph::interface::{DynamicGraph, ImmutableGraphContainer, StaticGraph};
 use traitgraph::walks::VecNodeWalk;
 use traitsequence::interface::Sequence;
 
+#[derive(Debug)]
 enum WalkOverlap {
     Forward,
     Backward,
@@ -21,6 +22,11 @@ fn check_walk_overlap<Graph: StaticGraph>(
     walk: &VecNodeWalk<Graph>,
     other_walk: &VecNodeWalk<Graph>,
 ) -> WalkOverlap {
+    println!(
+        "Checking walk overlap between {:?} and {:?}",
+        walk, other_walk
+    );
+
     // Check if the walks share any nodes.
     let nodes = walk.iter().copied().collect::<BTreeSet<_>>();
     let other_nodes = other_walk.iter().copied().collect::<BTreeSet<_>>();
@@ -178,6 +184,38 @@ fn check_walk_invalid_self_overlap<Graph: StaticGraph>(walk: &VecNodeWalk<Graph>
     !intersection.is_empty()
 }
 
+/// Returns true if a walk overlaps itself in any way.
+fn check_walk_any_self_overlap<Graph: StaticGraph>(walk: &VecNodeWalk<Graph>) -> bool {
+    let mut nodes = BTreeSet::new();
+    for node in walk.iter().copied() {
+        if nodes.contains(&node) {
+            return true;
+        } else {
+            nodes.insert(node);
+        }
+    }
+
+    false
+}
+
+fn check_if_walk_has_prefix_of_all_unique_nodes<Graph: StaticGraph>(
+    graph: &Graph,
+    walk: &VecNodeWalk<Graph>,
+) -> bool {
+    let mut used_nodes = BitVector::new(graph.node_count());
+    for node in walk.iter() {
+        if used_nodes.contains(node.as_usize()) {
+            return false;
+        }
+        used_nodes.insert(node.as_usize());
+        if used_nodes.len() == graph.node_count() {
+            return true;
+        }
+    }
+
+    used_nodes.len() == graph.node_count()
+}
+
 fn do_walks_cover_all_nodes<Graph: ImmutableGraphContainer>(
     graph: &Graph,
     walks: Vec<VecNodeWalk<Graph>>,
@@ -220,18 +258,22 @@ where
         &Macrotigs::compute(graph),
     );
 
-    if safe_walks
+    for walk in safe_walks
         .iter()
-        .any(|walk| check_walk_invalid_self_overlap(walk))
+        .filter(|walk| check_walk_any_self_overlap(walk))
     {
-        return None;
+        if !check_if_walk_has_prefix_of_all_unique_nodes(graph, walk) {
+            return None;
+        }
     }
 
     // Map nodes to walks that contain them.
     let mut node_walk_map = vec![Vec::new(); graph.node_count()];
     for (i, walk) in safe_walks.iter().enumerate() {
         for node in walk.iter() {
-            node_walk_map[node.as_usize()].push(i);
+            if !node_walk_map[node.as_usize()].contains(&i) {
+                node_walk_map[node.as_usize()].push(i);
+            }
         }
     }
     let node_walk_map = node_walk_map;
@@ -254,25 +296,59 @@ where
 
                 let walk = &safe_walks[walk_index];
                 let other_walk = &safe_walks[other_walk_index];
+                let walk_overlap = check_walk_overlap(walk, other_walk);
 
-                match check_walk_overlap(walk, other_walk) {
+                println!(
+                    "Walk overlap from {:?} to {:?} is {:?}",
+                    walk, other_walk, &walk_overlap
+                );
+
+                match walk_overlap {
                     WalkOverlap::Forward => {
                         let old_value =
                             forward_mergeable_walks.insert(walk_index, other_walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged after a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
+                        let old_value =
+                            backward_mergeable_walks.insert(other_walk_index, walk_index);
+                        if old_value.is_some() {
+                            return None;
+                        }
                     }
                     WalkOverlap::Backward => {
                         let old_value =
-                            backward_mergeable_walks.insert(other_walk_index, walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged before a walk, which is a contradiction to the mergeability of either.");
+                            forward_mergeable_walks.insert(other_walk_index, walk_index);
+                        if old_value.is_some() {
+                            return None;
+                        }
+                        let old_value =
+                            backward_mergeable_walks.insert(walk_index, other_walk_index);
+                        if old_value.is_some() {
+                            return None;
+                        }
                     }
                     WalkOverlap::Both => {
                         let old_value =
                             forward_mergeable_walks.insert(walk_index, other_walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged after a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
                         let old_value =
                             backward_mergeable_walks.insert(other_walk_index, walk_index);
-                        assert!(old_value.is_none(), "Found two walks that can be merged before a walk, which is a contradiction to the mergeability of either.");
+                        if old_value.is_some() {
+                            return None;
+                        }
+                        let old_value =
+                            forward_mergeable_walks.insert(other_walk_index, walk_index);
+                        if old_value.is_some() {
+                            return None;
+                        }
+                        let old_value =
+                            backward_mergeable_walks.insert(walk_index, other_walk_index);
+                        if old_value.is_some() {
+                            return None;
+                        }
                     }
                     WalkOverlap::None => {
                         harmless_pairs.insert(walk_index, other_walk_index);
@@ -286,10 +362,21 @@ where
         }
     }
 
+    println!(" === Merging walks === ");
+    println!("Forward merge map: {:?}", &forward_mergeable_walks);
+    println!("Backward merge map: {:?}", &backward_mergeable_walks);
+
     // Here we know that all pairs of walks are either harmless or mergeable.
     // First, we merge all mergeable walks.
     let mut merged_walks = Vec::new();
+    let mut used_walks = BitVector::new(safe_walks.len());
     for (i, walk) in safe_walks.iter().enumerate() {
+        if used_walks.contains(i) {
+            continue;
+        } else {
+            used_walks.insert(i);
+        }
+
         // Find beginning of merge.
         let mut first_walk_index = i;
         let mut circular = false;
@@ -300,19 +387,54 @@ where
                 // Found cycle
                 circular = true;
                 break;
+            } else {
+                assert!(
+                    !used_walks.contains(first_walk_index),
+                    "While extending a mergeable walk we found a walk that was used already."
+                );
+                used_walks.insert(first_walk_index);
             }
         }
 
+        println!(
+            "Used walks is now: {:?}",
+            used_walks
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        );
+
         // Collect walk indices and remove mappings.
         let mut walk_indices = vec![first_walk_index];
+        let mut insert_into_used_walks = first_walk_index == i;
         while let Some(successor_index) = forward_mergeable_walks
             .get(&walk_indices.last().unwrap())
             .copied()
         {
+            if insert_into_used_walks {
+                assert!(
+                    !used_walks.contains(successor_index),
+                    "While extending a mergeable walk we found a walk that was used already."
+                );
+                used_walks.insert(successor_index);
+            } else if successor_index == i {
+                insert_into_used_walks = true;
+            }
             forward_mergeable_walks.remove(&walk_indices.last().unwrap());
             backward_mergeable_walks.remove(&successor_index);
             walk_indices.push(successor_index);
         }
+
+        println!("Found walk indices to merge walk: {:?}", &walk_indices);
+        println!(
+            "Used walks is now: {:?}",
+            used_walks
+                .iter()
+                .enumerate()
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        );
 
         if circular {
             assert!(
@@ -334,7 +456,7 @@ where
         } else if walk_indices.len() == 1 {
             merged_walks.push(walk.clone())
         } else {
-            let mut merged_walk = walk.clone();
+            let mut merged_walk = safe_walks[walk_indices[0]].clone();
             for walk_index in walk_indices.iter().copied().skip(1) {
                 merged_walk = VecNodeWalk::<Graph>::new(
                     merged_walk
@@ -346,6 +468,8 @@ where
             merged_walks.push(merged_walk);
         }
     }
+
+    println!("Merged walks: {:?}", &merged_walks);
 
     // Remove all inner nodes and their incident arcs of merged walks and instead insert and arc from the first to the last node of the merged walk.
     // Do this by copying the graph.
@@ -391,6 +515,8 @@ where
             }
         }
     }
+
+    println!("Final node-id map: {:?}", &node_id_map);
 
     Some(result)
 }

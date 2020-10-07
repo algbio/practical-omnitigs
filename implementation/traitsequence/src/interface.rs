@@ -101,3 +101,19 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
         suffix.forward_merge_iter_assume_mergeable(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::interface::Sequence;
+
+    #[test]
+    fn test_merge_sequences_simple() {
+        let s1 = vec![0, 1, 2, 3, 4, 5];
+        let s2 = vec![3, 4, 5, 6, 7, 8];
+        let merged: Vec<_> = s1
+            .forward_merge_iter_assume_mergeable(&s2)
+            .copied()
+            .collect();
+        assert_eq!(merged, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    }
+}

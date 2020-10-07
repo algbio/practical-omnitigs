@@ -11,6 +11,7 @@ if 'use_conda' in config and config['use_conda']:
     workflow.use_conda = True
 
 workflow.global_resources["contigvalidator"] = 1
+workflow.global_resources["concorde"] = 1
 
 # Preprocess experiments configuration
 experiments = config["experiments"]
@@ -85,6 +86,20 @@ def generate_test_targets():
     for experiment, config in tests.items():
         for target in _generate_test_targets_(experiment, config):
             yield target
+
+def generate_hamcircuit_targets(amount, n, c):
+    yield "data/hamcircuit/random.0-" + str(amount - 1) + ".n" + str(n) + "-c" + str(c) + ".overallreport"
+    for target in generate_hamcircuit_single_report_targets(amount, n, c):
+        yield target
+
+def generate_hamcircuit_overall_report_targets(amount, n, c):
+    yield "scripts/generate_hamcircuit_overall_report.py"
+    for target in generate_hamcircuit_single_report_targets(amount, n, c):
+        yield target
+
+def generate_hamcircuit_single_report_targets(amount, n, c):
+    for i in range(amount):
+        yield "data/hamcircuit/random-" + str(i) + ".n" + str(n) + "-c" + str(c) + ".report"
 
 ######################################
 ###### Input Genome Preparation ######
@@ -336,3 +351,95 @@ rule bandage:
     output: "{file}.bandage.png"
     conda: "config/conda-bandage-env.yml"
     shell: "Bandage image {input} {output} --width 1000 --height 1000"
+
+######################
+###### Concorde ######
+######################
+
+rule install_concorde:
+    output: "external-software/concorde/TSP/concorde"
+    conda: "config/conda-download-env.yml"
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    # Download and unpack concorde
+    wget http://www.math.uwaterloo.ca/tsp/concorde/downloads/codes/src/co031219.tgz
+    tar -xf co031219.tgz
+    cd concorde
+
+    # Fix whatever incompatible libraries
+    sed -i "s/h->h_addr/h->h_addr_list[0]/g" UTIL/safe_io.c
+
+    # Download QSOpt
+    wget https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.PIC.a
+    mv qsopt.PIC.a qsopt.a
+    wget https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.h
+
+    # Build concorde
+    QSOPT=$(pwd)
+    CC="gcc" CFLAGS="-g -O3" LDFLAGS="-g -O3" ./configure --with-qsopt="$QSOPT"
+    make
+    """
+
+########################
+###### HamCircuit ######
+########################
+
+rule single_hamcircuit:
+    input: generate_hamcircuit_targets(1, 20, 1.0)
+
+rule ten_hamcircuits:
+    input: generate_hamcircuit_targets(10, 20, 1.0)
+
+rule hundred_hamcircuits:
+    input: generate_hamcircuit_targets(100, 20, 1.0)
+
+rule thousand_hamcircuits:
+    input: generate_hamcircuit_targets(1000, 20, 1.0)
+
+rule tenthousand_hamcircuits:
+    input: generate_hamcircuit_targets(10000, 20, 1.0)
+
+rule hamcircuit_overall_report:
+    input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
+    output: "data/hamcircuit/{name}.0-{max}.n{n}-c{c}.overallreport"
+    shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}' '{wildcards.n}' '{wildcards.c}'"
+
+rule hamcircuit_report:
+    input: preprocesslog = "data/hamcircuit/{name}.preprocesslog",
+           solution_raw = "data/hamcircuit/{name}.raw.sol",
+           solution_preprocessed = "data/hamcircuit/{name}.preprocessed.sol",
+           tsplog_raw = "data/hamcircuit/{name}.raw.tsplog",
+           tsplog_preprocessed = "data/hamcircuit/{name}.preprocessed.tsplog",
+           script = "scripts/generate_hamcircuit_report.py"
+    output: report = "data/hamcircuit/{name}.report"
+    shell: "'{input.script}' 'data/hamcircuit/{wildcards.name}'"
+
+rule hamcircuit_compute_tsp:
+    input: tsp = "data/hamcircuit/{name}.tsp", binary = "external-software/concorde/TSP/concorde"
+    output: solution = "data/hamcircuit/{name}.sol", tsplog = "data/hamcircuit/{name}.tsplog"
+    resources:
+      concorde = 1
+    shell: """
+    cd data/hamcircuit
+    cp '{wildcards.name}.tsp' '{wildcards.name}.tsptmp'
+    sed -i '0,/EDGE_WEIGHT_SECTION/d' '{wildcards.name}.tsptmp'
+    sed -i '/EOF/,$d' '{wildcards.name}.tsptmp'
+    LINES=$(wc -l '{wildcards.name}.tsptmp')
+    LINES=($LINES)
+    LINES=${{LINES[0]}}
+    UB=$((LINES * 5 + 1))
+    '../../{input.binary}' -u $UB -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
+    """
+
+rule hamcircuit_generate:
+    input: binary = "data/target/release/cli"
+    output: tsp_raw = "data/hamcircuit/{name}.n{n}-c{c}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.n{n}-c{c}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.n{n}-c{c}.preprocesslog"
+    shadow: "shallow"
+    shell: """
+    '{input.binary}' --input none ham-circuit --random n{wildcards.n}+c{wildcards.c} --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
+    mv '{output.tsp_raw}.tmp' '{output.tsp_raw}'
+    mv '{output.tsp_preprocessed}.tmp' '{output.tsp_preprocessed}'
+    mv '{output.preprocesslog}.tmp' '{output.preprocesslog}'
+    """
