@@ -87,19 +87,19 @@ def generate_test_targets():
         for target in _generate_test_targets_(experiment, config):
             yield target
 
-def generate_hamcircuit_targets(amount):
-    yield "data/hamcircuit/random.0-" + str(amount - 1) + ".overallreport"
-    for target in generate_hamcircuit_single_report_targets(amount):
+def generate_hamcircuit_targets(amount, n, c):
+    yield "data/hamcircuit/random.0-" + str(amount - 1) + ".n" + str(n) + "-c" + str(c) + ".overallreport"
+    for target in generate_hamcircuit_single_report_targets(amount, n, c):
         yield target
 
-def generate_hamcircuit_overall_report_targets(amount):
+def generate_hamcircuit_overall_report_targets(amount, n, c):
     yield "scripts/generate_hamcircuit_overall_report.py"
-    for target in generate_hamcircuit_single_report_targets(amount):
+    for target in generate_hamcircuit_single_report_targets(amount, n, c):
         yield target
 
-def generate_hamcircuit_single_report_targets(amount):
+def generate_hamcircuit_single_report_targets(amount, n, c):
     for i in range(amount):
-        yield "data/hamcircuit/random-" + str(i) + ".report"
+        yield "data/hamcircuit/random-" + str(i) + ".n" + str(n) + "-c" + str(c) + ".report"
 
 ######################################
 ###### Input Genome Preparation ######
@@ -387,24 +387,24 @@ rule install_concorde:
 ########################
 
 rule single_hamcircuit:
-    input: generate_hamcircuit_targets(1)
+    input: generate_hamcircuit_targets(1, 20, 1.0)
 
 rule ten_hamcircuits:
-    input: generate_hamcircuit_targets(10)
+    input: generate_hamcircuit_targets(10, 20, 1.0)
 
 rule hundred_hamcircuits:
-    input: generate_hamcircuit_targets(100)
+    input: generate_hamcircuit_targets(100, 20, 1.0)
 
 rule thousand_hamcircuits:
-    input: generate_hamcircuit_targets(1000)
+    input: generate_hamcircuit_targets(1000, 20, 1.0)
 
 rule tenthousand_hamcircuits:
-    input: generate_hamcircuit_targets(10000)
+    input: generate_hamcircuit_targets(10000, 20, 1.0)
 
 rule hamcircuit_overall_report:
-    input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1)
-    output: "data/hamcircuit/{name}.0-{max}.overallreport"
-    shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}'"
+    input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
+    output: "data/hamcircuit/{name}.0-{max}.n{n}-c{c}.overallreport"
+    shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}' '{wildcards.n}' '{wildcards.c}'"
 
 rule hamcircuit_report:
     input: preprocesslog = "data/hamcircuit/{name}.preprocesslog",
@@ -435,10 +435,10 @@ rule hamcircuit_compute_tsp:
 
 rule hamcircuit_generate:
     input: binary = "data/target/release/cli"
-    output: tsp_raw = "data/hamcircuit/{name}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.preprocesslog"
+    output: tsp_raw = "data/hamcircuit/{name}.n{n}-c{c}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.n{n}-c{c}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.n{n}-c{c}.preprocesslog"
     shadow: "shallow"
     shell: """
-    '{input.binary}' --input none ham-circuit --random n20+c1.0 --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
+    '{input.binary}' --input none ham-circuit --random n{wildcards.n}+c{wildcards.c} --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
     mv '{output.tsp_raw}.tmp' '{output.tsp_raw}'
     mv '{output.tsp_preprocessed}.tmp' '{output.tsp_preprocessed}'
     mv '{output.preprocesslog}.tmp' '{output.preprocesslog}'

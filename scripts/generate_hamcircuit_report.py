@@ -98,4 +98,4 @@ else:
 	report_file.write("Graph is not hamiltonian\n")
 
 report_file.write("Raw TSP Runtime: " + str(raw_tsp_running_time) + "\n")
-report_file.write("preprocessed TSP Runtime: " + str(preprocessed_tsp_running_time) + "\n")
+report_file.write("Preprocessed TSP Runtime: " + str(preprocessed_tsp_running_time) + "\n")
