@@ -55,13 +55,13 @@ for i in range(amount):
 			preprocessed_total_runtime += float(line.strip()[27:])
 
 		if "Safe walks: " in line:
-			safe_walk_count += int(line.split(":").strip())
+			safe_walk_count += int(line.split(":")[1].strip())
 
-		if "Safe walks length > 2: " in line:
-			long_safe_walk_count += int(line.split(":").strip())
+		if "Safe walks of length > 2: " in line:
+			long_safe_walk_count += int(line.split(":")[1].strip())
 
 		if "Non-trivial safe walks: " in line:
-			non_trivial_safe_walk_count += int(line.split(":").strip())
+			non_trivial_safe_walk_count += int(line.split(":")[1].strip())
 
 report_file = open(file_name_prefix + ".0-" + str(maxn) + ".n" + str(n) + "-c" + str(c) + ".overallreport", 'w')
 

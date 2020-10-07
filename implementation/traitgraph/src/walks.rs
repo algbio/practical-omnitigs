@@ -25,7 +25,9 @@ where
             }
         }
 
-        if last_split < first_join && (last_split > 0 || first_join < self.len() - 1 || self.len() == 2) {
+        if last_split < first_join
+            && (last_split > 0 || first_join < self.len() - 1 || self.len() == 2)
+        {
             Some((last_split, first_join))
         } else {
             None
@@ -176,7 +178,9 @@ where
             }
         }
 
-        if last_split <= first_join && (last_split > 0 || first_join < self.len() - 1 || self.len() == 1) {
+        if last_split <= first_join
+            && (last_split > 0 || first_join < self.len() - 1 || self.len() == 1)
+        {
             Some((last_split, first_join))
         } else {
             None
