@@ -1,7 +1,9 @@
 use crate::CliOptions;
 use clap::Clap;
 use genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected;
-use genome_graph::bigraph::traitgraph::algo::predefined_graphs::create_random_graph;
+use genome_graph::bigraph::traitgraph::algo::predefined_graphs::{
+    compute_m_from_n_and_c, create_random_graph,
+};
 use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
 use genome_graph::bigraph::traitgraph::io::{
     read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp,
@@ -41,12 +43,21 @@ pub(crate) fn hamcircuit(
 
     if let Some(random) = &subcommand.random {
         let (node_count, c_value) = scan_fmt!(random, "n{d}+c{f}", usize, f64).expect("Could not parse argument of random. Make sure it fulfills the format in the help message.");
+        let mut loop_count = 0;
 
         loop {
             graph.clear();
             create_random_graph(&mut graph, node_count, c_value, &mut rand::thread_rng());
             if is_strongly_connected(&graph) {
                 break;
+            }
+            loop_count += 1;
+            if loop_count == 10 {
+                info!("Did not find a strongly connected graph after 10 attempts, using n = {} and c = {} (which translates to a edge/node ration of {:.2}%)",
+                      node_count,
+                      c_value,
+                      compute_m_from_n_and_c(node_count, c_value) as f64 * 100.0
+                );
             }
         }
 

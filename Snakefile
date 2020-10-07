@@ -388,23 +388,36 @@ rule install_concorde:
 
 rule single_hamcircuit_n20_c1_0:
     input: generate_hamcircuit_targets(1, 20, 1.0)
+    output: touch("data/hamcircuit/tested.1.n20-c1.0.touch")
 
 rule ten_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10, 20, 1.0)
+    output: touch("data/hamcircuit/tested.10.n20-c1.0.touch")
 
 rule hundred_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(100, 20, 1.0)
+    output: touch("data/hamcircuit/tested.100.n20-c1.0.touch")
 
 rule thousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(1000, 20, 1.0)
+    output: touch("data/hamcircuit/tested.1000.n20-c1.0.touch")
 
 rule tenthousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10000, 20, 1.0)
+    output: touch("data/hamcircuit/tested.10000.n20-c1.0.touch")
 
 rule hundred_hamcircuits_n100_c1_0:
     input: generate_hamcircuit_targets(100, 100, 1.0)
+    output: touch("data/hamcircuit/tested.100.n100-c1.0.touch")
 
-rule hamcircuit_overall_report_n20_c1:
+rule hundred_hamcircuits_n100_c0_5:
+    input: generate_hamcircuit_targets(100, 100, 0.5)
+    output: touch("data/hamcircuit/tested.100.n100-c0.5.touch")
+
+rule hundred_hamcircuits_n100_call:
+    input: ["data/hamcircuit/tested.100.n100-c1.0.touch", "data/hamcircuit/tested.100.n100-c0.5.touch"]
+
+rule hamcircuit_overall_report:
     input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
     output: "data/hamcircuit/{name}.0-{max}.n{n}-c{c}.overallreport"
     shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}' '{wildcards.n}' '{wildcards.c}'"
