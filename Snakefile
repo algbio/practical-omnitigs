@@ -88,6 +88,16 @@ def generate_test_targets():
             yield target
 
 def generate_hamcircuit_targets(amount):
+    yield "data/hamcircuit/random.0-" + str(amount - 1) + ".overallreport"
+    for target in generate_hamcircuit_single_report_targets(amount):
+        yield target
+
+def generate_hamcircuit_overall_report_targets(amount):
+    yield "scripts/generate_hamcircuit_overall_report.py"
+    for target in generate_hamcircuit_single_report_targets(amount):
+        yield target
+
+def generate_hamcircuit_single_report_targets(amount):
     for i in range(amount):
         yield "data/hamcircuit/random-" + str(i) + ".report"
 
@@ -391,14 +401,20 @@ rule thousand_hamcircuits:
 rule tenthousand_hamcircuits:
     input: generate_hamcircuit_targets(10000)
 
+rule hamcircuit_overall_report:
+    input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1)
+    output: "data/hamcircuit/{name}.0-{max}.overallreport"
+    shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}'"
+
 rule hamcircuit_report:
     input: preprocesslog = "data/hamcircuit/{name}.preprocesslog",
            solution_raw = "data/hamcircuit/{name}.raw.sol",
            solution_preprocessed = "data/hamcircuit/{name}.preprocessed.sol",
            tsplog_raw = "data/hamcircuit/{name}.raw.tsplog",
-           tsplog_preprocessed = "data/hamcircuit/{name}.preprocessed.tsplog"
+           tsplog_preprocessed = "data/hamcircuit/{name}.preprocessed.tsplog",
+           script = "scripts/generate_hamcircuit_report.py"
     output: report = "data/hamcircuit/{name}.report"
-    shell: "scripts/generate_hamcircuit_report.py 'data/hamcircuit/{wildcards.name}'"
+    shell: "'{input.script}' 'data/hamcircuit/{wildcards.name}'"
 
 rule hamcircuit_compute_tsp:
     input: tsp = "data/hamcircuit/{name}.tsp", binary = "external-software/concorde/TSP/concorde"
@@ -407,10 +423,14 @@ rule hamcircuit_compute_tsp:
       concorde = 1
     shell: """
     cd data/hamcircuit
-    LINES=$(wc -l '{wildcards.name}.tsp')
+    cp '{wildcards.name}.tsp' '{wildcards.name}.tsptmp'
+    sed -i '0,/EDGE_WEIGHT_SECTION/d' '{wildcards.name}.tsptmp'
+    sed -i '/EOF/,$d' '{wildcards.name}.tsptmp'
+    LINES=$(wc -l '{wildcards.name}.tsptmp')
     LINES=($LINES)
     LINES=${{LINES[0]}}
-    '../../{input.binary}' -u $LINES -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
+    UB=$((LINES * 5 + 1))
+    '../../{input.binary}' -u $UB -o '{wildcards.name}.sol' '{wildcards.name}.tsp' 2>&1 | tee '{wildcards.name}.tsplog'
     """
 
 rule hamcircuit_generate:
