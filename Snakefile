@@ -219,6 +219,22 @@ rule bcalm2:
         rm data/{wildcards.dir}/{wildcards.file}.k{wildcards.k}-a{wildcards.abundance_min}.bcalm2.*.glue.*
         """
 
+####################
+###### wtdbg2 ######
+####################
+
+rule install_wtdbg2:
+    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
+    conda: "config/conda-download-env.yml"
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    wget https://github.com/ruanjue/wtdbg2/releases/download/v2.5/wtdbg-2.5_x64_linux.tgz
+    tar -xf wtdbg-2.5_x64_linux.tgz
+    mv wtdbg-2.5_x64_linux -T wtdbg2
+    """
+
 ###############################
 ###### Report Generation ######
 ###############################
@@ -311,6 +327,7 @@ rule run_contig_validator:
     shell:
         """
         cd external-software/ContigValidator
+        # The abundance-min here has nothing to do with the abundance_min from bcalm2
         bash run.sh -suffixsave 0 -abundance-min 1 -kmer-size {wildcards.k} -r '../../{input.reference}' -a '../../{output.result}' -i '../../{input.reads}'
         """
 
