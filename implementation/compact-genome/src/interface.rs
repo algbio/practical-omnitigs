@@ -88,8 +88,5 @@ pub fn ascii_complement(char: u8) -> Option<u8> {
 /// Valid genome characters are `A`, `T`, `G` and `C`.
 // Note: do not add more characters here, but make a new method if required.
 pub fn is_valid_ascii_genome_character(char: u8) -> bool {
-    match char {
-        b'A' | b'T' | b'G' | b'C' => true,
-        _ => false,
-    }
+    matches!(char, b'A' | b'T' | b'G' | b'C')
 }

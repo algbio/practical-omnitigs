@@ -458,8 +458,8 @@ where
                 ));
             }
 
-            out_neighbors_plus.sort();
-            out_neighbors_minus.sort();
+            out_neighbors_plus.sort_unstable();
+            out_neighbors_minus.sort_unstable();
             out_neighbors_plus.append(&mut out_neighbors_minus);
             let out_neighbors = out_neighbors_plus;
 
@@ -668,8 +668,8 @@ where
                 ));
             }
 
-            out_neighbors_plus.sort();
-            out_neighbors_minus.sort();
+            out_neighbors_plus.sort_unstable();
+            out_neighbors_minus.sort_unstable();
             out_neighbors_plus.append(&mut out_neighbors_minus);
             let out_neighbors = out_neighbors_plus;
 
