@@ -72,7 +72,7 @@ enum Command {
 
 // The main is unpacked from an error-chain macro.
 // Using just the macro makes IntelliJ complain that there would be no main.
-// The real main (programmed manually) is run, below this method.
+// The real main (programmed manually) is run(), below this method.
 fn main() {
     ::std::process::exit(match run() {
         Ok(()) => ExitCode::code(()),

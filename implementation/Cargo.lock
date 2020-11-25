@@ -505,6 +505,7 @@ dependencies = [
  "bio",
  "compact-genome",
  "error-chain",
+ "log",
  "num-traits",
 ]
 
