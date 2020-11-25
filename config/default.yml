@@ -1,27 +1,33 @@
 use_conda: true
 
 experiments:
-  "GCF_000008865.2_ASM886v2":
-    k: [31, 51]
-    bcalm2_abundance_min: [1]
-    circularised: [true]
-    filter_retain: "NC_002695.2"
-    algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  bcalm2:
+    "GCF_000008865.2_ASM886v2":
+      k: [31, 51]
+      bcalm2_abundance_min: [1]
+      circularised: [true]
+      filter_retain: "NC_002695.2"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
-  "GCF_000008025.1_ASM802v1":
-    k: [51]
-    bcalm2_abundance_min: [1]
-    circularised: [true]
-    filter_retain: "NC_002978.6"
-    algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+    "GCF_000008025.1_ASM802v1":
+      k: [51]
+      bcalm2_abundance_min: [1]
+      circularised: [true]
+      filter_retain: "NC_002978.6"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
-  #"GRCh38_latest":
-  #  k: [51]
-  #  bcalm2_abundance_min: [1]
-  #  circularised: [true]
-  #  filter_retain: "NC_000010.11"
-  #  algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #  url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
+    #"GRCh38_latest":
+    #  k: [51]
+    #  bcalm2_abundance_min: [1]
+    #  circularised: [true]
+    #  filter_retain: "NC_000010.11"
+    #  algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+    #  url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
+
+  wtdbg2:
+    "C.elegans":
+      urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/raw_data/2590970/0001/Analysis_Results/m140928_184123_42139_c100719602550000001823155305141590_s1_p0.1.subreads.fasta","http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/raw_data/2590970/0001/Analysis_Results/m140928_184123_42139_c100719602550000001823155305141590_s1_p0.2.subreads.fasta","http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/raw_data/2590970/0001/Analysis_Results/m140928_184123_42139_c100719602550000001823155305141590_s1_p0.3.subreads.fasta"]
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
 tests:
   "GCF_000008865.2_ASM886v2":
@@ -29,4 +35,5 @@ tests:
     bcalm2_abundance_min: [1]
     circularised: [true]
     filter_retain: "NC_002695.2"
+    preprocessing: "bcalm2"
     algorithm: ["unitigs"]
