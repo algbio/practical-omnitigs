@@ -1,4 +1,4 @@
-import pathlib, itertools
+import pathlib, itertools, sys
 
 ###############################
 ###### Preprocess Config ######
@@ -14,10 +14,12 @@ workflow.global_resources["contigvalidator"] = 1
 workflow.global_resources["concorde"] = 1
 
 # Preprocess experiments configuration
-experiments = config["experiments"]
+experiments_bcalm2 = config["experiments"]["bcalm2"]
+experiments_wtdbg2 = config["experiments"]["wtdbg2"]
+
 tests = config["tests"]
 
-for experiment, config in itertools.chain(experiments.items(), tests.items()):
+for experiment, config in itertools.chain(experiments_bcalm2.items(), tests.items()):
     if not "url" in config:
         url = "https://ftp.ncbi.nlm.nih.gov/genomes/all/"
         url += experiment.split("_")[0] + "/"
@@ -28,6 +30,11 @@ for experiment, config in itertools.chain(experiments.items(), tests.items()):
         url += experiment + "/"
         url += experiment + "_genomic.fna.gz"
         config["url"] = url
+
+for experiment, config in experiments_wtdbg2.items():
+    if not "urls" in config:
+        print("Missing url in wtdbg2 experiment")
+        sys.exit(1)
 
 # Collect all rust sources
 rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob('**/Cargo.toml'), pathlib.Path('implementation').glob('**/*.rs'))))
@@ -46,12 +53,6 @@ def _generate_read_sim_targets_(experiment, config):
     path = create_experiment_path(experiment)
     for circularised in config["circularised"]:
         yield path + ("circular" if circularised else "linear")
-
-def _generate_bcalm2_targets_(experiment, config):
-    for target in _generate_read_sim_targets_(experiment, config):
-        for k in config["k"]:
-            for bcalm2_abundance_min in config["bcalm2_abundance_min"]:
-                    yield target + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + ".bcalm2"
 
 def _generate_bcalm2_parameterisation_targets_(experiment, config):
     for target in _generate_read_sim_targets_(experiment, config):
@@ -73,9 +74,13 @@ def _generate_test_targets_(experiment, config):
             yield target + ".is_tested"
 
 def generate_report_targets():
-    for experiment, config in experiments.items():
+    for experiment, config in experiments_bcalm2.items():
         for target in _generate_report_targets_(experiment, config):
             yield target
+
+def generate_wtdbg2_report_targets():
+    for experiment, config in experiments_wtdbg2.items():
+        yield create_experiment_path(experiment) + "wtdbg2.wtdbg2-report.pdf"
 
 def generate_test_report_targets():
     for experiment, config in tests.items():
@@ -120,7 +125,7 @@ rule verify_genome:
 rule filter_genome:
     input: file = "data/{dir}/raw.fna", binary = "data/target/release/cli"
     output: file = "data/{dir}/filtered.fna", genome_name = "data/{dir}/name.txt", log = "data/{dir}/filtered.log"
-    params: retain = lambda wildcards: "--retain '" + experiments[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments[wildcards.dir] else ""
+    params: retain = lambda wildcards: "--retain '" + experiments_bcalm2[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments_bcalm2[wildcards.dir] else ""
     conda: "config/conda-rust-env.yml"
     shell: "data/target/release/cli --input '{input.file}' filter --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
@@ -132,9 +137,19 @@ rule extract:
 
 rule download_experiment_file:
     output: "data/{dir}/raw.fna.gz"
-    params: url = lambda wildcards, output: experiments[wildcards.dir]["url"]
+    params: url = lambda wildcards, output: experiments_bcalm2[wildcards.dir]["url"]
     conda: "config/conda-download-env.yml"
     shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget -O raw.fna.gz {params.url}"
+
+######################################
+###### wtdbg2 Input Preparation ######
+######################################
+
+rule download_wtdbg2_input:
+    output: "data/{dir}/reads.fa"
+    params: url = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["urls"]
+    conda: "config/conda-download-env.yml"
+    shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget -O reads.fa {params.url}"
 
 ##################
 ###### Rust ######
@@ -170,6 +185,21 @@ rule compute_unitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
     shell: "'{input.binary}' --input '{input.file}' compute-unitigs --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+rule compute_omnitigs_wtdbg2:
+    input: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.omnitigs.ctg.lay.gz", log = "data/{dir}/wtdbg2.omnitigs.log", latex = "data/{dir}/wtdbg2.omnitigs.tex"
+    shell: "'{input.binary}' compute-omnitigs-wtdbg2 --wtdbg2-nodes '{input.nodes}' --wtdbg2-reads '{input.reads}' --wtdbg2-raw-reads '{input.raw_reads}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+rule compute_trivial_omnitigs_wtdbg2:
+    input: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.trivialomnitigs.ctg.lay.gz", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
+    shell: "'{input.binary}' compute-trivialomnitigs-wtdbg2 --wtdbg2-nodes '{input.nodes}' --wtdbg2-reads '{input.reads}' --wtdbg2-raw-reads '{input.raw_reads}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+rule compute_unitigs_wtdbg2:
+    input: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.unitigs.ctg.lay.gz", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
+    shell: "'{input.binary}' compute-unitigs-wtdbg2 --wtdbg2-nodes '{input.nodes}' --wtdbg2-reads '{input.reads}' --wtdbg2-raw-reads '{input.raw_reads}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -235,13 +265,23 @@ rule install_wtdbg2:
     mv wtdbg-2.5_x64_linux -T wtdbg2
     """
 
+rule wtdbg2_graph:
+    input: file = "data/{dir}/reads.fa", binary = "external-software/wtdbg2/wtdbg2"
+    output: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", log = "data/{dir}/wtdbg2.log"
+    shell: "{input.binary} -x rs -g 4.6m -i '{input.file}' -t 4 -fo 'data/{wildcards.dir}/wtdbg2' 2>&1 | tee '{output.log}'"
+
+rule wtdbg2_consensus:
+    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay.gz", binary = "external-software/wtdbg2/wtpoa-cns"
+    output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
+    shell: "{input.binary} -t 4 -i '{input.contigs}' -fo '{output.consensus}'"
+
 ###############################
 ###### Report Generation ######
 ###############################
 
 rule latex:
-    input: "data/{dir}/{file}.report.tex"
-    output: "data/{dir}/{file}.report.pdf"
+    input: "data/{dir}/{file}report.tex"
+    output: "data/{dir}/{file}report.pdf"
     conda: "config/conda-latex-env.yml"
     shell: "tectonic {input}"
 
@@ -263,8 +303,16 @@ rule create_single_report_tex:
     params: prefix = "data/{dir}/{file}"
     shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '../../{input.bcalm2_bandage}' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
+rule create_single_wtdbg2_report_tex:
+    input: unitigs = "data/{dir}/wtdbg2.unitigs.raw.fa", omnitigs = "data/{dir}/wtdbg2.omnitigs.raw.fa", trivialomnitigs = "data/{dir}/wtdbg2.trivialomnitigs.raw.fa"
+    output: touch("data/{dir}/wtdbg2.wtdbg2-report.tex")
+    shell: ""
+
 rule report_all:
     input: generate_report_targets()
+
+rule report_wtdbg2:
+    input: generate_wtdbg2_report_targets()
 
 rule test_report:
     input: generate_test_report_targets()
