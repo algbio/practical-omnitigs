@@ -7,6 +7,9 @@ use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct ComputeTrivialOmnitigsCommand {
+    #[clap(short, long, about = "The input file in bcalm2 format")]
+    pub input: String,
+
     #[clap(
         short,
         long,
@@ -30,7 +33,7 @@ pub struct ComputeTrivialOmnitigsCommand {
 }
 
 pub(crate) fn compute_trivial_omnitigs(
-    options: &CliOptions,
+    _options: &CliOptions,
     subcommand: &ComputeTrivialOmnitigsCommand,
 ) -> crate::Result<()> {
     let mut latex_file = if let Some(latex_file_name) = &subcommand.latex {
@@ -44,11 +47,11 @@ pub(crate) fn compute_trivial_omnitigs(
 
     info!(
         "Reading bigraph from '{}' with kmer size {}",
-        options.input, subcommand.kmer_size
+        subcommand.input, subcommand.kmer_size
     );
     let genome_graph: PetBCalm2EdgeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
-            &options.input,
+            &subcommand.input,
             subcommand.kmer_size,
         )?;
 

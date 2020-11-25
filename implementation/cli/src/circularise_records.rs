@@ -4,6 +4,9 @@ use clap::Clap;
 
 #[derive(Clap)]
 pub struct CirculariseGenomeCommand {
+    #[clap(short, long, about = "The input file in fasta format")]
+    pub input: String,
+
     #[clap(
         short,
         long,
@@ -21,7 +24,7 @@ pub struct CirculariseGenomeCommand {
 }
 
 pub(crate) fn circularise_records(
-    options: &CliOptions,
+    _options: &CliOptions,
     subcommand: &CirculariseGenomeCommand,
 ) -> crate::Result<()> {
     info!(
@@ -29,8 +32,8 @@ pub(crate) fn circularise_records(
         subcommand.circularisation_size
     );
 
-    info!("Reading genome from: {}", &options.input);
-    let records = bio::io::fasta::Reader::from_file(&options.input)
+    info!("Reading genome from: {}", &subcommand.input);
+    let records = bio::io::fasta::Reader::from_file(&subcommand.input)
         .map_err(|e| {
             error!("Error reading genome file");
             e

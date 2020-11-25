@@ -1,7 +1,14 @@
 use crate::CliOptions;
+use clap::Clap;
 use compact_genome::implementation::vector_genome_impl::VectorGenome;
 use compact_genome::interface::Genome;
 use std::iter::FromIterator;
+
+#[derive(Clap)]
+pub struct VerifyGenomeCommand {
+    #[clap(short, long, about = "The input file in fasta format")]
+    pub input: String,
+}
 
 error_chain! {
     foreign_links {
@@ -36,11 +43,14 @@ error_chain! {
     }
 }
 
-pub(crate) fn verify_genome(options: &CliOptions) -> crate::Result<()> {
+pub(crate) fn verify_genome(
+    _options: &CliOptions,
+    subcommand: &VerifyGenomeCommand,
+) -> crate::Result<()> {
     info!("Verifying that the genome has no holes...");
 
-    info!("Reading genome from: {}", &options.input);
-    let records = bio::io::fasta::Reader::from_file(&options.input)
+    info!("Reading genome from: {}", &subcommand.input);
+    let records = bio::io::fasta::Reader::from_file(&subcommand.input)
         .map_err(|e| {
             error!("Error reading genome file");
             Error::from(e)

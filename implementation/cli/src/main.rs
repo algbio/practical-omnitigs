@@ -40,13 +40,6 @@ error_chain! {
 #[derive(Clap)]
 #[clap(name = "Practical Omnitigs", version = env!("CARGO_PKG_VERSION"), author = "Sebastian Schmidt <sebastian.schmidt@helsinki.fi>")]
 struct CliOptions {
-    #[clap(
-        short,
-        long,
-        about = "The input file, depending on the subcommand used"
-    )]
-    pub input: String,
-
     #[clap(subcommand)]
     pub subcommand: Command,
 }
@@ -62,7 +55,7 @@ enum Command {
     )]
     VerifyNodeCentric(verify::VerifyNodeCentricCommand),
     #[clap(about = "Verifies that no record of the genome contains illegal characters.")]
-    VerifyGenome,
+    VerifyGenome(verify_genome::VerifyGenomeCommand),
     #[clap(about = "Circularises each record in a genome by appending a prefix to itself.")]
     CirculariseGenome(circularise_records::CirculariseGenomeCommand),
     #[clap(about = "Filters records from a fasta file.")]
@@ -110,7 +103,7 @@ fn run() -> Result<()> {
     match &options.subcommand {
         Command::Verify(subcommand) => verify::verify_edge_centric(options, subcommand),
         Command::VerifyNodeCentric(subcommand) => verify::verify_node_centric(options, subcommand),
-        Command::VerifyGenome => verify_genome::verify_genome(options),
+        Command::VerifyGenome(subcommand) => verify_genome::verify_genome(options, subcommand),
         Command::CirculariseGenome(subcommand) => {
             circularise_records::circularise_records(options, subcommand)
         }
