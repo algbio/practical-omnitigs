@@ -114,20 +114,20 @@ rule separate_linear_and_circular:
     input: filtered = "data/{dir}/filtered.fna", verified = "data/{dir}/is_genome_verified.log", binary = "data/target/release/cli"
     output: circular = "data/{dir}/circular.fna", linear = "data/{dir}/linear.fna", log = "data/{dir}/separate_linear_and_circular.log"
     conda: "config/conda-rust-env.yml"
-    shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli --input '{input.filtered}' circularise-genome 2>&1 --output '{output.circular}' | tee '{output.log}'"
+    shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli circularise-genome --input '{input.filtered}' 2>&1 --output '{output.circular}' | tee '{output.log}'"
 
 rule verify_genome:
     input: file = "data/{dir}/filtered.fna", binary = "data/target/release/cli"
     output: log = "data/{dir}/is_genome_verified.log"
     conda: "config/conda-rust-env.yml"
-    shell: "data/target/release/cli --input '{input.file}' verify-genome 2>&1 | tee '{output.log}'"
+    shell: "data/target/release/cli verify-genome --input '{input.file}' 2>&1 | tee '{output.log}'"
 
 rule filter_genome:
     input: file = "data/{dir}/raw.fna", binary = "data/target/release/cli"
     output: file = "data/{dir}/filtered.fna", genome_name = "data/{dir}/name.txt", log = "data/{dir}/filtered.log"
     params: retain = lambda wildcards: "--retain '" + experiments_bcalm2[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments_bcalm2[wildcards.dir] else ""
     conda: "config/conda-rust-env.yml"
-    shell: "data/target/release/cli --input '{input.file}' filter --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
+    shell: "data/target/release/cli filter --input '{input.file}' --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
 rule extract:
     input: "data/{dir}/raw.fna.gz"
@@ -174,17 +174,17 @@ rule test_rust:
 rule compute_omnitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
-    shell: "'{input.binary}' --input '{input.file}' compute-omnitigs --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
-    shell: "'{input.binary}' --input '{input.file}' compute-trivial-omnitigs --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
-    shell: "'{input.binary}' --input '{input.file}' compute-unitigs --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_omnitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
@@ -227,7 +227,7 @@ rule verify_genome_graph:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: verification_copy = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify", log =  "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.properties", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.graphstatistics"
     conda: "config/conda-rust-env.yml"
-    shell: "data/target/release/cli --input '{input.file}' verify --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
+    shell: "data/target/release/cli verify --input '{input.file}' --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
 
 rule selftest:
     conda: "config/conda-selftest-env.yml"
@@ -536,7 +536,7 @@ rule hamcircuit_generate:
     output: tsp_raw = "data/hamcircuit/{name}.n{n}-c{c}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.n{n}-c{c}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.n{n}-c{c}.preprocesslog"
     shadow: "shallow"
     shell: """
-    '{input.binary}' --input none ham-circuit --random n{wildcards.n}+c{wildcards.c} --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
+    '{input.binary}' ham-circuit --input none --random n{wildcards.n}+c{wildcards.c} --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
     mv '{output.tsp_raw}.tmp' '{output.tsp_raw}'
     mv '{output.tsp_preprocessed}.tmp' '{output.tsp_preprocessed}'
     mv '{output.preprocesslog}.tmp' '{output.preprocesslog}'

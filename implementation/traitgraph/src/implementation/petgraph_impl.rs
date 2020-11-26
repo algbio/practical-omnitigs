@@ -111,6 +111,14 @@ impl<NodeData, EdgeData> MutableGraphContainer for DiGraph<NodeData, EdgeData, u
         self.remove_edge(edge_id.into())
     }
 
+    fn remove_edges_sorted(&mut self, edge_ids: &[Self::EdgeIndex]) {
+        edge_ids.windows(2).for_each(|w| debug_assert!(w[0] < w[1]));
+
+        for edge_id in edge_ids.iter().rev() {
+            self.remove_edge((*edge_id).into());
+        }
+    }
+
     fn clear(&mut self) {
         self.clear();
     }

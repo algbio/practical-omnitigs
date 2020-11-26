@@ -1,4 +1,11 @@
 error_chain! {
+    foreign_links {
+        // For some weird reasons I don't understand, the doc comments have to be put after the item in this macro...
+        Io(std::io::Error)
+        /// An IO error.
+        ;
+    }
+
     links {
         // For some weird reasons I don't understand, the doc comments have to be put after the item in this macro...
         BCalm2IOError(crate::io::bcalm2::Error, crate::io::bcalm2::ErrorKind)

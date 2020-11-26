@@ -4,6 +4,9 @@ use std::io::Write;
 
 #[derive(Clap)]
 pub struct FilterCommand {
+    #[clap(short, long, about = "The input file in fasta format")]
+    pub input: String,
+
     #[clap(
         short,
         long,
@@ -27,7 +30,7 @@ pub struct FilterCommand {
 }
 
 pub(crate) fn filter_records(
-    options: &CliOptions,
+    _options: &CliOptions,
     subcommand: &FilterCommand,
 ) -> crate::Result<()> {
     if let Some(retain) = &subcommand.retain {
@@ -36,8 +39,8 @@ pub(crate) fn filter_records(
         info!("Filtering nothing");
     }
 
-    info!("Reading genome from: {}", &options.input);
-    let records = bio::io::fasta::Reader::from_file(&options.input)
+    info!("Reading genome from: {}", &subcommand.input);
+    let records = bio::io::fasta::Reader::from_file(&subcommand.input)
         .map_err(|e| {
             error!("Error reading genome file");
             e

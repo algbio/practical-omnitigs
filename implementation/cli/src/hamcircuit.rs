@@ -21,6 +21,9 @@ use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct HamCircuitCommand {
+    #[clap(short, long, about = "The input file in tsplib format")]
+    pub input: String,
+
     #[clap(
         short,
         long,
@@ -39,7 +42,7 @@ pub struct HamCircuitCommand {
 }
 
 pub(crate) fn hamcircuit(
-    options: &CliOptions,
+    _options: &CliOptions,
     subcommand: &HamCircuitCommand,
 ) -> crate::Result<()> {
     let mut graph = petgraph_impl::new::<(), ()>();
@@ -70,8 +73,8 @@ pub(crate) fn hamcircuit(
             graph.edge_count()
         );
     } else {
-        info!("Reading graph from input file: '{}'", &options.input);
-        let input_file = File::open(&options.input).expect("Input file does not exist");
+        info!("Reading graph from input file: '{}'", &subcommand.input);
+        let input_file = File::open(&subcommand.input).expect("Input file does not exist");
         let mut input_reader = BufReader::new(input_file);
         read_hamcircuit_from_tsplib_tsp(&mut graph, &mut input_reader);
     };

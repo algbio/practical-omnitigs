@@ -8,6 +8,8 @@
 #![recursion_limit = "1024"]
 #[macro_use]
 extern crate error_chain;
+#[macro_use]
+extern crate log;
 
 /// Contains the error types used by this crate.
 pub mod error;

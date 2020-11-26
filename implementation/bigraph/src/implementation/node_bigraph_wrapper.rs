@@ -215,6 +215,10 @@ impl<Topology: MutableGraphContainer + StaticGraph> MutableGraphContainer
         self.topology.remove_edge(edge_id)
     }
 
+    fn remove_edges_sorted(&mut self, edge_ids: &[Self::EdgeIndex]) {
+        self.topology.remove_edges_sorted(edge_ids)
+    }
+
     fn clear(&mut self) {
         self.topology.clear();
         self.binode_map.clear();

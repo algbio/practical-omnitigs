@@ -18,6 +18,9 @@ use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct VerifyEdgeCentricCommand {
+    #[clap(short, long, about = "The input file in bcalm2 format")]
+    pub input: String,
+
     #[clap(
         short,
         long,
@@ -42,6 +45,9 @@ pub struct VerifyEdgeCentricCommand {
 
 #[derive(Clap)]
 pub struct VerifyNodeCentricCommand {
+    #[clap(short, long, about = "The input file in bcalm2 format")]
+    pub input: String,
+
     #[clap(
         short,
         long,
@@ -242,7 +248,7 @@ fn examine_macrotigs<Graph: Default + DynamicGraph, OutputWriter: std::io::Write
 }
 
 pub(crate) fn verify_edge_centric(
-    options: &CliOptions,
+    _options: &CliOptions,
     subcommand: &VerifyEdgeCentricCommand,
 ) -> crate::Result<()> {
     let mut latex_file = if let Some(latex_file_name) = &subcommand.latex {
@@ -256,11 +262,11 @@ pub(crate) fn verify_edge_centric(
 
     info!(
         "Reading bigraph from '{}' with kmer size {}",
-        options.input, subcommand.kmer_size
+        subcommand.input, subcommand.kmer_size
     );
     let genome_graph: PetBCalm2EdgeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
-            &options.input,
+            &subcommand.input,
             subcommand.kmer_size,
         )?;
 
@@ -316,13 +322,13 @@ pub(crate) fn verify_edge_centric(
 }
 
 pub(crate) fn verify_node_centric(
-    options: &CliOptions,
+    _options: &CliOptions,
     subcommand: &VerifyNodeCentricCommand,
 ) -> crate::Result<()> {
-    info!("Reading bigraph from {}", options.input);
+    info!("Reading bigraph from {}", subcommand.input);
     let genome_graph: PetBCalm2NodeGraph =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_node_centric_from_file(
-            &options.input,
+            &subcommand.input,
         )?;
 
     info!("");
