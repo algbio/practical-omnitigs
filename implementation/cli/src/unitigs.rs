@@ -168,31 +168,27 @@ pub(crate) fn compute_unitigs(
                 nodes_file, reads_file, raw_reads_file
             );
 
-            let _genome_graph: PetWtdbg2Graph =
+            let mut genome_graph: PetWtdbg2Graph =
                 genome_graph::io::wtdbg2::read_graph_from_wtdbg2_from_files(
                     nodes_file, reads_file,
                 )?;
-
-            /*let genome_graph: PetBCalm2EdgeGraph =
-                genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
-                    input,
-                    subcommand.kmer_size,
-                )?;
+            genome_graph::io::wtdbg2::clean_wtdbg2_graph(&mut genome_graph);
 
             info!("Computing maximal unitigs");
             let mut unitigs = EdgeUnitigs::compute(&genome_graph);
             info!("Removing reverse complements");
             unitigs.remove_reverse_complements(&genome_graph);
+            unitigs.sort_by_len_descending();
 
             print_unitig_statistics(&unitigs, &mut latex_file)?;
 
-            info!("Storing unitigs as fasta to '{}'", subcommand.output);
-            genome_graph::io::fasta::write_walks_as_fasta_file(
+            info!("Storing unitigs as .ctg.lay to '{}'", subcommand.output);
+            genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(
                 &genome_graph,
-                subcommand.kmer_size,
                 unitigs.iter(),
+                raw_reads_file,
                 &subcommand.output,
-            )?;*/
+            )?;
         }
 
         unknown => bail!("Unknown file format: {}", unknown),
