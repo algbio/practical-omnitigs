@@ -146,17 +146,23 @@ pub(crate) fn compute_unitigs(
 
         "wtdbg2" => {
             let nodes_file =
-                if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".1.nodes")) {
+                if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".3.nodes")) {
                     file
                 } else {
-                    bail!("Missing .1.nodes file")
+                    bail!("Missing .3.nodes file")
                 };
             let reads_file =
-                if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".1.reads")) {
+                if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".3.reads")) {
                     file
                 } else {
-                    bail!("Missing .1.reads file")
+                    bail!("Missing .3.reads file")
                 };
+            let dot_file = if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".dot"))
+            {
+                file
+            } else {
+                bail!("Missing .dot file")
+            };
             let raw_reads_file =
                 if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".fa")) {
                     file
@@ -164,21 +170,19 @@ pub(crate) fn compute_unitigs(
                     bail!("Missing raw reads file ending on .fa")
                 };
             info!(
-                "Reading bigraph from '{}', '{}' and '{}'",
-                nodes_file, reads_file, raw_reads_file
+                "Reading bigraph from '{}', '{}', '{}' and '{}'",
+                nodes_file, reads_file, dot_file, raw_reads_file
             );
 
-            let mut genome_graph: PetWtdbg2Graph =
+            let genome_graph: PetWtdbg2Graph =
                 genome_graph::io::wtdbg2::read_graph_from_wtdbg2_from_files(
-                    nodes_file, reads_file,
+                    nodes_file, reads_file, dot_file,
                 )?;
-            genome_graph::io::wtdbg2::clean_wtdbg2_graph(&mut genome_graph);
 
             info!("Computing maximal unitigs");
             let mut unitigs = EdgeUnitigs::compute(&genome_graph);
             info!("Removing reverse complements");
             unitigs.remove_reverse_complements(&genome_graph);
-            unitigs.sort_by_len_descending();
 
             print_unitig_statistics(&unitigs, &mut latex_file)?;
 

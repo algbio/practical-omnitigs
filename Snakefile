@@ -130,10 +130,10 @@ rule filter_genome:
     shell: "data/target/release/cli filter --input '{input.file}' --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
 rule extract:
-    input: "data/{dir}/raw.fna.gz"
-    output: "data/{dir}/raw.fna"
+    input: "data/{dir}/{file}.gz"
+    output: "data/{dir}/{file}"
     conda: "config/conda-extract-env.yml"
-    shell: "cd 'data/{wildcards.dir}'; gunzip -k raw.fna.gz"
+    shell: "cd 'data/{wildcards.dir}'; gunzip -k {wildcards.file}.gz"
 
 rule download_experiment_file:
     output: "data/{dir}/raw.fna.gz"
@@ -187,19 +187,19 @@ rule compute_unitigs:
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/wtdbg2.omnitigs.ctg.lay.gz", log = "data/{dir}/wtdbg2.omnitigs.log", latex = "data/{dir}/wtdbg2.omnitigs.tex"
-    shell: "'{input.binary}' compute-omnitigs-wtdbg2 --wtdbg2-nodes '{input.nodes}' --wtdbg2-reads '{input.reads}' --wtdbg2-raw-reads '{input.raw_reads}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.omnitigs.ctg.lay", log = "data/{dir}/wtdbg2.omnitigs.log", latex = "data/{dir}/wtdbg2.omnitigs.tex"
+    shell: "'{input.binary}' compute-omnitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/wtdbg2.trivialomnitigs.ctg.lay.gz", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
-    shell: "'{input.binary}' compute-trivialomnitigs-wtdbg2 --wtdbg2-nodes '{input.nodes}' --wtdbg2-reads '{input.reads}' --wtdbg2-raw-reads '{input.raw_reads}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.trivialomnitigs.ctg.lay", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
+    shell: "'{input.binary}' compute-trivialomnitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/wtdbg2.unitigs.ctg.lay.gz", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
-    shell: "'{input.binary}' compute-unitigs-wtdbg2 --wtdbg2-nodes '{input.nodes}' --wtdbg2-reads '{input.reads}' --wtdbg2-raw-reads '{input.raw_reads}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.unitigs.ctg.lay", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
+    shell: "'{input.binary}' compute-unitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -260,9 +260,10 @@ rule install_wtdbg2:
     mkdir -p external-software
     cd external-software
 
-    wget https://github.com/ruanjue/wtdbg2/releases/download/v2.5/wtdbg-2.5_x64_linux.tgz
-    tar -xf wtdbg-2.5_x64_linux.tgz
-    mv wtdbg-2.5_x64_linux -T wtdbg2
+    git clone https://github.com/sebschmi/wtdbg2.git
+    cd wtdbg2
+    git checkout 9040312a895cf1fbefab84dbb3bc94ae5210b741
+    make
     """
 
 rule wtdbg2_graph:
@@ -271,7 +272,7 @@ rule wtdbg2_graph:
     shell: "{input.binary} -x rs -g 4.6m -i '{input.file}' -t 4 -fo 'data/{wildcards.dir}/wtdbg2' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
-    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay.gz", binary = "external-software/wtdbg2/wtpoa-cns"
+    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
     shell: "{input.binary} -t 4 -i '{input.contigs}' -fo '{output.consensus}'"
 
