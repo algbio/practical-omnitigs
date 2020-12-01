@@ -359,121 +359,91 @@ pub fn read_graph_from_wtdbg2<
         if node_association_amount < 2 {
             continue;
         }
+        let nodes: Vec<_> = split.collect();
 
-        let mut last_node = split.next().unwrap();
-        for current_node in split {
-            let mut last_split = last_node.split(':');
-            let mut current_split = current_node.split(':');
-
-            let last_node_index = &last_split.next().unwrap()[1..];
-            let last_star = last_node_index.ends_with('*');
-            let last_exclamation_mark = last_node_index.ends_with('!');
-            let last_node_index: usize = if last_star || last_exclamation_mark {
-                last_node_index[..last_node_index.len() - 1].parse()
+        for (index, n1) in nodes.iter().enumerate() {
+            let mut n1_split = n1.split(':');
+            let n1_index = &n1_split.next().unwrap()[1..];
+            let n1_star = n1_index.ends_with('*');
+            let n1_exclamation_mark = n1_index.ends_with('!');
+            let n1_index: usize = if n1_star || n1_exclamation_mark {
+                n1_index[..n1_index.len() - 1].parse()
             } else {
-                last_node_index.parse()
+                n1_index.parse()
             }
             .unwrap();
-            let last_read_location = Wtdbg2ReadLocation::from(last_split.next().unwrap());
-            let current_node_index = &current_split.next().unwrap()[1..];
-            let current_star = current_node_index.ends_with('*');
-            let current_exclamation_mark = current_node_index.ends_with('!');
-            let current_node_index: usize = if current_star || current_exclamation_mark {
-                current_node_index[..current_node_index.len() - 1].parse()
-            } else {
-                current_node_index.parse()
-            }
-            .unwrap();
-            let current_read_location = Wtdbg2ReadLocation::from(current_split.next().unwrap());
+            let n1_read_location = Wtdbg2ReadLocation::from(n1_split.next().unwrap());
 
-            if current_star || current_exclamation_mark {
-                continue;
-            }
+            let n1_node_index =
+                (2 * n1_index + if n1_read_location.direction { 1 } else { 0 }).into();
+            let reverse_n2_node_index =
+                (2 * n1_index + if n1_read_location.direction { 0 } else { 1 }).into();
 
-            let from_node_index =
-                (2 * last_node_index + if last_read_location.direction { 1 } else { 0 }).into();
-            let to_node_index = (2 * current_node_index
-                + if current_read_location.direction {
-                    1
+            for n2 in nodes.iter().skip(index + 1) {
+                let mut n2_split = n2.split(':');
+                let n2_index = &n2_split.next().unwrap()[1..];
+                let n2_star = n2_index.ends_with('*');
+                let n2_exclamation_mark = n2_index.ends_with('!');
+                let n2_index: usize = if n2_star || n2_exclamation_mark {
+                    n2_index[..n2_index.len() - 1].parse()
                 } else {
-                    0
-                })
-            .into();
-            let reverse_from_node_index = (2 * current_node_index
-                + if current_read_location.direction {
-                    0
-                } else {
-                    1
-                })
-            .into();
-            let reverse_to_node_index =
-                (2 * last_node_index + if last_read_location.direction { 0 } else { 1 }).into();
+                    n2_index.parse()
+                }
+                .unwrap();
+                let n2_read_location = Wtdbg2ReadLocation::from(n2_split.next().unwrap());
 
-            if last_read_location.forms_edge(&current_read_location) {
-                let forward_read_association = Wtdbg2EdgeReadAssociation {
-                    read_id: read_id.clone(),
-                    location: Wtdbg2ReadLocation {
-                        direction: true,
-                        bucket_offset: last_read_location.bucket_offset,
-                        bucket_len: current_read_location.bucket_offset
-                            + current_read_location.bucket_len
-                            - last_read_location.bucket_offset,
-                    },
-                    from_star: last_star,
-                    to_star: current_star,
-                    from_exclamation_mark: last_exclamation_mark,
-                    to_exclamation_mark: current_exclamation_mark,
-                };
+                let n2_node_index =
+                    (2 * n2_index + if n2_read_location.direction { 1 } else { 0 }).into();
+                let reverse_n1_node_index =
+                    (2 * n2_index + if n2_read_location.direction { 0 } else { 1 }).into();
 
-                let existing_edge = graph.edges_between(from_node_index, to_node_index).next();
+                let existing_edge = graph.edges_between(n1_node_index, n2_node_index).next();
                 if let Some(edge) = existing_edge {
+                    let forward_read_association = Wtdbg2EdgeReadAssociation {
+                        read_id: read_id.clone(),
+                        location: Wtdbg2ReadLocation {
+                            direction: true,
+                            bucket_offset: n1_read_location.bucket_offset,
+                            bucket_len: n2_read_location.bucket_offset
+                                + n2_read_location.bucket_len
+                                - n1_read_location.bucket_offset,
+                        },
+                        from_star: n1_star,
+                        to_star: n2_star,
+                        from_exclamation_mark: n1_exclamation_mark,
+                        to_exclamation_mark: n2_exclamation_mark,
+                    };
+
                     let edge_data = graph.edge_data_mut(edge);
                     edge_data.add_edge_read_association(forward_read_association);
-                } /*else {
-                      let edge_data = PlainWtdbg2EdgeData {
-                          read_associations: vec![forward_read_association],
-                      };
-                      graph.add_edge(from_node_index, to_node_index, edge_data.into());
-                      warn!("Added non-existing edge N{} -> N{}", from_node_index.as_usize(), to_node_index.as_usize());
-                  }*/
-
-                let reverse_read_association = Wtdbg2EdgeReadAssociation {
-                    read_id: read_id.clone(),
-                    location: Wtdbg2ReadLocation {
-                        direction: false,
-                        bucket_offset: last_read_location.bucket_offset,
-                        bucket_len: current_read_location.bucket_offset
-                            + current_read_location.bucket_len
-                            - last_read_location.bucket_offset,
-                    },
-                    from_star: current_star,
-                    to_star: last_star,
-                    from_exclamation_mark: current_exclamation_mark,
-                    to_exclamation_mark: last_exclamation_mark,
-                };
+                }
 
                 let existing_edge = graph
-                    .edges_between(reverse_from_node_index, reverse_to_node_index)
+                    .edges_between(reverse_n1_node_index, reverse_n2_node_index)
                     .next();
                 if let Some(edge) = existing_edge {
+                    let reverse_read_association = Wtdbg2EdgeReadAssociation {
+                        read_id: read_id.clone(),
+                        location: Wtdbg2ReadLocation {
+                            direction: false,
+                            bucket_offset: n1_read_location.bucket_offset,
+                            bucket_len: n2_read_location.bucket_offset
+                                + n2_read_location.bucket_len
+                                - n1_read_location.bucket_offset,
+                        },
+                        from_star: n2_star,
+                        to_star: n1_star,
+                        from_exclamation_mark: n2_exclamation_mark,
+                        to_exclamation_mark: n1_exclamation_mark,
+                    };
+
                     let edge_data = graph.edge_data_mut(edge);
                     edge_data.add_edge_read_association(reverse_read_association);
-                } /*else {
-                      let edge_data = PlainWtdbg2EdgeData {
-                          read_associations: vec![reverse_read_association],
-                      };
-                      graph.add_edge(
-                          reverse_from_node_index,
-                          reverse_to_node_index,
-                          edge_data.into(),
-                      );
-                      warn!("Added non-existing edge N{} -> N{}", reverse_from_node_index.as_usize(), reverse_to_node_index.as_usize());
-                  }*/
+                }
             }
-
-            last_node = current_node;
         }
     }
+
     info!("Loaded {} edges", graph.edge_count());
 
     for edge_index in graph.edge_indices() {
