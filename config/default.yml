@@ -27,6 +27,7 @@ experiments:
   wtdbg2:
     "C.elegans":
       urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/raw_data/2590970/0001/Analysis_Results/m140928_184123_42139_c100719602550000001823155305141590_s1_p0.1.subreads.fasta","http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/raw_data/2590970/0001/Analysis_Results/m140928_184123_42139_c100719602550000001823155305141590_s1_p0.2.subreads.fasta","http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/raw_data/2590970/0001/Analysis_Results/m140928_184123_42139_c100719602550000001823155305141590_s1_p0.3.subreads.fasta"]
+      reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
 tests:

@@ -5,9 +5,11 @@ use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer};
 use bigraph::traitgraph::walks::EdgeWalk;
 use compact_genome::implementation::vector_genome_impl::VectorGenome;
-use compact_genome::interface::ExtendableGenome;
+use compact_genome::interface::{ExtendableGenome, Genome};
 use regex::Regex;
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::iter::FromIterator;
@@ -457,7 +459,7 @@ pub fn read_graph_from_wtdbg2<
         } else if edge_data.edge_read_associations().len() < 3 {
             let from_node = graph.edge_endpoints(edge_index).from_node.as_usize();
             let to_node = graph.edge_endpoints(edge_index).to_node.as_usize();
-            warn!(
+            debug!(
                 "Edge has only {} read associations: N{}{} -> N{}{}",
                 edge_data.edge_read_associations().len(),
                 from_node / 2,
@@ -469,6 +471,513 @@ pub fn read_graph_from_wtdbg2<
     }
 
     Ok(graph)
+}
+
+/// A .ctg.lay file.
+#[derive(Default, Debug, Clone)]
+pub struct RawWtdbg2Contigs {
+    contigs: Vec<RawWtdbg2Contig>,
+}
+
+/// A contig from a .ctg.lay file.
+#[derive(Debug, Clone)]
+pub struct RawWtdbg2Contig {
+    index: usize,
+    nodes: usize,
+    len: usize,
+    edges: Vec<RawWtdbg2ContigEdge>,
+}
+
+/// An edge from a .ctg.lay file.
+#[derive(Debug, Clone)]
+pub struct RawWtdbg2ContigEdge {
+    offset: usize,
+    from_node: usize,
+    from_direction: bool,
+    to_node: usize,
+    to_direction: bool,
+    supports: Vec<RawWtdbg2ContigEdgeSupport>,
+}
+
+/// An edge support from a .ctg.lay file.
+#[derive(Clone, Debug)]
+pub struct RawWtdbg2ContigEdgeSupport {
+    read: String,
+    direction: bool,
+    offset: usize,
+    len: usize,
+    sequence: String,
+}
+
+impl RawWtdbg2Contigs {
+    /// Sets the indices of the contigs according to their order.
+    pub fn update_indices(&mut self) {
+        for (index, contig) in self.contigs.iter_mut().enumerate() {
+            contig.index = index + 1
+        }
+    }
+
+    /// Sorts the contigs lexicographically by their node ids, and sorts the edge supports uniquely as well.
+    pub fn sort_contigs_topologically(&mut self) {
+        self.contigs.sort_unstable_by(|a, b| {
+            for (ea, eb) in a.edges.iter().zip(b.edges.iter()) {
+                if ea.from_node != eb.from_node {
+                    return ea.from_node.cmp(&eb.from_node);
+                }
+            }
+
+            if let Some((ea, eb)) = a.edges.iter().zip(b.edges.iter()).last() {
+                if ea.to_node != eb.to_node {
+                    return ea.to_node.cmp(&eb.to_node);
+                }
+            }
+
+            if a.edges.len() != b.edges.len() {
+                return a.edges.len().cmp(&b.edges.len());
+            }
+
+            Ordering::Equal
+        });
+
+        for contig in self.contigs.iter_mut() {
+            for edge in contig.edges.iter_mut() {
+                edge.supports.sort_unstable_by(|a, b| {
+                    (&a.read, a.direction, a.len, &a.sequence).cmp(&(
+                        &b.read,
+                        b.direction,
+                        b.len,
+                        &b.sequence,
+                    ))
+                });
+            }
+        }
+    }
+
+    /// Print differences between the two contig lists to stdout.
+    pub fn compare_contigs(&self, other: &Self) {
+        if self.contigs.len() != other.contigs.len() {
+            warn!(
+                "different number of contigs: {} != {}",
+                self.contigs.len(),
+                other.contigs.len()
+            );
+        }
+
+        for (a, b) in self.contigs.iter().zip(other.contigs.iter()) {
+            if a.index != b.index {
+                warn!("contigs differ in index: {} != {}", a.index, b.index);
+            }
+            if a.len != b.len {
+                warn!("ctg{} differs in length: {} != {}", a.index, a.len, b.len);
+            }
+            if a.nodes != b.nodes {
+                error!(
+                    "ctg{} differs in nodes: {} != {}",
+                    a.index, a.nodes, b.nodes
+                );
+            }
+            if a.edges.len() != b.edges.len() {
+                error!(
+                    "ctg{} differs in edge length: {} != {}",
+                    a.index,
+                    a.edges.len(),
+                    b.edges.len()
+                );
+            }
+
+            let mut node_diff = false;
+            for (i, (ea, eb)) in a.edges.iter().zip(b.edges.iter()).enumerate() {
+                if node_diff {
+                    continue;
+                }
+                if ea.offset != eb.offset {
+                    warn!(
+                        "ctg{} edge {} differs in offset: {} != {}",
+                        a.index, i, ea.offset, eb.offset
+                    );
+                }
+                if ea.from_node != eb.from_node {
+                    error!(
+                        "ctg{} edge {} differs in from node: {} != {}",
+                        a.index, i, ea.from_node, eb.from_node
+                    );
+                    node_diff = true;
+                }
+                if ea.from_direction != eb.from_direction {
+                    error!(
+                        "ctg{} edge {} differs in from direction: {} != {}",
+                        a.index, i, ea.from_direction, eb.from_direction
+                    );
+                    node_diff = true;
+                }
+                if ea.to_node != eb.to_node {
+                    error!(
+                        "ctg{} edge {} differs in to node: {} != {}",
+                        a.index, i, ea.to_node, eb.to_node
+                    );
+                    node_diff = true;
+                }
+                if ea.to_direction != eb.to_direction {
+                    error!(
+                        "ctg{} edge {} differs in from node: {} != {}",
+                        a.index, i, ea.to_direction, eb.to_direction
+                    );
+                    node_diff = true;
+                }
+                if node_diff {
+                    continue;
+                }
+                if ea.supports.len() != eb.supports.len() {
+                    error!(
+                        "ctg{} edge {} differs in support amount: {} != {}",
+                        a.index,
+                        i,
+                        ea.supports.len(),
+                        eb.supports.len()
+                    );
+                }
+                for (si, (sa, sb)) in ea.supports.iter().zip(eb.supports.iter()).enumerate() {
+                    let mut read_dir_diff = false;
+                    if sa.read != sb.read {
+                        error!(
+                            "ctg{} edge {} support {} differs in read: {} != {}",
+                            a.index, i, si, sa.read, sb.read
+                        );
+                        read_dir_diff = true;
+                    }
+                    if sa.direction != sb.direction {
+                        error!(
+                            "ctg{} edge {} support {} differs in direction: {} != {}",
+                            a.index, i, si, sa.direction, sb.direction
+                        );
+                        read_dir_diff = true;
+                    }
+                    if sa.offset != sb.offset {
+                        error!(
+                            "ctg{} edge {} support {} differs in offset: {} != {}",
+                            a.index, i, si, sa.offset, sb.offset
+                        );
+                    }
+                    if sa.len != sb.len {
+                        error!(
+                            "ctg{} edge {} support {} differs in length: {} != {}",
+                            a.index, i, si, sa.len, sb.len
+                        );
+                    }
+                    if sa.sequence != sb.sequence && !read_dir_diff {
+                        error!(
+                            "ctg{} edge {} support {} differs in sequence: {} != {}",
+                            a.index, i, si, sa.sequence, sb.sequence
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl Display for RawWtdbg2Contigs {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for contig in &self.contigs {
+            contig.fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for RawWtdbg2Contig {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "<ctg{} nodes={} len={}",
+            self.index, self.nodes, self.len
+        )?;
+        for edge in &self.edges {
+            edge.fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for RawWtdbg2ContigEdge {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "E\t{}\tN{}\t{}\tN{}\t{}",
+            self.offset,
+            self.from_node,
+            if self.from_direction { '+' } else { '-' },
+            self.to_node,
+            if self.to_direction { '+' } else { '-' }
+        )?;
+        for support in &self.supports {
+            support.fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+impl Display for RawWtdbg2ContigEdgeSupport {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "S\t{}\t{}\t{}\t{}\t{}",
+            self.read,
+            if self.direction { '+' } else { '-' },
+            self.offset,
+            self.len,
+            self.sequence
+        )
+    }
+}
+
+/// Convert a list of walks into a RawWtdbg2Contigs struct that represents a .ctg.lay file.
+/// This opens the given path as raw reads file in fasta format.
+pub fn convert_walks_to_wtdbg2_contigs_with_file<
+    'ws,
+    P: AsRef<Path>,
+    NodeData: Wtdbg2NodeData,
+    EdgeData: Wtdbg2EdgeData,
+    Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    raw_reads_file: P,
+) -> Result<RawWtdbg2Contigs> {
+    convert_walks_to_wtdbg2_contigs(
+        graph,
+        walks,
+        bio::io::fasta::Reader::from_file(raw_reads_file)?,
+    )
+}
+
+/// Convert a list of walks into a RawWtdbg2Contigs struct that represents a .ctg.lay file.
+/// This interprets the given reader as raw reads source in fasta format.
+pub fn convert_walks_to_wtdbg2_contigs<
+    'ws,
+    R: Read,
+    NodeData: Wtdbg2NodeData,
+    EdgeData: Wtdbg2EdgeData,
+    Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    raw_reads: bio::io::fasta::Reader<R>,
+) -> Result<RawWtdbg2Contigs> {
+    let mut read_map = HashMap::<_, VectorGenome>::new();
+    info!("Loading reads");
+    let mut last_print_time = Instant::now();
+
+    let trim_regex = Regex::new(r"^(.+?)/[0-9]+_[0-9]+$").unwrap();
+    for record in raw_reads.records() {
+        if Instant::now() - last_print_time >= Duration::from_secs(5) {
+            info!("Loaded {} reads", read_map.len());
+            last_print_time = Instant::now();
+        }
+
+        let record = record?;
+        // For some reason, wtdbg2 trims the last parts of reads.
+        // Maybe these indicate positions on an actual read.
+        // If wtdbg2 combines the reads then this is wrong.
+        let id = if trim_regex.is_match(record.id()) {
+            &record.id()[..record.id().rfind('/').unwrap()]
+        } else {
+            record.id()
+        }
+        .to_owned();
+        if let Some(genome) = read_map.get_mut(&id) {
+            genome.extend(record.seq().iter().copied());
+        } else {
+            read_map.insert(id.to_owned(), VectorGenome::from_iter(record.seq().iter()));
+        }
+    }
+    info!("Finished loading {} reads", read_map.len());
+
+    let walk_iter = walks.into_iter();
+    if let (min, Some(max)) = walk_iter.size_hint() {
+        if min == max {
+            info!("Converting {} walks", min);
+        } else {
+            info!("Converting between {} and {} walks", min, max);
+        }
+    } else {
+        info!("Converting at least {} walks", walk_iter.size_hint().0);
+    }
+    last_print_time = Instant::now();
+    let mut dropped_walks = 0usize;
+    let mut printed_walks = 0usize;
+    let mut contigs = RawWtdbg2Contigs::default();
+
+    for walk in walk_iter {
+        let walk_index = printed_walks;
+        if Instant::now() - last_print_time >= Duration::from_secs(5) {
+            info!("Converted {} walks", walk_index);
+            last_print_time = Instant::now();
+        }
+
+        // Compute edge offsets on the walk.
+        // The length of an edge is the median length of its supporting read fragments.
+        let mut offsets = vec![0];
+
+        let first_edge_data = graph.edge_data(*walk.first().unwrap());
+        let first_edge_length = first_edge_data.length();
+        if first_edge_length < 4 {
+            println!("First edge length: {}", first_edge_length);
+            for read_association in first_edge_data.edge_read_associations() {
+                println!("{:?}", read_association);
+            }
+        }
+        for &edge in walk.iter() {
+            offsets.push(offsets.last().unwrap() + graph.edge_data(edge).length() - 4);
+        }
+
+        if offsets.last().unwrap() * 256 < 5000 || walk.len() < 2 {
+            dropped_walks += 1;
+            continue;
+        } else {
+            printed_walks += 1;
+        }
+
+        let mut edges = Vec::new();
+
+        for (&edge, offset) in walk.iter().zip(offsets.iter()) {
+            let Edge { from_node, to_node } = graph.edge_endpoints(edge);
+            let from_node_data = graph.node_data(from_node);
+            let to_node_data = graph.node_data(to_node);
+
+            let mut read_associations = Vec::new();
+            for read_association in graph.edge_data(edge).edge_read_associations() {
+                let offset = read_association.location.bucket_offset * 256;
+                let len = read_association.location.bucket_len * 256;
+                read_associations.push(RawWtdbg2ContigEdgeSupport {
+                    read: read_association.read_id.to_owned(),
+                    direction: read_association.location.direction,
+                    offset,
+                    len,
+                    sequence: VectorGenome::from_iter(
+                        read_map.get(&read_association.read_id).unwrap()[offset..offset + len]
+                            .iter(),
+                    )
+                    .as_string(),
+                });
+            }
+
+            edges.push(RawWtdbg2ContigEdge {
+                offset: offset * 256,
+                from_node: from_node_data.index(),
+                from_direction: from_node_data.forward(),
+                to_node: to_node_data.index(),
+                to_direction: to_node_data.forward(),
+                supports: read_associations,
+            });
+        }
+
+        contigs.contigs.push(RawWtdbg2Contig {
+            index: walk_index + 1,
+            nodes: walk.len() + 1,
+            len: offsets.last().unwrap() * 256,
+            edges,
+        });
+    }
+
+    info!("Finished converting {} walks", printed_walks);
+    info!("{} too short walks were dropped", dropped_walks);
+
+    Ok(contigs)
+}
+
+/// Read a .ctg.lay file into a RawWtdbg2Contigs struct.
+pub fn read_wtdbg2_contigs_from_file<P: AsRef<Path>>(input_file: P) -> Result<RawWtdbg2Contigs> {
+    read_wtdbg2_contigs(File::open(input_file)?)
+}
+
+/// Read a .ctg.lay source into a RawWtdbg2Contigs struct.
+pub fn read_wtdbg2_contigs<R: Read>(input: R) -> Result<RawWtdbg2Contigs> {
+    let mut result = RawWtdbg2Contigs::default();
+
+    for line in BufReader::new(input).lines() {
+        let line = line.unwrap();
+        match line.as_bytes()[0] {
+            b'>' => {
+                let mut split = line.split(' ');
+                let index = split.next().unwrap()[4..].parse().unwrap();
+                let nodes = split.next().unwrap()[6..].parse().unwrap();
+                let len = split.next().unwrap()[4..].parse().unwrap();
+                result.contigs.push(RawWtdbg2Contig {
+                    index,
+                    nodes,
+                    len,
+                    edges: Vec::new(),
+                });
+            }
+            b'E' => {
+                let mut split = line.split('\t');
+                split.next().unwrap();
+                let offset = split.next().unwrap().parse().unwrap();
+                let from_node = split.next().unwrap()[1..].parse().unwrap();
+                let from_direction = match split.next().unwrap() {
+                    "+" => true,
+                    "-" => false,
+                    unknown => bail!("Unknown direction: '{}'", unknown),
+                };
+                let to_node = split.next().unwrap()[1..].parse().unwrap();
+                let to_direction = match split.next().unwrap() {
+                    "+" => true,
+                    "-" => false,
+                    unknown => bail!("Unknown direction: '{}'", unknown),
+                };
+                result
+                    .contigs
+                    .last_mut()
+                    .unwrap()
+                    .edges
+                    .push(RawWtdbg2ContigEdge {
+                        offset,
+                        from_node,
+                        from_direction,
+                        to_node,
+                        to_direction,
+                        supports: Vec::new(),
+                    });
+            }
+            b'S' => {
+                let mut split = line.split('\t');
+                split.next().unwrap();
+                let read = split.next().unwrap().to_owned();
+                let direction = match split.next().unwrap() {
+                    "+" => true,
+                    "-" => false,
+                    unknown => bail!("Unknown direction: '{}'", unknown),
+                };
+                let offset = split.next().unwrap().parse().unwrap();
+                let len = split.next().unwrap().parse().unwrap();
+                let sequence = split.next().unwrap().to_owned();
+
+                result
+                    .contigs
+                    .last_mut()
+                    .unwrap()
+                    .edges
+                    .last_mut()
+                    .unwrap()
+                    .supports
+                    .push(RawWtdbg2ContigEdgeSupport {
+                        read,
+                        direction,
+                        offset,
+                        len,
+                        sequence,
+                    });
+            }
+            error => bail!("Unknown line start: '{}'", error as char),
+        }
+    }
+
+    Ok(result)
 }
 
 /// Write a list of contigs in wtdbg's .ctg.lay format to a file.
@@ -647,4 +1156,55 @@ pub fn write_contigs_to_wtdbg2<
 
     output.flush()?;
     Ok(())
+}
+
+/// Build a graph from the unitigs of wtdbg2.
+pub fn build_wtdbg2_unitigs_graph<
+    Graph: DynamicBigraph<NodeData = (usize, bool), EdgeData = (RawWtdbg2Contig, bool)> + Default,
+>(
+    contigs: &RawWtdbg2Contigs,
+) -> Graph {
+    let mut graph = Graph::default();
+    let mut node_map = HashMap::new();
+
+    for contig in &contigs.contigs {
+        let n1 = contig.edges.first().unwrap().from_node;
+        let n1_dir = contig.edges.first().unwrap().from_direction;
+        let n2 = contig.edges.first().unwrap().to_node;
+        let n2_dir = contig.edges.first().unwrap().to_direction;
+
+        let n1_index = if let Some(&index) = node_map.get(&(n1, n1_dir)) {
+            index
+        } else {
+            let index = graph.add_node((n1, n1_dir));
+            node_map.insert((n1, n1_dir), index);
+            index
+        };
+        let n1_r_index = if let Some(&index) = node_map.get(&(n1, !n1_dir)) {
+            index
+        } else {
+            let index = graph.add_node((n1, !n1_dir));
+            node_map.insert((n1, !n1_dir), index);
+            index
+        };
+        let n2_index = if let Some(&index) = node_map.get(&(n2, n2_dir)) {
+            index
+        } else {
+            let index = graph.add_node((n2, n2_dir));
+            node_map.insert((n2, n2_dir), index);
+            index
+        };
+        let n2_r_index = if let Some(&index) = node_map.get(&(n2, !n2_dir)) {
+            index
+        } else {
+            let index = graph.add_node((n2, !n2_dir));
+            node_map.insert((n2, !n2_dir), index);
+            index
+        };
+
+        graph.add_edge(n1_index, n2_index, (contig.clone(), true));
+        graph.add_edge(n2_r_index, n1_r_index, (contig.clone(), false));
+    }
+
+    graph
 }

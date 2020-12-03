@@ -25,6 +25,9 @@ def append_latex_table_second_column(table, appendix):
 	if len(table) == 0:
 		return appendix
 
+	while len(appendix) < len(table):
+		appendix.append('N/A & N/A \\\\')
+
 	result = []
 	for tl, al in zip(table, appendix):
 		tl = tl.strip()
@@ -48,9 +51,13 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 ###############################
 
 def read_algorithm_file(prefix):
-	algorithm_file = open(prefix + ".tex")
-	algorithm_lines = algorithm_file.readlines()
-	return algorithm_lines
+	try:
+		algorithm_file = open(prefix + ".tex")
+		algorithm_lines = algorithm_file.readlines()
+		return algorithm_lines
+	except:
+		print("Did not find algorithm file for '" + prefix + "'")
+		return []
 
 headline = "Parameter"
 algorithm_table = []
@@ -67,12 +74,16 @@ algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
 ##########################
 
 def read_quast_file(prefix):
-	quast_file = open(prefix + ".quast/report.tex", 'r')
-	quast_lines = quast_file.readlines()
-	quast_lines = [x.strip() for x in quast_lines]
-	quast_lines = [x.replace("\\hline", "") for x in quast_lines]
-	quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
-	return quast_lines
+	try:
+		quast_file = open(prefix + ".quast/report.tex", 'r')
+		quast_lines = quast_file.readlines()
+		quast_lines = [x.strip() for x in quast_lines]
+		quast_lines = [x.replace("\\hline", "") for x in quast_lines]
+		quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
+		return quast_lines
+	except:
+		print("Did not find quast file for '" + prefix + "'")
+		return []
 
 headline = "Parameter"
 quast_table = []
@@ -89,14 +100,18 @@ quast_table = [headline + "\\\\ \\hline"] + quast_table
 ####################################
 
 def read_contig_validator_file(prefix):
-	contig_validator_file = open(prefix + ".contigvalidator", 'r')
-	contig_validator_lines = contig_validator_file.readlines()
-	contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
-	contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
-	contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
-	contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
-	contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
-	return contig_validator_lines
+	try:
+		contig_validator_file = open(prefix + ".contigvalidator", 'r')
+		contig_validator_lines = contig_validator_file.readlines()
+		contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
+		contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
+		contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
+		contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
+		contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
+		return contig_validator_lines
+	except:
+		print("Did not find contig validator file for '" + prefix + "'")
+		return []
 
 headline = "Parameter"
 contig_validator_table = []
@@ -107,13 +122,17 @@ for (label, prefix) in experiments:
 
 contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
 
-#########################################
+##########################################
 ### Process CLI graph statistics files ###
-#########################################
+##########################################
 
-graph_statistics_file = open(graph_statistics_file_name, 'r')
-graph_statistics_lines = graph_statistics_file.readlines()
-graph_statistics_table = ["Parameter & Value \\\\ \\hline"] + [x.strip() for x in graph_statistics_lines]
+try:
+	graph_statistics_file = open(graph_statistics_file_name, 'r')
+	graph_statistics_lines = graph_statistics_file.readlines()
+	graph_statistics_table = ["Parameter & Value \\\\ \\hline"] + [x.strip() for x in graph_statistics_lines]
+except:
+	print("Did not find graph statistics file '" + graph_statistics_file_name + "'")
+	graph_statistics_table = []
 
 ########################
 ### Build LaTeX file ###
@@ -188,8 +207,9 @@ write_table(output_file, "QUAST: total length of contigs", len(experiments), [qu
 write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[13:27])
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
 
-output_file.write("\\newpage")
-write_image(output_file, "Bandage genome graph", bandage_png_name, 1000, 1000)
+if bandage_png_name != 'none':
+	output_file.write("\\newpage")
+	write_image(output_file, "Bandage genome graph", bandage_png_name, 1000, 1000)
 
 
 output_file.write(
