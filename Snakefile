@@ -204,7 +204,7 @@ rule compute_omnitigs_wtdbg2:
 rule compute_trivial_omnitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.trivialomnitigs.ctg.lay", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
-    shell: "'{input.binary}' compute-trivialomnitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' compute-trivial-omnitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
