@@ -1,5 +1,8 @@
 use crate::CliOptions;
 use clap::Clap;
+use genome_graph::bigraph::traitgraph::algo::components::{
+    decompose_strongly_connected_components, is_strongly_connected,
+};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::interface::GraphBase;
@@ -234,14 +237,22 @@ pub(crate) fn compute_omnitigs(
                     nodes_file, reads_file, dot_file,
                 )?;
 
-            info!("Computing maximal unitigs");
+            if !is_strongly_connected(&genome_graph) {
+                warn!("Genome graph is not strongly connected!");
+                warn!(
+                    "Found {} SCCs",
+                    decompose_strongly_connected_components(&genome_graph).len()
+                );
+            }
+
+            info!("Computing maximal omnitigs");
             let mut omnitigs = Omnitigs::compute(&genome_graph);
             info!("Removing reverse complements");
             omnitigs.remove_reverse_complements(&genome_graph);
 
             print_omnitigs_statistics(&omnitigs, &mut latex_file)?;
 
-            info!("Storing unitigs as .ctg.lay to '{}'", subcommand.output);
+            info!("Storing omnitigs as .ctg.lay to '{}'", subcommand.output);
             genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(
                 &genome_graph,
                 omnitigs.iter(),

@@ -195,14 +195,17 @@ pub(crate) fn compute_trivial_omnitigs(
                     nodes_file, reads_file, dot_file,
                 )?;
 
-            info!("Computing maximal unitigs");
+            info!("Computing maximal trivial omnitigs");
             let mut trivial_omnitigs = Omnitigs::compute_trivial_only(&genome_graph);
             info!("Removing reverse complements");
             trivial_omnitigs.remove_reverse_complements(&genome_graph);
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
 
-            info!("Storing unitigs as .ctg.lay to '{}'", subcommand.output);
+            info!(
+                "Storing trivial omnitigs as .ctg.lay to '{}'",
+                subcommand.output
+            );
             genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(
                 &genome_graph,
                 trivial_omnitigs.iter(),
