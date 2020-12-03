@@ -15,11 +15,13 @@ pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
     graph: &Graph,
     edge: Graph::EdgeIndex,
 ) -> bool {
+    let edge_endpoints = graph.edge_endpoints(edge);
+
     let unitig_start_node =
         UnivocalIterator::new_backward_without_start(graph, NodeOrEdge::Edge(edge))
             .filter_map(|n_or_e| match n_or_e {
                 NodeOrEdge::Node(node) => {
-                    if !graph.is_biunivocal_node(node) {
+                    if !graph.is_biunivocal_node(node) || node == edge_endpoints.to_node {
                         Some(node)
                     } else {
                         None
@@ -29,11 +31,15 @@ pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
             })
             .next()
             .unwrap();
+    if unitig_start_node == edge_endpoints.to_node {
+        return true;
+    }
+
     let unitig_end_node =
         UnivocalIterator::new_forward_without_start(graph, NodeOrEdge::Edge(edge))
             .filter_map(|n_or_e| match n_or_e {
                 NodeOrEdge::Node(node) => {
-                    if !graph.is_biunivocal_node(node) {
+                    if !graph.is_biunivocal_node(node) || node == edge_endpoints.from_node {
                         Some(node)
                     } else {
                         None
@@ -43,6 +49,9 @@ pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
             })
             .next()
             .unwrap();
+    if unitig_end_node == edge_endpoints.from_node {
+        return true;
+    }
 
     graph.out_degree(unitig_start_node) >= 2 && graph.in_degree(unitig_end_node) >= 2
 }
