@@ -316,15 +316,17 @@ rule create_single_report_tex:
     shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '../../{input.bcalm2_bandage}' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
-    input: unitigs = "data/{dir}/wtdbg2.unitigs.quast",
-           wtdbg2 = "data/{dir}/wtdbg2.wtdbg2.quast",
+    input: unitigs_quast = "data/{dir}/wtdbg2.unitigs.quast",
+           trivialomnitigs_quast = "data/{dir}/wtdbg2.trivialomnitigs.quast",
+           omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.quast",
+           wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
            #omnitigs = "data/{dir}/wtdbg2.omnitigs.raw.fa",
            #trivialomnitigs = "data/{dir}/wtdbg2.trivialomnitigs.raw.fa",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
     params: prefix = "data/{dir}/wtdbg2"
     shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
-              scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+              scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
 
 rule report_all:
     input: generate_report_targets()
