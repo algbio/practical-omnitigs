@@ -244,7 +244,13 @@ where
         ) {
             match node_or_edge {
                 NodeOrEdge::Node(_) => {}
-                NodeOrEdge::Edge(edge) => result.push(edge),
+                NodeOrEdge::Edge(edge) => {
+                    if &edge == self.first().unwrap() {
+                        break;
+                    } else {
+                        result.push(edge)
+                    }
+                }
             }
         }
 
@@ -258,7 +264,13 @@ where
         ) {
             match node_or_edge {
                 NodeOrEdge::Node(_) => {}
-                NodeOrEdge::Edge(edge) => result.push(edge),
+                NodeOrEdge::Edge(edge) => {
+                    if &edge == self.last().unwrap() {
+                        break;
+                    } else {
+                        result.push(edge)
+                    }
+                }
             }
         }
 

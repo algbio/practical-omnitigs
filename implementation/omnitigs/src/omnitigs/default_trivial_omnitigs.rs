@@ -1,5 +1,6 @@
 use crate::omnitigs::{Omnitig, Omnitigs, TrivialOmnitigAlgorithm};
 use bitvector::BitVector;
+//use std::time::{Duration, Instant};
 use traitgraph::algo::traversal::univocal_traversal::UnivocalIterator;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{NodeOrEdge, StaticGraph};
@@ -51,6 +52,7 @@ impl<Graph: StaticGraph> TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmniti
         graph: &Graph,
         mut omnitigs: Omnitigs<Graph>,
     ) -> Omnitigs<Graph> {
+        info!("Marking used edges");
         let mut used_edges = BitVector::new(graph.edge_count());
         for omnitig in omnitigs.iter() {
             for edge in omnitig.iter() {
@@ -58,12 +60,26 @@ impl<Graph: StaticGraph> TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmniti
             }
         }
 
+        info!("Extend {} unused edges", graph.edge_count());
+        //let mut last_output_time = Instant::now();
+        //let mut last_check_edge = 0;
         for edge in graph.edge_indices() {
             if used_edges.contains(edge.as_usize())
                 || !is_edge_in_maximal_trivial_omnitig_heart(graph, edge)
             {
                 continue;
             }
+            /*if last_check_edge + 100 < edge.as_usize() {
+                last_check_edge = edge.as_usize();
+                if Instant::now() - last_output_time > Duration::from_secs(5) {
+                    last_output_time = Instant::now();
+                    info!(
+                        "Extended {}/{} unused edges",
+                        edge.as_usize() + 1,
+                        graph.edge_count()
+                    );
+                }
+            }*/
 
             let trivial_omnitig: VecEdgeWalk<Graph> = [edge].compute_univocal_extension(graph);
             for edge in trivial_omnitig.iter() {
