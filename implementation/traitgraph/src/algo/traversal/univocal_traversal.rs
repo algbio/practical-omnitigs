@@ -112,6 +112,9 @@ impl<'a, Graph: NavigableGraph<'a>, NeighborStrategy: TraversalNeighborStrategy<
                     } else {
                         self.current_node = None;
                     }
+                } else {
+                    self.current_node = None;
+                    self.current_edge = None;
                 }
 
                 Some(NodeOrEdge::Node(node))

@@ -261,4 +261,25 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn test_compute_trivial_omnitigs_cycle() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let e0 = graph.add_edge(n0, n1, ());
+        let e1 = graph.add_edge(n1, n2, ());
+        let e2 = graph.add_edge(n2, n0, ());
+
+        let trivial_omnitigs = Omnitigs::compute_trivial_only(&graph);
+        assert_eq!(
+            trivial_omnitigs,
+            Omnitigs::from(vec![Omnitig::new(
+                graph.create_edge_walk(&[e1, e2, e0, e1, e2]),
+                0,
+                4
+            )])
+        );
+    }
 }
