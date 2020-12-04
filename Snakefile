@@ -133,7 +133,7 @@ rule extract:
     input: "data/{dir}/{file}.gz"
     output: "data/{dir}/{file}"
     wildcard_constraints:
-        #file="^.*(?<!\.gz)$"
+        file=".*(?<!\.gz)"
         #file=r"^.*([^\.]..|.[^g].|..[^z])$"
     conda: "config/conda-extract-env.yml"
     shell: "cd 'data/{wildcards.dir}'; gunzip -k {wildcards.file}.gz"
