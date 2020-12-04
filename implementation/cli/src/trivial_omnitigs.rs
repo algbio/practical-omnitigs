@@ -2,6 +2,7 @@ use crate::CliOptions;
 use clap::Clap;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
+use omnitigs::traitgraph::algo::components::is_strongly_connected;
 use omnitigs::traitgraph::interface::GraphBase;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -30,7 +31,7 @@ pub struct ComputeTrivialOmnitigsCommand {
     #[clap(
         short,
         long,
-        about = "The file the trivial omnitigs are stored into in fasta format."
+        about = "The file the trivial omnitigs are stored into in fasta format"
     )]
     pub output: String,
 
@@ -40,6 +41,13 @@ pub struct ComputeTrivialOmnitigsCommand {
         about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
     )]
     pub latex: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        about = "Set to use algorithms that handle not strongly connected graphs, but are slower"
+    )]
+    pub non_scc: bool,
 }
 
 fn print_trivial_omnitigs_statistics<Graph: GraphBase>(
@@ -140,7 +148,12 @@ pub(crate) fn compute_trivial_omnitigs(
                 )?;
 
             info!("Computing maximal trivial omnitigs");
-            let mut maximal_omnitigs = Omnitigs::compute_trivial_only(&genome_graph);
+            let mut maximal_omnitigs = if subcommand.non_scc {
+                Omnitigs::compute_trivial_only_non_scc(&genome_graph)
+            } else {
+                ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
+                Omnitigs::compute_trivial_only(&genome_graph)
+            };
             info!("Removing reverse complements");
             maximal_omnitigs.remove_reverse_complements(&genome_graph);
 
@@ -196,7 +209,12 @@ pub(crate) fn compute_trivial_omnitigs(
                 )?;
 
             info!("Computing maximal trivial omnitigs");
-            let mut trivial_omnitigs = Omnitigs::compute_trivial_only(&genome_graph);
+            let mut trivial_omnitigs = if subcommand.non_scc {
+                Omnitigs::compute_trivial_only_non_scc(&genome_graph)
+            } else {
+                ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
+                Omnitigs::compute_trivial_only(&genome_graph)
+            };
             info!("Removing reverse complements");
             trivial_omnitigs.remove_reverse_complements(&genome_graph);
 

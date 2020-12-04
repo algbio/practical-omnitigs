@@ -1,14 +1,27 @@
-use crate::omnitigs::{Omnitig, Omnitigs, TrivialOmnitigAlgorithm};
+use crate::omnitigs::univocal_extension_algorithms::{
+    NonSCCUnivocalExtensionStrategy, SCCUnivocalExtensionStrategy,
+};
+use crate::omnitigs::{Omnitig, Omnitigs, TrivialOmnitigAlgorithm, UnivocalExtensionAlgorithm};
 use bitvector::BitVector;
-//use std::time::{Duration, Instant};
+use std::marker::PhantomData;
 use traitgraph::algo::traversal::univocal_traversal::UnivocalIterator;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{NodeOrEdge, StaticGraph};
-use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
+use traitgraph::walks::VecEdgeWalk;
 use traitsequence::interface::Sequence;
 
 /// An algorithm to extract trivial omnitigs.
-pub struct DefaultTrivialOmnitigAlgorithm;
+pub struct DefaultTrivialOmnitigAlgorithm<UnivocalExtensionStrategy> {
+    _univocal_extension_strategy: PhantomData<UnivocalExtensionStrategy>,
+}
+
+/// An algorithm to extract trivial omnitigs form a strongly connected graph.
+pub type SCCTrivialOmnitigAlgorithm = DefaultTrivialOmnitigAlgorithm<SCCUnivocalExtensionStrategy>;
+
+/// An algorithm to extract trivial omnitigs form a not strongly connected graph.
+/// This runs slightly slower than the counterpart for strongly connected graphs, especially for long univocal extensions.
+pub type NonSCCTrivialOmnitigAlgorithm =
+    DefaultTrivialOmnitigAlgorithm<NonSCCUnivocalExtensionStrategy>;
 
 /// Returns true if the edge is in a trivial omnitig heart.
 pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
@@ -53,10 +66,17 @@ pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
         return true;
     }
 
-    graph.out_degree(unitig_start_node) >= 2 && graph.in_degree(unitig_end_node) >= 2
+    (graph.out_degree(unitig_start_node) >= 2 || graph.in_degree(unitig_start_node) == 0)
+        && (graph.in_degree(unitig_end_node) >= 2 || graph.out_degree(unitig_end_node) == 0)
 }
 
-impl<Graph: StaticGraph> TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmnitigAlgorithm {
+impl<
+        Graph: StaticGraph,
+        UnivocalExtensionStrategy: UnivocalExtensionAlgorithm<Graph, VecEdgeWalk<Graph>>,
+    > TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmnitigAlgorithm<UnivocalExtensionStrategy>
+{
+    type UnivocalExtensionStrategy = UnivocalExtensionStrategy;
+
     fn compute_maximal_trivial_omnitigs(
         graph: &Graph,
         mut omnitigs: Omnitigs<Graph>,
@@ -70,27 +90,15 @@ impl<Graph: StaticGraph> TrivialOmnitigAlgorithm<Graph> for DefaultTrivialOmniti
         }
 
         info!("Extend {} unused edges", graph.edge_count());
-        //let mut last_output_time = Instant::now();
-        //let mut last_check_edge = 0;
         for edge in graph.edge_indices() {
             if used_edges.contains(edge.as_usize())
                 || !is_edge_in_maximal_trivial_omnitig_heart(graph, edge)
             {
                 continue;
             }
-            /*if last_check_edge + 100 < edge.as_usize() {
-                last_check_edge = edge.as_usize();
-                if Instant::now() - last_output_time > Duration::from_secs(5) {
-                    last_output_time = Instant::now();
-                    info!(
-                        "Extended {}/{} unused edges",
-                        edge.as_usize() + 1,
-                        graph.edge_count()
-                    );
-                }
-            }*/
 
-            let trivial_omnitig: VecEdgeWalk<Graph> = [edge].compute_univocal_extension(graph);
+            let trivial_omnitig: VecEdgeWalk<Graph> =
+                Self::UnivocalExtensionStrategy::compute_univocal_extension(graph, &[edge]);
             for edge in trivial_omnitig.iter() {
                 used_edges.insert(edge.as_usize());
             }
@@ -133,7 +141,7 @@ mod tests {
     use traitgraph::interface::MutableGraphContainer;
     use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
     use crate::omnitigs::{MacrotigBasedNonTrivialOmnitigAlgorithm, Omnitigs, TrivialOmnitigAlgorithm, Omnitig};
-    use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
+    use crate::omnitigs::default_trivial_omnitigs::SCCTrivialOmnitigAlgorithm;
 
     #[test]
     fn test_compute_omnitigs_simple() {
@@ -228,7 +236,7 @@ mod tests {
             ])
         );
 
-        let maximal_omnitigs = DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
+        let maximal_omnitigs = SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
             &graph,
             maximal_non_trivial_omnitigs,
         );
@@ -280,6 +288,45 @@ mod tests {
                 0,
                 4
             )])
+        );
+    }
+
+    #[test]
+    fn test_compute_trivial_omnitigs_trap_cycle() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let n3 = graph.add_node(());
+        let e0 = graph.add_edge(n3, n0, ());
+        let e1 = graph.add_edge(n0, n1, ());
+        let e2 = graph.add_edge(n1, n2, ());
+        let e3 = graph.add_edge(n2, n0, ());
+
+        let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        assert_eq!(
+            trivial_omnitigs,
+            Omnitigs::from(vec![Omnitig::new(
+                graph.create_edge_walk(&[e0, e1, e2, e3]),
+                0,
+                0
+            )])
+        );
+    }
+
+    #[test]
+    fn test_compute_trivial_omnitigs_path() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let e0 = graph.add_edge(n0, n1, ());
+        let e1 = graph.add_edge(n1, n2, ());
+
+        let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        assert_eq!(
+            trivial_omnitigs,
+            Omnitigs::from(vec![Omnitig::new(graph.create_edge_walk(&[e0, e1]), 0, 1)])
         );
     }
 }

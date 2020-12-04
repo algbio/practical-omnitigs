@@ -2,9 +2,13 @@
 pub mod default_trivial_omnitigs;
 /// An algorithm to extract non-trivial omnitigs from macrotigs using the incremental hydrostructure.
 pub mod incremental_hydrostructure_macrotig_based_non_trivial_omnitigs;
+/// Different algorithms to compute univocal extensions.
+pub mod univocal_extension_algorithms;
 
 use crate::macrotigs::macrotigs::Macrotigs;
-use crate::omnitigs::default_trivial_omnitigs::DefaultTrivialOmnitigAlgorithm;
+use crate::omnitigs::default_trivial_omnitigs::{
+    NonSCCTrivialOmnitigAlgorithm, SCCTrivialOmnitigAlgorithm,
+};
 use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
 use bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
 use bigraph::interface::BidirectedData;
@@ -174,7 +178,7 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
     pub fn compute(graph: &Graph) -> Self {
         let maximal_macrotigs = Macrotigs::compute(graph);
         let maximal_non_trivial_omnitigs = IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm::compute_maximal_non_trivial_omnitigs(graph, &maximal_macrotigs);
-        DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
+        SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
             graph,
             maximal_non_trivial_omnitigs,
         )
@@ -182,7 +186,13 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
 
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     pub fn compute_trivial_only(graph: &Graph) -> Self {
-        DefaultTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
+        SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
+    }
+
+    /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
+    /// This algorithm allows the graph to be not strongly connected, but it is a bit slower, especially for long trivial omnitigs.
+    pub fn compute_trivial_only_non_scc(graph: &Graph) -> Self {
+        NonSCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
     }
 }
 
@@ -353,12 +363,21 @@ pub trait MacrotigBasedNonTrivialOmnitigAlgorithm<Graph: StaticGraph> {
 
 /// A trait abstracting over the concrete algorithm used to compute maximal trivial omnitigs.
 pub trait TrivialOmnitigAlgorithm<Graph: StaticGraph> {
+    /// The algorithm to compute univocal extensions of omnitig hearts.
+    type UnivocalExtensionStrategy: UnivocalExtensionAlgorithm<Graph, VecEdgeWalk<Graph>>;
+
     /// To a sequence of maximal non-trivial omnitigs add the maximal trivial omnitigs.
     /// The function should not compute any trivial omnitigs that are subwalks of maximal non-trivial omnitigs.
     fn compute_maximal_trivial_omnitigs(
         graph: &Graph,
         omnitigs: Omnitigs<Graph>,
     ) -> Omnitigs<Graph>;
+}
+
+/// The algorithm used to compute univocal extensions of omnitigs.
+pub trait UnivocalExtensionAlgorithm<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>> {
+    /// Compute the univocal extension of a walk.
+    fn compute_univocal_extension(graph: &Graph, walk: &[Graph::EdgeIndex]) -> ResultWalk;
 }
 
 #[cfg(test)]

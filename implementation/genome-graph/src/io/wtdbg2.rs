@@ -351,7 +351,7 @@ pub fn read_graph_from_wtdbg2<
         );
     }
 
-    info!("Loading edges");
+    info!("Loading edge read associations");
     for line in reads.lines() {
         let line = line?;
         let mut split = line.split('\t');
@@ -824,13 +824,6 @@ pub fn convert_walks_to_wtdbg2_contigs<
         let mut offsets = vec![0];
 
         let first_edge_data = graph.edge_data(*walk.first().unwrap());
-        let first_edge_length = first_edge_data.length();
-        if first_edge_length < 4 {
-            println!("First edge length: {}", first_edge_length);
-            for read_association in first_edge_data.edge_read_associations() {
-                println!("{:?}", read_association);
-            }
-        }
         for &edge in walk.iter() {
             offsets.push(offsets.last().unwrap() + graph.edge_data(edge).length() - 4);
         }
@@ -1088,13 +1081,6 @@ pub fn write_contigs_to_wtdbg2<
         let mut offsets = vec![0];
 
         let first_edge_data = graph.edge_data(*walk.first().unwrap());
-        let first_edge_length = first_edge_data.length();
-        if first_edge_length < 4 {
-            println!("First edge length: {}", first_edge_length);
-            for read_association in first_edge_data.edge_read_associations() {
-                println!("{:?}", read_association);
-            }
-        }
         for &edge in walk.iter() {
             offsets.push(offsets.last().unwrap() + graph.edge_data(edge).length() - 4);
         }

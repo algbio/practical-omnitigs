@@ -223,6 +223,20 @@ where
 
     /// Compute the univocal extension of a walk.
     /// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first edge of W and R the longest univocal walk from the last edge of W.
+    /// This variant handles not strongly connected graphs by forbidding L and R to repeat edges.
+    fn compute_univocal_extension_non_scc<ResultWalk: From<Vec<Graph::EdgeIndex>>>(
+        &'a self,
+        graph: &Graph,
+    ) -> ResultWalk
+    where
+        Graph: StaticGraph,
+    {
+        self.compute_univocal_extension_with_original_offset_non_scc(graph)
+            .1
+    }
+
+    /// Compute the univocal extension of a walk.
+    /// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first edge of W and R the longest univocal walk from the last edge of W.
     ///
     /// Additionally to the univocal extension, this function returns the offset of the original walk in the univocal extension as usize.
     fn compute_univocal_extension_with_original_offset<ResultWalk: From<Vec<Graph::EdgeIndex>>>(
@@ -266,6 +280,65 @@ where
                 NodeOrEdge::Node(_) => {}
                 NodeOrEdge::Edge(edge) => {
                     if &edge == self.last().unwrap() {
+                        break;
+                    } else {
+                        result.push(edge)
+                    }
+                }
+            }
+        }
+
+        (original_offset, ResultWalk::from(result))
+    }
+
+    /// Compute the univocal extension of a walk.
+    /// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first edge of W and R the longest univocal walk from the last edge of W.
+    /// This variant handles not strongly connected graphs by forbidding L and R to repeat edges.
+    ///
+    /// Additionally to the univocal extension, this function returns the offset of the original walk in the univocal extension as usize.
+    fn compute_univocal_extension_with_original_offset_non_scc<
+        ResultWalk: From<Vec<Graph::EdgeIndex>>,
+    >(
+        &'a self,
+        graph: &Graph,
+    ) -> (usize, ResultWalk)
+    where
+        Graph: StaticGraph,
+    {
+        assert!(
+            !self.is_empty(),
+            "Cannot compute the univocal extension of an empty walk."
+        );
+
+        let mut result = Vec::new();
+        for node_or_edge in UnivocalIterator::new_backward_without_start(
+            graph,
+            NodeOrEdge::Edge(*self.first().unwrap()),
+        ) {
+            match node_or_edge {
+                NodeOrEdge::Node(_) => {}
+                NodeOrEdge::Edge(edge) => {
+                    if &edge == self.first().unwrap() || result.contains(&edge) {
+                        break;
+                    } else {
+                        result.push(edge)
+                    }
+                }
+            }
+        }
+
+        result.reverse();
+        let original_offset = result.len();
+        result.extend(self.iter());
+
+        for node_or_edge in UnivocalIterator::new_forward_without_start(
+            graph,
+            NodeOrEdge::Edge(*self.last().unwrap()),
+        ) {
+            match node_or_edge {
+                NodeOrEdge::Node(_) => {}
+                NodeOrEdge::Edge(edge) => {
+                    if &edge == self.last().unwrap() || result[original_offset..].contains(&edge) {
                         break;
                     } else {
                         result.push(edge)
@@ -325,9 +398,9 @@ where
 ////// Slices //////
 ////////////////////
 
-impl<'a, 'b, Graph: GraphBase> NodeWalk<'a, Graph> for [Graph::NodeIndex] where Graph::NodeIndex: 'a {}
+impl<'a, Graph: GraphBase> NodeWalk<'a, Graph> for [Graph::NodeIndex] where Graph::NodeIndex: 'a {}
 
-impl<'a, 'b, Graph: GraphBase> EdgeWalk<'a, Graph> for [Graph::EdgeIndex] where Graph::EdgeIndex: 'a {}
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for [Graph::EdgeIndex] where Graph::EdgeIndex: 'a {}
 
 /////////////////////////
 ////// VecNodeWalk //////
