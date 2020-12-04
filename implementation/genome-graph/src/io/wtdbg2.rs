@@ -823,7 +823,6 @@ pub fn convert_walks_to_wtdbg2_contigs<
         // The length of an edge is the median length of its supporting read fragments.
         let mut offsets = vec![0];
 
-        let first_edge_data = graph.edge_data(*walk.first().unwrap());
         for &edge in walk.iter() {
             offsets.push(offsets.last().unwrap() + graph.edge_data(edge).length() - 4);
         }
@@ -1080,7 +1079,6 @@ pub fn write_contigs_to_wtdbg2<
         // The length of an edge is the median length of its supporting read fragments.
         let mut offsets = vec![0];
 
-        let first_edge_data = graph.edge_data(*walk.first().unwrap());
         for &edge in walk.iter() {
             offsets.push(offsets.last().unwrap() + graph.edge_data(edge).length() - 4);
         }
