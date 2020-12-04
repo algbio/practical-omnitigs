@@ -132,8 +132,17 @@ rule filter_genome:
 rule extract:
     input: "data/{dir}/{file}.gz"
     output: "data/{dir}/{file}"
+    wildcard_constraints:
+        file=".*(?<!\.gz)"
+        #file=r"^.*([^\.]..|.[^g].|..[^z])$"
     conda: "config/conda-extract-env.yml"
     shell: "cd 'data/{wildcards.dir}'; gunzip -k {wildcards.file}.gz"
+
+#rule extract_dot:
+#    input: "data/{dir}/wtdbg2.3.dot.gz"
+#    output: "data/{dir}/wtdbg2.3.dot"
+#    conda: "config/conda-extract-env.yml"
+#    shell: "cd 'data/{wildcards.dir}'; gunzip -k wtdbg2.3.dot.gz"
 
 rule download_experiment_file:
     output: "data/{dir}/raw.fna.gz"
@@ -146,10 +155,11 @@ rule download_experiment_file:
 ######################################
 
 rule download_wtdbg2_input:
-    output: "data/{dir}/reads.fa"
-    params: url = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["urls"]
+    output: reads = "data/{dir}/reads.fa", reference = "data/{dir}/reference.fa.gz"
+    params: url = lambda wildcards, output: "'" + "' '".join(experiments_wtdbg2[wildcards.dir]["urls"]) + "'",
+            reference = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["reference"]
     conda: "config/conda-download-env.yml"
-    shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget -O reads.fa {params.url}"
+    shell: "mkdir -p 'data/{wildcards.dir}'; wget -O '{output.reads}' {params.url}; wget -O '{output.reference}' '{params.reference}'"
 
 ##################
 ###### Rust ######
@@ -194,10 +204,10 @@ rule compute_omnitigs_wtdbg2:
 rule compute_trivial_omnitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.trivialomnitigs.ctg.lay", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
-    shell: "'{input.binary}' compute-trivialomnitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' compute-trivial-omnitigs --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.unitigs.ctg.lay", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
     shell: "'{input.binary}' compute-unitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
@@ -262,19 +272,20 @@ rule install_wtdbg2:
 
     git clone https://github.com/sebschmi/wtdbg2.git
     cd wtdbg2
-    git checkout 9040312a895cf1fbefab84dbb3bc94ae5210b741
+    git checkout 3a7e0d28358a31509fa403e58b952939e5e9352c
     make
     """
 
 rule wtdbg2_graph:
     input: file = "data/{dir}/reads.fa", binary = "external-software/wtdbg2/wtdbg2"
-    output: nodes = "data/{dir}/wtdbg2.1.nodes", reads = "data/{dir}/wtdbg2.1.reads", log = "data/{dir}/wtdbg2.log"
-    shell: "{input.binary} -x rs -g 4.6m -i '{input.file}' -t 4 -fo 'data/{wildcards.dir}/wtdbg2' 2>&1 | tee '{output.log}'"
+    output: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot.gz", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.log"
+    shell: """{input.binary} -x rs -g 100m -i '{input.file}' -t 0 -fo 'data/{wildcards.dir}/wtdbg2' 2>&1 | tee '{output.log}'
+              mv 'data/{wildcards.dir}/wtdbg2.ctg.lay.gz' 'data/{wildcards.dir}/wtdbg2.wtdbg2.ctg.lay.gz'"""
 
 rule wtdbg2_consensus:
     input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
-    shell: "{input.binary} -t 4 -i '{input.contigs}' -fo '{output.consensus}'"
+    shell: "{input.binary} -t 0 -i '{input.contigs}' -fo '{output.consensus}'"
 
 ###############################
 ###### Report Generation ######
@@ -305,9 +316,18 @@ rule create_single_report_tex:
     shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '../../{input.bcalm2_bandage}' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
-    input: unitigs = "data/{dir}/wtdbg2.unitigs.raw.fa", omnitigs = "data/{dir}/wtdbg2.omnitigs.raw.fa", trivialomnitigs = "data/{dir}/wtdbg2.trivialomnitigs.raw.fa"
-    output: touch("data/{dir}/wtdbg2.wtdbg2-report.tex")
-    shell: ""
+    input: unitigs_quast = "data/{dir}/wtdbg2.unitigs.quast",
+           trivialomnitigs_quast = "data/{dir}/wtdbg2.trivialomnitigs.quast",
+           #omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.quast",
+           wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
+           #omnitigs = "data/{dir}/wtdbg2.omnitigs.raw.fa",
+           #trivialomnitigs = "data/{dir}/wtdbg2.trivialomnitigs.raw.fa",
+           script = "scripts/convert_validation_outputs_to_latex.py",
+    output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
+    params: prefix = "data/{dir}/wtdbg2"
+    shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
+              scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+              #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
 
 rule report_all:
     input: generate_report_targets()
@@ -390,6 +410,13 @@ rule run_quast:
     output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
     shell: "quast -o {output.report} -r {input.reference} {input.reads}"
+
+rule run_quast_wtdbg2:
+    input: contigs = "data/{dir}/wtdbg2.{algorithm}.raw.fa",
+        reference = "data/{dir}/reference.fa"
+    output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
+    conda: "config/conda-quast-env.yml"
+    shell: "quast -o {output.report} -r {input.reference} {input.contigs}"
 
 #####################
 ###### Bandage ######

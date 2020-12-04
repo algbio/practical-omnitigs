@@ -85,7 +85,11 @@ fn main() {
 
 fn initialise_logging() {
     CombinedLogger::init(vec![TermLogger::new(
-        LevelFilter::Trace,
+        if cfg!(debug_assertions) {
+            LevelFilter::Trace
+        } else {
+            LevelFilter::Info
+        },
         Config::default(),
         TerminalMode::Mixed,
     )])

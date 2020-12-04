@@ -1,6 +1,12 @@
 use crate::CliOptions;
 use clap::Clap;
+use genome_graph::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
+use genome_graph::bigraph::traitgraph::algo::components::{
+    decompose_strongly_connected_components, decompose_weakly_connected_components,
+};
+use genome_graph::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph;
 use genome_graph::bigraph::traitgraph::interface::GraphBase;
+use genome_graph::io::wtdbg2::build_wtdbg2_unitigs_graph;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2Graph};
 use omnitigs::unitigs::EdgeUnitigs;
 use std::fs::File;
@@ -17,7 +23,7 @@ pub struct ComputeUnitigsCommand {
     )]
     pub file_format: String,
 
-    #[clap(short, long, about = "The input file in the specified format")]
+    #[clap(short, long, about = "The input files in the specified format")]
     pub input: Vec<String>,
 
     #[clap(
@@ -40,6 +46,13 @@ pub struct ComputeUnitigsCommand {
         about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
     )]
     pub latex: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        about = "Compare the unitigs produced by our algorithm to wtdbg2's contigs"
+    )]
+    pub compare_with_wtdbg2_contigs: bool,
 }
 
 fn print_unitig_statistics<Graph: GraphBase>(
@@ -185,6 +198,44 @@ pub(crate) fn compute_unitigs(
             unitigs.remove_reverse_complements(&genome_graph);
 
             print_unitig_statistics(&unitigs, &mut latex_file)?;
+
+            if subcommand.compare_with_wtdbg2_contigs {
+                info!("Investigating differences between wtdbg2 and our unitigs");
+                let wtdbg2_unitigs_file =
+                    dot_file[..dot_file.len() - 6].to_owned() + ".wtdbg2.ctg.lay";
+                info!("Loading wtdbg2 unitigs from '{}'", wtdbg2_unitigs_file);
+                let mut wtdbg2_unitigs =
+                    genome_graph::io::wtdbg2::read_wtdbg2_contigs_from_file(&wtdbg2_unitigs_file)?;
+                info!("Converting our unitigs to .ctg.lay format");
+                let mut our_unitigs =
+                    genome_graph::io::wtdbg2::convert_walks_to_wtdbg2_contigs_with_file(
+                        &genome_graph,
+                        unitigs.iter(),
+                        &raw_reads_file,
+                    )?;
+                info!("Sorting unitigs");
+                wtdbg2_unitigs.sort_contigs_topologically();
+                our_unitigs.sort_contigs_topologically();
+                wtdbg2_unitigs.update_indices();
+                our_unitigs.update_indices();
+                info!(" =========================");
+                info!(" === Comparing unitigs ===");
+                info!(" =========================");
+                wtdbg2_unitigs.compare_contigs(&our_unitigs);
+                drop(our_unitigs);
+
+                info!(" ==============================");
+                info!(" === Analysing unitig graph ===");
+                info!(" ==============================");
+                let unitig_graph: NodeBigraphWrapper<DiGraph<_, _, _>> =
+                    build_wtdbg2_unitigs_graph(&wtdbg2_unitigs);
+                drop(wtdbg2_unitigs);
+
+                let wccs = decompose_weakly_connected_components(&unitig_graph);
+                info!("Unitig graph has {} wccs", wccs.len());
+                let sccs = decompose_strongly_connected_components(&unitig_graph);
+                info!("Unitig graph has {} sccs", sccs.len());
+            }
 
             info!("Storing unitigs as .ctg.lay to '{}'", subcommand.output);
             genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(

@@ -20,3 +20,4 @@ bigraph = {path = "../bigraph", version = "0.1.0"}
 traitsequence = {path = "../traitsequence", version = "0.1.0-alpha.0"}
 bitvector = "0.1"
 rand = "0.7"
+log = "0.4"

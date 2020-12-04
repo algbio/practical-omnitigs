@@ -1,6 +1,9 @@
 //! A crate implementing different omnitig-related algorithms.
 #![warn(missing_docs)]
 
+#[macro_use]
+extern crate log;
+
 /// Preprocess a hamiltonian circuit problem using node-centric omnitigs.
 pub mod hamiltonian;
 /// Algorithms to compute the hydrostructure.
