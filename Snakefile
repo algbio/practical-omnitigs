@@ -279,13 +279,13 @@ rule install_wtdbg2:
 rule wtdbg2_graph:
     input: file = "data/{dir}/reads.fa", binary = "external-software/wtdbg2/wtdbg2"
     output: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot.gz", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.log"
-    shell: """{input.binary} -x rs -g 100m -i '{input.file}' -t 4 -fo 'data/{wildcards.dir}/wtdbg2' 2>&1 | tee '{output.log}'
+    shell: """{input.binary} -x rs -g 100m -i '{input.file}' -t 0 -fo 'data/{wildcards.dir}/wtdbg2' 2>&1 | tee '{output.log}'
               mv 'data/{wildcards.dir}/wtdbg2.ctg.lay.gz' 'data/{wildcards.dir}/wtdbg2.wtdbg2.ctg.lay.gz'"""
 
 rule wtdbg2_consensus:
     input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
-    shell: "{input.binary} -t 4 -i '{input.contigs}' -fo '{output.consensus}'"
+    shell: "{input.binary} -t 0 -i '{input.contigs}' -fo '{output.consensus}'"
 
 ###############################
 ###### Report Generation ######
