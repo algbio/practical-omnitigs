@@ -1,7 +1,6 @@
 use crate::error::Result;
 use bigraph::interface::dynamic_bigraph::DynamicBigraph;
 use bigraph::interface::BidirectedData;
-use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer, StaticGraph};
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, VecNodeWalk};
@@ -18,6 +17,7 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 /// Node data as given in a .1.nodes file from wtdbg2.
+#[derive(Clone)]
 pub struct PlainWtdbg2NodeData {
     /// The index of the node in wtdbg2.
     pub index: usize,
@@ -277,7 +277,7 @@ pub fn read_graph_from_wtdbg2_from_files<
     P1: AsRef<Path>,
     P2: AsRef<Path>,
     P3: AsRef<Path>,
-    NodeData: From<PlainWtdbg2NodeData>,
+    NodeData: From<PlainWtdbg2NodeData> + Wtdbg2NodeData,
     EdgeData: From<PlainWtdbg2EdgeData> + Wtdbg2EdgeData,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
@@ -297,7 +297,7 @@ pub fn read_graph_from_wtdbg2<
     R1: BufRead,
     R2: BufRead,
     R3: BufRead,
-    NodeData: From<PlainWtdbg2NodeData>,
+    NodeData: From<PlainWtdbg2NodeData> + Wtdbg2NodeData,
     EdgeData: From<PlainWtdbg2EdgeData> + Wtdbg2EdgeData,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
@@ -306,13 +306,15 @@ pub fn read_graph_from_wtdbg2<
     dot: R3,
 ) -> Result<Graph> {
     let mut graph = Graph::default();
+    let mut node_map = HashMap::new();
 
     info!("Loading nodes");
     for line in nodes.lines() {
         let line = line?;
         let forward_node_data = PlainWtdbg2NodeData::from(line.as_str());
         let reverse_node = graph.add_node(forward_node_data.clone_reverse().into());
-        let forward_node = graph.add_node(forward_node_data.into());
+        let forward_node = graph.add_node(forward_node_data.clone().into());
+        node_map.insert(forward_node_data.index, (reverse_node, forward_node));
         graph.set_mirror_nodes(forward_node, reverse_node);
     }
     info!("Loaded {} nodes", graph.node_count());
@@ -325,9 +327,13 @@ pub fn read_graph_from_wtdbg2<
         }
 
         let mut split = line.split(' ');
-        let n1: usize = split.next().unwrap()[1..].parse().unwrap();
+        let n1 = node_map
+            .get(&split.next().unwrap()[1..].parse().unwrap())
+            .unwrap();
         split.next();
-        let n2: usize = split.next().unwrap()[1..].parse().unwrap();
+        let n2 = node_map
+            .get(&split.next().unwrap()[1..].parse().unwrap())
+            .unwrap();
         let label = &split.next().unwrap()[8..10];
         let from_forward = match label.as_bytes()[0] {
             b'+' => true,
@@ -340,11 +346,11 @@ pub fn read_graph_from_wtdbg2<
             unknown => bail!("Unknown node direction: {}", unknown),
         };
 
-        let n1 = 2 * n1 + if from_forward { 1 } else { 0 };
-        let n2 = 2 * n2 + if to_forward { 1 } else { 0 };
+        let n1 = if from_forward { n1.1 } else { n1.0 };
+        let n2 = if to_forward { n2.1 } else { n2.0 };
         graph.add_edge(
-            n1.into(),
-            n2.into(),
+            n1,
+            n2,
             PlainWtdbg2EdgeData {
                 read_associations: Vec::new(),
             }
@@ -369,36 +375,56 @@ pub fn read_graph_from_wtdbg2<
             let n1_index = &n1_split.next().unwrap()[1..];
             let n1_star = n1_index.ends_with('*');
             let n1_exclamation_mark = n1_index.ends_with('!');
-            let n1_index: usize = if n1_star || n1_exclamation_mark {
-                n1_index[..n1_index.len() - 1].parse()
-            } else {
-                n1_index.parse()
-            }
-            .unwrap();
+            let n1_index = node_map
+                .get(
+                    &if n1_star || n1_exclamation_mark {
+                        n1_index[..n1_index.len() - 1].parse()
+                    } else {
+                        n1_index.parse()
+                    }
+                    .unwrap(),
+                )
+                .unwrap();
             let n1_read_location = Wtdbg2ReadLocation::from(n1_split.next().unwrap());
 
-            let n1_node_index =
-                (2 * n1_index + if n1_read_location.direction { 1 } else { 0 }).into();
-            let reverse_n2_node_index =
-                (2 * n1_index + if n1_read_location.direction { 0 } else { 1 }).into();
+            let n1_node_index = if n1_read_location.direction {
+                n1_index.1
+            } else {
+                n1_index.0
+            };
+            let reverse_n2_node_index = if n1_read_location.direction {
+                n1_index.0
+            } else {
+                n1_index.1
+            };
 
             for n2 in nodes.iter().skip(index + 1) {
                 let mut n2_split = n2.split(':');
                 let n2_index = &n2_split.next().unwrap()[1..];
                 let n2_star = n2_index.ends_with('*');
                 let n2_exclamation_mark = n2_index.ends_with('!');
-                let n2_index: usize = if n2_star || n2_exclamation_mark {
-                    n2_index[..n2_index.len() - 1].parse()
-                } else {
-                    n2_index.parse()
-                }
-                .unwrap();
+                let n2_index = node_map
+                    .get(
+                        &if n2_star || n2_exclamation_mark {
+                            n2_index[..n2_index.len() - 1].parse()
+                        } else {
+                            n2_index.parse()
+                        }
+                        .unwrap(),
+                    )
+                    .unwrap();
                 let n2_read_location = Wtdbg2ReadLocation::from(n2_split.next().unwrap());
 
-                let n2_node_index =
-                    (2 * n2_index + if n2_read_location.direction { 1 } else { 0 }).into();
-                let reverse_n1_node_index =
-                    (2 * n2_index + if n2_read_location.direction { 0 } else { 1 }).into();
+                let n2_node_index = if n2_read_location.direction {
+                    n2_index.1
+                } else {
+                    n2_index.0
+                };
+                let reverse_n1_node_index = if n2_read_location.direction {
+                    n2_index.0
+                } else {
+                    n2_index.1
+                };
 
                 let existing_edge = graph.edges_between(n1_node_index, n2_node_index).next();
                 if let Some(edge) = existing_edge {
@@ -452,21 +478,41 @@ pub fn read_graph_from_wtdbg2<
     for edge_index in graph.edge_indices() {
         let edge_data = graph.edge_data(edge_index);
         if edge_data.edge_read_associations().is_empty() {
+            let from_node = graph.edge_endpoints(edge_index).from_node;
+            let to_node = graph.edge_endpoints(edge_index).to_node;
             warn!(
-                "Edge has no read associations: N{} -> N{}",
-                graph.edge_endpoints(edge_index).from_node.as_usize(),
-                graph.edge_endpoints(edge_index).to_node.as_usize()
+                "Edge has no read associations: N{}{} -> N{}{}",
+                graph.node_data(from_node).index(),
+                if graph.node_data(from_node).forward() {
+                    '+'
+                } else {
+                    '-'
+                },
+                graph.node_data(to_node).index(),
+                if graph.node_data(to_node).forward() {
+                    '+'
+                } else {
+                    '-'
+                },
             );
         } else if edge_data.edge_read_associations().len() < 3 {
-            let from_node = graph.edge_endpoints(edge_index).from_node.as_usize();
-            let to_node = graph.edge_endpoints(edge_index).to_node.as_usize();
+            let from_node = graph.edge_endpoints(edge_index).from_node;
+            let to_node = graph.edge_endpoints(edge_index).to_node;
             debug!(
                 "Edge has only {} read associations: N{}{} -> N{}{}",
                 edge_data.edge_read_associations().len(),
-                from_node / 2,
-                if from_node % 2 == 1 { '+' } else { '-' },
-                to_node / 2,
-                if to_node % 2 == 1 { '+' } else { '-' }
+                graph.node_data(from_node).index(),
+                if graph.node_data(from_node).forward() {
+                    '+'
+                } else {
+                    '-'
+                },
+                graph.node_data(to_node).index(),
+                if graph.node_data(to_node).forward() {
+                    '+'
+                } else {
+                    '-'
+                },
             );
         }
     }
