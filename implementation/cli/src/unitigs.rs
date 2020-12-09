@@ -43,16 +43,16 @@ pub struct ComputeUnitigsCommand {
     #[clap(
         short,
         long,
-        about = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
+        about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
     )]
-    pub output_as_wtdbg2_node_ids: bool,
+    pub latex: Option<String>,
 
     #[clap(
         short,
         long,
-        about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
+        about = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
     )]
-    pub latex: Option<String>,
+    pub output_as_wtdbg2_node_ids: bool,
 
     #[clap(
         short,

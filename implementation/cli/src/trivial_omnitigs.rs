@@ -45,6 +45,13 @@ pub struct ComputeTrivialOmnitigsCommand {
     #[clap(
         short,
         long,
+        about = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
+    )]
+    pub output_as_wtdbg2_node_ids: bool,
+
+    #[clap(
+        short,
+        long,
         about = "Set to use algorithms that handle not strongly connected graphs, but are slower"
     )]
     pub non_scc: bool,
@@ -128,6 +135,10 @@ pub(crate) fn compute_trivial_omnitigs(
 
     match subcommand.file_format.as_str() {
         "bcalm2" => {
+            if subcommand.output_as_wtdbg2_node_ids {
+                bail!("Output as wtdbg2 node ids not supported for bcalm2 format");
+            }
+
             let input = if let Some(input) = subcommand.input.first() {
                 input
             } else {
@@ -220,16 +231,28 @@ pub(crate) fn compute_trivial_omnitigs(
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
 
-            info!(
-                "Storing trivial omnitigs as .ctg.lay to '{}'",
-                subcommand.output
-            );
-            genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(
-                &genome_graph,
-                trivial_omnitigs.iter(),
-                raw_reads_file,
-                &subcommand.output,
-            )?;
+            if subcommand.output_as_wtdbg2_node_ids {
+                info!(
+                    "Storing trivial omnitigs as node ids to '{}'",
+                    subcommand.output
+                );
+                genome_graph::io::wtdbg2::write_contigs_as_wtdbg2_node_ids_to_file(
+                    &genome_graph,
+                    trivial_omnitigs.iter(),
+                    &subcommand.output,
+                )?;
+            } else {
+                info!(
+                    "Storing trivial omnitigs as .ctg.lay to '{}'",
+                    subcommand.output
+                );
+                genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(
+                    &genome_graph,
+                    trivial_omnitigs.iter(),
+                    raw_reads_file,
+                    &subcommand.output,
+                )?;
+            }
 
             Ok(())
         }
