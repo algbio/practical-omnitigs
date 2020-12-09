@@ -43,6 +43,13 @@ pub struct ComputeOmnitigsCommand {
         about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
     )]
     pub latex: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        about = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
+    )]
+    pub output_as_wtdbg2_node_ids: bool,
 }
 
 fn print_omnitigs_statistics<Graph: GraphBase>(
@@ -162,6 +169,10 @@ pub(crate) fn compute_omnitigs(
 
     match subcommand.file_format.as_str() {
         "bcalm2" => {
+            if subcommand.output_as_wtdbg2_node_ids {
+                bail!("Output as wtdbg2 node ids not supported for bcalm2 format");
+            }
+
             let input = if let Some(input) = subcommand.input.first() {
                 input
             } else {
@@ -252,13 +263,22 @@ pub(crate) fn compute_omnitigs(
 
             print_omnitigs_statistics(&omnitigs, &mut latex_file)?;
 
-            info!("Storing omnitigs as .ctg.lay to '{}'", subcommand.output);
-            genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(
-                &genome_graph,
-                omnitigs.iter(),
-                raw_reads_file,
-                &subcommand.output,
-            )?;
+            if subcommand.output_as_wtdbg2_node_ids {
+                info!("Storing omnitigs as node ids to '{}'", subcommand.output);
+                genome_graph::io::wtdbg2::write_contigs_as_wtdbg2_node_ids_to_file(
+                    &genome_graph,
+                    omnitigs.iter(),
+                    &subcommand.output,
+                )?;
+            } else {
+                info!("Storing omnitigs as .ctg.lay to '{}'", subcommand.output);
+                genome_graph::io::wtdbg2::write_contigs_to_wtdbg2_to_file(
+                    &genome_graph,
+                    omnitigs.iter(),
+                    raw_reads_file,
+                    &subcommand.output,
+                )?;
+            }
 
             Ok(())
         }
