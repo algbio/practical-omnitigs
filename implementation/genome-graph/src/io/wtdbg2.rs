@@ -2,8 +2,9 @@ use crate::error::Result;
 use bigraph::interface::dynamic_bigraph::DynamicBigraph;
 use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::index::GraphIndex;
-use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer};
-use bigraph::traitgraph::walks::EdgeWalk;
+use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer, StaticGraph};
+use bigraph::traitgraph::traitsequence::interface::Sequence;
+use bigraph::traitgraph::walks::{EdgeWalk, VecNodeWalk};
 use compact_genome::implementation::vector_genome_impl::VectorGenome;
 use compact_genome::interface::{ExtendableGenome, Genome};
 use regex::Regex;
@@ -1139,6 +1140,61 @@ pub fn write_contigs_to_wtdbg2<
     info!("{} too short walks were dropped", dropped_walks);
 
     output.flush()?;
+    Ok(())
+}
+
+/// Write a list of contigs as lists of wtdbg2's node ids to a file.
+pub fn write_contigs_as_wtdbg2_node_ids_to_file<
+    'ws,
+    P: AsRef<Path>,
+    NodeData: Wtdbg2NodeData,
+    EdgeData: Wtdbg2EdgeData,
+    Graph: StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    output_file: P,
+) -> Result<()> {
+    write_contigs_as_wtdbg2_node_ids(
+        graph,
+        walks,
+        &mut BufWriter::new(File::create(output_file)?),
+    )
+}
+
+/// Write a list of contigs as lists of wtdbg2's node ids.
+pub fn write_contigs_as_wtdbg2_node_ids<
+    'ws,
+    W: Write,
+    NodeData: Wtdbg2NodeData,
+    EdgeData: Wtdbg2EdgeData,
+    Graph: StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+>(
+    graph: &Graph,
+    walks: WalkSource,
+    output: &mut W,
+) -> Result<()> {
+    for walk in walks {
+        let walk: VecNodeWalk<Graph> = walk.clone_as_node_walk(graph).unwrap();
+        for &node in walk.iter() {
+            write!(
+                output,
+                "{} {} ",
+                graph.node_data(node).index(),
+                if graph.node_data(node).forward() {
+                    "+"
+                } else {
+                    "-"
+                }
+            )?;
+        }
+        writeln!(output)?;
+    }
+
     Ok(())
 }
 

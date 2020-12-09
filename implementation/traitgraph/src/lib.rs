@@ -1,6 +1,8 @@
 #![warn(missing_docs)]
 //! This crate offers traits for abstract graph algorithms as well as implementations of these traits.
 
+pub use traitsequence;
+
 /// Abstract graph algorithms.
 pub mod algo;
 /// Different implementations of the graph traits.
