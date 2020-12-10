@@ -299,7 +299,7 @@ rule install_wtdbg2:
 
     git clone https://github.com/sebschmi/wtdbg2.git
     cd wtdbg2
-    git checkout 5d8e0eb43b773f801c7f3dedaa443f935852cc97
+    git checkout 86e1ed60d29bf1d8b6e6e998e76294062d67164e
     make
     """
 
@@ -348,15 +348,19 @@ rule create_single_report_tex:
     shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '../../{input.bcalm2_bandage}' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
-    input: #unitigs_quast = "data/{dir}/wtdbg2.unitigs.quast",
-           #trivialomnitigs_quast = "data/{dir}/wtdbg2.trivialomnitigs.quast",
+    input: unitigs = "data/{dir}/wtdbg2.unitigs.tex",
+           trivialomnitigs = "data/{dir}/wtdbg2.trivialomnitigs.tex",
+           #omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.tex",
+           injected_unitigs = "data/{dir}/wtdbg2.injected-unitigs.tex",
+           injected_trivialomnitigs = "data/{dir}/wtdbg2.injected-trivialomnitigs.tex",
+           #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.tex",
+           unitigs_quast = "data/{dir}/wtdbg2.unitigs.quast",
+           trivialomnitigs_quast = "data/{dir}/wtdbg2.trivialomnitigs.quast",
            #omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.quast",
            injected_unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs.quast",
-           #injected_trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs.quast",
+           injected_trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs.quast",
            #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.quast",
-           #wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
-           #omnitigs = "data/{dir}/wtdbg2.omnitigs.raw.fa",
-           #trivialomnitigs = "data/{dir}/wtdbg2.trivialomnitigs.raw.fa",
+           wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
     params: prefix = "data/{dir}/wtdbg2"
