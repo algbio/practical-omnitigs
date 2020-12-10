@@ -5,7 +5,7 @@ Convert the output of the different validation tools into a LaTeX file.
 Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> [<label> <experiment prefix> ...] 
 """
 
-import sys
+import sys, subprocess
 
 genome_name_file_name = sys.argv[1]
 graph_statistics_file_name = sys.argv[2]
@@ -177,6 +177,7 @@ def write_image(output_file, caption, name, natwidth, natheight):
 	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + name + "}\n")
 	output_file.write("\\end{figure*}\n")
 
+revision = subprocess.check_output(["git", "describe"]).strip()
 output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
@@ -186,6 +187,7 @@ output_file.write(
 	\\begin{document}
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
+		\\item[Revision:] """ + revision + """
 	\\end{description}
 	This file contains statistics about the following genome(s):
 	\\begin{itemize}

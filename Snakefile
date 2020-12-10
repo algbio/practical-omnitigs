@@ -161,6 +161,12 @@ rule download_wtdbg2_input:
     conda: "config/conda-download-env.yml"
     shell: "mkdir -p 'data/{wildcards.dir}'; wget -O '{output.reads}' {params.url}; wget -O '{output.reference}' '{params.reference}'"
 
+rule uniquify_fasta_ids:
+    input: reads = "data/{dir}/reads.fa", script = "scripts/uniquify_fasta_ids.py"
+    output: reads = "data/{dir}/reads.uniqified.fa", log = "data/{dir}/uniquify.log"
+    conda: "config/conda-uniquify-env.yml"
+    shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
+
 ##################
 ###### Rust ######
 ##################
@@ -181,6 +187,8 @@ rule test_rust:
 ###### Algorithms ######
 ########################
 
+### bcalm2 ###
+
 rule compute_omnitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
@@ -196,20 +204,39 @@ rule compute_unitigs:
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
+### wtdbg2 ###
+
 rule compute_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.omnitigs.ctg.lay", log = "data/{dir}/wtdbg2.omnitigs.log", latex = "data/{dir}/wtdbg2.omnitigs.tex"
     shell: "'{input.binary}' compute-omnitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.trivialomnitigs.ctg.lay", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
     shell: "'{input.binary}' compute-trivial-omnitigs --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.unitigs.ctg.lay", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
     shell: "'{input.binary}' compute-unitigs --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+### injected wtdbg2 ###
+
+rule compute_injectable_omnitigs_wtdbg2:
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.injected-omnitigs.contigwalks", log = "data/{dir}/wtdbg2.injected-omnitigs.log", latex = "data/{dir}/wtdbg2.injected-omnitigs.tex"
+    shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+rule compute_injectable_trivial_omnitigs_wtdbg2:
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.injected-trivialomnitigs.contigwalks", log = "data/{dir}/wtdbg2.injected-trivialomnitigs.log", latex = "data/{dir}/wtdbg2.injected-trivialomnitigs.tex"
+    shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+rule compute_injectable_unitigs_wtdbg2:
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2.injected-unitigs.contigwalks", log = "data/{dir}/wtdbg2.injected-unitigs.log", latex = "data/{dir}/wtdbg2.injected-unitigs.tex"
+    shell: "'{input.binary}' compute-unitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -272,18 +299,23 @@ rule install_wtdbg2:
 
     git clone https://github.com/sebschmi/wtdbg2.git
     cd wtdbg2
-    git checkout c744f3c31cd94c512c93b597909e5a19e124fdf4
+    git checkout 5d8e0eb43b773f801c7f3dedaa443f935852cc97
     make
     """
 
-rule wtdbg2_graph:
-    input: file = "data/{dir}/reads.fa", binary = "external-software/wtdbg2/wtdbg2"
-    output: nodes = "data/{dir}/wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.3.dot.gz", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.log"
-    shell: """{input.binary} -x rs -g 100m -i '{input.file}' -t 0 -fo 'data/{wildcards.dir}/wtdbg2' 2>&1 | tee '{output.log}'
-              mv 'data/{wildcards.dir}/wtdbg2.ctg.lay.gz' 'data/{wildcards.dir}/wtdbg2.wtdbg2.ctg.lay.gz'"""
+rule wtdbg2_complete:
+    input: reads = "data/{dir}/reads.uniqified.fa", binary = "external-software/wtdbg2/wtdbg2"
+    output: original_nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2.clps", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2.log"
+    shell: "{input.binary} -x rs -g 100m -i '{input.reads}' -t 0 -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+
+rule wtdbg2_inject_contigs:
+    input: reads = "data/{dir}/reads.uniqified.fa", contigs = "data/{dir}/wtdbg2.injected-{algorithm}.contigwalks", clips = "data/{dir}/wtdbg2.wtdbg2.clps", nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", binary = "external-software/wtdbg2/wtdbg2"
+    output: ctg_lay = "data/{dir}/wtdbg2.injected-{algorithm}.ctg.lay.gz", log = "data/{dir}/wtdbg2.injected-{algorithm}.log"
+    params: genome_length = lambda wildcards, output: "-g 100m" if wildcards.algorithm == "unitigs" else ""
+    shell: "{input.binary} -x rs {params.genome_length} -i '{input.reads}' -t 0 -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
-    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
+    input: reads = "data/{dir}/reads.uniqified.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
     shell: "{input.binary} -t 0 -i '{input.contigs}' -fo '{output.consensus}'"
 
@@ -316,18 +348,21 @@ rule create_single_report_tex:
     shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '../../{input.bcalm2_bandage}' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
-    input: unitigs_quast = "data/{dir}/wtdbg2.unitigs.quast",
-           trivialomnitigs_quast = "data/{dir}/wtdbg2.trivialomnitigs.quast",
+    input: #unitigs_quast = "data/{dir}/wtdbg2.unitigs.quast",
+           #trivialomnitigs_quast = "data/{dir}/wtdbg2.trivialomnitigs.quast",
            #omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.quast",
-           wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
+           injected_unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs.quast",
+           #injected_trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs.quast",
+           #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.quast",
+           #wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
            #omnitigs = "data/{dir}/wtdbg2.omnitigs.raw.fa",
            #trivialomnitigs = "data/{dir}/wtdbg2.trivialomnitigs.raw.fa",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
     params: prefix = "data/{dir}/wtdbg2"
     shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
-              scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
-              #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+              scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+              #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' 'inj uni' '{params.prefix}.unitigs' 'inj Y-to-V' '{params.prefix}.trivialomnitigs' 'inj omni' '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
 
 rule report_all:
     input: generate_report_targets()
