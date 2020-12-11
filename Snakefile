@@ -311,7 +311,7 @@ rule wtdbg2_complete:
 rule wtdbg2_inject_contigs:
     input: reads = "data/{dir}/reads.uniqified.fa", contigs = "data/{dir}/wtdbg2.injected-{algorithm}.contigwalks", clips = "data/{dir}/wtdbg2.wtdbg2.clps", nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", binary = "external-software/wtdbg2/wtdbg2"
     output: ctg_lay = "data/{dir}/wtdbg2.injected-{algorithm}.ctg.lay.gz", log = "data/{dir}/wtdbg2.injected-{algorithm}.log"
-    params: genome_length = lambda wildcards, output: "-g 100m" if wildcards.algorithm == "unitigs" else ""
+    params: genome_length = lambda wildcards, output: "-g 100m" #if wildcards.algorithm == "unitigs" else ""
     shell: "{input.binary} -x rs {params.genome_length} -i '{input.reads}' -t 0 -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
