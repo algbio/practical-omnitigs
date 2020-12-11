@@ -187,7 +187,7 @@ output_file.write(
 	\\begin{document}
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
-		\\item[Revision:] """ + revision + """
+		\\item[Revision:] """ + str(revision) + """
 	\\end{description}
 	This file contains statistics about the following genome(s):
 	\\begin{itemize}
@@ -208,6 +208,10 @@ write_table(output_file, "QUAST: \\# of contigs", len(experiments), quast_table[
 write_table(output_file, "QUAST: total length of contigs", len(experiments), [quast_table[0]] + quast_table[7:13])
 write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[13:27])
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
+
+for label, prefix in experiments:
+	quast_png_name = prefix + ".quast/aligned_stats/NGAx_plot.pdf"
+	write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)
 
 if bandage_png_name != 'none':
 	output_file.write("\\newpage")
