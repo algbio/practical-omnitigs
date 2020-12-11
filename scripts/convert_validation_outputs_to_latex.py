@@ -187,7 +187,7 @@ output_file.write(
 	\\begin{document}
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
-		\\item[Revision:] """ + revision + """
+		\\item[Revision:] """ + str(revision) + """
 	\\end{description}
 	This file contains statistics about the following genome(s):
 	\\begin{itemize}
