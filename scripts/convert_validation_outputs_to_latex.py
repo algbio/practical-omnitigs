@@ -210,7 +210,7 @@ write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(expe
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
 
 for label, prefix in experiments:
-	quast_png_name = prefix + ".quast/aligned_stats/NGAx_plot.pdf"
+	quast_png_name = "../../" + prefix + ".quast/aligned_stats/NGAx_plot.pdf"
 	write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)
 
 if bandage_png_name != 'none':
