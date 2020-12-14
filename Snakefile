@@ -451,7 +451,7 @@ rule install_quast:
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout 3886d1fec6daf7d2ec4a4f34b093dfd778ab49a3
+    git checkout 224b3517a3f6287baef91c42780b2dc8860fb039
     """
 
 rule run_quast:
@@ -470,7 +470,7 @@ rule run_quast_wtdbg2:
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
-    shell: "{input.script} -o {output.report} -r {input.reference} {input.contigs}"
+    shell: "{input.script} --fragmented -o {output.report} -r {input.reference} {input.contigs}"
 
 #####################
 ###### Bandage ######
