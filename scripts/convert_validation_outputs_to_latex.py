@@ -209,10 +209,24 @@ write_table(output_file, "QUAST: total length of contigs", len(experiments), [qu
 write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[13:27])
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
 
+
+from os import path
 output_file.write("\\newpage")
 for label, prefix in experiments:
-	quast_png_name = "../../" + prefix + ".quast/aligned_stats/NGAx_plot.pdf"
-	write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)
+	plot_file_path = prefix + ".quast/aligned_stats/EAxmax_plot.pdf"
+	if path.isfile(plot_file_path):
+		quast_png_name = "../../" + plot_file_path
+		write_image(output_file, "QUAST EAxmax graph for " + label, quast_png_name, 1000, 1000)
+	else:
+		print("Did not find '" + plot_file_path + "'")
+
+for label, prefix in experiments:
+	plot_file_path = prefix + ".quast/aligned_stats/NGAx_plot.pdf"
+	if path.isfile(plot_file_path):
+		quast_png_name = "../../" + plot_file_path
+		write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)
+	else:
+		print("Did not find '" + plot_file_path + "'")
 
 if bandage_png_name != 'none':
 	output_file.write("\\newpage")

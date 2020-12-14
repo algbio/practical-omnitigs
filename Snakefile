@@ -443,19 +443,33 @@ rule run_contig_validator:
 ###### QUAST ######
 ###################
 
+rule install_quast:
+    output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    git clone https://github.com/sebschmi/quast
+    cd quast
+    git checkout 3886d1fec6daf7d2ec4a4f34b093dfd778ab49a3
+    """
+
 rule run_quast:
     input: reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
-        reference = "data/{dir}/{file}.fna"
+        reference = "data/{dir}/{file}.fna",
+        script = "external-software/quast/quast.py",
+        script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
-    conda: "config/conda-quast-env.yml"
-    shell: "quast -o {output.report} -r {input.reference} {input.reads}"
+    shell: "{input.script} -o {output.report} -r {input.reference} {input.reads}"
 
 rule run_quast_wtdbg2:
     input: contigs = "data/{dir}/wtdbg2.{algorithm}.raw.fa",
-        reference = "data/{dir}/reference.fa"
+        reference = "data/{dir}/reference.fa",
+        script = "external-software/quast/quast.py",
+        script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
-    shell: "quast -o {output.report} -r {input.reference} {input.contigs}"
+    shell: "{input.script} -o {output.report} -r {input.reference} {input.contigs}"
 
 #####################
 ###### Bandage ######
