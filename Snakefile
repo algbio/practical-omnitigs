@@ -460,6 +460,7 @@ rule run_quast:
         script = "external-software/quast/quast.py",
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
+    conda: "config/conda-quast-env.yml"
     shell: "{input.script} -o {output.report} -r {input.reference} {input.reads}"
 
 rule run_quast_wtdbg2:
@@ -468,6 +469,7 @@ rule run_quast_wtdbg2:
         script = "external-software/quast/quast.py",
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
+    conda: "config/conda-quast-env.yml"
     shell: "{input.script} -o {output.report} -r {input.reference} {input.contigs}"
 
 #####################
