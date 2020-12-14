@@ -468,7 +468,6 @@ rule run_quast_wtdbg2:
         script = "external-software/quast/quast.py",
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
-    conda: "config/conda-quast-env.yml"
     shell: "{input.script} -o {output.report} -r {input.reference} {input.contigs}"
 
 #####################
