@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 dependencies = [
  "num-traits",
  "opaque_typedef",
@@ -270,7 +270,7 @@ dependencies = [
 
 [[package]]
 name = "cli"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 dependencies = [
  "bio",
  "clap 3.0.0-beta.1",
@@ -309,7 +309,7 @@ dependencies = [
 
 [[package]]
 name = "compact-genome"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 dependencies = [
  "itertools",
 ]
@@ -499,7 +499,7 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 dependencies = [
  "bigraph",
  "bio",
@@ -800,7 +800,7 @@ checksum = "1ab52be62400ca80aa00285d25253d7f7c437b7375c4de678f5405d3afe82ca5"
 
 [[package]]
 name = "omnitigs"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 dependencies = [
  "bigraph",
  "bitvector",
@@ -1469,7 +1469,7 @@ dependencies = [
 
 [[package]]
 name = "traitgraph"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 dependencies = [
  "bitvector",
  "criterion",
@@ -1481,7 +1481,7 @@ dependencies = [
 
 [[package]]
 name = "traitsequence"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 
 [[package]]
 name = "unicode-segmentation"
