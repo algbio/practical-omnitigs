@@ -2,7 +2,7 @@
 name = "traitsequence"
 description = "Traits to abstract over sequences."
 categories = ["data-structures"]
-keywords = ["sequence", "trait", "abstract", "strong typedef"]
+keywords = ["sequence", "trait", "abstract", "strong-typedef"]
 version = "0.1.0-alpha.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
