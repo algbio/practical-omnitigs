@@ -16,6 +16,7 @@ Include: build-essential, git
     cd /
     git clone https://github.com/algbio/practical-omnitigs
     cd practical-omnitigs
+    mkdir -p data
     echo "Setting up practical-omnitigs conda environment..."
     conda env create -f environment.yml
     echo "Setting up snakemake conda environments..."
