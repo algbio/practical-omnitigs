@@ -2,7 +2,7 @@
 
 ![](https://github.com/algbio/practical-omnitigs/workflows/Tests%20%26%20Lints/badge.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/algbio/practical-omnitigs/badge.svg?branch=master)](https://coveralls.io/github/algbio/practical-omnitigs?branch=master)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4334939.svg)](https://doi.org/10.5281/zenodo.4334939v2)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4334939.svg)](https://doi.org/10.5281/zenodo.4335367)
 
 This is a repository to conduct experiments with omnitig-related models in the context of genome assembly.
 The algorithms are implemented in *Rust*, and around that we built a *snakemake* toolchain to conduct experiments.
@@ -106,4 +106,4 @@ See `LICENSE.md` for more information.
 
 ## How to Cite
 
-If you use this code in your research project, please cite it as "Safe and Complete Genome Assembly in Practice, DOI: 10.5281/zenodo.4334939v2"
+If you use this code in your research project, please cite it as "Safe and Complete Genome Assembly in Practice, DOI: 10.5281/zenodo.4335367"
