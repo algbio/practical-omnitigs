@@ -19,3 +19,7 @@ Use the following to get a help message with detailed usage information.
 ```commandline
 cargo run --release -- --help
 ```
+
+## How to Cite
+
+If you use this code in your research project, please cite it as "Safe and Complete Genome Assembly in Practice, DOI: 10.5281/zenodo.4334939v2"
