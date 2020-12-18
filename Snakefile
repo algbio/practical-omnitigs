@@ -391,7 +391,7 @@ rule create_combined_eaxmax_graph:
            script = "scripts/create_combined_eaxmax_plot.py",
     output: "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
     conda: "config/conda-seaborn-env.yml"
-    shell: "'{input.script}' 'data/{wildcards.dir}/' '{output}'"
+    shell: "python3 '{input.script}' 'data/{wildcards.dir}/' '{output}'"
 
 rule report_all:
     input: generate_report_targets()

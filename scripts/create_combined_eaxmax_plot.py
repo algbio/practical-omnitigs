@@ -17,8 +17,8 @@ df = pandas.DataFrame(columns = ["experiment", "x", "y"])
 
 for dir in input_directories:
     name = dir[7:-6]
-    path = path.join(input_path, dir, "aligned_stats/EAxmax_plot.csv")
-    frame = pandas.read_csv(path, names=["x", "y"])
+    file = path.join(input_path, dir, "aligned_stats/EAxmax_plot.csv")
+    frame = pandas.read_csv(file, names=["x", "y"])
     frame["experiment"] = name
     df = df.append(frame)
 
