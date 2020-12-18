@@ -10,11 +10,12 @@ import sys, subprocess
 genome_name_file_name = sys.argv[1]
 graph_statistics_file_name = sys.argv[2]
 bandage_png_name = sys.argv[3]
-output_file_name = sys.argv[4]
+combined_eaxmax_plot_name = sys.argv[4]
+output_file_name = sys.argv[5]
 
 experiments = []
 
-for i in range(5, len(sys.argv), 2):
+for i in range(6, len(sys.argv), 2):
 	if i + 1 >= len(sys.argv):
 		print("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
 		exit(1)
@@ -211,6 +212,11 @@ write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp"
 
 
 from os import path
+
+if combined_eaxmax_plot_name != 'none':
+    output_file.write("\\newpage")
+    write_image(output_file, "EAxmax", "../../" + combined_eaxmax_plot_name, 1000, 1000)
+
 output_file.write("\\newpage")
 for label, prefix in experiments:
 	plot_file_path = prefix + ".quast/aligned_stats/EAxmax_plot.pdf"
@@ -230,7 +236,7 @@ for label, prefix in experiments:
 
 if bandage_png_name != 'none':
 	output_file.write("\\newpage")
-	write_image(output_file, "Bandage genome graph", bandage_png_name, 1000, 1000)
+	write_image(output_file, "Bandage genome graph", "../../" + bandage_png_name, 1000, 1000)
 
 
 output_file.write(

@@ -354,7 +354,7 @@ rule create_single_report_tex:
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/{file}.report.tex"
     params: prefix = "data/{dir}/{file}"
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '../../{input.bcalm2_bandage}' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
+    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
     input: unitigs = "data/{dir}/wtdbg2.injected-unitigs-sfa.tex",
@@ -371,12 +371,26 @@ rule create_single_wtdbg2_report_tex:
            #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.quast",
            wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
            wtdbg2_sfa_quast = "data/{dir}/wtdbg2.wtdbg2-sfa.quast",
+           combined_eaxmax_plot = "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
     params: prefix = "data/{dir}/wtdbg2"
     shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
-              scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' 'inj uni sfa' '{params.prefix}.injected-unitigs-sfa' 'inj Y-to-V sfa' '{params.prefix}.injected-trivialomnitigs-sfa' 'wtdbg2 sfa' '{params.prefix}.wtdbg2-sfa' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+              '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' 'inj uni sfa' '{params.prefix}.injected-unitigs-sfa' 'inj Y-to-V sfa' '{params.prefix}.injected-trivialomnitigs-sfa' 'wtdbg2 sfa' '{params.prefix}.wtdbg2-sfa' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
               #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' 'inj uni' '{params.prefix}.unitigs' 'inj Y-to-V' '{params.prefix}.trivialomnitigs' 'inj omni' '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+
+rule create_combined_eaxmax_graph:
+    input: unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs-sfa.quast",
+           trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs-sfa.quast",
+           #omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.quast",
+           injected_unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs.quast",
+           injected_trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs.quast",
+           #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.quast",
+           wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
+           wtdbg2_sfa_quast = "data/{dir}/wtdbg2.wtdbg2-sfa.quast",
+           script = "scripts/create_combined_eaxmax_plot.py",
+    output: "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
+    shell: "'{input.script}' 'data/{wildcards.dir}/' '{output}'"
 
 rule report_all:
     input: generate_report_targets()
@@ -461,7 +475,7 @@ rule install_quast:
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout 13aef4f7c59980466f9f1643bad86fb693fcdfc9
+    git checkout f84dbdee4f4d861ac7150776ee6cf6faf1577948
     """
 
 rule run_quast:
