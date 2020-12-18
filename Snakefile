@@ -226,16 +226,19 @@ rule compute_unitigs:
 rule compute_injectable_omnitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.tex"
+    wildcard_constraints: algo_suffix = ".*"
     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_injectable_trivial_omnitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.tex"
+    wildcard_constraints: algo_suffix = ".*"
     shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_injectable_unitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.tex"
+    wildcard_constraints: algo_suffix = ".*"
     shell: "'{input.binary}' compute-unitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
