@@ -390,6 +390,7 @@ rule create_combined_eaxmax_graph:
            wtdbg2_sfa_quast = "data/{dir}/wtdbg2.wtdbg2-sfa.quast",
            script = "scripts/create_combined_eaxmax_plot.py",
     output: "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
+    conda: "config/conda-seaborn-env.yml"
     shell: "'{input.script}' 'data/{wildcards.dir}/' '{output}'"
 
 rule report_all:
