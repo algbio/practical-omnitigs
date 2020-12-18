@@ -23,5 +23,6 @@ for dir in input_directories:
     df = df.append(frame)
 
 import seaborn as sns
+import matplotlib.pyplot as plt
 plot = sns.lineplot(data=df, x="x", y="y", hue="experiment")
-plot.savefig(output_file)
+plt.savefig(output_file)
