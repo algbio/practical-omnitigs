@@ -474,7 +474,7 @@ rule install_contig_validator:
         """
 
 rule run_contig_validator:
-    input: cv = directory("external-software/ContigValidator"),
+    input: cv = "external-software/ContigValidator",
         reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
         reference = "data/{dir}/{file}.fna"
     output: result = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.contigvalidator",
