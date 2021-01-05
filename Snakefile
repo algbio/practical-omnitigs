@@ -114,12 +114,14 @@ rule separate_linear_and_circular:
     input: filtered = "data/{dir}/filtered.fna", verified = "data/{dir}/is_genome_verified.log", binary = "data/target/release/cli"
     output: circular = "data/{dir}/circular.fna", linear = "data/{dir}/linear.fna", log = "data/{dir}/separate_linear_and_circular.log"
     conda: "config/conda-rust-env.yml"
+    threads: 1
     shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli circularise-genome --input '{input.filtered}' 2>&1 --output '{output.circular}' | tee '{output.log}'"
 
 rule verify_genome:
     input: file = "data/{dir}/filtered.fna", binary = "data/target/release/cli"
     output: log = "data/{dir}/is_genome_verified.log"
     conda: "config/conda-rust-env.yml"
+    threads: 1
     shell: "data/target/release/cli verify-genome --input '{input.file}' 2>&1 | tee '{output.log}'"
 
 rule filter_genome:
@@ -127,6 +129,7 @@ rule filter_genome:
     output: file = "data/{dir}/filtered.fna", genome_name = "data/{dir}/name.txt", log = "data/{dir}/filtered.log"
     params: retain = lambda wildcards: "--retain '" + experiments_bcalm2[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments_bcalm2[wildcards.dir] else ""
     conda: "config/conda-rust-env.yml"
+    threads: 1
     shell: "data/target/release/cli filter --input '{input.file}' --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
 rule extract:
@@ -136,6 +139,7 @@ rule extract:
         file=".*(?<!\.gz)"
         #file=r"^.*([^\.]..|.[^g].|..[^z])$"
     conda: "config/conda-extract-env.yml"
+    threads: 1
     shell: "cd 'data/{wildcards.dir}'; gunzip -k {wildcards.file}.gz"
 
 #rule extract_dot:
@@ -148,6 +152,7 @@ rule download_experiment_file:
     output: "data/{dir}/raw.fna.gz"
     params: url = lambda wildcards, output: experiments_bcalm2[wildcards.dir]["url"]
     conda: "config/conda-download-env.yml"
+    threads: 1
     shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget -O raw.fna.gz {params.url}"
 
 ######################################
@@ -159,12 +164,14 @@ rule download_wtdbg2_input:
     params: url = lambda wildcards, output: "'" + "' '".join(experiments_wtdbg2[wildcards.dir]["urls"]) + "'",
             reference = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["reference"]
     conda: "config/conda-download-env.yml"
+    threads: 1
     shell: "mkdir -p 'data/{wildcards.dir}'; wget -O '{output.reads}' {params.url}; wget -O '{output.reference}' '{params.reference}'"
 
 rule uniquify_fasta_ids:
     input: reads = "data/{dir}/reads.fa", script = "scripts/uniquify_fasta_ids.py"
     output: reads = "data/{dir}/reads.uniqified.fa", log = "data/{dir}/uniquify.log"
     conda: "config/conda-uniquify-env.yml"
+    threads: 1
     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
 
 ##################
@@ -175,13 +182,13 @@ rule build_rust_release:
     input: "data/is_rust_tested.log"
     output: "data/target/release/cli"
     conda: "config/conda-rust-env.yml"
-    shell: "RUSTFLAGS=\"-C target-cpu=native\" cargo build --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "RUSTFLAGS=\"-C target-cpu=native\" cargo build -j {threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
     output: touch("data/is_rust_tested.log")
     conda: "config/conda-rust-env.yml"
-    shell: "cargo test --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
+    shell: "cargo test -j {threads} --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
 
 ########################
 ###### Algorithms ######
@@ -192,16 +199,19 @@ rule test_rust:
 rule compute_omnitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
+    threads: 1
     shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
+    threads: 1
     shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
+    threads: 1
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 ### wtdbg2 ###
@@ -209,16 +219,19 @@ rule compute_unitigs:
 # rule compute_omnitigs_wtdbg2:
 #     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
 #     output: file = "data/{dir}/wtdbg2.omnitigs.contigwalks", log = "data/{dir}/wtdbg2.omnitigs.log", latex = "data/{dir}/wtdbg2.omnitigs.tex"
+#     threads: 1
 #     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 # rule compute_trivial_omnitigs_wtdbg2:
 #     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
 #     output: file = "data/{dir}/wtdbg2.trivialomnitigs.contigwalks", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
+#     threads: 1
 #     shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 # rule compute_unitigs_wtdbg2:
 #     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
 #     output: file = "data/{dir}/wtdbg2.unitigs.contigwalks", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
+#     threads: 1
 #     shell: "'{input.binary}' compute-unitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 ### injected wtdbg2 ###
@@ -227,18 +240,21 @@ rule compute_injectable_omnitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.tex"
     wildcard_constraints: algo_suffix = ".*"
+    threads: 1
     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_injectable_trivial_omnitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.tex"
     wildcard_constraints: algo_suffix = ".*"
+    threads: 1
     shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_injectable_unitigs_wtdbg2:
     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.tex"
     wildcard_constraints: algo_suffix = ".*"
+    threads: 1
     shell: "'{input.binary}' compute-unitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
@@ -256,21 +272,25 @@ rule test_single_file:
     input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify",
            deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.deterministic"
     output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.is_tested")
+    threads: 1
     shell: "cmp --silent {input.verify} {input.deterministic}"
 
 rule make_bcalm_output_deterministic:
     input: file = "data/{dir}/{file}.bcalm2.fa", script = "scripts/make_bcalm_output_deterministic.py"
     output: file = "data/{dir}/{file}.bcalm2.fa.deterministic"
+    threads: 1
     shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output.file}'"
 
 rule verify_genome_graph:
     input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
     output: verification_copy = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify", log =  "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.properties", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.graphstatistics"
     conda: "config/conda-rust-env.yml"
+    threads: 1
     shell: "data/target/release/cli verify --input '{input.file}' --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
 
 rule selftest:
     conda: "config/conda-selftest-env.yml"
+    threads: 1
     shell: "echo \"snakemake $(snakemake --version)\"; conda --version; wget --version"
 
 #######################################
@@ -296,6 +316,7 @@ rule bcalm2:
 rule install_wtdbg2:
     output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
     conda: "config/conda-download-env.yml"
+    threads: 1
     shell: """
     mkdir -p external-software
     cd external-software
@@ -336,6 +357,7 @@ rule latex:
     input: "data/{dir}/{file}report.tex"
     output: "data/{dir}/{file}report.pdf"
     conda: "config/conda-latex-env.yml"
+    threads: 1
     shell: "tectonic {input}"
 
 rule create_single_report_tex:
@@ -354,6 +376,7 @@ rule create_single_report_tex:
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/{file}.report.tex"
     params: prefix = "data/{dir}/{file}"
+    threads: 1
     shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
@@ -375,6 +398,7 @@ rule create_single_wtdbg2_report_tex:
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
     params: prefix = "data/{dir}/wtdbg2"
+    threads: 1
     shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
               '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' 'inj uni sfa' '{params.prefix}.injected-unitigs-sfa' 'inj Y-to-V sfa' '{params.prefix}.injected-trivialomnitigs-sfa' 'wtdbg2 sfa' '{params.prefix}.wtdbg2-sfa' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
               #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' 'inj uni' '{params.prefix}.unitigs' 'inj Y-to-V' '{params.prefix}.trivialomnitigs' 'inj omni' '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
@@ -391,6 +415,7 @@ rule create_combined_eaxmax_graph:
            script = "scripts/create_combined_eaxmax_plot.py",
     output: "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
     conda: "config/conda-seaborn-env.yml"
+    threads: 1
     shell: "python3 '{input.script}' 'data/{wildcards.dir}/' '{output}'"
 
 rule report_all:
@@ -406,6 +431,7 @@ rule png_to_pdf:
     input: "{file}.png"
     output: "{file}.image.pdf"
     conda: "config/conda-imagemagick-env.yml"
+    threads: 1
     shell: "convert {input} {output}"
 
 #############################
@@ -415,6 +441,7 @@ rule png_to_pdf:
 rule install_sdsl:
     output: dir = directory("external-software/sdsl-lite")
     conda: "config/conda-contigvalidator-env.yml"
+    threads: 1
     shell:
         """
         cd external-software
@@ -428,6 +455,7 @@ rule install_contig_validator:
     input: sdsl = directory("external-software/sdsl-lite")
     output: dir = directory("external-software/ContigValidator")
     conda: "config/conda-contigvalidator-env.yml"
+    threads: 1
     shell: 
         """
         cd external-software
@@ -455,6 +483,7 @@ rule run_contig_validator:
         tp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_pre"),
         tp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_suf")
     conda: "config/conda-contigvalidator-env.yml"
+    threads: 1
     resources:
       contigvalidator = 1
     shell:
@@ -471,6 +500,7 @@ rule run_contig_validator:
 rule install_quast:
     output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
     conda: "config/conda-install-env.yml"
+    threads: 1
     shell: """
     mkdir -p external-software
     cd external-software
@@ -487,7 +517,7 @@ rule run_quast:
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
-    shell: "{input.script} -o {output.report} -r {input.reference} {input.reads}"
+    shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
 
 rule run_quast_wtdbg2:
     input: contigs = "data/{dir}/wtdbg2.{algorithm}.raw.fa",
@@ -496,7 +526,7 @@ rule run_quast_wtdbg2:
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
-    shell: "{input.script} --fragmented -o {output.report} -r {input.reference} {input.contigs}"
+    shell: "{input.script} -t {threads} --fragmented -o {output.report} -r {input.reference} {input.contigs}"
 
 rule test_quast_wtdbg2:
     input: contigs = "data/C.elegans/wtdbg2.wtdbg2.raw.fa",
@@ -504,7 +534,7 @@ rule test_quast_wtdbg2:
         script = "../quast/quast.py"
     params: report = "data/C.elegans/wtdbg2.wtdbg2.quast"
     conda: "config/conda-quast-env.yml"
-    shell: """{input.script} --fragmented -o {params.report} -r {input.reference} {input.contigs}"""
+    shell: """{input.script} -t {threads} --fragmented -o {params.report} -r {input.reference} {input.contigs}"""
 
 #####################
 ###### Bandage ######
@@ -513,6 +543,7 @@ rule test_quast_wtdbg2:
 rule download_bcalm2_gfa_converter:
     output: "external-software/scripts/convertToGFA.py"
     conda: "config/conda-download-env.yml"
+    threads: 1
     shell:
         """
         mkdir -p external-software/scripts
@@ -525,12 +556,14 @@ rule convert_bcalm2_output_to_gfa:
     input: fa = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
         converter = "external-software/scripts/convertToGFA.py"
     output: gfa = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.gfa"
+    threads: 1
     shell: "external-software/scripts/convertToGFA.py {input.fa} {output.gfa} {wildcards.k}"
 
 rule bandage:
     input: "{file}.gfa"
     output: "{file}.bandage.png"
     conda: "config/conda-bandage-env.yml"
+    threads: 1
     shell: "Bandage image {input} {output} --width 1000 --height 1000"
 
 ######################
@@ -628,11 +661,13 @@ rule hamcircuit_report:
            tsplog_preprocessed = "data/hamcircuit/{name}.preprocessed.tsplog",
            script = "scripts/generate_hamcircuit_report.py"
     output: report = "data/hamcircuit/{name}.report"
+    threads: 1
     shell: "'{input.script}' 'data/hamcircuit/{wildcards.name}'"
 
 rule hamcircuit_compute_tsp:
     input: tsp = "data/hamcircuit/{name}.tsp", binary = "external-software/concorde/TSP/concorde"
     output: solution = "data/hamcircuit/{name}.sol", tsplog = "data/hamcircuit/{name}.tsplog"
+    threads: 1
     resources:
       concorde = 1
     shell: """
@@ -651,6 +686,7 @@ rule hamcircuit_generate:
     input: binary = "data/target/release/cli"
     output: tsp_raw = "data/hamcircuit/{name}.n{n}-c{c}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.n{n}-c{c}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.n{n}-c{c}.preprocesslog"
     shadow: "shallow"
+    threads: 1
     shell: """
     '{input.binary}' ham-circuit --input none --random n{wildcards.n}+c{wildcards.c} --output-raw '{output.tsp_raw}.tmp' --output-preprocessed '{output.tsp_preprocessed}.tmp' 2>&1 | tee '{output.preprocesslog}.tmp'
     mv '{output.tsp_raw}.tmp' '{output.tsp_raw}'
