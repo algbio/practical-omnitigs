@@ -11,3 +11,4 @@ dependencies:
   - python=3.8.5=h4d41432_2_cpython
   - samtools=1.10=h9402c20_2
   - snakemake=5.23.0=2
+  - git>=2.20 # Chosen arbitrarily, but to new versions make this fail.

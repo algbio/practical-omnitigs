@@ -470,13 +470,14 @@ rule run_contig_validator:
 
 rule install_quast:
     output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
+    conda: "config/conda-install-env.yml"
     shell: """
     mkdir -p external-software
     cd external-software
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout 468958da4ec93e028428bb9c87b06b360016c1a0
+    git checkout d9ede1b1f5090fe757b9ad16b2bae3fdc3a1fc8d
     """
 
 rule run_quast:
