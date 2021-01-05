@@ -364,13 +364,13 @@ rule create_single_report_tex:
     input: genome_name = "data/{dir}/name.txt",
            unitigs = "data/{dir}/{file}.unitigs.tex",
            unitigs_contigvalidator = "data/{dir}/{file}.unitigs.contigvalidator",
-           unitigs_quast = directory("data/{dir}/{file}.unitigs.quast"),
+           unitigs_quast = "data/{dir}/{file}.unitigs.quast",
            omnitigs = "data/{dir}/{file}.omnitigs.tex",
            omnitigs_contigvalidator = "data/{dir}/{file}.omnitigs.contigvalidator",
-           omnitigs_quast = directory("data/{dir}/{file}.omnitigs.quast"),
+           omnitigs_quast = "data/{dir}/{file}.omnitigs.quast",
            trivialomnitigs = "data/{dir}/{file}.trivialomnitigs.tex",
            trivialomnitigs_contigvalidator = "data/{dir}/{file}.trivialomnitigs.contigvalidator",
-           trivialomnitigs_quast = directory("data/{dir}/{file}.trivialomnitigs.quast"),
+           trivialomnitigs_quast = "data/{dir}/{file}.trivialomnitigs.quast",
            graphstatistics = "data/{dir}/{file}.bcalm2.graphstatistics",
            bcalm2_bandage = "data/{dir}/{file}.bcalm2.bandage.png",
            script = "scripts/convert_validation_outputs_to_latex.py",
@@ -439,7 +439,7 @@ rule png_to_pdf:
 #############################
 
 rule install_sdsl:
-    output: dir = directory("external-software/sdsl-lite")
+    output: dir = "external-software/sdsl-lite"
     conda: "config/conda-contigvalidator-env.yml"
     threads: 1
     shell:
@@ -452,7 +452,7 @@ rule install_sdsl:
         """
 
 rule install_contig_validator:
-    input: sdsl = directory("external-software/sdsl-lite")
+    input: sdsl = "external-software/sdsl-lite"
     output: dir = directory("external-software/ContigValidator")
     conda: "config/conda-contigvalidator-env.yml"
     threads: 1
