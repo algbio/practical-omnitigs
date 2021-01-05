@@ -182,12 +182,14 @@ rule build_rust_release:
     input: "data/is_rust_tested.log"
     output: "data/target/release/cli"
     conda: "config/conda-rust-env.yml"
+    threads: workflow.cores
     shell: "RUSTFLAGS=\"-C target-cpu=native\" cargo build -j {threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
     output: touch("data/is_rust_tested.log")
     conda: "config/conda-rust-env.yml"
+    threads: workflow.cores
     shell: "cargo test -j {threads} --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
 
 ########################
@@ -302,6 +304,7 @@ rule bcalm2:
     output: unitigs = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.bcalm2.fa",
     #params: tmp = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.unitigs.bcalm2-tmp/"
     conda: "config/conda-bcalm2-env.yml"
+    threads: workflow.cores
     shell: 
         """
         bcalm -nb-cores {threads} -in '{input.genome}' -out '{output.unitigs}' -kmer-size {wildcards.k} -abundance-min {wildcards.abundance_min}
@@ -330,11 +333,13 @@ rule install_wtdbg2:
 rule wtdbg2_complete:
     input: reads = "data/{dir}/reads.uniqified.fa", binary = "external-software/wtdbg2/wtdbg2"
     output: original_nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2.clps", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2.log"
+    threads: workflow.cores
     shell: "{input.binary} -x rs -g 100m -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_complete_without_fragment_assembly:
     input: reads = "data/{dir}/reads.uniqified.fa", binary = "external-software/wtdbg2/wtdbg2"
     output: original_nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2-sfa.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2-sfa.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2-sfa.clps", kbm = "data/{dir}/wtdbg2.wtdbg2-sfa.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2-sfa.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2-sfa.log"
+    threads: workflow.cores
     shell: "{input.binary} -x rs -g 100m --skip-fragment-assembly -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
@@ -342,11 +347,13 @@ rule wtdbg2_inject_contigs:
     output: ctg_lay = "data/{dir}/wtdbg2.injected-{algorithm}.ctg.lay.gz", log = "data/{dir}/wtdbg2.injected-{algorithm}.log"
     params: genome_length = lambda wildcards, output: "-g 100m", #if wildcards.algorithm == "unitigs" else ""
             skip_fragment_assembly = lambda wildcards, output: "--skip-fragment-assembly" if "-sfa" in wildcards.algorithm else ""
+    threads: workflow.cores
     shell: "{input.binary} -x rs {params.genome_length} {params.skip_fragment_assembly} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
     input: reads = "data/{dir}/reads.uniqified.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
+    threads: workflow.cores
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
 
 ###############################
@@ -517,6 +524,7 @@ rule run_quast:
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
+    threads: workflow.cores / 8
     shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
 
 rule run_quast_wtdbg2:
@@ -526,6 +534,7 @@ rule run_quast_wtdbg2:
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
+    threads: workflow.cores / 8
     shell: "{input.script} -t {threads} --fragmented -o {output.report} -r {input.reference} {input.contigs}"
 
 rule test_quast_wtdbg2:
@@ -534,6 +543,7 @@ rule test_quast_wtdbg2:
         script = "../quast/quast.py"
     params: report = "data/C.elegans/wtdbg2.wtdbg2.quast"
     conda: "config/conda-quast-env.yml"
+    threads: workflow.cores / 8
     shell: """{input.script} -t {threads} --fragmented -o {params.report} -r {input.reference} {input.contigs}"""
 
 #####################
@@ -573,6 +583,7 @@ rule bandage:
 rule install_concorde:
     output: "external-software/concorde/TSP/concorde"
     conda: "config/conda-download-env.yml"
+    threads: 1
     shell: """
     mkdir -p external-software
     cd external-software
@@ -651,6 +662,7 @@ rule hundred_hamcircuits_nall_call:
 rule hamcircuit_overall_report:
     input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
     output: "data/hamcircuit/{name}.0-{max}.n{n}-c{c}.overallreport"
+    threads: 1
     shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}' '{wildcards.n}' '{wildcards.c}'"
 
 rule hamcircuit_report:
@@ -667,7 +679,7 @@ rule hamcircuit_report:
 rule hamcircuit_compute_tsp:
     input: tsp = "data/hamcircuit/{name}.tsp", binary = "external-software/concorde/TSP/concorde"
     output: solution = "data/hamcircuit/{name}.sol", tsplog = "data/hamcircuit/{name}.tsplog"
-    threads: 1
+    threads: workflow.cores
     resources:
       concorde = 1
     shell: """
