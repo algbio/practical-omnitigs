@@ -74,13 +74,14 @@ algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
 ### Process QUAST files ###
 ##########################
 
-def read_quast_file(prefix):
+def read_quast_file(filename):
 	try:
-		quast_file = open(prefix + ".quast/report.tex", 'r')
+		quast_file = open(filename, 'r')
 		quast_lines = quast_file.readlines()
 		quast_lines = [x.strip() for x in quast_lines]
 		quast_lines = [x.replace("\\hline", "") for x in quast_lines]
 		quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
+		quast_lines = [line.replace("misassemblies caused by fragmented reference", "mis. caused by frag. ref.") for line in quast_lines]
 		return quast_lines
 	except:
 		print("Did not find quast file for '" + prefix + "'")
@@ -90,10 +91,19 @@ headline = "Parameter"
 quast_table = []
 for (label, prefix) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix)
+	table = read_quast_file(prefix + ".quast/report.tex")
 	quast_table = append_latex_table_second_column(quast_table, table)
 
 quast_table = [headline + "\\\\ \\hline"] + quast_table
+
+headline = "Parameter"
+quast_misassemblies_table = []
+for (label, prefix) in experiments:
+	headline += " & " + label
+	table = read_quast_file(prefix + ".quast/contigs_reports/misassemblies_report.tex")
+	quast_misassemblies_table = append_latex_table_second_column(quast_misassemblies_table, table)
+
+quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_table
 
 
 ####################################
@@ -209,6 +219,7 @@ write_table(output_file, "QUAST: \\# of contigs", len(experiments), quast_table[
 write_table(output_file, "QUAST: total length of contigs", len(experiments), [quast_table[0]] + quast_table[7:13])
 write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[13:27])
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
+write_table(output_file, "QUAST: misassembly statistics for contigs $\\geq$ 500bp", len(experiments), quast_misassemblies_table)
 
 
 from os import path
