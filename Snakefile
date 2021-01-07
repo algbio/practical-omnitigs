@@ -384,7 +384,7 @@ rule create_single_report_tex:
     output: "data/{dir}/{file}.report.tex"
     params: prefix = "data/{dir}/{file}"
     threads: 1
-    shell: "scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
+    shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
     input: unitigs = "data/{dir}/wtdbg2.injected-unitigs-sfa.tex",
@@ -407,7 +407,7 @@ rule create_single_wtdbg2_report_tex:
     params: prefix = "data/{dir}/wtdbg2"
     threads: 1
     shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
-              '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' 'inj uni sfa' '{params.prefix}.injected-unitigs-sfa' 'inj Y-to-V sfa' '{params.prefix}.injected-trivialomnitigs-sfa' 'wtdbg2 sfa' '{params.prefix}.wtdbg2-sfa' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+              python3 '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' 'inj uni sfa' '{params.prefix}.injected-unitigs-sfa' 'inj Y-to-V sfa' '{params.prefix}.injected-trivialomnitigs-sfa' 'wtdbg2 sfa' '{params.prefix}.wtdbg2-sfa' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
               #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' 'inj uni' '{params.prefix}.unitigs' 'inj Y-to-V' '{params.prefix}.trivialomnitigs' 'inj omni' '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
 
 rule create_combined_eaxmax_graph:
