@@ -73,7 +73,7 @@ impl<Graph: GraphBase> Omnitig<Graph> {
     }
 
     /// Returns an iterator over the edges in the heart of this omnitig.
-    pub fn iter_heart<'a>(&'a self) -> impl 'a + Iterator<Item = &'a Graph::EdgeIndex> {
+    pub fn iter_heart(&self) -> impl Iterator<Item = &Graph::EdgeIndex> {
         self.omnitig
             .iter()
             .take(self.last_heart_edge + 1)
@@ -271,7 +271,7 @@ impl<Graph: GraphBase> Omnitigs<Graph> {
     }
 
     /// Returns an iterator over the omnitigs in this struct.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a Omnitig<Graph>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Omnitig<Graph>> {
         self.omnitigs.iter()
     }
 

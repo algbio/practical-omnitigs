@@ -264,7 +264,7 @@ impl<Graph: StaticGraph> EdgeUnitigs<Graph> {
 
     /// Sorts the unitigs by length descending.
     pub fn sort_by_len_descending(&mut self) {
-        self.unitigs.sort_by(|a, b| b.len().cmp(&a.len()));
+        self.unitigs.sort_by_key(|a| std::cmp::Reverse(a.len()));
     }
 }
 
