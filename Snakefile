@@ -537,7 +537,7 @@ rule run_quast_wtdbg2:
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
     threads: 1
-    shell: "{input.script} -t {threads} --fragmented -o {output.report} -r {input.reference} {input.contigs}"
+    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
 rule test_quast_wtdbg2:
     input: contigs = "data/C.elegans/wtdbg2.wtdbg2.raw.fa",
@@ -546,7 +546,7 @@ rule test_quast_wtdbg2:
     params: report = "data/C.elegans/wtdbg2.wtdbg2.quast"
     conda: "config/conda-quast-env.yml"
     threads: 1
-    shell: """{input.script} -t {threads} --fragmented -o {params.report} -r {input.reference} {input.contigs}"""
+    shell: """{input.script} -t {threads} --fragmented --large -o {params.report} -r {input.reference} {input.contigs}"""
 
 #####################
 ###### Bandage ######
