@@ -514,7 +514,7 @@ rule install_quast:
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout ef6e48274c40b2603dac63bc31450e70cfc4c690
+    git checkout 40875179cb7b1907847eb7430915a7f94cbeb100
     """
 
 rule run_quast:
@@ -524,7 +524,7 @@ rule run_quast:
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
-    threads: workflow.cores / 8
+    threads: 1
     shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
 
 rule run_quast_wtdbg2:
@@ -534,7 +534,7 @@ rule run_quast_wtdbg2:
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
-    threads: workflow.cores / 8
+    threads: 1
     shell: "{input.script} -t {threads} --fragmented -o {output.report} -r {input.reference} {input.contigs}"
 
 rule test_quast_wtdbg2:
@@ -543,7 +543,7 @@ rule test_quast_wtdbg2:
         script = "../quast/quast.py"
     params: report = "data/C.elegans/wtdbg2.wtdbg2.quast"
     conda: "config/conda-quast-env.yml"
-    threads: workflow.cores / 8
+    threads: 1
     shell: """{input.script} -t {threads} --fragmented -o {params.report} -r {input.reference} {input.contigs}"""
 
 #####################
