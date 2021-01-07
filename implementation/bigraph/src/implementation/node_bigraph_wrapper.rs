@@ -284,6 +284,7 @@ mod tests {
     };
     use crate::traitgraph::implementation::petgraph_impl;
     use crate::traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
+    use traitgraph::index::OptionalGraphIndex;
 
     #[test]
     fn test_bigraph_creation() {
@@ -661,7 +662,7 @@ mod tests {
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let mut bigraph = NodeBigraphWrapper::new(graph);
         bigraph.topology.add_node(NodeData(4));
-        bigraph.binode_map.push(None.into());
+        bigraph.binode_map.push(OptionalGraphIndex::new_none());
         assert!(!bigraph.verify_node_pairing_without_self_mirrors());
         assert!(!bigraph.verify_node_pairing());
     }
