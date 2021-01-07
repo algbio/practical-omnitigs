@@ -2,3 +2,4 @@ channels:
   - conda-forge
 dependencies:
   - git==2.30.0
+  - python==3.8.6
