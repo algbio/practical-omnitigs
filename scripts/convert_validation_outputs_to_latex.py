@@ -185,7 +185,8 @@ def write_image(output_file, caption, name, natwidth, natheight):
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
 	output_file.write("\\centering\n")
-	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + name + "}\n")
+	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + str(name) + "}\n")
+	output_file.write("\\caption{" + str(caption) + "}")
 	output_file.write("\\end{figure*}\n")
 
 revision = subprocess.check_output(["git", "describe"]).strip()
@@ -217,9 +218,9 @@ write_table(output_file, "ContigValidator", len(experiments), contig_validator_t
 
 write_table(output_file, "QUAST: \\# of contigs", len(experiments), quast_table[0:7])
 write_table(output_file, "QUAST: total length of contigs", len(experiments), [quast_table[0]] + quast_table[7:13])
-write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[13:27])
-write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
-write_table(output_file, "QUAST: misassembly statistics for contigs $\\geq$ 500bp", len(experiments), quast_misassemblies_table)
+write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[13:27])
+write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[27:])
+write_table(output_file, "QUAST: misassembly statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), quast_misassemblies_table)
 
 
 from os import path
