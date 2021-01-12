@@ -29,11 +29,27 @@ experiments:
       urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
       reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x rs -g 100m"
 
     "A.thaliana":
       urls: ["https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam", "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam"]
       reference: "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/Assembly/Arabidopsis_assembly.fasta"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x sq -g 125m"
+
+    "D.melanogaster_A4":
+      urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-7/SRR5439404/SRR5439404.1"]
+      format: "sra"
+      reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/300/595/GCA_002300595.1_Dmel_A4_1.0/GCA_002300595.1_Dmel_A4_1.0_genomic.fna.gz"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x rs -g 144m"
+
+    "D.melanogaster_ISO1":
+      urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-13/SRR6702603/SRR6702603.2"]
+      format: "sra"
+      reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x ont -g 144m"
 
 tests:
   "GCF_000008865.2_ASM886v2":

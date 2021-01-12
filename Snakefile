@@ -164,8 +164,11 @@ def url_file_format(url):
 
 def wtdbg2_url_file_format(experiment):
     format = url_file_format(experiments_wtdbg2[experiment]["urls"][0])
+
     if format == "fasta":
         return "fa"
+    elif experiments_wtdbg2[experiment].get("format", None) == "sra":
+        return "sra"
     else:
         return format
 
@@ -176,7 +179,7 @@ rule download_wtdbg2_source_reads:
     params: url = lambda wildcards: experiments_wtdbg2[wildcards.dir]["urls"][int(wildcards.index)],
             url_format = lambda wildcards: wtdbg2_url_file_format(wildcards.dir)
     wildcard_constraints:
-        format = "(fa|bam)",
+        format = "(fa|bam|sra)",
         index = "\d+"
     conda: "config/conda-download-env.yml"
     threads: 1
@@ -197,11 +200,13 @@ rule convert_wtdbg2_source_reads:
     params: file_format = lambda wildcards: wtdbg2_url_file_format(wildcards.dir)
     wildcard_constraints:
         index = "\d+"
-    conda: "config/conda-samtools-env.yml"
+    conda: "config/conda-convert-reads-env.yml"
     threads: 1
     shell: """
-        if [ '{params.file_format}' != 'fa' ]; then
+        if [ '{params.file_format}' == 'bam' ]; then
             samtools fasta '{input.file}'
+        elif [ '{params.file_format}' == 'sra' ]; then
+            fastq-dump --fasta '{input.file}'
         else
             cp '{input.file}' '{output.file}'
         fi
@@ -214,8 +219,8 @@ rule combine_wtdbg2_reads:
     threads: 1
     shell: "cat {params.input_list} > '{output.reads}'"
 
-rule download_wtdbg2_reference:
-    output: reference = "data/{dir}/reference.fa.gz"
+rule download_wtdbg2_reference_raw:
+    output: reference = "data/downloads/{dir}/reference.fa"
     params: url = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["reference"]
     conda: "config/conda-download-env.yml"
     threads: 1
@@ -224,8 +229,26 @@ rule download_wtdbg2_reference:
         wget -O '{output.reference}' '{params.url}'
         """
 
-rule test_download_a_thaliana:
-    input: "data/A.thaliana/reads.uniquified.fa"
+rule download_wtdbg2_reference_gzip:
+    output: reference = "data/downloads/{dir}/packed-reference.fa.gz"
+    params: url = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["reference"]
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p 'data/{wildcards.dir}'
+        wget -O '{output.reference}' '{params.url}'
+        """
+
+rule download_wtdbg2_reference:
+    input: file = lambda wildcards: "data/downloads/{dir}/packed-reference.fa" if experiments_wtdbg2[wildcards.dir]["reference"].split(".")[-1] == "gz" else "data/downloads/{dir}/reference.fa"
+    output: reference = "data/{dir}/reference.fa"
+    wildcard_constraints:
+        format = "(|\.fa)"
+    threads: 1
+    shell: """
+        mkdir -p 'data/{wildcards.dir}'
+        cp '{input.file}' '{output.reference}'
+        """
 
 rule uniquify_fasta_ids:
     input: reads = "data/{dir}/reads.fa", script = "scripts/uniquify_fasta_ids.py"
@@ -393,22 +416,24 @@ rule install_wtdbg2:
 rule wtdbg2_complete:
     input: reads = "data/{dir}/reads.uniquified.fa", binary = "external-software/wtdbg2/wtdbg2"
     output: original_nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2.clps", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2.log"
+    params: wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
     threads: workflow.cores
-    shell: "{input.binary} -x rs -g 100m -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_complete_without_fragment_assembly:
     input: reads = "data/{dir}/reads.uniquified.fa", binary = "external-software/wtdbg2/wtdbg2"
     output: original_nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2-sfa.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2-sfa.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2-sfa.clps", kbm = "data/{dir}/wtdbg2.wtdbg2-sfa.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2-sfa.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2-sfa.log"
+    params: wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
     threads: workflow.cores
     shell: "{input.binary} -x rs -g 100m --skip-fragment-assembly -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
     input: reads = "data/{dir}/reads.uniquified.fa", contigs = "data/{dir}/wtdbg2.injected-{algorithm}.contigwalks", clips = "data/{dir}/wtdbg2.wtdbg2.clps", nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", binary = "external-software/wtdbg2/wtdbg2"
     output: ctg_lay = "data/{dir}/wtdbg2.injected-{algorithm}.ctg.lay.gz", log = "data/{dir}/wtdbg2.injected-{algorithm}.log"
-    params: genome_length = lambda wildcards, output: "-g 100m", #if wildcards.algorithm == "unitigs" else ""
-            skip_fragment_assembly = lambda wildcards, output: "--skip-fragment-assembly" if "-sfa" in wildcards.algorithm else ""
+    params: skip_fragment_assembly = lambda wildcards: "--skip-fragment-assembly" if "-sfa" in wildcards.algorithm else "",
+            wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
     threads: workflow.cores
-    shell: "{input.binary} -x rs {params.genome_length} {params.skip_fragment_assembly} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {wtdbg2_args} {params.skip_fragment_assembly} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
     input: reads = "data/{dir}/reads.uniquified.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
@@ -773,6 +798,10 @@ rule hamcircuit_generate:
 ###################################
 
 rule download_wtdbg2:
-    input: files = lambda wildcards: [file for dir in experiments_wtdbg2.keys() for file in expand("data/downloads/{dir}/reads-{index}.{file_type}", dir=[dir], index=range(len(experiments_wtdbg2[dir]["urls"])), file_type=wtdbg2_url_file_format(dir))],
+    input: reads = [file for dir in experiments_wtdbg2.keys() for file in expand("data/downloads/{dir}/reads-{index}.{file_type}", dir=[dir], index=range(len(experiments_wtdbg2[dir]["urls"])), file_type=wtdbg2_url_file_format(dir))],
+           references = expand("data/{dir}/reference.fa", dir=experiments_wtdbg2.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
+
+#rule prepare_wtdbg2:
+
