@@ -51,6 +51,13 @@ experiments:
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
       wtdbg2_args: "-x ont -g 144m"
 
+    "Minghui63":
+      urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1018837/SRR10188372.1"]
+      format: "sra"
+      reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/623/365/GCA_001623365.2_MH63RS2/GCA_001623365.2_MH63RS2_genomic.fna.gz"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x ccs -g 387m"
+
 tests:
   "GCF_000008865.2_ASM886v2":
     k: [51]
