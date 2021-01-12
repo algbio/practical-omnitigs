@@ -163,7 +163,11 @@ def url_file_format(url):
     return url.split('.')[-1]
 
 def wtdbg2_url_file_format(experiment):
-    return url_file_format(experiments_wtdbg2[experiment]["urls"][0])
+    format = url_file_format(experiments_wtdbg2[experiment]["urls"][0])
+    if format == "fasta":
+        return "fa"
+    else:
+        return format
 
 ruleorder: download_wtdbg2_source_reads > convert_wtdbg2_source_reads > extract
 
@@ -763,3 +767,12 @@ rule hamcircuit_generate:
     mv '{output.tsp_preprocessed}.tmp' '{output.tsp_preprocessed}'
     mv '{output.preprocesslog}.tmp' '{output.preprocesslog}'
     """
+
+###################################
+###### Download requirements ######
+###################################
+
+rule download_wtdbg2:
+    input: files = lambda wildcards: [file for dir in experiments_wtdbg2.keys() for file in expand("data/downloads/{dir}/reads-{index}.{file_type}", dir=[dir], index=range(len(experiments_wtdbg2[dir]["urls"])), file_type=wtdbg2_url_file_format(dir))],
+           quast = "external-software/quast/quast.py",
+           wtdbg2 = "external-software/wtdbg2/wtdbg2",
