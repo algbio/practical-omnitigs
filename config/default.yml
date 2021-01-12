@@ -30,6 +30,11 @@ experiments:
       reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
+    "A.thaliana":
+      urls: ["https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam", "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam"]
+      reference: "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/Assembly/Arabidopsis_assembly.fasta"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+
 tests:
   "GCF_000008865.2_ASM886v2":
     k: [51]

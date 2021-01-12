@@ -159,17 +159,73 @@ rule download_experiment_file:
 ###### wtdbg2 Input Preparation ######
 ######################################
 
-rule download_wtdbg2_input:
-    output: reads = "data/{dir}/reads.fa", reference = "data/{dir}/reference.fa.gz"
-    params: url = lambda wildcards, output: "'" + "' '".join(experiments_wtdbg2[wildcards.dir]["urls"]) + "'",
-            reference = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["reference"]
+def url_file_format(url):
+    return url.split('.')[-1]
+
+def wtdbg2_url_file_format(experiment):
+    return url_file_format(experiments_wtdbg2[experiment]["urls"][0])
+
+ruleorder: download_wtdbg2_source_reads > convert_wtdbg2_source_reads > extract
+
+rule download_wtdbg2_source_reads:
+    output: file = "data/downloads/{dir}/reads-{index}.{format}"
+    params: url = lambda wildcards: experiments_wtdbg2[wildcards.dir]["urls"][int(wildcards.index)],
+            url_format = lambda wildcards: wtdbg2_url_file_format(wildcards.dir)
+    wildcard_constraints:
+        format = "(fa|bam)",
+        index = "\d+"
     conda: "config/conda-download-env.yml"
     threads: 1
-    shell: "mkdir -p 'data/{wildcards.dir}'; wget -O '{output.reads}' {params.url}; wget -O '{output.reference}' '{params.reference}'"
+    shell: """
+        mkdir -p 'data/{wildcards.dir}/source'
+
+        if [ '{params.url_format}' != '{wildcards.format}' ]; then
+            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
+            exit 1
+        fi
+
+        wget -O '{output.file}' '{params.url}'
+        """
+
+rule convert_wtdbg2_source_reads:
+    input: file = lambda wildcards: "data/downloads/{dir}/reads-{index}." + wtdbg2_url_file_format(wildcards.dir)
+    output: file = "data/downloads/{dir}/reads-{index}.converted.fa"
+    params: file_format = lambda wildcards: wtdbg2_url_file_format(wildcards.dir)
+    wildcard_constraints:
+        index = "\d+"
+    conda: "config/conda-samtools-env.yml"
+    threads: 1
+    shell: """
+        if [ '{params.file_format}' != 'fa' ]; then
+            samtools fasta '{input.file}'
+        else
+            cp '{input.file}' '{output.file}'
+        fi
+        """
+
+rule combine_wtdbg2_reads:
+    input: files = lambda wildcards: expand("data/downloads/{{dir}}/reads-{index}.converted.fa", index=range(len(experiments_wtdbg2[wildcards.dir]["urls"])))
+    output: reads = "data/{dir}/reads.fa"
+    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+    threads: 1
+    shell: "cat {params.input_list} > '{output.reads}'"
+
+rule download_wtdbg2_reference:
+    output: reference = "data/{dir}/reference.fa.gz"
+    params: url = lambda wildcards, output: experiments_wtdbg2[wildcards.dir]["reference"]
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p 'data/{wildcards.dir}'
+        wget -O '{output.reference}' '{params.url}'
+        """
+
+rule test_download_a_thaliana:
+    input: "data/A.thaliana/reads.uniquified.fa"
 
 rule uniquify_fasta_ids:
     input: reads = "data/{dir}/reads.fa", script = "scripts/uniquify_fasta_ids.py"
-    output: reads = "data/{dir}/reads.uniqified.fa", log = "data/{dir}/uniquify.log"
+    output: reads = "data/{dir}/reads.uniquified.fa", log = "data/{dir}/uniquify.log"
     conda: "config/conda-uniquify-env.yml"
     threads: 1
     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
@@ -219,19 +275,19 @@ rule compute_unitigs:
 ### wtdbg2 ###
 
 # rule compute_omnitigs_wtdbg2:
-#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
+#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniquified.fa", binary = "data/target/release/cli"
 #     output: file = "data/{dir}/wtdbg2.omnitigs.contigwalks", log = "data/{dir}/wtdbg2.omnitigs.log", latex = "data/{dir}/wtdbg2.omnitigs.tex"
 #     threads: 1
 #     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 # rule compute_trivial_omnitigs_wtdbg2:
-#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
+#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniquified.fa", binary = "data/target/release/cli"
 #     output: file = "data/{dir}/wtdbg2.trivialomnitigs.contigwalks", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
 #     threads: 1
 #     shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 # rule compute_unitigs_wtdbg2:
-#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
+#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.uniquified.fa", binary = "data/target/release/cli"
 #     output: file = "data/{dir}/wtdbg2.unitigs.contigwalks", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
 #     threads: 1
 #     shell: "'{input.binary}' compute-unitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
@@ -239,21 +295,21 @@ rule compute_unitigs:
 ### injected wtdbg2 ###
 
 rule compute_injectable_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniquified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.tex"
     wildcard_constraints: algo_suffix = ".*"
     threads: 1
     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_injectable_trivial_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.uniquified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.tex"
     wildcard_constraints: algo_suffix = ".*"
     threads: 1
     shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_injectable_unitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.uniqified.fa", binary = "data/target/release/cli"
+    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.uniquified.fa", binary = "data/target/release/cli"
     output: file = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.tex"
     wildcard_constraints: algo_suffix = ".*"
     threads: 1
@@ -331,19 +387,19 @@ rule install_wtdbg2:
     """
 
 rule wtdbg2_complete:
-    input: reads = "data/{dir}/reads.uniqified.fa", binary = "external-software/wtdbg2/wtdbg2"
+    input: reads = "data/{dir}/reads.uniquified.fa", binary = "external-software/wtdbg2/wtdbg2"
     output: original_nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2.clps", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2.log"
     threads: workflow.cores
     shell: "{input.binary} -x rs -g 100m -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_complete_without_fragment_assembly:
-    input: reads = "data/{dir}/reads.uniqified.fa", binary = "external-software/wtdbg2/wtdbg2"
+    input: reads = "data/{dir}/reads.uniquified.fa", binary = "external-software/wtdbg2/wtdbg2"
     output: original_nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2-sfa.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2-sfa.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2-sfa.clps", kbm = "data/{dir}/wtdbg2.wtdbg2-sfa.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2-sfa.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2-sfa.log"
     threads: workflow.cores
     shell: "{input.binary} -x rs -g 100m --skip-fragment-assembly -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
-    input: reads = "data/{dir}/reads.uniqified.fa", contigs = "data/{dir}/wtdbg2.injected-{algorithm}.contigwalks", clips = "data/{dir}/wtdbg2.wtdbg2.clps", nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", binary = "external-software/wtdbg2/wtdbg2"
+    input: reads = "data/{dir}/reads.uniquified.fa", contigs = "data/{dir}/wtdbg2.injected-{algorithm}.contigwalks", clips = "data/{dir}/wtdbg2.wtdbg2.clps", nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", binary = "external-software/wtdbg2/wtdbg2"
     output: ctg_lay = "data/{dir}/wtdbg2.injected-{algorithm}.ctg.lay.gz", log = "data/{dir}/wtdbg2.injected-{algorithm}.log"
     params: genome_length = lambda wildcards, output: "-g 100m", #if wildcards.algorithm == "unitigs" else ""
             skip_fragment_assembly = lambda wildcards, output: "--skip-fragment-assembly" if "-sfa" in wildcards.algorithm else ""
@@ -351,7 +407,7 @@ rule wtdbg2_inject_contigs:
     shell: "{input.binary} -x rs {params.genome_length} {params.skip_fragment_assembly} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
-    input: reads = "data/{dir}/reads.uniqified.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
+    input: reads = "data/{dir}/reads.uniquified.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
     threads: workflow.cores
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
