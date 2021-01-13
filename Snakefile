@@ -425,7 +425,7 @@ rule wtdbg2_complete_without_fragment_assembly:
     output: original_nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2-sfa.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2-sfa.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2-sfa.clps", kbm = "data/{dir}/wtdbg2.wtdbg2-sfa.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2-sfa.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2-sfa.log"
     params: wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
     threads: workflow.cores
-    shell: "{input.binary} -x rs -g 100m --skip-fragment-assembly -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.wtdbg2_args} --skip-fragment-assembly -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
     input: reads = "data/{dir}/reads.uniquified.fa", contigs = "data/{dir}/wtdbg2.injected-{algorithm}.contigwalks", clips = "data/{dir}/wtdbg2.wtdbg2.clps", nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", binary = "external-software/wtdbg2/wtdbg2"
@@ -433,7 +433,7 @@ rule wtdbg2_inject_contigs:
     params: skip_fragment_assembly = lambda wildcards: "--skip-fragment-assembly" if "-sfa" in wildcards.algorithm else "",
             wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
     threads: workflow.cores
-    shell: "{input.binary} {wtdbg2_args} {params.skip_fragment_assembly} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.wtdbg2_args} {params.skip_fragment_assembly} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
     input: reads = "data/{dir}/reads.uniquified.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
