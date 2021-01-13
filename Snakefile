@@ -206,7 +206,7 @@ rule convert_wtdbg2_source_reads:
         if [ '{params.file_format}' == 'bam' ]; then
             samtools fasta '{input.file}' > '{output.file}'
         elif [ '{params.file_format}' == 'sra' ]; then
-            fastq-dump --stdout --fasta '{input.file}' > '{output.file}'
+            fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
         else
             cp '{input.file}' '{output.file}'
         fi
