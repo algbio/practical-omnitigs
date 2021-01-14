@@ -1,3 +1,6 @@
+use std::fmt::Debug;
+use std::fmt::Write;
+
 /// A type behaving like a sequence over the type `Item` with a subsequence type `Subsequence`.
 pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
     /// The iterator type of the sequence.
@@ -99,6 +102,36 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
         Item: Eq,
     {
         suffix.forward_merge_iter_assume_mergeable(self)
+    }
+
+    /// Converts the sequence to a string using the debug formatting of the items.
+    ///
+    /// ```rust
+    /// use traitsequence::interface::Sequence;
+    ///
+    /// let sequence = [0, 2, 1];
+    /// assert_eq!(sequence.to_debug_string(), "[0, 2, 1]".to_string());
+    ///
+    /// let sequence = ["a", "c", "b"];
+    /// assert_eq!(sequence.to_debug_string(), "[\"a\", \"c\", \"b\"]".to_string());
+    /// ```
+    fn to_debug_string(&'a self) -> String
+    where
+        Item: Debug,
+    {
+        let mut result = String::new();
+        write!(result, "[").unwrap();
+        let mut once = true;
+        for item in self.iter() {
+            if once {
+                once = false;
+            } else {
+                write!(result, ", ").unwrap();
+            }
+            write!(result, "{:?}", item).unwrap();
+        }
+        write!(result, "]").unwrap();
+        result
     }
 }
 

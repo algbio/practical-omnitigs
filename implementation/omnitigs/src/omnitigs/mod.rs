@@ -14,7 +14,7 @@ use bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
 use bigraph::interface::BidirectedData;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
-use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
+use traitgraph::walks::{EdgeWalk, VecEdgeWalk, VecNodeWalk};
 use traitsequence::interface::Sequence;
 
 /// An omnitig with information about its heart.
@@ -199,6 +199,7 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
 impl<Graph: StaticEdgeCentricBigraph> Omnitigs<Graph>
 where
     Graph::EdgeData: BidirectedData + Eq,
+    Graph::NodeData: std::fmt::Debug,
 {
     /// Retains only one direction of each pair of reverse-complemental omnitigs.
     ///
@@ -233,13 +234,22 @@ where
                     .iter()
                     .zip(reverse_complement_candidate.iter().rev())
                 {
-                    // I am not sure if the following assumption is correct.
+                    let complements_complement_edge = graph
+                        .mirror_edge_edge_centric(*reverse_complement_edge)
+                        .expect("Edge has no reverse complement.");
+                    // If our algorithms are sound, then this assumption should be correct.
                     assert_eq!(
                         *edge,
-                        graph
-                            .mirror_edge_edge_centric(*reverse_complement_edge)
-                            .expect("Edge has no reverse complement."),
-                        "Found reverse complement candidate, but it is not a reverse complement."
+                        complements_complement_edge,
+                        "Found reverse complement candidate, but it is not a reverse complement:\nomnitig: {:?}\nnode omnitig: {:?}\nomnitig indegree:  {}\nomnitig outdegree: {}\nrevcomp: {:?}\nnode revcomp: {:?}\nrevcomp indegree:  {}\nrevcomp outdegree: {}",
+                        omnitig,
+                        omnitig.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().iter().map(|&n| graph.node_data(n)).collect::<Vec<_>>(),
+                        graph.in_degree(*omnitig.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().first().unwrap()),
+                        graph.out_degree(*omnitig.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().last().unwrap()),
+                        reverse_complement_candidate,
+                        reverse_complement_candidate.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().iter().map(|&n| graph.node_data(n)).collect::<Vec<_>>(),
+                        graph.in_degree(*reverse_complement_candidate.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().first().unwrap()),
+                        graph.out_degree(*reverse_complement_candidate.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().last().unwrap()),
                     );
                 }
             } else {

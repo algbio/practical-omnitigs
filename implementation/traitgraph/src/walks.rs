@@ -318,10 +318,10 @@ where
             match node_or_edge {
                 NodeOrEdge::Node(_) => {}
                 NodeOrEdge::Edge(edge) => {
-                    if &edge == self.first().unwrap() || result.contains(&edge) {
+                    if edge == *self.last().unwrap() || result.contains(&edge) {
                         break;
                     } else {
-                        result.push(edge)
+                        result.push(edge);
                     }
                 }
             }
@@ -338,10 +338,12 @@ where
             match node_or_edge {
                 NodeOrEdge::Node(_) => {}
                 NodeOrEdge::Edge(edge) => {
-                    if &edge == self.last().unwrap() || result[original_offset..].contains(&edge) {
+                    if edge == *self.first().unwrap()
+                        || result[original_offset + self.len()..].contains(&edge)
+                    {
                         break;
                     } else {
-                        result.push(edge)
+                        result.push(edge);
                     }
                 }
             }

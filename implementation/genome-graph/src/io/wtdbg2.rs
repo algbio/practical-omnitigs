@@ -17,7 +17,7 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 /// Node data as given in a .1.nodes file from wtdbg2.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PlainWtdbg2NodeData {
     /// The index of the node in wtdbg2.
     pub index: usize,
@@ -30,7 +30,7 @@ pub struct PlainWtdbg2NodeData {
 }
 
 /// Read associations of nodes of wtdbg2.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Wtdbg2NodeReadAssociation {
     /// The identifier of the read.
     pub read_id: String,

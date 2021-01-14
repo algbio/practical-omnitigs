@@ -44,9 +44,9 @@ pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
             })
             .next()
             .unwrap();
-    if unitig_start_node == edge_endpoints.to_node {
-        return true;
-    }
+    // True if the edge is part of a cycle that can be traversed R-univocally indefinitely.
+    let reverse_univocal_cycle =
+        unitig_start_node == edge_endpoints.to_node && graph.in_degree(unitig_start_node) == 1;
 
     let unitig_end_node =
         UnivocalIterator::new_forward_without_start(graph, NodeOrEdge::Edge(edge))
@@ -62,12 +62,19 @@ pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
             })
             .next()
             .unwrap();
-    if unitig_end_node == edge_endpoints.from_node {
-        return true;
-    }
+    // True if the edge is part of a cycle that can be traversed univocally indefinitely.
+    let forward_univocal_cycle =
+        unitig_end_node == edge_endpoints.from_node && graph.out_degree(unitig_end_node) == 1;
+    // True if the edge is part of a biunivocal cycle. That is a cycle that is disconnected to all other possibly existing parts of the graph.
+    let univocal_cycle = forward_univocal_cycle && reverse_univocal_cycle;
 
-    (graph.out_degree(unitig_start_node) >= 2 || graph.in_degree(unitig_start_node) == 0)
-        && (graph.in_degree(unitig_end_node) >= 2 || graph.out_degree(unitig_end_node) == 0)
+    // True if the edge is part of a trivial heart in a non-circular weakly connected component of the graph.
+    // This means that its surrounding unitig cannot be entered via a univocal walk, and not entered in reverse via an R-univocal walk.
+    let heart_in_non_circular_graph = (graph.out_degree(unitig_start_node) >= 2
+        || graph.in_degree(unitig_start_node) == 0)
+        && (graph.in_degree(unitig_end_node) >= 2 || graph.out_degree(unitig_end_node) == 0);
+
+    univocal_cycle || heart_in_non_circular_graph
 }
 
 impl<
@@ -310,6 +317,75 @@ mod tests {
                 graph.create_edge_walk(&[e0, e1, e2, e3]),
                 0,
                 0
+            )])
+        );
+    }
+
+    #[test]
+    fn test_compute_trivial_omnitigs_reverse_trap_cycle() {
+        let mut graph = petgraph_impl::new();
+        let n0 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let n3 = graph.add_node(());
+        let e0 = graph.add_edge(n0, n3, ());
+        let e1 = graph.add_edge(n0, n1, ());
+        let e2 = graph.add_edge(n1, n2, ());
+        let e3 = graph.add_edge(n2, n0, ());
+
+        let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        assert_eq!(
+            trivial_omnitigs,
+            Omnitigs::from(vec![Omnitig::new(
+                graph.create_edge_walk(&[e1, e2, e3, e0]),
+                3,
+                3
+            )])
+        );
+    }
+
+    #[test]
+    fn test_compute_trivial_omnitigs_trap_cycle_inverse_id_order() {
+        let mut graph = petgraph_impl::new();
+        let n3 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n0 = graph.add_node(());
+        let e3 = graph.add_edge(n2, n0, ());
+        let e2 = graph.add_edge(n1, n2, ());
+        let e1 = graph.add_edge(n0, n1, ());
+        let e0 = graph.add_edge(n3, n0, ());
+
+        let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        assert_eq!(
+            trivial_omnitigs,
+            Omnitigs::from(vec![Omnitig::new(
+                graph.create_edge_walk(&[e0, e1, e2, e3]),
+                0,
+                0
+            )])
+        );
+    }
+
+    #[test]
+    fn test_compute_trivial_omnitigs_reverse_trap_cycle_inverse_id_order() {
+        let mut graph = petgraph_impl::new();
+        let n3 = graph.add_node(());
+        let n2 = graph.add_node(());
+        let n1 = graph.add_node(());
+        let n0 = graph.add_node(());
+        let e3 = graph.add_edge(n2, n0, ());
+        let e2 = graph.add_edge(n1, n2, ());
+        let e1 = graph.add_edge(n0, n1, ());
+        let e0 = graph.add_edge(n0, n3, ());
+
+        let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        assert_eq!(
+            trivial_omnitigs,
+            Omnitigs::from(vec![Omnitig::new(
+                graph.create_edge_walk(&[e1, e2, e3, e0]),
+                3,
+                3
             )])
         );
     }
