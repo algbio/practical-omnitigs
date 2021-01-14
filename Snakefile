@@ -802,6 +802,7 @@ rule download_wtdbg2:
            references = expand("data/{dir}/reference.fa", dir=experiments_wtdbg2.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
+           rust = "data/target/release/cli",
 
 #rule prepare_wtdbg2:
 
