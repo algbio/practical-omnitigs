@@ -266,7 +266,7 @@ rule build_rust_release:
     output: "data/target/release/cli"
     conda: "config/conda-rust-env.yml"
     threads: workflow.cores
-    shell: "RUSTFLAGS=\"-C target-cpu=native\" cargo build -j {threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "cargo build -j {threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
