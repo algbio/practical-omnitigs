@@ -48,7 +48,6 @@ pub struct ComputeUnitigsCommand {
     pub latex: Option<String>,
 
     #[clap(
-        short,
         long,
         about = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
     )]
@@ -118,7 +117,7 @@ pub(crate) fn compute_unitigs(
     subcommand: &ComputeUnitigsCommand,
 ) -> crate::Result<()> {
     let mut latex_file = if let Some(latex_file_name) = &subcommand.latex {
-        info!("Creating/truncating LaTeX file");
+        info!("Creating/truncating LaTeX file '{}'", latex_file_name);
         Some(std::io::BufWriter::new(std::fs::File::create(
             latex_file_name,
         )?))
