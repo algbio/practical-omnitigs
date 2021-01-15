@@ -58,6 +58,15 @@ experiments:
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
       wtdbg2_args: "-x ccs -g 387m"
 
+    #"HG002":
+    #  urls: ["https://sra-download.ncbi.nlm.nih.gov/traces/sra42/SRR/011267/SRR11537600"]
+    #  format: "sra"
+    #  ratatosk_short_reads: ["???"]
+    #  reference: "???"
+    #  algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+    #  wtdbg2_args: "-x ccs (???) -g ???"
+
+
 tests:
   "GCF_000008865.2_ASM886v2":
     k: [51]
