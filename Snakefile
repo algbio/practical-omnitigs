@@ -601,7 +601,7 @@ rule install_quast:
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout 33d4458ea898474d07561937df83fe0f449f0244
+    git checkout db8b333acfa4d1a17e2c9aa2a9cc076f56cd7c47
     """
 
 rule run_quast:
