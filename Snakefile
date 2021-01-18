@@ -832,8 +832,14 @@ rule download_wtdbg2_result:
     wildcard_constraints:
         date = "\d\d\d\d-\d\d-\d\d"
     threads: 1
-    shell: "scp turso:\"/proj/sebschmi/git/practical-omnitigs/data/{wildcards.experiment}/wtdbg2.wtdbg2-report.pdf\" {output.file}"
+    shell: """
+        if [ "{wildcards.experiment}" == "aggregated" ]; then
+            scp turso:\"/proj/sebschmi/git/practical-omnitigs/data/wtdbg2.aggregated-report.pdf\" '{output.file}'
+        else
+            scp turso:\"/proj/sebschmi/git/practical-omnitigs/data/{wildcards.experiment}/wtdbg2.wtdbg2-report.pdf\" '{output.file}'
+        fi
+        """
 
 rule download_wtdbg2_results:
-    input: files = expand("results/" + today + ".wtdbg2.{experiment}.pdf", experiment = experiments_wtdbg2.keys())
+    input: files = expand("results/" + today + ".wtdbg2.{experiment}.pdf", experiment = list(experiments_wtdbg2.keys()) + ["aggregated"])
     threads: 1
