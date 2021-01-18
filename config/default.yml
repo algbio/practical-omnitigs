@@ -25,10 +25,15 @@ experiments:
     #  url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
 
   wtdbg2:
-    "C.elegans":
+    "C.elegans_-s0.02":
       genome: "C.elegans"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x rs -g 100m"
+      wtdbg2_args: "-x rs -g 100m -s 0.02"
+
+    "C.elegans_-s0.05":
+      genome: "C.elegans"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x rs -g 100m -s 0.05"
 
     "C.elegans_-s0.1":
       genome: "C.elegans"
