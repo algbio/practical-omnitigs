@@ -55,7 +55,7 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 		metrics = [metrics]
 
 	if metric_shortname is None:
-		metric_shortname = metrics.join('/')
+		metric_shortname = '/'.join(metrics)
 
 	table = [metric_shortname.replace("_", "\\_") + " & " + " & ".join(algorithm_names) + " \\\\\\hline"]
 	for experiment in experiments:
@@ -67,7 +67,7 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 					for index, metric in enumerate(metrics):
 						if line.startswith(metric + '\t'):
 							algorithm_value[index] = line.split('\t')[1]
-			values.append(algorithm_value.join('/'))
+			values.append('/'.join(algorithm_value))
 		table.append(experiment.replace("_", "\\_") + " & " + " & ".join(values) + "\\\\")
 
 	write_table(output_file, caption, len(algorithms), table)
