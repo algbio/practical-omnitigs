@@ -450,20 +450,20 @@ rule wtdbg2_consensus:
 ###############################
 
 active_algorithm_properties = [
-    {"identifier": "injected-unitigs-sfa", "shortname": "inj uni sfa", "has_graph_statistics:" True},
-    {"identifier": "injected-trivialomnitigs-sfa", "shortname": "inj Y-to-V sfa", "has_graph_statistics:" True},
-    {"identifier": "wtdbg2-sfa", "shortname": "wtdbg sfa", "has_graph_statistics:" False},
-    {"identifier": "injected-unitigs", "shortname": "inj uni", "has_graph_statistics:" True},
-    {"identifier": "injected-trivialomnitigs", "shortname": "inj Y-to-V", "has_graph_statistics:" True},
-    {"identifier": "wtdbg2", "shortname": "wtdbg2", "has_graph_statistics:" False}
+    {"identifier": "injected-unitigs-sfa", "shortname": "inj uni sfa", "has_graph_statistics": True},
+    {"identifier": "injected-trivialomnitigs-sfa", "shortname": "inj Y-to-V sfa", "has_graph_statistics": True},
+    {"identifier": "wtdbg2-sfa", "shortname": "wtdbg sfa", "has_graph_statistics": False},
+    {"identifier": "injected-unitigs", "shortname": "inj uni", "has_graph_statistics": True},
+    {"identifier": "injected-trivialomnitigs", "shortname": "inj Y-to-V", "has_graph_statistics": True},
+    {"identifier": "wtdbg2", "shortname": "wtdbg2", "has_graph_statistics": False}
 ]
 active_algorithms_shortnames = [algorithm["shortname"] for algorithm in active_algorithm_properties]
 active_algorithms = [algorithm["identifier"] for algorithm in active_algorithm_properties]
 active_algorithms_with_graph_statistics = [algorithm["identifier"] for algorithm in active_algorithm_properties if algorithm["has_graph_statistics"]]
 
 rule latex:
-    input: "data/{dir}/{file}report.tex"
-    output: "data/{dir}/{file}report.pdf"
+    input: "data/{file}report.tex"
+    output: "data/{file}report.pdf"
     conda: "config/conda-latex-env.yml"
     threads: 1
     shell: "tectonic {input}"
@@ -489,8 +489,8 @@ rule create_single_report_tex:
     shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
-    input: graph_statistics = expand("data/{{dir}}/wtdbg2.{algorithm}.tex", algorithm = active_algorithms_with_graph_statistics)
-           quasts = expand("data/{{dir}}/wtdbg2.{algorithm}.quast", algorithm = active_algorithms)
+    input: graph_statistics = expand("data/{{dir}}/wtdbg2.{algorithm}.tex", algorithm = active_algorithms_with_graph_statistics),
+           quasts = expand("data/{{dir}}/wtdbg2.{algorithm}.quast", algorithm = active_algorithms),
            combined_eaxmax_plot = "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
@@ -505,9 +505,9 @@ rule create_aggregated_wtdbg2_report_tex:
     input: quasts = expand("data/{dir}/wtdbg2.{algorithm}.quast", dir = experiments_wtdbg2.keys(), algorithm = active_algorithms),
            script = "scripts/create_aggregated_wtdbg2_report.py",
     output: "data/wtdbg2.aggregated-report.tex"
-    params: experiments_arg = "' '".join(experiments_wtdbg2.keys())
-            algorithms_arg = "' '".join(active_algorithms)
-            algorithm_names_arg = "' '".join(active_algorithms_shortnames)
+    params: experiments_arg = "' '".join(experiments_wtdbg2.keys()),
+            algorithms_arg = "' '".join(active_algorithms),
+            algorithm_names_arg = "' '".join(active_algorithms_shortnames),
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
