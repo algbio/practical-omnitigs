@@ -65,6 +65,11 @@ experiments:
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
       wtdbg2_args: "-x sq -g 387m"
 
+    "Minghui63_ccs_-s0.4":
+      genome: "Minghui63"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x ccs -g 387m -s 0.4"
+
     "Minghui63_ccs_-s0.5":
       genome: "Minghui63"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
