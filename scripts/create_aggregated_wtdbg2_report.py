@@ -55,7 +55,7 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 		metrics = [metrics]
 
 	if metric_shortname is None:
-		metric_shortname = metric.join('/')
+		metric_shortname = metrics.join('/')
 
 	table = [metric_shortname.replace("_", "\\_") + " & " + " & ".join(algorithm_names) + " \\\\\\hline"]
 	for experiment in experiments:
