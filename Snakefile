@@ -213,7 +213,7 @@ rule convert_wtdbg2_source_reads:
         elif [ '{params.file_format}' == 'sra' ]; then
             fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
         else
-            ln -s -T '{input.file}' '{output.file}'
+            ln -sr -T '{input.file}' '{output.file}'
         fi
         """
 
@@ -239,7 +239,7 @@ rule link_wtdbg2_reads:
     input: file = reads_input_file_name
     output: file = "data/{dir}/reads.fa"
     threads: 1
-    shell: "ln -s -T '{input.file}' '{output.file}'"
+    shell: "ln -sr -T '{input.file}' '{output.file}'"
 
 rule download_wtdbg2_reference_raw:
     output: reference = "data/downloads/{dir}/reference.fa"
@@ -264,7 +264,6 @@ rule download_wtdbg2_reference_gzip:
 def reference_input_file_name(wildcards):
     genome_name = experiments_wtdbg2[wildcards.dir]["genome"]
     genome_properties = genomes[genome_name]
-    input_file_name = "does_not_exist_debug"
 
     if genome_properties["reference"].split('.')[-1] == "gz":
         input_file_name = "data/downloads/" + genome_name + "/packed-reference.fa"
@@ -278,7 +277,7 @@ rule link_wtdbg2_reference:
     threads: 1
     shell: """
         mkdir -p 'data/{wildcards.dir}'
-        ln -s -T '{input.file}' '{output.file}'
+        ln -sr -T '{input.file}' '{output.file}'
         """
 
 ##################
@@ -836,7 +835,7 @@ rule hamcircuit_generate:
 
 rule download_wtdbg2:
     input: reads = [file for dir in genomes.keys() for file in expand("data/downloads/{dir}/reads-{index}.{file_type}", dir=[dir], index=range(len(genomes[dir]["urls"])), file_type=wtdbg2_url_file_format(dir))],
-           references = expand("data/downloads/{dir}/reference.fa", dir=genomes.keys()),
+           references = expand("data/{dir}/reference.fa", dir=experiments_wtdbg2.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
            rust = "data/target/release/cli",
