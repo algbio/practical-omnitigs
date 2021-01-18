@@ -50,19 +50,24 @@ def write_table(output_file, caption, column_count, rows):
 		output_file.write(row + '\n')
 	output_file.write(table_footer)
 
-def write_aggregated_table(output_file, caption, metric, metric_shortname=None):
+def write_aggregated_table(output_file, caption, metrics, metric_shortname=None):
+	if type(metrics) is not list:
+		metrics = [metrics]
+
 	if metric_shortname is None:
-		metric_shortname = metric
+		metric_shortname = metric.join('/')
 
 	table = [metric_shortname.replace("_", "\\_") + " & " + " & ".join(algorithm_names) + " \\\\\\hline"]
 	for experiment in experiments:
 		values = []
 		for algorithm in algorithms:
+			algorithm_value = ["None"] * len(metrics)
 			with open("data/{experiment}/wtdbg2.{algorithm}.quast/report.tsv".format(experiment=experiment, algorithm=algorithm), 'r') as input_file:
 				for line in input_file:
-					if line.startswith(metric + '\t'):
-						values.append(line.split('\t')[1])
-						break
+					for index, metric in enumerate(metrics):
+						if line.startswith(metric + '\t'):
+							algorithm_value[index] = line.split('\t')[1]
+			values.append(algorithm_value.join('/'))
 		table.append(experiment.replace("_", "\\_") + " & " + " & ".join(values) + "\\\\")
 
 	write_table(output_file, caption, len(algorithms), table)
@@ -104,10 +109,8 @@ write_aggregated_table(output_file, "EA50max", "EA50max")
 ### Misassembly tables ###
 ##########################
 
-write_aggregated_table(output_file, "Number of extensive misassemblies. These do not include local misassemblies.", "# misassemblies", "extensive misassemblies")
-write_aggregated_table(output_file, "Number of local misassemblies.", "# local misassemblies", "local misassemblies")
-write_aggregated_table(output_file, "Number of unique extensive misassemblies. These do not include local misassemblies. The `uniqueness' is determined heuristically.", "# unique misassemblies", "unique extensive misassemblies")
-write_aggregated_table(output_file, "Number of unique local misassemblies. The `uniqueness' is determined heuristically.", "# unique local misassemblies", "unique local misassemblies")
+write_aggregated_table(output_file, "Number of unique/total extensive misassemblies. These do not include local misassemblies. The `uniqueness' is determined heuristically.", ["# unique misassemblies", "# misassemblies"], "unique/total ext. mis.")
+write_aggregated_table(output_file, "Number of unique/total local misassemblies. The `uniqueness' is determined heuristically.", ["# unique local misassemblies", "# local misassemblies"], "unique/total loc. mis.")
 
 ##############
 ### Footer ###
