@@ -90,7 +90,7 @@ for experiment in experiments:
 				if line.startswith("EA50max\t"):
 					values.append(line[8:])
 					break
-	ea50_max_table.append(experiment + " & " + " & ".join(values) + "\\\\")
+	ea50_max_table.append(experiment.replace("_", "\\_") + " & " + " & ".join(values) + "\\\\")
 
 write_table(output_file, "EA50max", 6, ea50_max_table)
 
