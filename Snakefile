@@ -504,14 +504,14 @@ rule create_single_wtdbg2_report_tex:
 rule create_aggregated_wtdbg2_report_tex:
     input: quasts = expand("data/{dir}/wtdbg2.{algorithm}.quast", dir = experiments_wtdbg2.keys(), algorithm = active_algorithms),
            script = "scripts/create_aggregated_wtdbg2_report.py",
-    output: "data/wtdbg2.aggregated-report.tex"
+    output: file = "data/wtdbg2.aggregated-report.tex"
     params: experiments_arg = "' '".join(experiments_wtdbg2.keys()),
             algorithms_arg = "' '".join(active_algorithms),
             algorithm_names_arg = "' '".join(active_algorithms_shortnames),
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
-        python3 '{input.script}' --experiments '{params.experiments_arg}' --algorithms '{params.algorithms_arg}' --algorithm-names '{params.algorithm_names_arg}'
+        python3 '{input.script}' --experiments '{params.experiments_arg}' --algorithms '{params.algorithms_arg}' --algorithm-names '{params.algorithm_names_arg}' --output '{output.file}'
         """
 
 rule create_combined_eaxmax_graph:
