@@ -74,7 +74,7 @@ output_file.write(
 )
 
 for experiment in experiments:
-	output_file.write("\\item " + experiment + '\n')
+	output_file.write("\\item " + experiment.replace("_", "\\_") + '\n')
 output_file.write("\\end{itemize}\n")
 
 #####################
