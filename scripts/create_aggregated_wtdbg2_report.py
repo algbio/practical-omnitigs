@@ -4,7 +4,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Create an aggregated report of wtdbg2 experiments")
 parser.add_argument("--experiments", type=str, nargs='+', required=True)
 parser.add_argument("--algorithms", type=str, nargs='+', required=True)
-parser.add_argument("--algorithm_names", type=str, nargs='+')
+parser.add_argument("--algorithm-names", type=str, nargs='+')
 parser.add_argument("--output", type=str, required=True)
 
 args = parser.parse_args()
