@@ -66,7 +66,7 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 				for line in input_file:
 					for index, metric in enumerate(metrics):
 						if line.startswith(metric + '\t'):
-							algorithm_value[index] = line.split('\t')[1]
+							algorithm_value[index] = line.split('\t')[1].strip()
 			values.append('/'.join(algorithm_value))
 		table.append(experiment.replace("_", "\\_") + " & " + " & ".join(values) + "\\\\")
 
