@@ -61,7 +61,7 @@ def write_aggregated_table(output_file, caption, metric, metric_shortname=None):
 			with open("data/{experiment}/wtdbg2.{algorithm}.quast/report.tsv".format(experiment=experiment, algorithm=algorithm), 'r') as input_file:
 				for line in input_file:
 					if line.startswith(metric + '\t'):
-						values.append(line.split('\t'[1]))
+						values.append(line.split('\t')[1])
 						break
 		table.append(experiment.replace("_", "\\_") + " & " + " & ".join(values) + "\\\\")
 
