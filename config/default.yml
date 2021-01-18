@@ -30,6 +30,16 @@ experiments:
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
       wtdbg2_args: "-x rs -g 100m"
 
+    "C.elegans_-s0.1":
+      genome: "C.elegans"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x rs -g 100m -s 0.1"
+
+    "C.elegans_-s0.5":
+      genome: "C.elegans"
+      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+      wtdbg2_args: "-x rs -g 100m -s 0.5"
+
     "A.thaliana":
       genome: "A.thaliana"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
