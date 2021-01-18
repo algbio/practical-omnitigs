@@ -39,6 +39,9 @@ for experiment, config in experiments_wtdbg2.items():
 # Collect all rust sources
 rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob('**/Cargo.toml'), pathlib.Path('implementation').glob('**/*.rs'))))
 
+import datetime
+today = datetime.date.today().isoformat()
+
 ###############################
 ###### Target Generators ######
 ###############################
@@ -81,6 +84,7 @@ def generate_report_targets():
 def generate_wtdbg2_report_targets():
     for experiment, config in experiments_wtdbg2.items():
         yield create_experiment_path(experiment) + "wtdbg2.wtdbg2-report.pdf"
+    yield "data/wtdbg2.aggregated-report.pdf"
 
 def generate_test_report_targets():
     for experiment, config in tests.items():
@@ -445,6 +449,18 @@ rule wtdbg2_consensus:
 ###### Report Generation ######
 ###############################
 
+active_algorithm_properties = [
+    {"identifier": "injected-unitigs-sfa", "shortname": "inj uni sfa", "has_graph_statistics:" True},
+    {"identifier": "injected-trivialomnitigs-sfa", "shortname": "inj Y-to-V sfa", "has_graph_statistics:" True},
+    {"identifier": "wtdbg2-sfa", "shortname": "wtdbg sfa", "has_graph_statistics:" False},
+    {"identifier": "injected-unitigs", "shortname": "inj uni", "has_graph_statistics:" True},
+    {"identifier": "injected-trivialomnitigs", "shortname": "inj Y-to-V", "has_graph_statistics:" True},
+    {"identifier": "wtdbg2", "shortname": "wtdbg2", "has_graph_statistics:" False}
+]
+active_algorithms_shortnames = [algorithm["shortname"] for algorithm in active_algorithm_properties]
+active_algorithms = [algorithm["identifier"] for algorithm in active_algorithm_properties]
+active_algorithms_with_graph_statistics = [algorithm["identifier"] for algorithm in active_algorithm_properties if algorithm["has_graph_statistics"]]
+
 rule latex:
     input: "data/{dir}/{file}report.tex"
     output: "data/{dir}/{file}report.pdf"
@@ -473,20 +489,8 @@ rule create_single_report_tex:
     shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 rule create_single_wtdbg2_report_tex:
-    input: unitigs = "data/{dir}/wtdbg2.injected-unitigs-sfa.tex",
-           trivialomnitigs = "data/{dir}/wtdbg2.injected-trivialomnitigs-sfa.tex",
-           #omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs-sfa.tex",
-           injected_unitigs = "data/{dir}/wtdbg2.injected-unitigs.tex",
-           injected_trivialomnitigs = "data/{dir}/wtdbg2.injected-trivialomnitigs.tex",
-           #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.tex",
-           unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs-sfa.quast",
-           trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs-sfa.quast",
-           #omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.quast",
-           injected_unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs.quast",
-           injected_trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs.quast",
-           #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.quast",
-           wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
-           wtdbg2_sfa_quast = "data/{dir}/wtdbg2.wtdbg2-sfa.quast",
+    input: graph_statistics = expand("data/{{dir}}/wtdbg2.{algorithm}.tex", algorithm = active_algorithms_with_graph_statistics)
+           quasts = expand("data/{{dir}}/wtdbg2.{algorithm}.quast", algorithm = active_algorithms)
            combined_eaxmax_plot = "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
            script = "scripts/convert_validation_outputs_to_latex.py",
     output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
@@ -496,6 +500,19 @@ rule create_single_wtdbg2_report_tex:
     shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
               python3 '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' 'inj uni sfa' '{params.prefix}.injected-unitigs-sfa' 'inj Y-to-V sfa' '{params.prefix}.injected-trivialomnitigs-sfa' 'wtdbg2 sfa' '{params.prefix}.wtdbg2-sfa' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
               #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' 'inj uni' '{params.prefix}.unitigs' 'inj Y-to-V' '{params.prefix}.trivialomnitigs' 'inj omni' '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+
+rule create_aggregated_wtdbg2_report_tex:
+    input: quasts = expand("data/{dir}/wtdbg2.{algorithm}.quast", dir = experiments_wtdbg2.keys(), algorithm = active_algorithms),
+           script = "scripts/create_aggregated_wtdbg2_report.py",
+    output: "data/wtdbg2.aggregated-report.tex"
+    params: experiments_arg = "' '".join(experiments_wtdbg2.keys())
+            algorithms_arg = "' '".join(active_algorithms)
+            algorithm_names_arg = "' '".join(active_algorithms_shortnames)
+    conda: "config/conda-latex-gen-env.yml"
+    threads: 1
+    shell: """
+        python3 '{input.script}' --experiments '{params.experiments_arg}' --algorithms '{params.algorithms_arg}' --algorithm-names '{params.algorithm_names_arg}'
+        """
 
 rule create_combined_eaxmax_graph:
     input: unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs-sfa.quast",
@@ -806,3 +823,17 @@ rule download_wtdbg2:
 
 #rule prepare_wtdbg2:
 
+##############################
+###### Download results ######
+##############################
+
+rule download_wtdbg2_result:
+    output: file = "results/{date}.wtdbg2.{experiment}.pdf"
+    wildcard_constraints:
+        date = "\d\d\d\d-\d\d-\d\d"
+    threads: 1
+    shell: "scp turso:\"/proj/sebschmi/git/practical-omnitigs/data/{wildcards.experiment}/wtdbg2.wtdbg2-report.pdf\" {output.file}"
+
+rule download_wtdbg2_results:
+    input: files = expand("results/" + today + ".wtdbg2.{experiment}.pdf", experiment = experiments_wtdbg2.keys())
+    threads: 1
