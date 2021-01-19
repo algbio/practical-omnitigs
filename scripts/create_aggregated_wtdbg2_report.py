@@ -62,11 +62,14 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 		values = []
 		for algorithm in algorithms:
 			algorithm_value = ["None"] * len(metrics)
-			with open("data/{experiment}/wtdbg2.{algorithm}.quast/report.tsv".format(experiment=experiment, algorithm=algorithm), 'r') as input_file:
-				for line in input_file:
-					for index, metric in enumerate(metrics):
-						if line.startswith(metric + '\t'):
-							algorithm_value[index] = line.split('\t')[1].strip()
+			try:
+				with open("data/{experiment}/{algorithm}.quast/report.tsv".format(experiment=experiment, algorithm=algorithm), 'r') as input_file:
+					for line in input_file:
+						for index, metric in enumerate(metrics):
+							if line.startswith(metric + '\t'):
+								algorithm_value[index] = line.split('\t')[1].strip()
+			except EnvironmentError:
+				pass
 			values.append('/'.join(algorithm_value))
 		table.append(experiment.replace("_", "\\_") + " & " + " & ".join(values) + "\\\\")
 

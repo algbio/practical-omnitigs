@@ -24,115 +24,244 @@ experiments:
     #  algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
     #  url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
 
-  wtdbg2:
-    "C.elegans_-s0.02":
-      genome: "C.elegans"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x rs -g 100m -s 0.02"
+  # wtdbg2:
+  #   "C.elegans_-s0.02":
+  #     genome: "C.elegans"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x rs -g 100m -s 0.02"
 
-    "C.elegans_-s0.05":
-      genome: "C.elegans"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x rs -g 100m -s 0.05"
+  #   "C.elegans_-s0.05":
+  #     genome: "C.elegans"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x rs -g 100m -s 0.05"
 
-    "C.elegans_-s0.1":
-      genome: "C.elegans"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x rs -g 100m -s 0.1"
+  #   "C.elegans_-s0.1":
+  #     genome: "C.elegans"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x rs -g 100m -s 0.1"
 
-    "C.elegans_-s0.5":
-      genome: "C.elegans"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x rs -g 100m -s 0.5"
+  #   "C.elegans_-s0.5":
+  #     genome: "C.elegans"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x rs -g 100m -s 0.5"
 
-    "A.thaliana":
-      genome: "A.thaliana"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x sq -g 125m"
+  #   "A.thaliana":
+  #     genome: "A.thaliana"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x sq -g 125m"
 
-    "D.melanogaster_A4":
-      genome: "D.melanogaster_A4"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x rs -g 144m"
+  #   "D.melanogaster_A4":
+  #     genome: "D.melanogaster_A4"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x rs -g 144m"
 
-    "D.melanogaster_ISO1":
-      genome: "D.melanogaster_ISO1"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ont -g 144m"
+  #   "D.melanogaster_ISO1":
+  #     genome: "D.melanogaster_ISO1"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ont -g 144m"
 
-    "Minghui63_rs":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x rs -g 387m"
+  #   "Minghui63_rs":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x rs -g 387m"
 
-    "Minghui63_sq":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x sq -g 387m"
+  #   "Minghui63_sq":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x sq -g 387m"
 
-    "Minghui63_ccs_-s0.4":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.4"
+  #   "Minghui63_ccs_-s0.4":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.4"
 
-    "Minghui63_ccs_-s0.5":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.5"
+  #   "Minghui63_ccs_-s0.5":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.5"
 
-    "Minghui63_ccs_-s0.6":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.6"
+  #   "Minghui63_ccs_-s0.6":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.6"
 
-    "Minghui63_ccs_-s0.7":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.7"
+  #   "Minghui63_ccs_-s0.7":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.7"
 
-    "Minghui63_ccs_-s0.8":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.8"
+  #   "Minghui63_ccs_-s0.8":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.8"
 
-    "Minghui63_ccs_-s0.9":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.9"
+  #   "Minghui63_ccs_-s0.9":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.9"
 
-    "Minghui63_ccs_-s0.95":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.95"
+  #   "Minghui63_ccs_-s0.95":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.95"
 
-    "Minghui63_ccs_-s0.98":
-      genome: "Minghui63"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-      wtdbg2_args: "-x ccs -g 387m -s 0.98"
+  #   "Minghui63_ccs_-s0.98":
+  #     genome: "Minghui63"
+  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  #     wtdbg2_args: "-x ccs -g 387m -s 0.98"
+
+  # flye:
+  #   "Minghui63_flye":
+  #     genome: "Minghui63"
+
+column_templates:
+  default_columns: &default_columns
+    - shortname: "uni sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2:inject-unitigs": True
+    - shortname: "Y-to-V sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2:inject-trivial-omnitigs": True
+    - shortname: "wtdbg2 sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2:wtdbg2": True
+    - shortname: "uni"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2:inject-unitigs": True
+    - shortname: "Y-to-V"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2:inject-trivial-omnitigs": True
+    - shortname: "wtdbg2"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2:wtdbg2": True
+
+  default_columns_with_flye: &default_columns_with_flye
+    - shortname: "uni sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2:inject-unitigs": True
+    - shortname: "Y-to-V sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2:inject-trivial-omnitigs": True
+    - shortname: "wtdbg2 sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2:wtdbg2": True
+    - shortname: "uni"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2:inject-unitigs": True
+    - shortname: "Y-to-V"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2:inject-trivial-omnitigs": True
+    - shortname: "wtdbg2"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2:wtdbg2": True
+    - shortname: "flye"
+      assembler: "flye"
+
+reports:
+  "C.elegans":
+    genomes: ["C.elegans"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["rs"]
+            "-s": [0.02, 0.05, 0.1]
+    columns: *default_columns
+
+  "A.thaliana":
+    genomes: ["A.thaliana"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["sq"]
+    columns: *default_columns
+
+  "D.melanogaster_A4":
+    genomes: ["D.melanogaster_A4"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["rs"]
+    columns: *default_columns
+
+  "D.melanogaster_ISO1":
+    genomes: ["D.melanogaster_ISO1"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["ont"]
+    columns: *default_columns
+
+  "Minghui63":
+    genomes: ["Minghui63"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["rs"]
+          - "-x": ["sq"]
+          - "-x": ["ccs"]
+            "-s": [0.4, 0.5, 0.7, 0.95]
+      flye:
+        argument_sets:
+          - "--pacbio-hifi": [True]
+    columns: *default_columns_with_flye
+
+aggregated_reports:
+  "aggregated":
+    reports:
+      - "C.elegans"
+      - "A.thaliana"
+      - "D.melanogaster_A4"
+      - "D.melanogaster_ISO1"
+      - "Minghui63"
+
 
 genomes:
   "C.elegans":
     urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
     reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
+    genome_length: 100000000
 
   "A.thaliana":
     urls: ["https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam", "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam"]
     reference: "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/Assembly/Arabidopsis_assembly.fasta"
+    genome_length: 125000000
 
   "D.melanogaster_A4":
     urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-7/SRR5439404/SRR5439404.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/300/595/GCA_002300595.1_Dmel_A4_1.0/GCA_002300595.1_Dmel_A4_1.0_genomic.fna.gz"
+    genome_length: 144000000
 
   "D.melanogaster_ISO1":
     urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-13/SRR6702603/SRR6702603.2"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
+    genome_length: 144000000
 
   "Minghui63":  
     urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1018837/SRR10188372.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/623/365/GCA_001623365.2_MH63RS2/GCA_001623365.2_MH63RS2_genomic.fna.gz"
+    flye_args: "--pacbio-hifi -g 387m"
+    genome_length: 387000000
 
     #"HG002":
     #  urls: ["https://sra-download.ncbi.nlm.nih.gov/traces/sra42/SRR/011267/SRR11537600"]

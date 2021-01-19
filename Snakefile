@@ -4,6 +4,10 @@ import pathlib, itertools, sys
 ###### Preprocess Config ######
 ###############################
 
+import itertools
+import sys
+import re
+
 configfile: "config/default.yml"
 
 # Allow to configure to use conda from the config file
@@ -15,8 +19,231 @@ workflow.global_resources["concorde"] = 1
 
 # Preprocess experiments configuration
 experiments_bcalm2 = config["experiments"]["bcalm2"]
-experiments_wtdbg2 = config["experiments"]["wtdbg2"]
 genomes = config["genomes"]
+reports = config["reports"]
+
+class Arguments(dict):
+    @staticmethod
+    def from_list(arguments):
+        result = Arguments()
+        for key, value in arguments:
+            result[key] = value
+        if len(arguments) != len(result):
+            sys.exit("Found duplicate arguments: " + str(arguments))
+        return result
+
+    @staticmethod
+    def from_dict(arguments):
+        result = Arguments()
+        result.update(arguments)
+        return result
+
+    @staticmethod
+    def argument_to_str(key, value):
+        if value is None:
+            return str(key)
+        elif value == False:
+            return ""
+        else:
+            return str(key) + "_" + str(value)
+
+    @staticmethod
+    def argument_from_str(string):
+        string = string.strip()
+        if string == "":
+            return ("", False)
+        elif "_" in string:
+            split = string.split("_")
+            return (split[0], split[1])
+        else:
+            return (string, None)
+
+    def __str__(self):
+        result = ""
+        once = True
+        for argument in self:
+            string = Arguments.argument_to_str(argument, self[argument])
+            if string != "":
+                if once:
+                    once = False
+                else:
+                    result += ":"
+                result += string
+        return result
+
+    @staticmethod
+    def from_str(string):
+        string = string.strip()
+        result = Arguments()
+        if len(string) == 0:
+            return result
+        for argument in string.split(":"):
+            (key, value) = Arguments.argument_from_str(argument)
+            result[key] = value
+        return result
+
+    def copy(self):
+        result = Arguments()
+        for key, value in self.items():
+            result[key] = value
+        return result
+
+    def __key(self):
+        return str(self)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        if isinstance(other, Arguments):
+            return self.__key() == other.__key()
+        return NotImplemented
+
+class Algorithm:
+    def __init__(self, assembler, arguments):
+        self.assembler = assembler
+        self.arguments = arguments
+
+    def __str__(self):
+        return self.assembler + ";" + str(self.arguments)
+
+    def from_str(string):
+        split = string.split(";")
+        return Algorithm(split[0], Arguments.from_str(split[1]))
+
+class Experiment:
+    def __init__(self, genome, algorithm):
+        self.genome = genome
+        self.algorithm = algorithm
+
+class Column:
+    def __init__(self, shortname, experiment):
+        self.shortname = shortname
+        self.experiment = experiment
+
+class ReportFile:
+    def __init__(self, assembler_name_indices, assembler_argument_map_combination, columns):
+        self.columns = columns
+        # print("Creating report file with columns: " + str([str(column.experiment.algorithm) for column in columns]))
+
+        self.name = ""
+        once = True
+        for name, index in assembler_name_indices.items():
+            if once:
+                once = False
+            else:
+                self.name += ";;"
+            self.name += str(assembler_argument_map_combination[index])
+
+for report_name, report_definition in reports.items():
+    report_definition["report_files_by_genome"] = {}
+    assembler_argument_maps = {}
+
+    # Build argument maps for each assembler
+    for assembler_name, assembler in report_definition["assemblers"].items():
+        for argument_set in assembler["argument_sets"]:
+            argument_lists = []
+            for key, values in argument_set.items():
+                argument_list = []
+                for value in values:
+                    argument_list.append((key, value))
+                argument_lists.append(argument_list)
+
+            argument_maps = []
+            for argument_combination in itertools.product(*argument_lists):
+                argument_map = Arguments(list(argument_combination))
+                argument_maps.append(argument_map)
+            assembler_argument_maps.setdefault(assembler_name, set()).update(argument_maps)
+
+    # Convert argument maps to list of lists to iterate over their product
+    assembler_name_indices = {}
+    for index, name in enumerate(assembler_argument_maps.keys()):
+        assembler_name_indices[name] = index
+    assembler_argument_map_lists = [None] * len(assembler_name_indices)
+    for name, index in assembler_name_indices.items():
+        assembler_argument_map_list = list(assembler_argument_maps[name])
+        assembler_argument_map_lists[index] = assembler_argument_map_list
+
+    # Iterate over the product of argument map lists to create all report files'
+    for assembler_argument_map_combination in itertools.product(*assembler_argument_map_lists):
+        for genome in report_definition["genomes"]:
+            report_file_columns = []
+            for column in report_definition["columns"]:
+                assembler_name = column["assembler"]
+                assembler_arguments = assembler_argument_map_combination[assembler_name_indices[assembler_name]].copy()
+
+                if "arguments" in column:
+                    additional_arguments = Arguments.from_dict(column["arguments"])
+                    assembler_arguments.update(additional_arguments)
+
+                algorithm = Algorithm(assembler_name, assembler_arguments)
+                experiment = Experiment(genome, algorithm)
+                report_file_columns.append(Column(column["shortname"], experiment))
+            report_file = ReportFile(assembler_name_indices, assembler_argument_map_combination, report_file_columns)
+            report_definition["report_files_by_genome"].setdefault(genome, {})[report_file.name] = report_file
+
+import pprint
+pp = pprint.PrettyPrinter(indent = 2, width = 200, compact = True)
+pp.pprint(reports)
+sys.exit()
+
+
+
+# def list_argument_combinations_from_argument_set(argument_set):
+#     argument_lists = []
+#     for name, values in argument_set.items():
+#         argument_list = []
+#         for value in values:
+#             name = str(name)
+#             value = str(value)
+#             if type(value) == bool:
+#                 if value:
+#                     argument_list.append(str(name))
+#             elif len(name) == 0 or len(value) == 0:
+#                 sys.exit("Error: either name or value of parameter is empty")
+#             else:
+#                 argument_list.append(str(name) + "_" + str(value))
+#         argument_lists.append(argument_list)
+#     for argument_combination in itertools.product(*argument_lists):
+#         argument_combination = list(argument_combination)
+#         argument_combination.sort()
+#         yield "_".join(argument_combination)
+
+# def unpack_argument_combination(argument_combination):
+#     return argument_combination.replace("_", " ")
+
+# def remove_packed_argument(argument_combination, argument):
+#     return argument_combination.replace(argument, "").replace("__", "_")
+
+
+
+# for genome in genomes.values():
+#     algorithms = []
+#     flye_algorithms = []
+#     reports = {}
+
+#     for assembler, properties in genome["assemblers"].items():
+#         if assembler == "wtdbg2":
+#             for injection, argument_set in itertools.product(properties["injections"], properties["argument_sets"]):
+#                 for argument_combination in list_argument_combinations_from_argument_set(argument_set):
+#                     algorithm = assembler + ";" + injection + ";" + argument_combination
+#                     algorithms.append(algorithm)
+#                     reports.getdefault(remove_packed_argument(argument_combination, "--skip-fragment-assembly"), []).append(algorithm)
+#         elif assembler == "flye":
+#             for argument_set in properties["argument_sets"]:
+#                 for argument_combination in list_argument_combinations_from_argument_set(argument_set):
+#                     algorithms.append(assembler + ";" + argument_combination)
+#                     flye_algorithms.append(algorithm)
+
+#     genome["algorithms"] = OrderedDict.fromkeys(algorithms)
+
+#     for report in reports.values():
+#         report.extend(flye_algorithms)
+#     genome["reports"] = reports
+
+# for genome in genomes:
+#     for algorithm in genomes[genome]["algorithms"]:
+#         print(genome + "/" + algorithm)
 
 tests = config["tests"]
 
@@ -42,6 +269,14 @@ rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob
 
 import datetime
 today = datetime.date.today().isoformat()
+
+#######################
+###### Wildcards ######
+#######################
+
+wildcard_constraints:
+    wtdbg2_injection = "((uni)|(Y-to-V)|(omni))",
+    wtdbg2_variant = "((uni)|(Y-to-V)|(omni)|(wtdbg2))",
 
 ###############################
 ###### Target Generators ######
@@ -85,7 +320,7 @@ def generate_report_targets():
 def generate_wtdbg2_report_targets():
     for experiment, config in experiments_wtdbg2.items():
         yield create_experiment_path(experiment) + "wtdbg2.wtdbg2-report.pdf"
-    yield "data/wtdbg2.aggregated-report.pdf"
+    yield "data/aggregated-report.pdf"
 
 def generate_test_report_targets():
     for experiment, config in tests.items():
@@ -231,12 +466,8 @@ rule uniquify_wtdbg2_ids:
     threads: 1
     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
 
-def reads_input_file_name(wildcards):
-    genome_name = experiments_wtdbg2[wildcards.dir]["genome"]
-    return "data/downloads/" + genome_name + "/reads.uniquified.fa"
-
 rule link_wtdbg2_reads:
-    input: file = reads_input_file_name
+    input: file = "data/downloads/{dir}/reads.uniquified.fa"
     output: file = "data/{dir}/reads.fa"
     threads: 1
     shell: "ln -sr -T '{input.file}' '{output.file}'"
@@ -262,7 +493,7 @@ rule download_wtdbg2_reference_gzip:
         """
 
 def reference_input_file_name(wildcards):
-    genome_name = experiments_wtdbg2[wildcards.dir]["genome"]
+    genome_name = wildcards.dir
     genome_properties = genomes[genome_name]
 
     if genome_properties["reference"].split('.')[-1] == "gz":
@@ -344,26 +575,35 @@ rule compute_unitigs:
 
 ### injected wtdbg2 ###
 
-rule compute_injectable_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.tex"
-    wildcard_constraints: algo_suffix = ".*"
-    threads: 1
-    shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+# rule compute_injectable_omnitigs_wtdbg2:
+#     input: nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
+#            reads = "data/{dir}/wtdbg2.wtdbg2.3.reads",
+#            dot = "data/{dir}/wtdbg2.wtdbg2.3.dot",
+#            raw_reads = "data/{dir}/reads.fa",
+#            binary = "data/target/release/cli"
+#     output: file = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.tex"
+#     wildcard_constraints: algo_suffix = ".*"
+#     threads: 1
+#     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
-rule compute_injectable_trivial_omnitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-trivialomnitigs{algo_suffix}.tex"
-    wildcard_constraints: algo_suffix = ".*"
-    threads: 1
-    shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+algorithm_omnitig_command_map = {
+    "uni": "compute-unitigs",
+    "Y-to-V": "compute-trivial-omnitigs",
+    "omni": "compute-omnitigs",
+}
 
-rule compute_injectable_unitigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-unitigs{algo_suffix}.tex"
-    wildcard_constraints: algo_suffix = ".*"
+rule compute_injectable_contigs_wtdbg2:
+    input: nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
+           reads = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.reads",
+           dot = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.dot",
+           raw_reads = "data/{dir}/reads.fa",
+           binary = "data/target/release/cli"
+    output: file = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.contigwalks",
+            log = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.log",
+            latex = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.tex"
+    params: command = lambda wildcards: algorithm_omnitig_command_map[wildcards.algo]
     threads: 1
-    shell: "'{input.binary}' compute-unitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -437,57 +677,143 @@ rule install_wtdbg2:
     """
 
 rule wtdbg2_complete:
-    input: reads = "data/{dir}/reads.fa", binary = "external-software/wtdbg2/wtdbg2"
-    output: original_nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2.clps", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2.log"
-    params: wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
+    input: reads = "data/{dir}/reads.fa",
+           binary = "external-software/wtdbg2/wtdbg2",
+    output: original_nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.1.nodes",
+            nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
+            reads = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.reads",
+            dot = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.dot.gz",
+            clips = "data/{dir}/wtdbg2;wtdbg2;{arguments}.clps",
+            kbm = "data/{dir}/wtdbg2;wtdbg2;{arguments}.kbm",
+            ctg_lay = "data/{dir}/wtdbg2;wtdbg2;{arguments}.ctg.lay.gz",
+            log = "data/{dir}/wtdbg2;wtdbg2;{arguments}.log",
+    wildcard_constraints: arguments = "((?!--skip-fragment-assembly).)*"
+    params: wtdbg2_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
     threads: workflow.cores
-    shell: "{input.binary} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
-rule wtdbg2_complete_without_fragment_assembly:
-    input: reads = "data/{dir}/reads.fa", binary = "external-software/wtdbg2/wtdbg2"
-    output: original_nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.1.nodes", nodes = "data/{dir}/wtdbg2.wtdbg2-sfa.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2-sfa.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2-sfa.3.dot.gz", clips = "data/{dir}/wtdbg2.wtdbg2-sfa.clps", kbm = "data/{dir}/wtdbg2.wtdbg2-sfa.kbm", ctg_lay = "data/{dir}/wtdbg2.wtdbg2-sfa.ctg.lay.gz", log = "data/{dir}/wtdbg2.wtdbg2-sfa.log"
-    params: wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
+rule wtdbg2_without_fragment_assembly:
+    input: reads = "data/{dir}/reads.fa",
+           clips = "data/{dir}/wtdbg2;wtdbg2;{arguments}.clps",
+           nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.1.nodes",
+           kbm = "data/{dir}/wtdbg2;wtdbg2;{arguments}.kbm",
+           binary = "external-software/wtdbg2/wtdbg2",
+    output: original_nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.1.nodes",
+            nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
+            reads = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.reads",
+            dot = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.dot.gz",
+            ctg_lay = "data/{dir}/wtdbg2;wtdbg2;{arguments}.ctg.lay.gz",
+            log = "data/{dir}/wtdbg2;wtdbg2;{arguments}.log",
+    wildcard_constraints: arguments = ".*--skip-fragment-assembly.*"
+    params: wtdbg2_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
     threads: workflow.cores
-    shell: "{input.binary} {params.wtdbg2_args} --skip-fragment-assembly -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
-    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.injected-{algorithm}.contigwalks", clips = "data/{dir}/wtdbg2.wtdbg2.clps", nodes = "data/{dir}/wtdbg2.wtdbg2.1.nodes", kbm = "data/{dir}/wtdbg2.wtdbg2.kbm", binary = "external-software/wtdbg2/wtdbg2"
-    output: ctg_lay = "data/{dir}/wtdbg2.injected-{algorithm}.ctg.lay.gz", log = "data/{dir}/wtdbg2.injected-{algorithm}.log"
-    params: skip_fragment_assembly = lambda wildcards: "--skip-fragment-assembly" if "-sfa" in wildcards.algorithm else "",
-            wtdbg2_args = lambda wildcards: experiments_wtdbg2[wildcards.dir]["wtdbg2_args"]
+    input: reads = "data/{dir}/reads.fa",
+           contigs = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".contigwalks",
+           clips = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".clps",
+           nodes = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".1.nodes",
+           kbm = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".kbm",
+           binary = "external-software/wtdbg2/wtdbg2",
+    output: ctg_lay = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.ctg.lay.gz",
+            log = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.log",
+    params: wtdbg2_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
     threads: workflow.cores
-    shell: "{input.binary} {params.wtdbg2_args} {params.skip_fragment_assembly} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
-    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2.{algorithm}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
-    output: consensus = "data/{dir}/wtdbg2.{algorithm}.raw.fa"
+    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2;{wtdbg2_variant};{arguments}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
+    output: consensus = "data/{dir}/wtdbg2;{wtdbg2_variant};{arguments}.raw.fa"
     threads: workflow.cores
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
+
+##################
+###### Flye ######
+##################
+
+rule flye:
+    input: reads = "data/{dir}/reads.fa"
+    output: directory = directory("data/{dir}/flye;{arguments}"),
+            contigs = "data/{dir}/flye;{arguments}/assembly.fasta",
+    params: flye_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
+    conda: "config/conda-flye-env.yml"
+    threads: workflow.cores
+    shell: "flye assemble {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' '{input.reads}'"
 
 ###############################
 ###### Report Generation ######
 ###############################
 
 active_algorithm_properties = [
-    {"identifier": "injected-unitigs-sfa", "shortname": "inj uni sfa", "has_graph_statistics": True},
-    {"identifier": "injected-trivialomnitigs-sfa", "shortname": "inj Y-to-V sfa", "has_graph_statistics": True},
-    {"identifier": "wtdbg2-sfa", "shortname": "wtdbg sfa", "has_graph_statistics": False},
-    {"identifier": "injected-unitigs", "shortname": "inj uni", "has_graph_statistics": True},
-    {"identifier": "injected-trivialomnitigs", "shortname": "inj Y-to-V", "has_graph_statistics": True},
-    {"identifier": "wtdbg2", "shortname": "wtdbg2", "has_graph_statistics": False}
+    {"identifier": "wtdbg2.injected-unitigs-sfa", "shortname": "inj uni sfa", "has_graph_statistics": True},
+    {"identifier": "wtdbg2.injected-trivialomnitigs-sfa", "shortname": "inj Y-to-V sfa", "has_graph_statistics": True},
+    {"identifier": "wtdbg2.wtdbg2-sfa", "shortname": "wtdbg sfa", "has_graph_statistics": False},
+    {"identifier": "wtdbg2.injected-unitigs", "shortname": "inj uni", "has_graph_statistics": True},
+    {"identifier": "wtdbg2.injected-trivialomnitigs", "shortname": "inj Y-to-V", "has_graph_statistics": True},
+    {"identifier": "wtdbg2.wtdbg2", "shortname": "wtdbg2", "has_graph_statistics": False},
+    #{"identifier": "flye", "shortname": "flye", "has_graph_statistics": False, "active_experiments": ["Minghui63"]}
 ]
 active_algorithms_shortnames = [algorithm["shortname"] for algorithm in active_algorithm_properties]
 active_algorithms = [algorithm["identifier"] for algorithm in active_algorithm_properties]
 active_algorithms_with_graph_statistics = [algorithm["identifier"] for algorithm in active_algorithm_properties if algorithm["has_graph_statistics"]]
 
+def get_report_columns(genome, arguments):
+    result = []
+    for algorithm in genomes[genome]["reports"][arguments]:
+        for column in report_columns:
+            if re.search(column["regex"], algorithm) is not None:
+                result.append(algorithm)
+    return result
+
+def get_report_colums_with_graph_statistics(genome, arguments):
+    result = []
+    for algorithm in genomes[genome]["reports"][arguments]:
+        for column in report_columns:
+            if re.search(column["regex"], algorithm) is not None and column["has_graph_statistics"]:
+                result.append(algorithm)
+    return result
+
+def get_single_report_script_arguments(genome, arguments):
+    result = ""
+    for algorithm in genomes[genome]["reports"][arguments]:
+        for column in report_columns:
+            if re.search(column["regex"], algorithm) is not None:
+                result += " '" + column["shortname"] + "' 'data/" + genome + "/" + algorithm + "'"
+    return result
+
+def get_all_report_quasts():
+    result = []
+    for genome_name, genome in genomes.items():
+        for algorithm in genome["algorithms"]:
+            result.append("data/" + genome_name + "/" + algorithm + ".quast")
+    return result
+
+def get_report_column_shortnames():
+    result = []
+    for algorithm in genomes[genome]["reports"][arguments]:
+        for column in report_columns:
+            if re.search(column["regex"], algorithm) is not None:
+                result.append(column["shortname"])
+
+def get_report_row_quast_names(genome_name, arguments):
+    columns = get_report_columns(genome_name, arguments)
+    result = []
+    for column in columns:
+        result.append("data/" + genome_name + "/" + algorithm + ".quast")
+
 rule latex:
-    input: "data/{file}report.tex"
-    output: "data/{file}report.pdf"
+    input: "data/{subpath}report.tex"
+    output: "data/{subpath}report.pdf"
     conda: "config/conda-latex-env.yml"
     threads: 1
     shell: "tectonic {input}"
 
-rule create_single_report_tex:
+rule create_single_bcalm2_report_tex:
     input: genome_name = "data/{dir}/name.txt",
            unitigs = "data/{dir}/{file}.unitigs.tex",
            unitigs_contigvalidator = "data/{dir}/{file}.unitigs.contigvalidator",
@@ -507,26 +833,28 @@ rule create_single_report_tex:
     threads: 1
     shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
-rule create_single_wtdbg2_report_tex:
-    input: graph_statistics = expand("data/{{dir}}/wtdbg2.{algorithm}.tex", algorithm = active_algorithms_with_graph_statistics),
-           quasts = expand("data/{{dir}}/wtdbg2.{algorithm}.quast", algorithm = active_algorithms),
-           combined_eaxmax_plot = "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
+rule create_single_report_tex:
+    input: graph_statistics = lambda wildcards: expand("data/{{dir}}/{algorithm}.tex", algorithm = get_report_colums_with_graph_statistics(wildcards.dir, wildcards.arguments)),
+           quasts = lambda wildcards: expand("data/{{dir}}/{algorithm}.quast", algorithm = get_report_columns(wildcards.dir, wildcards.arguments)),
+           combined_eaxmax_plot = "data/{dir}/report;{arguments}.combined_eaxmax_plot.pdf",
            script = "scripts/convert_validation_outputs_to_latex.py",
-    output: "data/{dir}/wtdbg2.wtdbg2-report.tex"
-    params: prefix = "data/{dir}/wtdbg2"
+    output: "data/{dir}/report;{arguments}.tex"
+    wildcard_constraints: arguments = "((?!--skip-fragment-assembly).)*"
+    params: unpacked_arguments = lambda wildcards: unpack_argument_combination(wildcards.arguments),
+            script_column_arguments = lambda wildcards: get_single_report_script_arguments(wilcards.dir, wildcards.arguments),
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
-    shell: """echo '{wildcards.dir}' > 'data/{wildcards.dir}/name.txt'
-              python3 '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' 'inj uni sfa' '{params.prefix}.injected-unitigs-sfa' 'inj Y-to-V sfa' '{params.prefix}.injected-trivialomnitigs-sfa' 'wtdbg2 sfa' '{params.prefix}.wtdbg2-sfa' 'inj uni' '{params.prefix}.injected-unitigs' 'inj Y-to-V' '{params.prefix}.injected-trivialomnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
+    shell: """echo '{wildcards.dir} {params.unpacked_arguments}' > 'data/{wildcards.dir}/name.txt'
+              python3 '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}"""
               #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' 'inj uni' '{params.prefix}.unitigs' 'inj Y-to-V' '{params.prefix}.trivialomnitigs' 'inj omni' '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
 
-rule create_aggregated_wtdbg2_report_tex:
-    input: quasts = expand("data/{dir}/wtdbg2.{algorithm}.quast", dir = experiments_wtdbg2.keys(), algorithm = active_algorithms),
+rule create_aggregated_report_tex:
+    input: quasts = get_all_report_quasts(),
            script = "scripts/create_aggregated_wtdbg2_report.py",
-    output: file = "data/wtdbg2.aggregated-report.tex"
-    params: experiments_arg = "' '".join(experiments_wtdbg2.keys()),
-            algorithms_arg = "' '".join(active_algorithms),
-            algorithm_names_arg = "' '".join(active_algorithms_shortnames),
+    output: file = "data/aggregated-report.tex"
+    params: experiments_arg = "' '".join(experiments_wtdbg2.keys() + experiments_flye.keys()),
+            algorithms_arg = "' '".join(active_algorithms + ["flye"]),
+            algorithm_names_arg = "' '".join(active_algorithms_shortnames + ["flye"]),
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
@@ -656,6 +984,16 @@ rule run_quast_wtdbg2:
         script = "external-software/quast/quast.py",
         script_directory = "external-software/quast/"
     output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
+    conda: "config/conda-quast-env.yml"
+    threads: 1
+    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
+
+rule run_quast_flye:
+    input: contigs = "data/{dir}/flye/assembly.fasta",
+        reference = "data/{dir}/reference.fa",
+        script = "external-software/quast/quast.py",
+        script_directory = "external-software/quast/"
+    output: report = directory("data/{dir}/flye.quast")
     conda: "config/conda-quast-env.yml"
     threads: 1
     shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
