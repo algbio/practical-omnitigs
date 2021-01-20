@@ -19,6 +19,10 @@ if 'use_conda' in config and config['use_conda']:
 workflow.global_resources["contigvalidator"] = 1
 workflow.global_resources["concorde"] = 1
 
+from datetime import datetime, timedelta
+begin_time = datetime.now() + timedelta(minutes=2)
+workflow.default_resources.begin_time = begin_time.strftime("%H:%M %m/%d/%y")
+
 MAX_CORES = 28
 print("Setting MAX_CORES to " + str(MAX_CORES), flush = True)
 MAX_THREADS = MAX_CORES * 2
