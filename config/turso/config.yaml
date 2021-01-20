@@ -1,7 +1,7 @@
 use-conda: true
 cluster: >-
   sbatch
-  $(./scripts/parseJobID.sh {dependencies})
+  $(./scripts/parse_sbatch_job_id.sh {dependencies})
   --job-name=practical-omnitigs:{rule}:{wildcards}
   --workdir=/proj/sebschmi/git/practical-omnitigs
   -o logs/practical-omnitigs:{rule}:{wildcards}.log
