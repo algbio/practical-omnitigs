@@ -521,7 +521,7 @@ rule wtdbg2_complete:
             kbm = ALGORITHM_PREFIX_FORMAT + "wtdbg2.kbm",
             ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
-    wildcard_constraints: algorithm = "((?!(--skip-fragment-assembly|wtdbg2:inject-)).)*"
+    wildcard_constraints: algorithm = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
@@ -552,7 +552,7 @@ rule wtdbg2_without_fragment_assembly:
             dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
             ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
-    wildcard_constraints: algorithm = ".*--skip-fragment-assembly.*"
+    wildcard_constraints: algorithm = "(.*wtdbg2-wtdbg2.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-wtdbg2.*)"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
@@ -571,7 +571,7 @@ rule wtdbg2_inject_contigs:
            binary = "external-software/wtdbg2/wtdbg2",
     output: ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
-    wildcard_constraints: algorithm = ".*wtdbg2:inject-.*"
+    wildcard_constraints: algorithm = ".*wtdbg2-inject-.*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
