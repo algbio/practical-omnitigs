@@ -220,7 +220,7 @@ reports:
             "-s": [0.4, 0.5, 0.7, 0.95]
       flye:
         argument_sets:
-          - "--pacbio-hifi": [True]
+          - "flye-pacbio-hifi": [True]
     columns: *default_columns_with_flye
 
 aggregated_reports:

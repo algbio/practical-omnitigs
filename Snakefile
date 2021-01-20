@@ -120,7 +120,7 @@ class Arguments(dict):
         result = ""
         once = True
         for key, value in self.items():
-            if key.startswith("wtdbg2-"):
+            if key.startswith("wtdbg2-") or key.startswith("flye-"):
                 continue
             argument = Arguments.argument_to_argument_string(key, value)
             if argument != "":
@@ -596,11 +596,19 @@ rule wtdbg2_consensus:
 ###### Flye ######
 ##################
 
+def get_flye_input_argument_from_wildcards(wildcards):
+    algorithm = Algorithm.from_str(wildcards.algorithm)
+    if "flye-pacbio-hifi" in algorithm.arguments:
+        return "--pacbio-hifi"
+    else:
+        sys.exit("Missing flye input argument: " + str(algorithm.arguments))
+
 rule flye:
     input: reads = "data/{genome}/reads.fa"
     output: directory = ALGORITHM_PREFIX_FORMAT + "flye/",
             contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
     params: flye_args = get_assembler_args_from_wildcards,
+            flye_input_argument = get_flye_input_argument_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
     conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
@@ -608,7 +616,7 @@ rule flye:
                cpus = MAX_CORES,
                time_min = 1440,
                mail_type = "END",
-    shell: "flye assemble {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' '{input.reads}'"
+    shell: "flye assemble {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' {params.flye_input_argument} '{input.reads}'"
 
 
 #########################################
