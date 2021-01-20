@@ -6,8 +6,9 @@ source /home/sebschmi/.bashrc
 cd /proj/sebschmi/git/practical-omnitigs
 
 source activate practical-omnitigs
+mkdir -p logs
 
-snakemake --profile config/turso $@ | tee run_on_turso.log
+snakemake --profile config/turso $@ | tee "logs/run_on_turso.log"
 
 echo "Successfully created jobs, now releasing them"
 
