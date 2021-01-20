@@ -243,14 +243,6 @@ today = datetime.date.today().isoformat()
 
 print("Finished config preprocessing", flush = True)
 
-#######################
-###### Wildcards ######
-#######################
-
-wildcard_constraints:
-    wtdbg2_injection = "((uni)|(Y-to-V)|(omni))",
-    wtdbg2_variant = "((uni)|(Y-to-V)|(omni)|(wtdbg2))",
-
 #########################
 ###### Directories ######
 #########################
@@ -475,9 +467,9 @@ def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
         sys.exit("Missing injection command in wildcards: " + str(wildcards))
 
 rule compute_injectable_contigs_wtdbg2:
-    input: nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
-           reads = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.reads",
-           dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot",
+    input: nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.nodes",
+           reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
+           dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
            raw_reads = "data/{genome}/reads.fa",
            binary = "data/target/release/cli"
     output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
