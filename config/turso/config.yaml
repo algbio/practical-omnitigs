@@ -17,6 +17,7 @@ immediate-submit: true
 notemp: true
 printshellcmds: true
 cores: 1000
+latency-wait: 60
 
 
 # -M vorna
