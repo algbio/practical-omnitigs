@@ -321,6 +321,16 @@ def get_report_file_quasts(report_name, report_file_name):
 def get_report_file_quasts_from_wildcards(wildcards):
     return get_report_file_quasts(wildcards.report_name, wildcards.report_file_name)
 
+def get_report_file_column_shortnames(report_name, report_file_name):
+    report_file = get_report_file(report_name, report_file_name)
+    shortnames = []
+    for column in report_file.columns:
+        shortnames.append(column.shortname)
+    return shortnames
+
+def get_report_file_column_shortnames_from_wildcards(wildcards):
+    return get_report_file_column_shortnames(wildcards.report_name, wildcards.report_file_name)
+
 def get_report_genome_name(report_name, report_file_name):
     report_file = get_report_file(report_name, report_file_name)
     genome_name = None
@@ -349,6 +359,7 @@ def get_single_report_script_column_arguments(report_name, report_file_name):
         genome = column.experiment.genome
         algorithm = column.experiment.algorithm
         result += "'" + column.shortname + "' '" + ALGORITHM_PREFIX_FORMAT.format(genome = genome, algorithm = algorithm) + "'"
+    return result
 
 def get_single_report_script_column_arguments_from_wildcards(wildcards):
     return get_single_report_script_column_arguments(wildcards.report_name, wildcards.report_file_name)
@@ -408,7 +419,7 @@ rule create_combined_eaxmax_graph:
     input: quasts = get_report_file_quasts_from_wildcards,
            script = "scripts/create_combined_eaxmax_plot.py",
     output: REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
-    params: input_quasts = lambda wildcards, input: "' '".join(input.quasts)
+    params: input_quasts = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quasts)])
     conda: "config/conda-seaborn-env.yml"
     threads: 1
     shell: "python3 '{input.script}' '{params.input_quasts}' '{output}'"
@@ -454,14 +465,14 @@ rule compute_unitigs:
 def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
     algorithm = Algorithm.from_str(wildcards.algorithm)
     arguments = algorithm.arguments
-    if "wtdbg2:inject-unitigs" in arguments:
+    if "wtdbg2-inject-unitigs" in arguments:
         return "compute-unitigs"
-    elif "wtdbg2:inject-trivial-omnitigs" in arguments:
-        return "compute-trivial-omnitigs"
-    elif "wtdbg2:inject-omnitigs" in arguments:
+    elif "wtdbg2-inject-trivial-omnitigs" in arguments:
+        return "compute-trivial-omnitigs --non-scc"
+    elif "wtdbg2-inject-omnitigs" in arguments:
         return "compute-omnitigs"
     else:
-        sys.exit("Missing injection command in wildcards: " + wildcards)
+        sys.exit("Missing injection command in wildcards: " + str(wildcards))
 
 rule compute_injectable_contigs_wtdbg2:
     input: nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
@@ -475,7 +486,7 @@ rule compute_injectable_contigs_wtdbg2:
     params: command = get_injectable_contigs_rust_cli_command_from_wildcards
     threads: 1
     resources: mem_mb = 48000
-    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 ####################
 ###### wtdbg2 ######

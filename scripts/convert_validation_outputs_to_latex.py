@@ -53,7 +53,7 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 
 def read_algorithm_file(prefix):
 	try:
-		algorithm_file = open(prefix + ".tex")
+		algorithm_file = open(prefix + "compute_injectable_contigs.tex")
 		algorithm_lines = algorithm_file.readlines()
 		return algorithm_lines
 	except:
@@ -84,14 +84,14 @@ def read_quast_file(filename):
 		quast_lines = [line.replace("misassemblies caused by fragmented reference", "mis. caused by frag. ref.") for line in quast_lines]
 		return quast_lines
 	except:
-		print("Did not find quast file for '" + prefix + "'")
+		print("Did not find quast file for '" + filename + "'")
 		return []
 
 headline = "Parameter"
 quast_table = []
 for (label, prefix) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix + ".quast/report.tex")
+	table = read_quast_file(prefix + "quast/report.tex")
 	quast_table = append_latex_table_second_column(quast_table, table)
 
 quast_table = [headline + "\\\\ \\hline"] + quast_table
@@ -100,7 +100,7 @@ headline = "Parameter"
 quast_misassemblies_table = []
 for (label, prefix) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix + ".quast/contigs_reports/misassemblies_report.tex")
+	table = read_quast_file(prefix + "quast/contigs_reports/misassemblies_report.tex")
 	quast_misassemblies_table = append_latex_table_second_column(quast_misassemblies_table, table)
 
 quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_table
@@ -227,28 +227,28 @@ from os import path
 
 if combined_eaxmax_plot_name != 'none':
     output_file.write("\\newpage")
-    write_image(output_file, "EAxmax", "../../" + combined_eaxmax_plot_name, 1000, 1000)
+    write_image(output_file, "EAxmax", "../../../" + combined_eaxmax_plot_name, 1000, 1000)
 
 output_file.write("\\newpage")
 for label, prefix in experiments:
-	plot_file_path = prefix + ".quast/aligned_stats/EAxmax_plot.pdf"
+	plot_file_path = prefix + "quast/aligned_stats/EAxmax_plot.pdf"
 	if path.isfile(plot_file_path):
-		quast_png_name = "../../" + plot_file_path
+		quast_png_name = "../../../" + plot_file_path
 		write_image(output_file, "QUAST EAxmax graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
 
 for label, prefix in experiments:
-	plot_file_path = prefix + ".quast/aligned_stats/NGAx_plot.pdf"
+	plot_file_path = prefix + "quast/aligned_stats/NGAx_plot.pdf"
 	if path.isfile(plot_file_path):
-		quast_png_name = "../../" + plot_file_path
+		quast_png_name = "../../../" + plot_file_path
 		write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
 
 if bandage_png_name != 'none':
 	output_file.write("\\newpage")
-	write_image(output_file, "Bandage genome graph", "../../" + bandage_png_name, 1000, 1000)
+	write_image(output_file, "Bandage genome graph", "../../../" + bandage_png_name, 1000, 1000)
 
 
 output_file.write(
