@@ -8,7 +8,11 @@ cd /proj/sebschmi/git/practical-omnitigs
 source activate practical-omnitigs
 mkdir -p logs
 
+echo "Creating jobs"
+
 snakemake --profile config/turso $@ | tee "logs/run_on_turso.log"
+
+echo "Created jobs, logging their properties"
 
 # Log job information
 rm -f logs/jobs.log
