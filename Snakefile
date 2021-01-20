@@ -4,7 +4,7 @@ import pathlib, itertools, sys
 ###### Preprocess Config ######
 ###############################
 
-print("Preprocessing config")
+print("Preprocessing config", flush = True)
 
 import itertools
 import sys
@@ -20,9 +20,9 @@ workflow.global_resources["contigvalidator"] = 1
 workflow.global_resources["concorde"] = 1
 
 MAX_CORES = 28
-print("Setting MAX_CORES to " + str(MAX_CORES))
+print("Setting MAX_CORES to " + str(MAX_CORES), flush = True)
 MAX_THREADS = MAX_CORES * 2
-print("Setting MAX_THREADS to " + str(MAX_THREADS))
+print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
 
 # Preprocess experiments configuration
 experiments_bcalm2 = config["experiments"]["bcalm2"]
@@ -241,7 +241,7 @@ rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob
 import datetime
 today = datetime.date.today().isoformat()
 
-print("Finished config preprocessing")
+print("Finished config preprocessing", flush = True)
 
 #######################
 ###### Wildcards ######
