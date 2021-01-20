@@ -28,13 +28,17 @@ done
 
 echo "Successfully created jobs, now releasing them"
 
-rm -f .tmpjobids
-squeue -o "%.18A %.18R" -u sebschmi -M carrington | awk '{if ($2 =="(JobHeldUser)"){printf "%s carrington\n", $1}}' >> .tmpjobids
-squeue -o "%.18A %.18R" -u sebschmi -M ukko2 | awk '{if ($2 =="(JobHeldUser)"){printf "%s ukko2\n", $1}}' >> .tmpjobids
-squeue -o "%.18A %.18R" -u sebschmi -M vorna | awk '{if ($2 =="(JobHeldUser)"){printf "%s vorna\n", $1}}' >> .tmpjobids
+squeue -o "%.18A %.18R" -u sebschmi -M carrington | awk '{if ($2 =="(JobHeldUser)"){printf "%s\n", $1}}' | xargs -r scontrol -M carrington release
+squeue -o "%.18A %.18R" -u sebschmi -M ukko2 | awk '{if ($2 =="(JobHeldUser)"){printf "%s\n", $1}}' | xargs -r scontrol -M ukko2 release
+squeue -o "%.18A %.18R" -u sebschmi -M vorna | awk '{if ($2 =="(JobHeldUser)"){printf "%s\n", $1}}' | xargs -r scontrol -M vorna release
 
-sort -nr .tmpjobids | xargs -n2 sh -c 'scontrol -M $2 release $1' sh
-rm -f .tmpjobids
+#rm -f .tmpjobids
+#squeue -o "%.18A %.18R" -u sebschmi -M carrington | awk '{if ($2 =="(JobHeldUser)"){printf "%s carrington\n", $1}}' >> .tmpjobids
+#squeue -o "%.18A %.18R" -u sebschmi -M ukko2 | awk '{if ($2 =="(JobHeldUser)"){printf "%s ukko2\n", $1}}' >> .tmpjobids
+#squeue -o "%.18A %.18R" -u sebschmi -M vorna | awk '{if ($2 =="(JobHeldUser)"){printf "%s vorna\n", $1}}' >> .tmpjobids
+
+#sort -nr .tmpjobids | xargs -nr2 sh -c 'scontrol -M $2 release $1' sh
+#rm -f .tmpjobids
 
 BROKEN_JOBS=$(squeue -o "%.18A %.18R" -u sebschmi | grep "(DependencyNeverSatisfied)")
 
