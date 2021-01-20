@@ -16,7 +16,7 @@ rerun-incomplete: true
 immediate-submit: true
 notemp: true
 printshellcmds: true
-#cores: 1000
+cores: 1000
 
 
 # -M vorna
