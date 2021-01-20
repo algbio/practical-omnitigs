@@ -16,12 +16,15 @@ echo "Created jobs, logging their properties"
 
 # Log job information
 rm -f logs/jobs.log
-for JOB in $(squeue -o "%.18A" -u sebschmi -M carrington)
+for JOB in $(squeue -o "%.18A" -u sebschmi -M carrington); do
 	scontrol show jobid -M carrington -dd $JOB >> logs/jobs.log
-for JOB in $(squeue -o "%.18A" -u sebschmi -M ukko2)
+done
+for JOB in $(squeue -o "%.18A" -u sebschmi -M ukko2); do
 	scontrol show jobid -M ukko2 -dd $JOB >> logs/jobs.log
-for JOB in $(squeue -o "%.18A" -u sebschmi -M vorna)
+done
+for JOB in $(squeue -o "%.18A" -u sebschmi -M vorna); do
 	scontrol show jobid -M vorna -dd $JOB >> logs/jobs.log
+done
 
 echo "Successfully created jobs, now releasing them"
 
