@@ -4,6 +4,8 @@ import pathlib, itertools, sys
 ###### Preprocess Config ######
 ###############################
 
+print("Preprocessing config")
+
 import itertools
 import sys
 import re
@@ -21,6 +23,7 @@ workflow.global_resources["concorde"] = 1
 experiments_bcalm2 = config["experiments"]["bcalm2"]
 genomes = config["genomes"]
 reports = config["reports"]
+aggregated_reports = config["aggregated_reports"]
 
 class Arguments(dict):
     @staticmethod
@@ -40,12 +43,21 @@ class Arguments(dict):
 
     @staticmethod
     def argument_to_str(key, value):
-        if value is None:
+        if value is None or value == True:
             return str(key)
         elif value == False:
             return ""
         else:
             return str(key) + "_" + str(value)
+
+    @staticmethod
+    def argument_to_argument_string(key, value):
+        if value is None or value == True:
+            return str(key)
+        elif value == False:
+            return ""
+        else:
+            return str(key) + " " + str(value)
 
     @staticmethod
     def argument_from_str(string):
@@ -56,7 +68,7 @@ class Arguments(dict):
             split = string.split("_")
             return (split[0], split[1])
         else:
-            return (string, None)
+            return (string, True)
 
     def __str__(self):
         result = ""
@@ -99,6 +111,21 @@ class Arguments(dict):
             return self.__key() == other.__key()
         return NotImplemented
 
+    def to_argument_string(self):
+        result = ""
+        once = True
+        for key, value in self.items():
+            if key.startswith("wtdbg2-"):
+                continue
+            argument = Arguments.argument_to_argument_string(key, value)
+            if argument != "":
+                if once:
+                    once = False
+                else:
+                    result += " "
+                result += argument
+        return result
+
 class Algorithm:
     def __init__(self, assembler, arguments):
         self.assembler = assembler
@@ -133,10 +160,10 @@ class ReportFile:
                 once = False
             else:
                 self.name += ";;"
-            self.name += str(assembler_argument_map_combination[index])
+            self.name += name + ";" + str(assembler_argument_map_combination[index])
 
 for report_name, report_definition in reports.items():
-    report_definition["report_files_by_genome"] = {}
+    report_definition["report_files"] = {}
     assembler_argument_maps = {}
 
     # Build argument maps for each assembler
@@ -175,18 +202,26 @@ for report_name, report_definition in reports.items():
                 if "arguments" in column:
                     additional_arguments = Arguments.from_dict(column["arguments"])
                     assembler_arguments.update(additional_arguments)
+                else:
+                    additional_arguments = Arguments()
 
                 algorithm = Algorithm(assembler_name, assembler_arguments)
                 experiment = Experiment(genome, algorithm)
                 report_file_columns.append(Column(column["shortname"], experiment))
             report_file = ReportFile(assembler_name_indices, assembler_argument_map_combination, report_file_columns)
-            report_definition["report_files_by_genome"].setdefault(genome, {})[report_file.name] = report_file
+            report_definition["report_files"][report_file.name] = report_file
 
 import pprint
 pp = pprint.PrettyPrinter(indent = 2, width = 200, compact = True)
 pp.pprint(reports)
-sys.exit()
 
+# for report_name, report_definition in aggregated_reports.items():
+#     source_report_files = set()
+#     for source_report_name in report_definition["reports"]:
+#         source_report_files.update(reports[source_report_name]["report_files"].keys())
+#     report_definition["source_report_files"] = source_report_files
+
+pp.pprint(aggregated_reports)
 
 
 # def list_argument_combinations_from_argument_set(argument_set):
@@ -259,16 +294,13 @@ for experiment, config in itertools.chain(experiments_bcalm2.items(), tests.item
         url += experiment + "_genomic.fna.gz"
         config["url"] = url
 
-for experiment, config in genomes.items():
-    if not "urls" in config:
-        print("Missing url in genome")
-        sys.exit(1)
-
 # Collect all rust sources
 rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob('**/Cargo.toml'), pathlib.Path('implementation').glob('**/*.rs'))))
 
 import datetime
 today = datetime.date.today().isoformat()
+
+print("Finished config preprocessing")
 
 #######################
 ###### Wildcards ######
@@ -277,6 +309,472 @@ today = datetime.date.today().isoformat()
 wildcard_constraints:
     wtdbg2_injection = "((uni)|(Y-to-V)|(omni))",
     wtdbg2_variant = "((uni)|(Y-to-V)|(omni)|(wtdbg2))",
+
+#########################
+###### Directories ######
+#########################
+
+ALGORITHM_PREFIX_FORMAT = "data/{genome}/{algorithm}/"
+QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
+REPORT_PREFIX_FORMAT = "data/reports/{report_name}/{report_file_name}"
+AGGREGATED_REPORT_PREFIX_FORMAT = "data/reports/{aggregated_report_name}/"
+
+#################################
+###### Global report rules ######
+#################################
+
+def get_all_report_files():
+    result = []
+    for report_name, report_definition in reports.items():
+        for report_file_name in report_definition["report_files"].keys():
+            result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + ";;;report.pdf")
+
+
+    for aggregated_report_name in aggregated_reports.keys():
+        result.append(AGGREGATED_REPORT_PREFIX_FORMAT.format(aggregated_report_name = aggregated_report_name) + "aggregated-report.pdf")
+    return result
+
+rule report_all:
+    input: get_all_report_files()
+
+###############################
+###### Report Generation ######
+###############################
+
+rule create_single_bcalm2_report_tex:
+    input: genome_name = "data/{dir}/name.txt",
+           unitigs = "data/{dir}/{file}.unitigs.tex",
+           unitigs_contigvalidator = "data/{dir}/{file}.unitigs.contigvalidator",
+           unitigs_quast = "data/{dir}/{file}.unitigs.quast",
+           omnitigs = "data/{dir}/{file}.omnitigs.tex",
+           omnitigs_contigvalidator = "data/{dir}/{file}.omnitigs.contigvalidator",
+           omnitigs_quast = "data/{dir}/{file}.omnitigs.quast",
+           trivialomnitigs = "data/{dir}/{file}.trivialomnitigs.tex",
+           trivialomnitigs_contigvalidator = "data/{dir}/{file}.trivialomnitigs.contigvalidator",
+           trivialomnitigs_quast = "data/{dir}/{file}.trivialomnitigs.quast",
+           graphstatistics = "data/{dir}/{file}.bcalm2.graphstatistics",
+           bcalm2_bandage = "data/{dir}/{file}.bcalm2.bandage.png",
+           script = "scripts/convert_validation_outputs_to_latex.py",
+    output: "data/{dir}/{file}.report.tex"
+    params: prefix = "data/{dir}/{file}"
+    conda: "config/conda-latex-gen-env.yml"
+    threads: 1
+    shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
+
+### Create single report ###
+
+def get_report_file(report_name, report_file_name):
+    return reports[report_name]["report_files"][report_file_name]
+
+def get_report_file_quasts(report_name, report_file_name):
+    report_file = get_report_file(report_name, report_file_name)
+    quasts = []
+    for column in report_file.columns:
+        genome = column.experiment.genome
+        algorithm = column.experiment.algorithm
+        quasts.append(QUAST_PREFIX_FORMAT.format(genome = genome, algorithm = algorithm))
+    return quasts
+
+def get_report_file_quasts_from_wildcards(wildcards):
+    return get_report_file_quasts(wildcards.report_name, wildcards.report_file_name)
+
+def get_report_genome_name(report_name, report_file_name):
+    report_file = get_report_file(report_name, report_file_name)
+    genome_name = None
+    for column in report_file.columns:
+        genome = column.experiment.genome
+        if genome_name is None:
+            genome_name = genome
+        elif genome_name != genome:
+            sys.exit("Report has two separate genomes")
+
+    return genome_name
+
+def get_report_genome_name_from_wildcards(wildcards):
+    return get_report_genome_name(wildcards.report_name, wildcards.report_file_name)
+
+def get_single_report_script_column_arguments(report_name, report_file_name):
+    report_file = get_report_file(report_name, report_file_name)
+    result = ""
+    once = True
+    for column in report_file.columns:
+        if once:
+            once = False
+        else:
+            result += " "
+
+        genome = column.experiment.genome
+        algorithm = column.experiment.algorithm
+        result += "'" + column.shortname + "' '" + ALGORITHM_PREFIX_FORMAT.format(genome = genome, algorithm = algorithm) + "'"
+
+def get_single_report_script_column_arguments_from_wildcards(wildcards):
+    return get_single_report_script_column_arguments(wildcards.report_name, wildcards.report_file_name)
+
+
+rule create_single_report_tex:
+    input: quasts = get_report_file_quasts_from_wildcards,
+           combined_eaxmax_plot = REPORT_PREFIX_FORMAT + ";;;combined_eaxmax_plot.pdf",
+           script = "scripts/convert_validation_outputs_to_latex.py",
+    output: report = REPORT_PREFIX_FORMAT + ";;;report.tex",
+    params: genome_name = get_report_genome_name_from_wildcards,
+            script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
+            name_file = REPORT_PREFIX_FORMAT + ";;;name.txt"
+    conda: "config/conda-latex-gen-env.yml"
+    threads: 1
+    shell: """
+        echo '{wildcards.report_name} {params.genome_name} {wildcards.report_file_name}' > '{params.name_file}'
+        python3 '{input.script}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
+        """
+
+### Create aggregated report ###
+
+def get_aggregated_report_file_maps(aggregated_report_name):
+    result = {}
+    for report_name in aggregated_reports[aggregated_report_name]["reports"]:
+        result.setdefault(report_name, {}).update(reports[report_name]["report_files"])
+    return result
+
+def iterate_aggregated_report_file_source_reports(aggregated_report_name):
+    aggregated_report_files = get_aggregated_report_file_maps(aggregated_report_name)
+    for report_name, report_file_map in aggregated_report_files.items():
+        for report_file_name in report_file_map.keys():
+            yield (report_name, report_file_name)
+
+def get_aggregated_report_file_source_report_paths(aggregated_report_name):
+    result = set()
+    for report_name, report_file_name in iterate_aggregated_report_file_source_reports(aggregated_report_name):
+        result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + ";;;report.tex")
+    return result
+
+def get_aggregated_report_file_source_report_paths_from_wildcards(wildcards):
+    return get_aggregated_report_file_source_report_paths(wildcards.aggregated_report_name)
+
+rule create_aggregated_report_tex:
+    input: source_reports = get_aggregated_report_file_source_report_paths_from_wildcards,
+           script = "scripts/create_aggregated_wtdbg2_report.py",
+    output: file = AGGREGATED_REPORT_PREFIX_FORMAT + "aggregated-report.tex"
+    params: source_reports_arg = lambda wildcards: "' '".join(get_aggregated_report_file_source_report_paths_from_wildcards(wildcards)),
+            source_report_names_arg = lambda wildcards: "' '".join([report_name + "/" + report_file_name for report_name, report_file_name in iterate_aggregated_report_file_source_reports(wildcards.aggregated_report_name)]),
+    conda: "config/conda-latex-gen-env.yml"
+    threads: 1
+    shell: """
+        python3 '{input.script}' --source-reports '{params.source_reports_arg}' --output '{output.file}'
+        """
+
+rule create_combined_eaxmax_graph:
+    input: quasts = get_report_file_quasts_from_wildcards,
+           script = "scripts/create_combined_eaxmax_plot.py",
+    output: REPORT_PREFIX_FORMAT + ";;;combined_eaxmax_plot.pdf",
+    params: input_quasts = lambda wildcards, input: "' '".join(input.quasts)
+    conda: "config/conda-seaborn-env.yml"
+    threads: 1
+    shell: "python3 '{input.script}' '{params.input_quasts}' '{output}'"
+
+rule png_to_pdf:
+    input: "{file}.png"
+    output: "{file}.image.pdf"
+    conda: "config/conda-imagemagick-env.yml"
+    threads: 1
+    shell: "convert {input} {output}"
+
+rule latex:
+    input: "data/{subpath}report.tex"
+    output: "data/{subpath}report.pdf"
+    conda: "config/conda-latex-env.yml"
+    threads: 1
+    shell: "tectonic {input}"
+
+########################
+###### Algorithms ######
+########################
+
+### bcalm2 ###
+
+rule compute_omnitigs:
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
+    threads: 1
+    shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+rule compute_trivial_omnitigs:
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
+    threads: 1
+    shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+rule compute_unitigs:
+    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
+    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
+    threads: 1
+    shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+algorithm_omnitig_command_map = {
+    "uni": "compute-unitigs",
+    "Y-to-V": "compute-trivial-omnitigs",
+    "omni": "compute-omnitigs",
+}
+
+def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
+    algorithm = Algorithm.from_str(wildcards.algorithm)
+    arguments = algorithm.arguments
+    if "wtdbg2:inject-unitigs" in arguments:
+        return "compute-unitigs"
+    elif "wtdbg2:inject-trivial-omnitigs" in arguments:
+        return "compute-trivial-omnitigs"
+    elif "wtdbg2:inject-omnitigs" in arguments:
+        return "compute-omnitigs"
+    else:
+        sys.exit("Missing injection command in wildcards: " + wildcards)
+
+rule compute_injectable_contigs_wtdbg2:
+    input: nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
+           reads = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.reads",
+           dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot",
+           raw_reads = "data/{genome}/reads.fa",
+           binary = "data/target/release/cli"
+    output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
+            log = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.log",
+            latex = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.tex"
+    params: command = get_injectable_contigs_rust_cli_command_from_wildcards
+    threads: 1
+    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+
+####################
+###### wtdbg2 ######
+####################
+
+rule install_wtdbg2:
+    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    git clone https://github.com/sebschmi/wtdbg2.git
+    cd wtdbg2
+    git checkout 11011ee9c27f10d08fd302bbb68f4a6aba5f9748
+    make
+    """
+
+def get_assembler_args_from_wildcards(wildcards):
+    algorithm = Algorithm.from_str(wildcards.algorithm)
+    return algorithm.arguments.to_argument_string()
+
+rule wtdbg2_complete:
+    input: reads = "data/{genome}/reads.fa",
+           binary = "external-software/wtdbg2/wtdbg2",
+    output: original_nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.1.nodes",
+            nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
+            reads = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.reads",
+            dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
+            clips = ALGORITHM_PREFIX_FORMAT + "wtdbg2.clps",
+            kbm = ALGORITHM_PREFIX_FORMAT + "wtdbg2.kbm",
+            ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+            log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
+    wildcard_constraints: algorithm = "((?!(--skip-fragment-assembly|wtdbg2:inject-)).)*"
+    params: wtdbg2_args = get_assembler_args_from_wildcards,
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+    threads: workflow.cores
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+
+def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
+    algorithm = Algorithm.from_str(wildcards.algorithm)
+    algorithm.arguments.pop("--skip-fragment-assembly", None)
+    algorithm.arguments.pop("wtdbg2-inject-unitigs", None)
+    algorithm.arguments.pop("wtdbg2-inject-trivial-omnitigs", None)
+    algorithm.arguments.pop("wtdbg2-inject-omnitigs", None)
+    algorithm.arguments["wtdbg2-wtdbg2"] = True
+    return ALGORITHM_PREFIX_FORMAT.format(genome = "{genome}", algorithm = str(algorithm))
+
+rule wtdbg2_without_fragment_assembly:
+    input: reads = "data/{genome}/reads.fa",
+           clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
+           nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
+           kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
+           binary = "external-software/wtdbg2/wtdbg2",
+    output: original_nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.1.nodes",
+            nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
+            reads = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.reads",
+            dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
+            ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+            log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
+    wildcard_constraints: algorithm = ".*--skip-fragment-assembly.*"
+    params: wtdbg2_args = get_assembler_args_from_wildcards,
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+    threads: workflow.cores
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+
+rule wtdbg2_inject_contigs:
+    input: reads = "data/{genome}/reads.fa",
+           contigs = ALGORITHM_PREFIX_FORMAT + "contigwalks",
+           clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
+           nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
+           kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
+           binary = "external-software/wtdbg2/wtdbg2",
+    output: ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+            log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
+    wildcard_constraints: algorithm = ".*wtdbg2:inject-.*"
+    params: wtdbg2_args = get_assembler_args_from_wildcards,
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+    threads: workflow.cores
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+
+rule wtdbg2_consensus:
+    input: reads = "data/{genome}/reads.fa",
+           contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay",
+           binary = "external-software/wtdbg2/wtpoa-cns"
+    output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
+    threads: workflow.cores
+    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
+
+##################
+###### Flye ######
+##################
+
+rule flye:
+    input: reads = "data/{genome}/reads.fa"
+    output: directory = ALGORITHM_PREFIX_FORMAT + "flye/",
+            contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
+    params: flye_args = get_assembler_args_from_wildcards,
+            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+    conda: "config/conda-flye-env.yml"
+    threads: workflow.cores
+    shell: "flye assemble {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' '{input.reads}'"
+
+
+#########################################
+###### Long Read Input Preparation ######
+#########################################
+
+def url_file_format(url):
+    return url.split('.')[-1]
+
+def read_url_file_format(genome):
+    format = url_file_format(genomes[genome]["urls"][0])
+
+    if format == "fasta":
+        return "fa"
+    elif genomes[genome].get("format", None) == "sra":
+        return "sra"
+    else:
+        return format
+
+ruleorder: download_source_reads > convert_source_reads > extract
+
+rule download_source_reads:
+    output: file = "data/downloads/{genome}/reads-{index}.{format}"
+    params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
+            url_format = lambda wildcards: read_url_file_format(wildcards.genome)
+    wildcard_constraints:
+        format = "(fa|bam|sra)",
+        index = "\d+",
+        genome = "((?!downloads).)*",
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p 'data/downloads/{wildcards.genome}'
+
+        if [ '{params.url_format}' != '{wildcards.format}' ]; then
+            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
+            exit 1
+        fi
+
+        wget -O '{output.file}' '{params.url}'
+        """
+
+rule convert_source_reads:
+    input: file = lambda wildcards: "data/downloads/{genome}/reads-{index}." + read_url_file_format(wildcards.genome)
+    output: file = "data/downloads/{genome}/reads-{index}.converted.fa"
+    params: file_format = lambda wildcards: read_url_file_format(wildcards.genome)
+    wildcard_constraints:
+        index = "\d+",
+        genome = "((?!downloads).)*",
+    conda: "config/conda-convert-reads-env.yml"
+    threads: 1
+    shell: """
+        if [ '{params.file_format}' == 'bam' ]; then
+            samtools fasta '{input.file}' > '{output.file}'
+        elif [ '{params.file_format}' == 'sra' ]; then
+            fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
+        else
+            ln -sr -T '{input.file}' '{output.file}'
+        fi
+        """
+
+rule combine_reads:
+    input: files = lambda wildcards: expand("data/downloads/{{genome}}/reads-{index}.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
+    output: reads = "data/downloads/{genome}/reads.fa"
+    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+    wildcard_constraints:
+        genome = "((?!downloads).)*",
+    threads: 1
+    shell: "cat {params.input_list} > '{output.reads}'"
+
+rule uniquify_ids:
+    input: reads = "data/downloads/{genome}/reads.fa", script = "scripts/uniquify_fasta_ids.py"
+    output: reads = "data/downloads/{genome}/reads.uniquified.fa", log = "data/downloads/{genome}/uniquify.log"
+    wildcard_constraints:
+        genome = "((?!downloads).)*",
+    conda: "config/conda-uniquify-env.yml"
+    threads: 1
+    shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
+
+rule link_reads:
+    input: file = "data/downloads/{genome}/reads.uniquified.fa"
+    output: file = "data/{genome}/reads.fa"
+    wildcard_constraints:
+        genome = "((?!downloads).)*",
+    threads: 1
+    shell: "ln -sr -T '{input.file}' '{output.file}'"
+
+rule download_reference_raw:
+    output: reference = "data/downloads/{genome}/reference.fa"
+    params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
+    wildcard_constraints:
+        genome = "((?!downloads).)*",
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p 'data/{wildcards.genome}'
+        wget -O '{output.reference}' '{params.url}'
+        """
+
+rule download_reference_gzip:
+    output: reference = "data/downloads/{genome}/packed-reference.fa.gz"
+    params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
+    wildcard_constraints:
+        genome = "((?!downloads).)*",
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p 'data/{wildcards.genome}'
+        wget -O '{output.reference}' '{params.url}'
+        """
+
+def reference_input_file_name(wildcards):
+    genome_name = wildcards.genome
+    genome_properties = genomes[genome_name]
+
+    if genome_properties["reference"].split('.')[-1] == "gz":
+        input_file_name = "data/downloads/" + genome_name + "/packed-reference.fa"
+    else:
+        input_file_name = "data/downloads/" + genome_name + "/reference.fa"
+    return input_file_name
+
+rule link_reference:
+    input: file = reference_input_file_name
+    output: file = "data/{genome}/reference.fa"
+    wildcard_constraints:
+        genome = "((?!downloads).)*",
+    threads: 1
+    shell: """
+        mkdir -p 'data/{wildcards.genome}'
+        ln -sr -T '{input.file}' '{output.file}'
+        """
 
 ###############################
 ###### Target Generators ######
@@ -351,8 +849,8 @@ def generate_hamcircuit_single_report_targets(amount, n, c):
 ######################################
 
 rule separate_linear_and_circular:
-    input: filtered = "data/{dir}/filtered.fna", verified = "data/{dir}/is_genome_verified.log", binary = "data/target/release/cli"
-    output: circular = "data/{dir}/circular.fna", linear = "data/{dir}/linear.fna", log = "data/{dir}/separate_linear_and_circular.log"
+    input: filtered = "data/{genome}/filtered.fna", verified = "data/{genome}/is_genome_verified.log", binary = "data/target/release/cli"
+    output: circular = "data/{genome}/circular.fna", linear = "data/{genome}/linear.fna", log = "data/{genome}/separate_linear_and_circular.log"
     conda: "config/conda-rust-env.yml"
     threads: 1
     shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli circularise-genome --input '{input.filtered}' 2>&1 --output '{output.circular}' | tee '{output.log}'"
@@ -395,121 +893,54 @@ rule download_experiment_file:
     threads: 1
     shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget -O raw.fna.gz {params.url}"
 
-######################################
-###### wtdbg2 Input Preparation ######
-######################################
+###################
+###### QUAST ######
+###################
 
-def url_file_format(url):
-    return url.split('.')[-1]
-
-def wtdbg2_url_file_format(genome):
-    format = url_file_format(genomes[genome]["urls"][0])
-
-    if format == "fasta":
-        return "fa"
-    elif genomes[genome].get("format", None) == "sra":
-        return "sra"
-    else:
-        return format
-
-ruleorder: download_wtdbg2_source_reads > convert_wtdbg2_source_reads > extract
-
-rule download_wtdbg2_source_reads:
-    output: file = "data/downloads/{dir}/reads-{index}.{format}"
-    params: url = lambda wildcards: genomes[wildcards.dir]["urls"][int(wildcards.index)],
-            url_format = lambda wildcards: wtdbg2_url_file_format(wildcards.dir)
-    wildcard_constraints:
-        format = "(fa|bam|sra)",
-        index = "\d+"
-    conda: "config/conda-download-env.yml"
+rule install_quast:
+    output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
+    conda: "config/conda-install-env.yml"
     threads: 1
     shell: """
-        mkdir -p 'data/downloads/{wildcards.dir}'
+    mkdir -p external-software
+    cd external-software
 
-        if [ '{params.url_format}' != '{wildcards.format}' ]; then
-            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
-            exit 1
-        fi
+    git clone https://github.com/sebschmi/quast
+    cd quast
+    git checkout 673a78601ac2453b2d994c20f6d998a05ca88fa9
+    """
 
-        wget -O '{output.file}' '{params.url}'
-        """
-
-rule convert_wtdbg2_source_reads:
-    input: file = lambda wildcards: "data/downloads/{dir}/reads-{index}." + wtdbg2_url_file_format(wildcards.dir)
-    output: file = "data/downloads/{dir}/reads-{index}.converted.fa"
-    params: file_format = lambda wildcards: wtdbg2_url_file_format(wildcards.dir)
-    wildcard_constraints:
-        index = "\d+"
-    conda: "config/conda-convert-reads-env.yml"
+rule run_quast_bcalm2:
+    input: reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
+        reference = "data/{dir}/{file}.fna",
+        script = "external-software/quast/quast.py",
+        script_directory = "external-software/quast/"
+    output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
+    conda: "config/conda-quast-env.yml"
     threads: 1
-    shell: """
-        if [ '{params.file_format}' == 'bam' ]; then
-            samtools fasta '{input.file}' > '{output.file}'
-        elif [ '{params.file_format}' == 'sra' ]; then
-            fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
-        else
-            ln -sr -T '{input.file}' '{output.file}'
-        fi
-        """
+    shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
 
-rule combine_wtdbg2_reads:
-    input: files = lambda wildcards: expand("data/downloads/{{dir}}/reads-{index}.converted.fa", index=range(len(genomes[wildcards.dir]["urls"])))
-    output: reads = "data/downloads/{dir}/reads.fa"
-    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+rule run_quast_wtdbg2:
+    input: contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa",
+        reference = "data/{genome}/reference.fa",
+        script = "external-software/quast/quast.py"
+    output: report = directory(QUAST_PREFIX_FORMAT)
+    wildcard_constraints: algorithm = "wtdbg2;.*"
+    conda: "config/conda-quast-env.yml"
     threads: 1
-    shell: "cat {params.input_list} > '{output.reads}'"
+    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
-rule uniquify_wtdbg2_ids:
-    input: reads = "data/downloads/{dir}/reads.fa", script = "scripts/uniquify_fasta_ids.py"
-    output: reads = "data/downloads/{dir}/reads.uniquified.fa", log = "data/downloads/{dir}/uniquify.log"
-    conda: "config/conda-uniquify-env.yml"
+rule run_quast_flye:
+    input: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
+        reference = "data/{genome}/reference.fa",
+        script = "external-software/quast/quast.py",
+        script_directory = "external-software/quast/"
+    output: report = directory(QUAST_PREFIX_FORMAT)
+    wildcard_constraints: algorithm = "flye;.*"
+    conda: "config/conda-quast-env.yml"
     threads: 1
-    shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
+    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
-rule link_wtdbg2_reads:
-    input: file = "data/downloads/{dir}/reads.uniquified.fa"
-    output: file = "data/{dir}/reads.fa"
-    threads: 1
-    shell: "ln -sr -T '{input.file}' '{output.file}'"
-
-rule download_wtdbg2_reference_raw:
-    output: reference = "data/downloads/{dir}/reference.fa"
-    params: url = lambda wildcards, output: genomes[wildcards.dir]["reference"]
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p 'data/{wildcards.dir}'
-        wget -O '{output.reference}' '{params.url}'
-        """
-
-rule download_wtdbg2_reference_gzip:
-    output: reference = "data/downloads/{dir}/packed-reference.fa.gz"
-    params: url = lambda wildcards, output: genomes[wildcards.dir]["reference"]
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p 'data/{wildcards.dir}'
-        wget -O '{output.reference}' '{params.url}'
-        """
-
-def reference_input_file_name(wildcards):
-    genome_name = wildcards.dir
-    genome_properties = genomes[genome_name]
-
-    if genome_properties["reference"].split('.')[-1] == "gz":
-        input_file_name = "data/downloads/" + genome_name + "/packed-reference.fa"
-    else:
-        input_file_name = "data/downloads/" + genome_name + "/reference.fa"
-    return input_file_name
-
-rule link_wtdbg2_reference:
-    input: file = reference_input_file_name
-    output: file = "data/{dir}/reference.fa"
-    threads: 1
-    shell: """
-        mkdir -p 'data/{wildcards.dir}'
-        ln -sr -T '{input.file}' '{output.file}'
-        """
 
 ##################
 ###### Rust ######
@@ -528,82 +959,6 @@ rule test_rust:
     conda: "config/conda-rust-env.yml"
     threads: workflow.cores
     shell: "cargo test -j {threads} --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
-
-########################
-###### Algorithms ######
-########################
-
-### bcalm2 ###
-
-rule compute_omnitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
-    threads: 1
-    shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-rule compute_trivial_omnitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
-    threads: 1
-    shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-rule compute_unitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
-    threads: 1
-    shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-### wtdbg2 ###
-
-# rule compute_omnitigs_wtdbg2:
-#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-#     output: file = "data/{dir}/wtdbg2.omnitigs.contigwalks", log = "data/{dir}/wtdbg2.omnitigs.log", latex = "data/{dir}/wtdbg2.omnitigs.tex"
-#     threads: 1
-#     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-# rule compute_trivial_omnitigs_wtdbg2:
-#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-#     output: file = "data/{dir}/wtdbg2.trivialomnitigs.contigwalks", log = "data/{dir}/wtdbg2.trivialomnitigs.log", latex = "data/{dir}/wtdbg2.trivialomnitigs.tex"
-#     threads: 1
-#     shell: "'{input.binary}' compute-trivial-omnitigs --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-# rule compute_unitigs_wtdbg2:
-#     input: nodes = "data/{dir}/wtdbg2.wtdbg2.3.nodes", reads = "data/{dir}/wtdbg2.wtdbg2.3.reads", dot = "data/{dir}/wtdbg2.wtdbg2.3.dot", ctg_lay = "data/{dir}/wtdbg2.wtdbg2.ctg.lay", raw_reads = "data/{dir}/reads.fa", binary = "data/target/release/cli"
-#     output: file = "data/{dir}/wtdbg2.unitigs.contigwalks", log = "data/{dir}/wtdbg2.unitigs.log", latex = "data/{dir}/wtdbg2.unitigs.tex"
-#     threads: 1
-#     shell: "'{input.binary}' compute-unitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-### injected wtdbg2 ###
-
-# rule compute_injectable_omnitigs_wtdbg2:
-#     input: nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
-#            reads = "data/{dir}/wtdbg2.wtdbg2.3.reads",
-#            dot = "data/{dir}/wtdbg2.wtdbg2.3.dot",
-#            raw_reads = "data/{dir}/reads.fa",
-#            binary = "data/target/release/cli"
-#     output: file = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.contigwalks", log = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.log", latex = "data/{dir}/wtdbg2.injected-omnitigs{algo_suffix}.tex"
-#     wildcard_constraints: algo_suffix = ".*"
-#     threads: 1
-#     shell: "'{input.binary}' compute-omnitigs --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-algorithm_omnitig_command_map = {
-    "uni": "compute-unitigs",
-    "Y-to-V": "compute-trivial-omnitigs",
-    "omni": "compute-omnitigs",
-}
-
-rule compute_injectable_contigs_wtdbg2:
-    input: nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
-           reads = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.reads",
-           dot = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.dot",
-           raw_reads = "data/{dir}/reads.fa",
-           binary = "data/target/release/cli"
-    output: file = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.contigwalks",
-            log = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.log",
-            latex = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.tex"
-    params: command = lambda wildcards: algorithm_omnitig_command_map[wildcards.algo]
-    threads: 1
-    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 #####################
 ###### Testing ######
@@ -658,239 +1013,8 @@ rule bcalm2:
         rm data/{wildcards.dir}/{wildcards.file}.k{wildcards.k}-a{wildcards.abundance_min}.bcalm2.*.glue.*
         """
 
-####################
-###### wtdbg2 ######
-####################
-
-rule install_wtdbg2:
-    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-    mkdir -p external-software
-    cd external-software
-
-    git clone https://github.com/sebschmi/wtdbg2.git
-    cd wtdbg2
-    git checkout 11011ee9c27f10d08fd302bbb68f4a6aba5f9748
-    make
-    """
-
-rule wtdbg2_complete:
-    input: reads = "data/{dir}/reads.fa",
-           binary = "external-software/wtdbg2/wtdbg2",
-    output: original_nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.1.nodes",
-            nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
-            reads = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.reads",
-            dot = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.dot.gz",
-            clips = "data/{dir}/wtdbg2;wtdbg2;{arguments}.clps",
-            kbm = "data/{dir}/wtdbg2;wtdbg2;{arguments}.kbm",
-            ctg_lay = "data/{dir}/wtdbg2;wtdbg2;{arguments}.ctg.lay.gz",
-            log = "data/{dir}/wtdbg2;wtdbg2;{arguments}.log",
-    wildcard_constraints: arguments = "((?!--skip-fragment-assembly).)*"
-    params: wtdbg2_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
-    threads: workflow.cores
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
-
-rule wtdbg2_without_fragment_assembly:
-    input: reads = "data/{dir}/reads.fa",
-           clips = "data/{dir}/wtdbg2;wtdbg2;{arguments}.clps",
-           nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.1.nodes",
-           kbm = "data/{dir}/wtdbg2;wtdbg2;{arguments}.kbm",
-           binary = "external-software/wtdbg2/wtdbg2",
-    output: original_nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.1.nodes",
-            nodes = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.nodes",
-            reads = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.reads",
-            dot = "data/{dir}/wtdbg2;wtdbg2;{arguments}.3.dot.gz",
-            ctg_lay = "data/{dir}/wtdbg2;wtdbg2;{arguments}.ctg.lay.gz",
-            log = "data/{dir}/wtdbg2;wtdbg2;{arguments}.log",
-    wildcard_constraints: arguments = ".*--skip-fragment-assembly.*"
-    params: wtdbg2_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
-    threads: workflow.cores
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.wtdbg2-sfa' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
-
-rule wtdbg2_inject_contigs:
-    input: reads = "data/{dir}/reads.fa",
-           contigs = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".contigwalks",
-           clips = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".clps",
-           nodes = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".1.nodes",
-           kbm = lambda wildcards: "data/{dir}/wtdbg2;{wtdbg2_injection};" + remove_packed_argument(wildcards.arguments, "--skip-fragment-assembly") + ".kbm",
-           binary = "external-software/wtdbg2/wtdbg2",
-    output: ctg_lay = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.ctg.lay.gz",
-            log = "data/{dir}/wtdbg2;{wtdbg2_injection};{arguments}.log",
-    params: wtdbg2_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
-    threads: workflow.cores
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo 'data/{wildcards.dir}/wtdbg2.injected-{wildcards.algorithm}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
-
-rule wtdbg2_consensus:
-    input: reads = "data/{dir}/reads.fa", contigs = "data/{dir}/wtdbg2;{wtdbg2_variant};{arguments}.ctg.lay", binary = "external-software/wtdbg2/wtpoa-cns"
-    output: consensus = "data/{dir}/wtdbg2;{wtdbg2_variant};{arguments}.raw.fa"
-    threads: workflow.cores
-    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
-
-##################
-###### Flye ######
-##################
-
-rule flye:
-    input: reads = "data/{dir}/reads.fa"
-    output: directory = directory("data/{dir}/flye;{arguments}"),
-            contigs = "data/{dir}/flye;{arguments}/assembly.fasta",
-    params: flye_args = lambda wildcards: unpack_argument_combination(wildcards.arguments),
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.dir]["genome_length"]),
-    conda: "config/conda-flye-env.yml"
-    threads: workflow.cores
-    shell: "flye assemble {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' '{input.reads}'"
-
-###############################
-###### Report Generation ######
-###############################
-
-active_algorithm_properties = [
-    {"identifier": "wtdbg2.injected-unitigs-sfa", "shortname": "inj uni sfa", "has_graph_statistics": True},
-    {"identifier": "wtdbg2.injected-trivialomnitigs-sfa", "shortname": "inj Y-to-V sfa", "has_graph_statistics": True},
-    {"identifier": "wtdbg2.wtdbg2-sfa", "shortname": "wtdbg sfa", "has_graph_statistics": False},
-    {"identifier": "wtdbg2.injected-unitigs", "shortname": "inj uni", "has_graph_statistics": True},
-    {"identifier": "wtdbg2.injected-trivialomnitigs", "shortname": "inj Y-to-V", "has_graph_statistics": True},
-    {"identifier": "wtdbg2.wtdbg2", "shortname": "wtdbg2", "has_graph_statistics": False},
-    #{"identifier": "flye", "shortname": "flye", "has_graph_statistics": False, "active_experiments": ["Minghui63"]}
-]
-active_algorithms_shortnames = [algorithm["shortname"] for algorithm in active_algorithm_properties]
-active_algorithms = [algorithm["identifier"] for algorithm in active_algorithm_properties]
-active_algorithms_with_graph_statistics = [algorithm["identifier"] for algorithm in active_algorithm_properties if algorithm["has_graph_statistics"]]
-
-def get_report_columns(genome, arguments):
-    result = []
-    for algorithm in genomes[genome]["reports"][arguments]:
-        for column in report_columns:
-            if re.search(column["regex"], algorithm) is not None:
-                result.append(algorithm)
-    return result
-
-def get_report_colums_with_graph_statistics(genome, arguments):
-    result = []
-    for algorithm in genomes[genome]["reports"][arguments]:
-        for column in report_columns:
-            if re.search(column["regex"], algorithm) is not None and column["has_graph_statistics"]:
-                result.append(algorithm)
-    return result
-
-def get_single_report_script_arguments(genome, arguments):
-    result = ""
-    for algorithm in genomes[genome]["reports"][arguments]:
-        for column in report_columns:
-            if re.search(column["regex"], algorithm) is not None:
-                result += " '" + column["shortname"] + "' 'data/" + genome + "/" + algorithm + "'"
-    return result
-
-def get_all_report_quasts():
-    result = []
-    for genome_name, genome in genomes.items():
-        for algorithm in genome["algorithms"]:
-            result.append("data/" + genome_name + "/" + algorithm + ".quast")
-    return result
-
-def get_report_column_shortnames():
-    result = []
-    for algorithm in genomes[genome]["reports"][arguments]:
-        for column in report_columns:
-            if re.search(column["regex"], algorithm) is not None:
-                result.append(column["shortname"])
-
-def get_report_row_quast_names(genome_name, arguments):
-    columns = get_report_columns(genome_name, arguments)
-    result = []
-    for column in columns:
-        result.append("data/" + genome_name + "/" + algorithm + ".quast")
-
-rule latex:
-    input: "data/{subpath}report.tex"
-    output: "data/{subpath}report.pdf"
-    conda: "config/conda-latex-env.yml"
-    threads: 1
-    shell: "tectonic {input}"
-
-rule create_single_bcalm2_report_tex:
-    input: genome_name = "data/{dir}/name.txt",
-           unitigs = "data/{dir}/{file}.unitigs.tex",
-           unitigs_contigvalidator = "data/{dir}/{file}.unitigs.contigvalidator",
-           unitigs_quast = "data/{dir}/{file}.unitigs.quast",
-           omnitigs = "data/{dir}/{file}.omnitigs.tex",
-           omnitigs_contigvalidator = "data/{dir}/{file}.omnitigs.contigvalidator",
-           omnitigs_quast = "data/{dir}/{file}.omnitigs.quast",
-           trivialomnitigs = "data/{dir}/{file}.trivialomnitigs.tex",
-           trivialomnitigs_contigvalidator = "data/{dir}/{file}.trivialomnitigs.contigvalidator",
-           trivialomnitigs_quast = "data/{dir}/{file}.trivialomnitigs.quast",
-           graphstatistics = "data/{dir}/{file}.bcalm2.graphstatistics",
-           bcalm2_bandage = "data/{dir}/{file}.bcalm2.bandage.png",
-           script = "scripts/convert_validation_outputs_to_latex.py",
-    output: "data/{dir}/{file}.report.tex"
-    params: prefix = "data/{dir}/{file}"
-    conda: "config/conda-latex-gen-env.yml"
-    threads: 1
-    shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
-
-rule create_single_report_tex:
-    input: graph_statistics = lambda wildcards: expand("data/{{dir}}/{algorithm}.tex", algorithm = get_report_colums_with_graph_statistics(wildcards.dir, wildcards.arguments)),
-           quasts = lambda wildcards: expand("data/{{dir}}/{algorithm}.quast", algorithm = get_report_columns(wildcards.dir, wildcards.arguments)),
-           combined_eaxmax_plot = "data/{dir}/report;{arguments}.combined_eaxmax_plot.pdf",
-           script = "scripts/convert_validation_outputs_to_latex.py",
-    output: "data/{dir}/report;{arguments}.tex"
-    wildcard_constraints: arguments = "((?!--skip-fragment-assembly).)*"
-    params: unpacked_arguments = lambda wildcards: unpack_argument_combination(wildcards.arguments),
-            script_column_arguments = lambda wildcards: get_single_report_script_arguments(wilcards.dir, wildcards.arguments),
-    conda: "config/conda-latex-gen-env.yml"
-    threads: 1
-    shell: """echo '{wildcards.dir} {params.unpacked_arguments}' > 'data/{wildcards.dir}/name.txt'
-              python3 '{input.script}' 'data/{wildcards.dir}/name.txt' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}"""
-              #scripts/convert_validation_outputs_to_latex.py 'data/{wildcards.dir}/name.txt' 'none' 'none' '{output}' uni '{params.prefix}.unitigs' Y-to-V '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs' 'inj uni' '{params.prefix}.unitigs' 'inj Y-to-V' '{params.prefix}.trivialomnitigs' 'inj omni' '{params.prefix}.omnitigs' wtdbg2 '{params.prefix}.wtdbg2'"""
-
-rule create_aggregated_report_tex:
-    input: quasts = get_all_report_quasts(),
-           script = "scripts/create_aggregated_wtdbg2_report.py",
-    output: file = "data/aggregated-report.tex"
-    params: experiments_arg = "' '".join(experiments_wtdbg2.keys() + experiments_flye.keys()),
-            algorithms_arg = "' '".join(active_algorithms + ["flye"]),
-            algorithm_names_arg = "' '".join(active_algorithms_shortnames + ["flye"]),
-    conda: "config/conda-latex-gen-env.yml"
-    threads: 1
-    shell: """
-        python3 '{input.script}' --experiments '{params.experiments_arg}' --algorithms '{params.algorithms_arg}' --algorithm-names '{params.algorithm_names_arg}' --output '{output.file}'
-        """
-
-rule create_combined_eaxmax_graph:
-    input: unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs-sfa.quast",
-           trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs-sfa.quast",
-           #omnitigs_quast = "data/{dir}/wtdbg2.omnitigs.quast",
-           injected_unitigs_quast = "data/{dir}/wtdbg2.injected-unitigs.quast",
-           injected_trivialomnitigs_quast = "data/{dir}/wtdbg2.injected-trivialomnitigs.quast",
-           #injected_omnitigs_quast = "data/{dir}/wtdbg2.injected-omnitigs.quast",
-           wtdbg2_quast = "data/{dir}/wtdbg2.wtdbg2.quast",
-           wtdbg2_sfa_quast = "data/{dir}/wtdbg2.wtdbg2-sfa.quast",
-           script = "scripts/create_combined_eaxmax_plot.py",
-    output: "data/{dir}/wtdbg2.wtdbg2-eaxmax-plot.pdf",
-    conda: "config/conda-seaborn-env.yml"
-    threads: 1
-    shell: "python3 '{input.script}' 'data/{wildcards.dir}/' '{output}'"
-
-rule report_all:
+rule report_bcalm2:
     input: generate_report_targets()
-
-rule report_wtdbg2:
-    input: generate_wtdbg2_report_targets()
-
-rule test_report:
-    input: generate_test_report_targets()
-
-rule png_to_pdf:
-    input: "{file}.png"
-    output: "{file}.image.pdf"
-    conda: "config/conda-imagemagick-env.yml"
-    threads: 1
-    shell: "convert {input} {output}"
 
 #############################
 ###### ContigValidator ######
@@ -950,62 +1074,6 @@ rule run_contig_validator:
         # The abundance-min here has nothing to do with the abundance_min from bcalm2
         bash run.sh -suffixsave 0 -abundance-min 1 -kmer-size {wildcards.k} -r '../../{input.reference}' -a '../../{output.result}' -i '../../{input.reads}'
         """
-
-###################
-###### QUAST ######
-###################
-
-rule install_quast:
-    output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
-    conda: "config/conda-install-env.yml"
-    threads: 1
-    shell: """
-    mkdir -p external-software
-    cd external-software
-
-    git clone https://github.com/sebschmi/quast
-    cd quast
-    git checkout 673a78601ac2453b2d994c20f6d998a05ca88fa9
-    """
-
-rule run_quast:
-    input: reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
-        reference = "data/{dir}/{file}.fna",
-        script = "external-software/quast/quast.py",
-        script_directory = "external-software/quast/"
-    output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
-    conda: "config/conda-quast-env.yml"
-    threads: 1
-    shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
-
-rule run_quast_wtdbg2:
-    input: contigs = "data/{dir}/wtdbg2.{algorithm}.raw.fa",
-        reference = "data/{dir}/reference.fa",
-        script = "external-software/quast/quast.py",
-        script_directory = "external-software/quast/"
-    output: report = directory("data/{dir}/wtdbg2.{algorithm}.quast")
-    conda: "config/conda-quast-env.yml"
-    threads: 1
-    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
-
-rule run_quast_flye:
-    input: contigs = "data/{dir}/flye/assembly.fasta",
-        reference = "data/{dir}/reference.fa",
-        script = "external-software/quast/quast.py",
-        script_directory = "external-software/quast/"
-    output: report = directory("data/{dir}/flye.quast")
-    conda: "config/conda-quast-env.yml"
-    threads: 1
-    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
-
-rule test_quast_wtdbg2:
-    input: contigs = "data/C.elegans/wtdbg2.wtdbg2.raw.fa",
-        reference = "data/C.elegans/reference.fa",
-        script = "../quast/quast.py"
-    params: report = "data/C.elegans/wtdbg2.wtdbg2.quast"
-    conda: "config/conda-quast-env.yml"
-    threads: 1
-    shell: """{input.script} -t {threads} --fragmented --large -o {params.report} -r {input.reference} {input.contigs}"""
 
 #####################
 ###### Bandage ######
@@ -1172,8 +1240,8 @@ rule hamcircuit_generate:
 ###################################
 
 rule download_wtdbg2:
-    input: reads = [file for dir in genomes.keys() for file in expand("data/downloads/{dir}/reads-{index}.{file_type}", dir=[dir], index=range(len(genomes[dir]["urls"])), file_type=wtdbg2_url_file_format(dir))],
-           references = expand("data/{dir}/reference.fa", dir=experiments_wtdbg2.keys()),
+    input: reads = [file for genome in genomes.keys() for file in expand("data/downloads/{genome}/reads-{index}.{file_type}", genome=[genome], index=range(len(genomes[genome]["urls"])), file_type=read_url_file_format(genome))],
+           references = expand("data/{genome}/reference.fa", genome=genomes.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
            rust = "data/target/release/cli",
@@ -1198,5 +1266,5 @@ rule download_wtdbg2_result:
         """
 
 rule download_wtdbg2_results:
-    input: files = expand("results/" + today + ".wtdbg2.{experiment}.pdf", experiment = list(experiments_wtdbg2.keys()) + ["aggregated"])
+    input: files = expand("results/" + today + ".wtdbg2.{experiment}.pdf", experiment = list(genomes.keys()) + ["aggregated"])
     threads: 1

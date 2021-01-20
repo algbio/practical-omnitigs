@@ -120,58 +120,58 @@ column_templates:
       assembler: "wtdbg2"
       arguments:
         "--skip-fragment-assembly": True
-        "wtdbg2:inject-unitigs": True
+        "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V sfa"
       assembler: "wtdbg2"
       arguments:
         "--skip-fragment-assembly": True
-        "wtdbg2:inject-trivial-omnitigs": True
+        "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2 sfa"
       assembler: "wtdbg2"
       arguments:
         "--skip-fragment-assembly": True
-        "wtdbg2:wtdbg2": True
+        "wtdbg2-wtdbg2": True
     - shortname: "uni"
       assembler: "wtdbg2"
       arguments:
-        "wtdbg2:inject-unitigs": True
+        "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V"
       assembler: "wtdbg2"
       arguments:
-        "wtdbg2:inject-trivial-omnitigs": True
+        "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2"
       assembler: "wtdbg2"
       arguments:
-        "wtdbg2:wtdbg2": True
+        "wtdbg2-wtdbg2": True
 
   default_columns_with_flye: &default_columns_with_flye
     - shortname: "uni sfa"
       assembler: "wtdbg2"
       arguments:
         "--skip-fragment-assembly": True
-        "wtdbg2:inject-unitigs": True
+        "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V sfa"
       assembler: "wtdbg2"
       arguments:
         "--skip-fragment-assembly": True
-        "wtdbg2:inject-trivial-omnitigs": True
+        "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2 sfa"
       assembler: "wtdbg2"
       arguments:
         "--skip-fragment-assembly": True
-        "wtdbg2:wtdbg2": True
+        "wtdbg2-wtdbg2": True
     - shortname: "uni"
       assembler: "wtdbg2"
       arguments:
-        "wtdbg2:inject-unitigs": True
+        "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V"
       assembler: "wtdbg2"
       arguments:
-        "wtdbg2:inject-trivial-omnitigs": True
+        "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2"
       assembler: "wtdbg2"
       arguments:
-        "wtdbg2:wtdbg2": True
+        "wtdbg2-wtdbg2": True
     - shortname: "flye"
       assembler: "flye"
 
