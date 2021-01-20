@@ -9,8 +9,21 @@ source activate practical-omnitigs
 
 snakemake --profile config/turso $@ | tee run_on_turso.log
 
-squeue -o "%.18A %.18R" -u sebschmi -M carrington | awk '{if ($2 =="(JobHeldUser)"){print $1}}' | xargs -n 1 -r scontrol -M carrington release
-squeue -o "%.18A %.18R" -u sebschmi -M ukko2 | awk '{if ($2 =="(JobHeldUser)"){print $1}}' | xargs -n 1 -r scontrol -M ukko2 release
-squeue -o "%.18A %.18R" -u sebschmi -M vorna | awk '{if ($2 =="(JobHeldUser)"){print $1}}' | xargs -n 1 -r scontrol -M vorna release
+echo "Successfully created jobs, now releasing them"
 
-echo "Successfully created and released all jobs"
+rm -f .tmpjobids
+squeue -o "%.18A %.18R" -u sebschmi -M carrington | awk '{if ($2 =="(JobHeldUser)"){printf "%s carrington\n", $1}}' >> .tmpjobids
+squeue -o "%.18A %.18R" -u sebschmi -M ukko2 | awk '{if ($2 =="(JobHeldUser)"){printf "%s ukko2\n", $1}}' >> .tmpjobids
+squeue -o "%.18A %.18R" -u sebschmi -M vorna | awk '{if ($2 =="(JobHeldUser)"){printf "%s vorna\n", $1}}' >> .tmpjobids
+
+sort -nr .tmpjobids | xargs -n2 sh -c 'scontrol -M $2 release $1' sh
+rm -f .tmpjobids
+
+BROKEN_JOBS=$(squeue -o "%.18A %.18R" -u sebschmi | grep "(DependencyNeverSatisfied)")
+
+if [ -z "$BROKEN_JOBS" ]; then
+	echo "Successfully created and released all jobs"
+else
+	echo "Found broken jobs: $BROKEN_JOBS"
+	exit 1
+fi
