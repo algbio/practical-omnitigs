@@ -7,4 +7,4 @@ cd /proj/sebschmi/git/practical-omnitigs
 
 source activate practical-omnitigs
 
-snakemake --profile config/turso report_all
+snakemake --profile config/turso $@
