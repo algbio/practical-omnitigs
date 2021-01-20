@@ -10,6 +10,15 @@ mkdir -p logs
 
 snakemake --profile config/turso $@ | tee "logs/run_on_turso.log"
 
+# Log job information
+rm -f logs/jobs.log
+for JOB in $(squeue -o "%.18A" -u sebschmi -M carrington)
+	scontrol show jobid -M carrington -dd $JOB >> logs/jobs.log
+for JOB in $(squeue -o "%.18A" -u sebschmi -M ukko2)
+	scontrol show jobid -M ukko2 -dd $JOB >> logs/jobs.log
+for JOB in $(squeue -o "%.18A" -u sebschmi -M vorna)
+	scontrol show jobid -M vorna -dd $JOB >> logs/jobs.log
+
 echo "Successfully created jobs, now releasing them"
 
 rm -f .tmpjobids
