@@ -7,5 +7,5 @@ if [[ "Submitted batch job" =~ "$@" ]]; then
   echo -n ""
 else
   deplist=$(grep -Eo '[0-9]{1,10}' <<< "$@" | tr '\n' ',' | sed 's/.$//')
-  echo -n "--dependency=aftercorr:$deplist"
+  echo -n "--dependency=afterok:$deplist"
 fi
