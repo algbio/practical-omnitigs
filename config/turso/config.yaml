@@ -1,0 +1,21 @@
+use-conda: true
+cluster: >-
+  sbatch
+  $(./scripts/parseJobID.sh {dependencies})
+  --job-name=practical-omnitigs:{rule}:{wildcards}
+  --workdir=/proj/sebschmi/git/practical-omnitigs
+  -o logs/practical-omnitigs:{rule}:{wildcards}.log
+  -p {resources.queue}
+  -c {resources.cpus}
+  -t {resources.time_min}
+  --mem={resources.mem_mb}
+  --mail-type={resources.mail_type}
+  --mail-user=sebastian.schmidt@helsinki.fi
+default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
+rerun-incomplete: true
+immediate-submit: true
+printshellcmds: true
+cores: 28
+
+
+# -M vorna

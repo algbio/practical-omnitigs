@@ -19,6 +19,9 @@ if 'use_conda' in config and config['use_conda']:
 workflow.global_resources["contigvalidator"] = 1
 workflow.global_resources["concorde"] = 1
 
+MAX_CORES = workflow.cores
+MAX_THREADS = MAX_CORES * 2
+
 # Preprocess experiments configuration
 experiments_bcalm2 = config["experiments"]["bcalm2"]
 genomes = config["genomes"]
@@ -132,10 +135,10 @@ class Algorithm:
         self.arguments = arguments
 
     def __str__(self):
-        return self.assembler + ";" + str(self.arguments)
+        return self.assembler + "::" + str(self.arguments)
 
     def from_str(string):
-        split = string.split(";")
+        split = string.split("::")
         return Algorithm(split[0], Arguments.from_str(split[1]))
 
 class Experiment:
@@ -159,8 +162,8 @@ class ReportFile:
             if once:
                 once = False
             else:
-                self.name += ";;"
-            self.name += name + ";" + str(assembler_argument_map_combination[index])
+                self.name += ":::"
+            self.name += name + "::" + str(assembler_argument_map_combination[index])
 
 for report_name, report_definition in reports.items():
     report_definition["report_files"] = {}
@@ -214,71 +217,7 @@ for report_name, report_definition in reports.items():
 import pprint
 pp = pprint.PrettyPrinter(indent = 2, width = 200, compact = True)
 pp.pprint(reports)
-
-# for report_name, report_definition in aggregated_reports.items():
-#     source_report_files = set()
-#     for source_report_name in report_definition["reports"]:
-#         source_report_files.update(reports[source_report_name]["report_files"].keys())
-#     report_definition["source_report_files"] = source_report_files
-
 pp.pprint(aggregated_reports)
-
-
-# def list_argument_combinations_from_argument_set(argument_set):
-#     argument_lists = []
-#     for name, values in argument_set.items():
-#         argument_list = []
-#         for value in values:
-#             name = str(name)
-#             value = str(value)
-#             if type(value) == bool:
-#                 if value:
-#                     argument_list.append(str(name))
-#             elif len(name) == 0 or len(value) == 0:
-#                 sys.exit("Error: either name or value of parameter is empty")
-#             else:
-#                 argument_list.append(str(name) + "_" + str(value))
-#         argument_lists.append(argument_list)
-#     for argument_combination in itertools.product(*argument_lists):
-#         argument_combination = list(argument_combination)
-#         argument_combination.sort()
-#         yield "_".join(argument_combination)
-
-# def unpack_argument_combination(argument_combination):
-#     return argument_combination.replace("_", " ")
-
-# def remove_packed_argument(argument_combination, argument):
-#     return argument_combination.replace(argument, "").replace("__", "_")
-
-
-
-# for genome in genomes.values():
-#     algorithms = []
-#     flye_algorithms = []
-#     reports = {}
-
-#     for assembler, properties in genome["assemblers"].items():
-#         if assembler == "wtdbg2":
-#             for injection, argument_set in itertools.product(properties["injections"], properties["argument_sets"]):
-#                 for argument_combination in list_argument_combinations_from_argument_set(argument_set):
-#                     algorithm = assembler + ";" + injection + ";" + argument_combination
-#                     algorithms.append(algorithm)
-#                     reports.getdefault(remove_packed_argument(argument_combination, "--skip-fragment-assembly"), []).append(algorithm)
-#         elif assembler == "flye":
-#             for argument_set in properties["argument_sets"]:
-#                 for argument_combination in list_argument_combinations_from_argument_set(argument_set):
-#                     algorithms.append(assembler + ";" + argument_combination)
-#                     flye_algorithms.append(algorithm)
-
-#     genome["algorithms"] = OrderedDict.fromkeys(algorithms)
-
-#     for report in reports.values():
-#         report.extend(flye_algorithms)
-#     genome["reports"] = reports
-
-# for genome in genomes:
-#     for algorithm in genomes[genome]["algorithms"]:
-#         print(genome + "/" + algorithm)
 
 tests = config["tests"]
 
@@ -327,7 +266,7 @@ def get_all_report_files():
     result = []
     for report_name, report_definition in reports.items():
         for report_file_name in report_definition["report_files"].keys():
-            result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + ";;;report.pdf")
+            result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.pdf")
 
 
     for aggregated_report_name in aggregated_reports.keys():
@@ -336,6 +275,8 @@ def get_all_report_files():
 
 rule report_all:
     input: get_all_report_files()
+    threads: 1
+    resources: mail_type = "END"
 
 ###############################
 ###### Report Generation ######
@@ -413,12 +354,12 @@ def get_single_report_script_column_arguments_from_wildcards(wildcards):
 
 rule create_single_report_tex:
     input: quasts = get_report_file_quasts_from_wildcards,
-           combined_eaxmax_plot = REPORT_PREFIX_FORMAT + ";;;combined_eaxmax_plot.pdf",
+           combined_eaxmax_plot = REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
            script = "scripts/convert_validation_outputs_to_latex.py",
-    output: report = REPORT_PREFIX_FORMAT + ";;;report.tex",
+    output: report = REPORT_PREFIX_FORMAT + "::::report.tex",
     params: genome_name = get_report_genome_name_from_wildcards,
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
-            name_file = REPORT_PREFIX_FORMAT + ";;;name.txt"
+            name_file = REPORT_PREFIX_FORMAT + "::::name.txt"
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
@@ -443,7 +384,7 @@ def iterate_aggregated_report_file_source_reports(aggregated_report_name):
 def get_aggregated_report_file_source_report_paths(aggregated_report_name):
     result = set()
     for report_name, report_file_name in iterate_aggregated_report_file_source_reports(aggregated_report_name):
-        result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + ";;;report.tex")
+        result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.tex")
     return result
 
 def get_aggregated_report_file_source_report_paths_from_wildcards(wildcards):
@@ -464,7 +405,7 @@ rule create_aggregated_report_tex:
 rule create_combined_eaxmax_graph:
     input: quasts = get_report_file_quasts_from_wildcards,
            script = "scripts/create_combined_eaxmax_plot.py",
-    output: REPORT_PREFIX_FORMAT + ";;;combined_eaxmax_plot.pdf",
+    output: REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
     params: input_quasts = lambda wildcards, input: "' '".join(input.quasts)
     conda: "config/conda-seaborn-env.yml"
     threads: 1
@@ -508,12 +449,6 @@ rule compute_unitigs:
     threads: 1
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
-algorithm_omnitig_command_map = {
-    "uni": "compute-unitigs",
-    "Y-to-V": "compute-trivial-omnitigs",
-    "omni": "compute-omnitigs",
-}
-
 def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
     algorithm = Algorithm.from_str(wildcards.algorithm)
     arguments = algorithm.arguments
@@ -537,6 +472,7 @@ rule compute_injectable_contigs_wtdbg2:
             latex = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.tex"
     params: command = get_injectable_contigs_rust_cli_command_from_wildcards
     threads: 1
+    resources: mem_mb = 48000
     shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --non-scc --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 ####################
@@ -576,7 +512,10 @@ rule wtdbg2_complete:
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
-    threads: workflow.cores
+    threads: MAX_THREADS
+    resources: mem_mb = 48000
+               cpus = MAX_CORES
+               time_min = 360
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
@@ -604,7 +543,10 @@ rule wtdbg2_without_fragment_assembly:
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
-    threads: workflow.cores
+    threads: MAX_THREADS
+    resources: mem_mb = 48000
+               cpus = MAX_CORES
+               time_min = 360
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
@@ -620,7 +562,10 @@ rule wtdbg2_inject_contigs:
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
-    threads: workflow.cores
+    threads: MAX_THREADS
+    resources: mem_mb = 48000
+               cpus = MAX_CORES
+               time_min = 360
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
@@ -628,7 +573,10 @@ rule wtdbg2_consensus:
            contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay",
            binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
-    threads: workflow.cores
+    threads: MAX_THREADS
+    resources: mem_mb = 8000
+               cpus = MAX_CORES
+               time_min = 360
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
 
 ##################
@@ -642,7 +590,11 @@ rule flye:
     params: flye_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
     conda: "config/conda-flye-env.yml"
-    threads: workflow.cores
+    threads: MAX_THREADS
+    resources: mem_mb = 250000
+               cpus = MAX_CORES
+               time_min = 1440
+               mail_type = "END"
     shell: "flye assemble {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' '{input.reads}'"
 
 
@@ -925,9 +877,12 @@ rule run_quast_wtdbg2:
         reference = "data/{genome}/reference.fa",
         script = "external-software/quast/quast.py"
     output: report = directory(QUAST_PREFIX_FORMAT)
-    wildcard_constraints: algorithm = "wtdbg2;.*"
+    wildcard_constraints: algorithm = "wtdbg2::.*"
     conda: "config/conda-quast-env.yml"
-    threads: 1
+    threads: 8
+    resources: mem_mb = 12000
+               cpus = 4
+               time_min = 60
     shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
 rule run_quast_flye:
@@ -936,9 +891,12 @@ rule run_quast_flye:
         script = "external-software/quast/quast.py",
         script_directory = "external-software/quast/"
     output: report = directory(QUAST_PREFIX_FORMAT)
-    wildcard_constraints: algorithm = "flye;.*"
+    wildcard_constraints: algorithm = "flye::.*"
     conda: "config/conda-quast-env.yml"
-    threads: 1
+    threads: 8
+    resources: mem_mb = 12000
+               cpus = 4
+               time_min = 60
     shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
 
@@ -950,14 +908,20 @@ rule build_rust_release:
     input: "data/is_rust_tested.log"
     output: "data/target/release/cli"
     conda: "config/conda-rust-env.yml"
-    threads: workflow.cores
+    threads: MAX_THREADS
+    resources: mem_mb = 4000
+               cpus = MAX_CORES
+               time_min = 30
     shell: "cargo build -j {threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
     output: touch("data/is_rust_tested.log")
     conda: "config/conda-rust-env.yml"
-    threads: workflow.cores
+    threads: 4
+    resources: mem_mb = 4000
+               cpus = 2
+               time_min = 30
     shell: "cargo test -j {threads} --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
 
 #####################
