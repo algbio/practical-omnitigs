@@ -184,6 +184,9 @@ for report_name, report_definition in reports.items():
                 argument_map = Arguments(list(argument_combination))
                 argument_maps.append(argument_map)
             assembler_argument_maps.setdefault(assembler_name, set()).update(argument_maps)
+        if assembler_name not in assembler_argument_maps or len(assembler_argument_maps[assembler_name]) == 0:
+            assembler_argument_maps[assembler_name] = set()
+            assembler_argument_maps[assembler_name].add(Arguments())
 
     # Convert argument maps to list of lists to iterate over their product
     assembler_name_indices = {}
@@ -200,6 +203,7 @@ for report_name, report_definition in reports.items():
             report_file_columns = []
             for column in report_definition["columns"]:
                 assembler_name = column["assembler"]
+                print(assembler_name_indices)
                 assembler_arguments = assembler_argument_map_combination[assembler_name_indices[assembler_name]].copy()
 
                 if "arguments" in column:
@@ -590,6 +594,10 @@ def get_flye_input_argument_from_wildcards(wildcards):
     algorithm = Algorithm.from_str(wildcards.algorithm)
     if "flye-pacbio-hifi" in algorithm.arguments:
         return "--pacbio-hifi"
+    elif "flye-pacbio-corr" in algorithm.arguments:
+        return "--pacbio-corr"
+    elif "flye-pacbio-raw" in algorithm.arguments:
+        return "--pacbio-raw"
     else:
         sys.exit("Missing flye input argument: " + str(algorithm.arguments))
 

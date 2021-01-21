@@ -176,6 +176,37 @@ column_templates:
       assembler: "flye"
 
 reports:
+  "Flye_comparison":
+    genomes: ["C.elegans"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["rs"]
+      flye:
+        argument_sets: []
+    columns:
+      - shortname: "Y-to-V sfa"
+        assembler: "wtdbg2"
+        arguments:
+          "--skip-fragment-assembly": True
+          "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "Y-to-V"
+        assembler: "wtdbg2"
+        arguments:
+          "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "wtdbg2"
+        assembler: "wtdbg2"
+        arguments:
+          "wtdbg2-wtdbg2": True
+      - shortname: "flye raw"
+        assembler: "flye"
+        arguments:
+          "flye-pacbio-raw": True
+      - shortname: "flye corr"
+        assembler: "flye"
+        arguments:
+          "flye-pacbio-corr": True
+
   "C.elegans":
     genomes: ["C.elegans"]
     assemblers:
