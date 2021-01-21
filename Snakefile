@@ -25,6 +25,7 @@ print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
 # Preprocess experiments configuration
 experiments_bcalm2 = config["experiments"]["bcalm2"]
 genomes = config["genomes"]
+corrected_genomes = config["corrected_genomes"]
 reports = config["reports"]
 aggregated_reports = config["aggregated_reports"]
 
@@ -203,7 +204,6 @@ for report_name, report_definition in reports.items():
             report_file_columns = []
             for column in report_definition["columns"]:
                 assembler_name = column["assembler"]
-                print(assembler_name_indices)
                 assembler_arguments = assembler_argument_map_combination[assembler_name_indices[assembler_name]].copy()
 
                 if "arguments" in column:
@@ -622,7 +622,11 @@ rule flye:
 #########################################
 
 def url_file_format(url):
-    return url.split('.')[-1]
+    parts = url.split('.')
+    if parts[-1] == "gz":
+        return parts[-2]
+    else:
+        return parts[-1]
 
 def read_url_file_format(genome):
     format = url_file_format(genomes[genome]["urls"][0])
@@ -634,9 +638,9 @@ def read_url_file_format(genome):
     else:
         return format
 
-ruleorder: download_source_reads > convert_source_reads > extract
+ruleorder: download_raw_source_reads > download_packed_source_reads > convert_source_reads > extract
 
-rule download_source_reads:
+rule download_raw_source_reads:
     output: file = "data/downloads/{genome}/reads-{index}.{format}"
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
             url_format = lambda wildcards: read_url_file_format(wildcards.genome)
@@ -657,8 +661,39 @@ rule download_source_reads:
         wget -O '{output.file}' '{params.url}'
         """
 
+rule download_packed_source_reads:
+    output: file = "data/downloads/{genome}/packed-reads-{index}.{format}.gz"
+    params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
+            url_format = lambda wildcards: read_url_file_format(wildcards.genome)
+    wildcard_constraints:
+        format = "(fa|bam|sra)",
+        index = "\d+",
+        genome = "((?!downloads).)*",
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p 'data/downloads/{wildcards.genome}'
+
+        if [ '{params.url_format}' != '{wildcards.format}' ]; then
+            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
+            exit 1
+        fi
+
+        wget -O '{output.file}' '{params.url}'
+        """
+
+def read_raw_input_file_name(wildcards):
+    genome_name = wildcards.genome
+    genome_properties = genomes[genome_name]
+
+    if genome_properties["urls"][0].split('.')[-1] == "gz":
+        input_file_name = "data/downloads/" + genome_name + "/packed-reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+    else:
+        input_file_name = "data/downloads/" + genome_name + "/reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+    return input_file_name
+
 rule convert_source_reads:
-    input: file = lambda wildcards: "data/downloads/{genome}/reads-{index}." + read_url_file_format(wildcards.genome)
+    input: file = read_raw_input_file_name
     output: file = "data/downloads/{genome}/reads-{index}.converted.fa"
     params: file_format = lambda wildcards: read_url_file_format(wildcards.genome)
     wildcard_constraints:
@@ -694,8 +729,18 @@ rule uniquify_ids:
     threads: 1
     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
 
+def read_input_file_name(wildcards):
+    genome_name = wildcards.genome
+    if genome_name in genomes:
+        return "data/downloads/" + genome_name + "/reads.uniquified.fa"
+    elif genome_name in corrected_genomes:
+        return "data/corrected_reads/" + genome_name + "/corrected_reads.fa"
+    else:
+        sys.exit("genome name not found: " + genome_name)
+
 rule link_reads:
-    input: file = "data/downloads/{genome}/reads.uniquified.fa"
+    #input: file = read_input_file_name
+    input: file = "data/corrected_reads/{genome}/corrected_reads.fa"
     output: file = "data/{genome}/reads.fa"
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -745,6 +790,104 @@ rule link_reference:
     shell: """
         mkdir -p 'data/{wildcards.genome}'
         ln -sr -T '{input.file}' '{output.file}'
+        """
+
+#############################
+###### Corrected Reads ######
+#############################
+
+def correction_read_url_file_format(corrected_genome):
+    format = url_file_format(corrected_genomes[corrected_genome]["correction_short_reads"][0])
+
+    if format == "fasta":
+        return "fa"
+    elif corrected_genomes[corrected_genome].get("format", None) == "sra":
+        return "sra"
+    else:
+        return format
+
+rule download_correction_short_reads:
+    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.{format}"
+    params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
+            url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome)
+    wildcard_constraints:
+        format = "(fa|bam|sra)",
+        index = "\d+",
+        corrected_genome = "((?!corrected_reads).)*",
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p 'data/corrected_reads/{wildcards.corrected_genome}'
+
+        if [ '{params.url_format}' != '{wildcards.format}' ]; then
+            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
+            exit 1
+        fi
+
+        wget -O '{output.file}' '{params.url}'
+        """
+
+rule convert_correction_short_reads:
+    input: file = lambda wildcards: "data/corrected_reads/{corrected_genome}/reads-{index}." + correction_read_url_file_format(wildcards.corrected_genome)
+    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.converted.fa"
+    params: file_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome)
+    wildcard_constraints:
+        index = "\d+",
+        genome = "((?!corrected_reads).)*",
+    conda: "config/conda-convert-reads-env.yml"
+    threads: 1
+    shell: """
+        if [ '{params.file_format}' == 'bam' ]; then
+            samtools fasta '{input.file}' > '{output.file}'
+        elif [ '{params.file_format}' == 'sra' ]; then
+            fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
+        else
+            ln -sr -T '{input.file}' '{output.file}'
+        fi
+        """
+
+rule combine_correction_short_reads:
+    input: files = lambda wildcards: expand("data/corrected_reads/{{corrected_genome}}/reads-{index}.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"])))
+    output: reads = "data/corrected_reads/{corrected_genome}/correction_short_reads.fa"
+    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+    wildcard_constraints:
+        genome = "((?!corrected_reads).)*",
+    threads: 1
+    shell: "cat {params.input_list} > '{output.reads}'"
+
+rule install_ratatosk:
+    output: binary = "external-software/Ratatosk/build/src/Ratatosk",
+    conda: "config/conda-install-ratatosk-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p external-software
+        cd external-software
+
+        rm -r Ratatosk
+        git clone --recursive https://github.com/GuillaumeHolley/Ratatosk.git
+        cd Ratatosk
+        git checkout --recurse-submodules 74ca617afb20a7c24d73d20f2dcdf223db303496
+
+        mkdir build
+        cd build
+        cmake ..
+        make
+        """
+
+rule ratatosk:
+    input: correction_short_reads = "data/corrected_reads/{corrected_genome}/correction_short_reads.fa",
+           long_reads = lambda wildcards: "data/downloads/" + corrected_genomes[wildcards.corrected_genome]["source_genome"] + "/reads.uniquified.fa",
+           binary = "external-software/Ratatosk/build/src/Ratatosk",
+    output: corrected_long_reads = "data/corrected_reads/{corrected_genome}/corrected_reads.fa",
+    wildcard_constraints:
+        genome = "((?!corrected_reads).)*",
+    threads: MAX_THREADS
+    resources: mem_mb = 48000,
+               cpus = MAX_THREADS,
+               time_min = 360,
+               mail_type = "END",
+    shell: """
+        {input.binary} -v -c {threads} -s {input.correction_short_reads} -l {input.long_reads} -o {output.corrected_long_reads}
         """
 
 ###############################
