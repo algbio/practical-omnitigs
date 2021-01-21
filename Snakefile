@@ -270,7 +270,7 @@ def get_all_report_files():
 rule report_all:
     input: get_all_report_files()
     threads: 1
-    resources: mail_type = "END"
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
 ###############################
 ###### Report Generation ######
