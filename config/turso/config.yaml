@@ -4,7 +4,7 @@ cluster: >-
   $(./scripts/parse_sbatch_job_id.sh {dependencies})
   --job-name=practical-omnitigs:{rule}:{wildcards}
   --workdir=/proj/sebschmi/git/practical-omnitigs
-  -o logs/practical-omnitigs:{rule}:{wildcards}.log
+  -o $(cat .logdir)/practical-omnitigs:{rule}:{wildcards}.log
   -p {resources.queue}
   -c {resources.cpus}
   -t {resources.time_min}
@@ -19,6 +19,3 @@ notemp: true
 printshellcmds: true
 cores: 1000
 latency-wait: 60
-
-
-# -M vorna

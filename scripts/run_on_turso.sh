@@ -6,11 +6,16 @@ source /home/sebschmi/.bashrc
 cd /proj/sebschmi/git/practical-omnitigs
 
 source activate practical-omnitigs
-mkdir -p logs
+
+# Create log directory
+LOGDIR="logs/$(date +"%FT%X")/"
+mkdir -p "$LOGDIR"
+echo "$LOGDIR" > .logdir
 
 echo "Creating jobs"
 
 snakemake --profile config/turso $@ | tee "logs/run_on_turso.log"
+rm -f .logdir
 
 echo "Created jobs, logging their properties"
 
