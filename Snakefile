@@ -517,11 +517,12 @@ rule wtdbg2_complete:
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+            threads = MAX_THREADS,
     threads: MAX_THREADS
     resources: mem_mb = 60000,
                cpus = MAX_CORES,
                time_min = 360,
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {params.threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
     algorithm = Algorithm.from_str(wildcards.algorithm)
@@ -548,11 +549,12 @@ rule wtdbg2_without_fragment_assembly:
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+            threads = MAX_THREADS,
     threads: MAX_THREADS
     resources: mem_mb = 48000,
                cpus = MAX_CORES,
                time_min = 360,
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {params.threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
     input: reads = "data/{genome}/reads.fa",
@@ -567,22 +569,24 @@ rule wtdbg2_inject_contigs:
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+            threads = MAX_THREADS,
     threads: MAX_THREADS
     resources: mem_mb = 48000,
                cpus = MAX_CORES,
                time_min = 360,
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {params.threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
     input: reads = "data/{genome}/reads.fa",
            contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay",
            binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
+    params: threads = MAX_THREADS,
     threads: MAX_THREADS
     resources: mem_mb = 8000,
                cpus = MAX_CORES,
                time_min = 360,
-    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
+    shell: "{input.binary} -t {params.threads} -i '{input.contigs}' -fo '{output.consensus}'"
 
 ##################
 ###### Flye ######
@@ -602,13 +606,14 @@ rule flye:
     params: flye_args = get_assembler_args_from_wildcards,
             flye_input_argument = get_flye_input_argument_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            threads = MAX_THREADS,
     conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = 250000,
                cpus = MAX_CORES,
                time_min = 1440,
                mail_type = "END",
-    shell: "flye {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' {params.flye_input_argument} '{input.reads}'"
+    shell: "flye {params.genome_len_arg} {params.flye_args} -t {params.threads} -o '{output.directory}' {params.flye_input_argument} '{input.reads}'"
 
 
 #########################################
@@ -890,13 +895,14 @@ rule run_quast_wtdbg2:
         reference = "data/{genome}/reference.fa",
         script = "external-software/quast/quast.py"
     output: report = directory(QUAST_PREFIX_FORMAT)
+    params: threads = MAX_THREADS
     wildcard_constraints: algorithm = "wtdbg2::.*"
     conda: "config/conda-quast-env.yml"
     threads: 8
     resources: mem_mb = 12000,
                cpus = 4,
                time_min = 60,
-    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
+    shell: "{input.script} -t {params.threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
 rule run_quast_flye:
     input: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
@@ -904,13 +910,14 @@ rule run_quast_flye:
         script = "external-software/quast/quast.py",
         script_directory = "external-software/quast/"
     output: report = directory(QUAST_PREFIX_FORMAT)
+    params: threads = MAX_THREADS
     wildcard_constraints: algorithm = "flye::.*"
     conda: "config/conda-quast-env.yml"
     threads: 8
     resources: mem_mb = 12000,
                cpus = 4,
                time_min = 60,
-    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
+    shell: "{input.script} -t {params.threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
 
 ##################
@@ -920,22 +927,24 @@ rule run_quast_flye:
 rule build_rust_release:
     input: "data/is_rust_tested.log"
     output: "data/target/release/cli"
+    params: threads = MAX_THREADS
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = 4000,
                cpus = MAX_CORES,
                time_min = 30,
-    shell: "cargo build -j {threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "cargo build -j {params.threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
     output: touch("data/is_rust_tested.log")
+    params: threads = MAX_THREADS
     conda: "config/conda-rust-env.yml"
     threads: 4
     resources: mem_mb = 4000,
                cpus = 2,
                time_min = 30,
-    shell: "cargo test -j {threads} --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
+    shell: "cargo test -j {params.threads} --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
 
 #####################
 ###### Testing ######
