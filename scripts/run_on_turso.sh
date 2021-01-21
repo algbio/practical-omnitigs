@@ -14,7 +14,7 @@ echo "$LOGDIR" > .logdir
 
 echo "Creating jobs"
 
-snakemake --profile config/turso $@ | tee "$LOGDIR/run_on_turso.log"
+snakemake --profile config/turso $@ 2>&1 | tee "$LOGDIR/run_on_turso.log"
 rm -f .logdir
 
 echo "Created jobs, logging their properties"
