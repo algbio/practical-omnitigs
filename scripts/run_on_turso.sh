@@ -14,21 +14,20 @@ echo "$LOGDIR" > .logdir
 
 echo "Creating jobs"
 
-snakemake --profile config/turso $@ | tee "logs/run_on_turso.log"
+snakemake --profile config/turso $@ | tee "$LOGDIR/run_on_turso.log"
 rm -f .logdir
 
 echo "Created jobs, logging their properties"
 
 # Log job information
-rm -f logs/jobs.log
 for JOB in $(squeue -o "%.18A" -u sebschmi -M carrington | sed 's/ *//' | grep -E "^[0-9]*$"); do
-	scontrol show jobid -M carrington -dd $JOB >> logs/jobs.log
+	scontrol show jobid -M carrington -dd $JOB >> "$LOGDIR/jobs.log"
 done
 for JOB in $(squeue -o "%.18A" -u sebschmi -M ukko2 | sed 's/ *//' | grep -E "^[0-9]*$"); do
-	scontrol show jobid -M ukko2 -dd $JOB >> logs/jobs.log
+	scontrol show jobid -M ukko2 -dd $JOB >> "$LOGDIR/jobs.log"
 done
 for JOB in $(squeue -o "%.18A" -u sebschmi -M vorna | sed 's/ *//' | grep -E "^[0-9]*$"); do
-	scontrol show jobid -M vorna -dd $JOB >> logs/jobs.log
+	scontrol show jobid -M vorna -dd $JOB >> "$LOGDIR/jobs.log"
 done
 
 echo "Successfully created jobs, now releasing them"
