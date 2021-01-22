@@ -1376,8 +1376,13 @@ rule hamcircuit_generate:
 ###### Download requirements ######
 ###################################
 
-rule download_wtdbg2:
+rule download_all:
     input: reads = [file for genome in genomes.keys() for file in expand("data/downloads/{genome}/reads-{index}.{file_type}", genome=[genome], index=range(len(genomes[genome]["urls"])), file_type=read_url_file_format(genome))],
+           correction_short_reads = [file for corrected_genome in corrected_genomes.keys() for file in
+                                     expand("data/corrected_reads/{corrected_genome}/reads-{index}.{file_type}",
+                                            corrected_genome=[corrected_genome],
+                                            index=range(len(corrected_genomes[corrected_genome]["correction_short_reads"])),
+                                            file_type=correction_read_url_file_format(corrected_genome))],
            references = expand("data/{genome}/reference.fa", genome=genomes.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
