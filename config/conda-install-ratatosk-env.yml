@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+dependencies:
+  - cmake == 3.19.3
+  - make == 4.3
+  - gcc_impl_linux-64 == 9.3.0
+  - zlib == 1.2.11
+  - git == 2.30.0
