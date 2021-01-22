@@ -18,5 +18,6 @@ rerun-incomplete: true
 #notemp: true
 printshellcmds: true
 cores: 10000
+local-cores: 8
 latency-wait: 60
 keep-going: true
