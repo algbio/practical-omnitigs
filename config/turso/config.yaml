@@ -17,5 +17,5 @@ rerun-incomplete: true
 immediate-submit: true
 notemp: true
 printshellcmds: true
-cores: 1000
+cores: 10000
 latency-wait: 60
