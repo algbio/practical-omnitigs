@@ -32,7 +32,7 @@ for JOB_ID in $JOB_IDS; do
 		seff $JOB_ID >> $FAILED_JOBS_LOG 2>&1
 		echo "" >> $FAILED_JOBS_LOG
 		JOBS_NOT_FOUND="true"
-	elif [ ! -z "$(seff $JOB_ID 2>&1 | grep '(exit code 0)')" ]; then
+	elif [ -z "$(seff $JOB_ID 2>&1 | grep '(exit code 0)')" ]; then
 		seff $JOB_ID >> $FAILED_JOBS_LOG 2>&1
 		echo "" >> $FAILED_JOBS_LOG
 		echo "Job $JOB_ID has failed."
