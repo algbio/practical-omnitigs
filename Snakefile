@@ -503,21 +503,26 @@ rule install_wtdbg2:
     make
     """
 
+def get_source_genome_properties_from_wildcards(wildcards):
+    genome_name = wildcards.genome
+    if genome_name in genomes:
+        pass
+    elif corrected_genomes is not None and genome_name in corrected_genomes:
+        genome_name = corrected_genomes[genome_name]["source_genome"]
+    else:
+        sys.exit("Genome name not found: " + str(genome_name))
+    return genomes[genome_name]
+
 def get_assembler_args_from_wildcards(wildcards):
     algorithm = Algorithm.from_str(wildcards.algorithm)
     return algorithm.arguments.to_argument_string()
 
 def get_genome_len_from_wildcards(wildcards):
-    genome_name = wildcards.genome
-    if genome_name in corrected_genomes:
-        genome_name = corrected_genomes[genome_name]["source_genome"]
-    return str(genomes[genome_name]["genome_length"])
+    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
+    return str(genome_properties["genome_length"])
 
 def compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb):
-    genome_name = wildcards.genome
-    if genome_name in corrected_genomes:
-        genome_name = corrected_genomes[genome_name]["source_genome"]
-    genome_properties = genomes[genome_name]
+    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
 
     if "assembly_mem_factor" in genome_properties:
         return int(float(genome_properties["assembly_mem_factor"]) * float(base_mem_mb))
@@ -525,10 +530,7 @@ def compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb):
         return base_mem_mb
 
 def compute_genome_time_min_from_wildcards(wildcards, base_time_min):
-    genome_name = wildcards.genome
-    if genome_name in corrected_genomes:
-        genome_name = corrected_genomes[genome_name]["source_genome"]
-    genome_properties = genomes[genome_name]
+    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
 
     if "assembly_time_factor" in genome_properties:
         return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
@@ -822,7 +824,7 @@ rule download_reference_gzip:
 
 def reference_input_file_name(wildcards):
     genome_name = wildcards.genome
-    if genome_name in corrected_genomes:
+    if corrected_genomes is not None and genome_name in corrected_genomes:
         genome_name = corrected_genomes[genome_name]["source_genome"]
     reference = genomes[genome_name]["reference"]
 
@@ -1422,7 +1424,7 @@ rule download_all:
                                      expand("data/corrected_reads/{corrected_genome}/reads-{index}.{file_type}",
                                             corrected_genome=[corrected_genome],
                                             index=range(len(corrected_genomes[corrected_genome]["correction_short_reads"])),
-                                            file_type=correction_read_url_file_format(corrected_genome))],
+                                            file_type=correction_read_url_file_format(corrected_genome))] if corrected_genomes is not None else [],
            references = expand("data/{genome}/reference.fa", genome=genomes.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
