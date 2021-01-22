@@ -1382,6 +1382,7 @@ rule download_wtdbg2:
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
            rust = "data/target/release/cli",
+           ratatosk = "external-software/Ratatosk/build/src/Ratatosk",
 
 #rule prepare_wtdbg2:
 
