@@ -19,7 +19,7 @@ fi
 JOB_IDS=$(grep -oE "^JobId=[0-9]{3,12}" "$JOBS_LOG" | sed "s/JobId=//g")
 JOBS_HAVE_FAILED=""
 
-for JOB_ID in JOB_IDS; do
+for JOB_ID in "$JOB_IDS"; do
 	if [ -z "$(seff $JOB_ID | grep '(exit code 0)')" ]; then
 		seff $JOB_ID >> $FAILED_JOBS_LOG
 		echo "" >> $FAILED_JOBS_LOG
