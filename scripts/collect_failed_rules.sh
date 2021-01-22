@@ -16,7 +16,7 @@ if [[ ! -f "$JOBS_LOG" ]]; then
 	exit 1
 fi
 
-JOB_IDS=$(grep -oE "^JobId=[0-9]{3,12}" '$JOBS_LOG' | sed "s/JobId=//g")
+JOB_IDS=$(grep -oE "^JobId=[0-9]{3,12}" "$JOBS_LOG" | sed "s/JobId=//g")
 JOBS_HAVE_FAILED=""
 
 for JOB_ID in JOB_IDS; do
