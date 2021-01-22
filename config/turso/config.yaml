@@ -1,7 +1,6 @@
 use-conda: true
 cluster: >-
   sbatch
-  $(./scripts/parse_sbatch_job_id.sh {dependencies})
   --job-name=practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< "{wildcards}")
   --workdir=/proj/sebschmi/git/practical-omnitigs
   -o $(cat .logdir)/practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< "{wildcards}").log
@@ -11,11 +10,12 @@ cluster: >-
   --mem={resources.mem_mb}
   --mail-type={resources.mail_type}
   --mail-user=sebastian.schmidt@helsinki.fi
-  --hold
+#  --hold
+#  $(./scripts/parse_sbatch_job_id.sh {dependencies})
 default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
 rerun-incomplete: true
-immediate-submit: true
-notemp: true
+#immediate-submit: true
+#notemp: true
 printshellcmds: true
 cores: 10000
 latency-wait: 60
