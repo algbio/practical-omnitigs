@@ -293,17 +293,17 @@ reports:
           - "flye-pacbio-corr": [True]
     columns: *default_columns_with_flye
 
-  "HG002_ratatosk":
-    genomes: ["HG002_ratatosk"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["rs", "sq", "ccs"]
-      flye:
-        argument_sets:
-          - "flye-pacbio-corr": [True]
-          - "flye-pacbio-hifi": [True]
-    columns: *default_columns_with_flye
+  # "HG002_ratatosk":
+  #   genomes: ["HG002_ratatosk"]
+  #   assemblers:
+  #     wtdbg2:
+  #       argument_sets:
+  #         - "-x": ["rs", "sq", "ccs"]
+  #     flye:
+  #       argument_sets:
+  #         - "flye-pacbio-corr": [True]
+  #         - "flye-pacbio-hifi": [True]
+  #   columns: *default_columns_with_flye
 
 aggregated_reports:
   "aggregated":
@@ -643,17 +643,11 @@ genomes:
       - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150225_012540_42177.subreads.fasta.gz"
       - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150225_013529_42156.subreads.fasta.gz"
 
-  #"HG002":
-  #  urls: ["https://sra-download.ncbi.nlm.nih.gov/traces/sra42/SRR/011267/SRR11537600"]
-  #  format: "sra"
-  #  ratatosk_short_reads: ["???"]
-  #  reference: "???"
-
 corrected_genomes:
-  "HG002_ratatosk":
-    correction_short_reads: ["https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/NHGRI_Illumina300X_AJtrio_novoalign_bams/HG002.GRCh38.300x.bam"]
-    source_genome: "HG002"
-    correction_type: "ratatosk"
+  # "HG002_ratatosk":
+  #   correction_short_reads: ["https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/NHGRI_Illumina300X_AJtrio_novoalign_bams/HG002.GRCh38.300x.bam"]
+  #   source_genome: "HG002"
+  #   correction_type: "ratatosk"
 
 
 
