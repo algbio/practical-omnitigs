@@ -167,6 +167,7 @@ class ReportFile:
             self.name += name + "::" + str(assembler_argument_map_combination[index])
 
 for report_name, report_definition in reports.items():
+    print(report_name)
     report_definition["report_files"] = {}
     assembler_argument_maps = {}
 
@@ -197,6 +198,8 @@ for report_name, report_definition in reports.items():
     for name, index in assembler_name_indices.items():
         assembler_argument_map_list = list(assembler_argument_maps[name])
         assembler_argument_map_lists[index] = assembler_argument_map_list
+
+    print(assembler_name_indices)
 
     # Iterate over the product of argument map lists to create all report files'
     for assembler_argument_map_combination in itertools.product(*assembler_argument_map_lists):
@@ -504,6 +507,12 @@ def get_assembler_args_from_wildcards(wildcards):
     algorithm = Algorithm.from_str(wildcards.algorithm)
     return algorithm.arguments.to_argument_string()
 
+def get_genome_len_from_wildcards(wildcards):
+    genome_name = wildcards.genome
+    if genome_name in corrected_genomes:
+        genome_name = corrected_genomes[genome_name]["source_genome"]
+    return str(genomes[genome_name]["genome_length"])
+
 rule wtdbg2_complete:
     input: reads = "data/{genome}/reads.fa",
            binary = "external-software/wtdbg2/wtdbg2",
@@ -517,7 +526,7 @@ rule wtdbg2_complete:
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
     wildcard_constraints: algorithm = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
     resources: mem_mb = 60000,
@@ -548,7 +557,7 @@ rule wtdbg2_without_fragment_assembly:
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
     wildcard_constraints: algorithm = "(.*wtdbg2-wtdbg2.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-wtdbg2.*)"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
     resources: mem_mb = 48000,
@@ -567,7 +576,7 @@ rule wtdbg2_inject_contigs:
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
     wildcard_constraints: algorithm = ".*wtdbg2-inject-.*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
     resources: mem_mb = 48000,
@@ -607,7 +616,7 @@ rule flye:
             contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
     params: flye_args = get_assembler_args_from_wildcards,
             flye_input_argument = get_flye_input_argument_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + str(genomes[wildcards.genome]["genome_length"]),
+            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
     conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = 250000,
@@ -739,8 +748,8 @@ def read_input_file_name(wildcards):
         sys.exit("genome name not found: " + genome_name)
 
 rule link_reads:
-    #input: file = read_input_file_name
-    input: file = "data/corrected_reads/{genome}/corrected_reads.fa"
+    input: file = read_input_file_name
+    #input: file = "data/corrected_reads/{genome}/corrected_reads.fa"
     output: file = "data/{genome}/reads.fa"
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -773,9 +782,11 @@ rule download_reference_gzip:
 
 def reference_input_file_name(wildcards):
     genome_name = wildcards.genome
-    genome_properties = genomes[genome_name]
+    if genome_name in corrected_genomes:
+        genome_name = corrected_genomes[genome_name]["source_genome"]
+    reference = genomes[genome_name]["reference"]
 
-    if genome_properties["reference"].split('.')[-1] == "gz":
+    if reference.split('.')[-1] == "gz":
         input_file_name = "data/downloads/" + genome_name + "/packed-reference.fa"
     else:
         input_file_name = "data/downloads/" + genome_name + "/reference.fa"

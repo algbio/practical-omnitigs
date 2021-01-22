@@ -281,6 +281,30 @@ reports:
           - "flye-pacbio-hifi": [True]
     columns: *default_columns_with_flye
 
+  "HG002":
+    genomes: ["HG002"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["rs", "sq", "ccs"]
+      flye:
+        argument_sets:
+          - "flye-pacbio-raw": [True]
+          - "flye-pacbio-corr": [True]
+    columns: *default_columns_with_flye
+
+  "HG002_ratatosk":
+    genomes: ["HG002_ratatosk"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["rs", "sq", "ccs"]
+      flye:
+        argument_sets:
+          - "flye-pacbio-corr": [True]
+          - "flye-pacbio-hifi": [True]
+    columns: *default_columns_with_flye
+
 aggregated_reports:
   "aggregated":
     reports:
