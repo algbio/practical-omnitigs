@@ -167,7 +167,6 @@ class ReportFile:
             self.name += name + "::" + str(assembler_argument_map_combination[index])
 
 for report_name, report_definition in reports.items():
-    print(report_name)
     report_definition["report_files"] = {}
     assembler_argument_maps = {}
 
@@ -198,8 +197,6 @@ for report_name, report_definition in reports.items():
     for name, index in assembler_name_indices.items():
         assembler_argument_map_list = list(assembler_argument_maps[name])
         assembler_argument_map_lists[index] = assembler_argument_map_list
-
-    print(assembler_name_indices)
 
     # Iterate over the product of argument map lists to create all report files'
     for assembler_argument_map_combination in itertools.product(*assembler_argument_map_lists):
