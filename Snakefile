@@ -489,6 +489,7 @@ rule compute_injectable_contigs_wtdbg2:
 ###### wtdbg2 ######
 ####################
 
+localrules: install_wtdbg2
 rule install_wtdbg2:
     output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
     conda: "config/conda-download-env.yml"
@@ -691,6 +692,7 @@ def read_url_file_format(genome):
 
 ruleorder: download_raw_source_reads > download_packed_source_reads > convert_source_reads > extract
 
+localrules: download_raw_source_reads
 rule download_raw_source_reads:
     output: file = "data/downloads/{genome}/reads-{index}.{format}"
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
@@ -712,6 +714,7 @@ rule download_raw_source_reads:
         wget -O '{output.file}' '{params.url}'
         """
 
+localrules: download_packed_source_reads
 rule download_packed_source_reads:
     output: file = "data/downloads/{genome}/packed-reads-{index}.{format}.gz"
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
@@ -789,6 +792,7 @@ def read_input_file_name(wildcards):
     else:
         sys.exit("genome name not found: " + genome_name)
 
+localrules: link_reads
 rule link_reads:
     input: file = read_input_file_name
     #input: file = "data/corrected_reads/{genome}/corrected_reads.fa"
@@ -798,6 +802,7 @@ rule link_reads:
     threads: 1
     shell: "ln -sr -T '{input.file}' '{output.file}'"
 
+localrules: download_reference_raw
 rule download_reference_raw:
     output: reference = "data/downloads/{genome}/reference.fa"
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
@@ -810,6 +815,7 @@ rule download_reference_raw:
         wget -O '{output.reference}' '{params.url}'
         """
 
+localrules: download_reference_gzip
 rule download_reference_gzip:
     output: reference = "data/downloads/{genome}/packed-reference.fa.gz"
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
@@ -834,6 +840,7 @@ def reference_input_file_name(wildcards):
         input_file_name = "data/downloads/" + genome_name + "/reference.fa"
     return input_file_name
 
+localrules: link_reference
 rule link_reference:
     input: file = reference_input_file_name
     output: file = "data/{genome}/reference.fa"
@@ -859,6 +866,7 @@ def correction_read_url_file_format(corrected_genome):
     else:
         return format
 
+localrules: download_correction_short_reads
 rule download_correction_short_reads:
     output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.{format}"
     params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
@@ -908,6 +916,7 @@ rule combine_correction_short_reads:
     threads: 1
     shell: "cat {params.input_list} > '{output.reads}'"
 
+localrules: install_ratatosk
 rule install_ratatosk:
     output: binary = "external-software/Ratatosk/build/src/Ratatosk",
     conda: "config/conda-install-ratatosk-env.yml"
@@ -1064,6 +1073,7 @@ rule download_experiment_file:
 ###### QUAST ######
 ###################
 
+localrules: install_quast
 rule install_quast:
     output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
     conda: "config/conda-install-env.yml"
@@ -1418,6 +1428,7 @@ rule hamcircuit_generate:
 ###### Download requirements ######
 ###################################
 
+localrules: download_all
 rule download_all:
     input: reads = [file for genome in genomes.keys() for file in expand("data/downloads/{genome}/reads-{index}.{file_type}", genome=[genome], index=range(len(genomes[genome]["urls"])), file_type=read_url_file_format(genome))],
            correction_short_reads = [file for corrected_genome in corrected_genomes.keys() for file in
