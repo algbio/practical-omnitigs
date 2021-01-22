@@ -26,18 +26,17 @@ JOBS_NOT_FOUND=""
 set +e
 
 for JOB_ID in $JOB_IDS; do
-	if [ -z "$(seff $JOB_ID 2>&1 | grep '(exit code 0)')" ]; then
+	if [ ! -z "$(seff $JOB_ID 2>&1 | grep 'Job not found.')" ]; then
+		echo "Job ID: $JOB_ID" >> $FAILED_JOBS_LOG
+		echo "Job ID: $JOB_ID" >> $SEFF_LOG
+		seff $JOB_ID >> $FAILED_JOBS_LOG 2>&1
+		echo "" >> $FAILED_JOBS_LOG
+		JOBS_NOT_FOUND="true"
+	elif [ ! -z "$(seff $JOB_ID 2>&1 | grep '(exit code 0)')" ]; then
 		seff $JOB_ID >> $FAILED_JOBS_LOG 2>&1
 		echo "" >> $FAILED_JOBS_LOG
 		echo "Job $JOB_ID has failed."
 		JOBS_HAVE_FAILED="true"
-	elif [ ! -z "$(seff $JOB_ID 2>&1 | grep 'Job not found.')" ]; then
-		echo "Job ID: $JOB_ID" >> $FAILED_JOBS_LOG
-		seff $JOB_ID >> $FAILED_JOBS_LOG 2>&1
-		echo "" >> $FAILED_JOBS_LOG
-		JOBS_NOT_FOUND="true"
-
-		echo "Job ID: $JOB_ID" >> $SEFF_LOG
 	fi
 
 	seff $JOB_ID >> $SEFF_LOG 2>&1
