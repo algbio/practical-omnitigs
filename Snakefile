@@ -513,6 +513,41 @@ def get_genome_len_from_wildcards(wildcards):
         genome_name = corrected_genomes[genome_name]["source_genome"]
     return str(genomes[genome_name]["genome_length"])
 
+def compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb):
+    genome_name = wildcards.genome
+    if genome_name in corrected_genomes:
+        genome_name = corrected_genomes[genome_name]["source_genome"]
+    genome_properties = genomes[genome_name]
+
+    if "assembly_mem_factor" in genome_properties:
+        return int(float(genome_properties["assembly_mem_factor"]) * float(base_mem_mb))
+    else:
+        return base_mem_mb
+
+def compute_genome_time_min_from_wildcards(wildcards, base_time_min):
+    genome_name = wildcards.genome
+    if genome_name in corrected_genomes:
+        genome_name = corrected_genomes[genome_name]["source_genome"]
+    genome_properties = genomes[genome_name]
+
+    if "assembly_time_factor" in genome_properties:
+        return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
+    else:
+        return base_time_min
+
+def compute_genome_queue_from_wildcards(wildcards, base_time_min):
+    time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
+    if time <= 1440:
+        return "short"
+    elif time <= 1440 * 3:
+        return "medium"
+    elif time <= 1440 * 14:
+        return "long"
+    elif time <= 1440 * 60:
+        return "extralong"
+    else:
+        sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+
 rule wtdbg2_complete:
     input: reads = "data/{genome}/reads.fa",
            binary = "external-software/wtdbg2/wtdbg2",
@@ -529,9 +564,10 @@ rule wtdbg2_complete:
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
-    resources: mem_mb = 60000,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60000),
                cpus = MAX_THREADS,
-               time_min = 360,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
@@ -560,9 +596,10 @@ rule wtdbg2_without_fragment_assembly:
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
-    resources: mem_mb = 48000,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
                cpus = MAX_THREADS,
-               time_min = 360,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
@@ -579,9 +616,10 @@ rule wtdbg2_inject_contigs:
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
-    resources: mem_mb = 48000,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
                cpus = MAX_THREADS,
-               time_min = 360,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
@@ -590,9 +628,10 @@ rule wtdbg2_consensus:
            binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
     threads: MAX_THREADS
-    resources: mem_mb = 8000,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8000),
                cpus = MAX_THREADS,
-               time_min = 360,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
 
 ##################
@@ -619,9 +658,10 @@ rule flye:
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
     conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
-    resources: mem_mb = 250000, #lambda wildcards: wildcards.genome * 250000,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250000),
                cpus = MAX_THREADS,
-               time_min = 1440,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440),
                mail_type = "END",
     shell: "flye {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' {params.flye_input_argument} '{input.reads}'"
 
