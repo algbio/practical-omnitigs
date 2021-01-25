@@ -884,9 +884,9 @@ rule download_correction_short_reads:
         fi
 
         if [ -z "{params.checksum}" ]; then
-            wget -c -O '{output.file}' '{params.url}'
+            curl -o '{output.file}' '{params.url}'
         else
-            wget -c -O '{output.file}' '{params.url}'
+            curl -o '{output.file}' '{params.url}'
             echo "Checksum given, but not supported yet"
             exit 1
         fi

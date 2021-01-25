@@ -2,3 +2,4 @@ channels:
         - anaconda
 dependencies:
         - wget==1.20.1
+        - curl==7.71.1
