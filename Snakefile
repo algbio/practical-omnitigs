@@ -1457,19 +1457,9 @@ rule download_all:
 ###### Download results ######
 ##############################
 
-rule download_wtdbg2_result:
-    output: file = "results/{date}.wtdbg2.{experiment}.pdf"
-    wildcard_constraints:
-        date = "\d\d\d\d-\d\d-\d\d"
-    threads: 1
+rule sync_results:
+    conda: "config/conda-rsync-env.yml"
     shell: """
-        if [ "{wildcards.experiment}" == "aggregated" ]; then
-            scp turso:\"/proj/sebschmi/git/practical-omnitigs/data/wtdbg2.aggregated-report.pdf\" '{output.file}'
-        else
-            scp turso:\"/proj/sebschmi/git/practical-omnitigs/data/{wildcards.experiment}/wtdbg2.wtdbg2-report.pdf\" '{output.file}'
-        fi
+        mkdir -p data/reports
+        rsync --verbose --recursive --relative turso:'/proj/sebschmi/git/practical-omnitigs/data/reports/./*/*report.pdf' data/reports
         """
-
-rule download_wtdbg2_results:
-    input: files = expand("results/" + today + ".wtdbg2.{experiment}.pdf", experiment = list(genomes.keys()) + ["aggregated"])
-    threads: 1
