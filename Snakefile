@@ -278,6 +278,7 @@ rule report_all:
 ###### Report Generation ######
 ###############################
 
+localrules: create_single_bcalm2_report_tex
 rule create_single_bcalm2_report_tex:
     input: genome_name = "data/{dir}/name.txt",
            unitigs = "data/{dir}/{file}.unitigs.tex",
@@ -358,7 +359,7 @@ def get_single_report_script_column_arguments(report_name, report_file_name):
 def get_single_report_script_column_arguments_from_wildcards(wildcards):
     return get_single_report_script_column_arguments(wildcards.report_name, wildcards.report_file_name)
 
-
+localrules: create_single_report_tex
 rule create_single_report_tex:
     input: quasts = get_report_file_quasts_from_wildcards,
            combined_eaxmax_plot = REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
@@ -397,6 +398,7 @@ def get_aggregated_report_file_source_report_paths(aggregated_report_name):
 def get_aggregated_report_file_source_report_paths_from_wildcards(wildcards):
     return get_aggregated_report_file_source_report_paths(wildcards.aggregated_report_name)
 
+localrules: create_aggregated_report_tex
 rule create_aggregated_report_tex:
     input: source_reports = get_aggregated_report_file_source_report_paths_from_wildcards,
            script = "scripts/create_aggregated_wtdbg2_report.py",
@@ -409,6 +411,7 @@ rule create_aggregated_report_tex:
         python3 '{input.script}' --source-reports '{params.source_reports_arg}' --output '{output.file}'
         """
 
+localrules: create_combined_eaxmax_graph
 rule create_combined_eaxmax_graph:
     input: quasts = get_report_file_quasts_from_wildcards,
            script = "scripts/create_combined_eaxmax_plot.py",
@@ -418,6 +421,7 @@ rule create_combined_eaxmax_graph:
     threads: 1
     shell: "python3 '{input.script}' '{params.input_quasts}' '{output}'"
 
+localrules: png_to_pdf
 rule png_to_pdf:
     input: "{file}.png"
     output: "{file}.image.pdf"
@@ -425,6 +429,7 @@ rule png_to_pdf:
     threads: 1
     shell: "convert {input} {output}"
 
+localrules: latex
 rule latex:
     input: "data/{subpath}report.tex"
     output: "data/{subpath}report.pdf"
