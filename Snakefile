@@ -708,7 +708,7 @@ rule download_raw_source_reads:
             exit 1
         fi
 
-        curl -o '{output.file}' '{params.url}'
+        wget -O --progress=dot:mega '{output.file}' '{params.url}'
         """
 
 localrules: download_packed_source_reads
@@ -730,7 +730,7 @@ rule download_packed_source_reads:
             exit 1
         fi
 
-        curl -o '{output.file}' '{params.url}'
+        wget -O --progress=dot:mega '{output.file}' '{params.url}'
         """
 
 def read_raw_input_file_name(wildcards):
@@ -809,7 +809,7 @@ rule download_reference_raw:
     threads: 1
     shell: """
         mkdir -p 'data/{wildcards.genome}'
-        curl -o '{output.reference}' '{params.url}'
+        wget -O --progress=dot:mega '{output.reference}' '{params.url}'
         """
 
 localrules: download_reference_gzip
@@ -822,7 +822,7 @@ rule download_reference_gzip:
     threads: 1
     shell: """
         mkdir -p 'data/{wildcards.genome}'
-        curl -o '{output.reference}' '{params.url}'
+        wget -O --progress=dot:mega '{output.reference}' '{params.url}'
         """
 
 def reference_input_file_name(wildcards):
@@ -884,9 +884,9 @@ rule download_correction_short_reads:
         fi
 
         if [ -z "{params.checksum}" ]; then
-            curl -o '{output.file}' '{params.url}'
+            wget -O --progress=dot:mega '{output.file}' '{params.url}'
         else
-            curl -o '{output.file}' '{params.url}'
+            wget -O --progress=dot:mega '{output.file}' '{params.url}'
             echo "Checksum given, but not supported yet"
             exit 1
         fi
@@ -1071,7 +1071,7 @@ rule download_experiment_file:
     params: url = lambda wildcards, output: experiments_bcalm2[wildcards.dir]["url"]
     conda: "config/conda-download-env.yml"
     threads: 1
-    shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; curl -o raw.fna.gz {params.url}"
+    shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget -O --progress=dot:mega raw.fna.gz {params.url}"
 
 ###################
 ###### QUAST ######
@@ -1187,7 +1187,7 @@ rule verify_genome_graph:
 rule selftest:
     conda: "config/conda-selftest-env.yml"
     threads: 1
-    shell: "echo \"snakemake $(snakemake --version)\"; conda --version; curl --version"
+    shell: "echo \"snakemake $(snakemake --version)\"; conda --version; wget --version"
 
 #######################################
 ###### Genome Graph Construction ######
@@ -1280,7 +1280,7 @@ rule download_bcalm2_gfa_converter:
         """
         mkdir -p external-software/scripts
         cd external-software/scripts
-        curl https://raw.githubusercontent.com/GATB/bcalm/v2.2.3/scripts/convertToGFA.py
+        wget https://raw.githubusercontent.com/GATB/bcalm/v2.2.3/scripts/convertToGFA.py
         chmod u+x convertToGFA.py
         """
 
@@ -1311,7 +1311,7 @@ rule install_concorde:
     cd external-software
 
     # Download and unpack concorde
-    curl http://www.math.uwaterloo.ca/tsp/concorde/downloads/codes/src/co031219.tgz
+    wget http://www.math.uwaterloo.ca/tsp/concorde/downloads/codes/src/co031219.tgz
     tar -xf co031219.tgz
     cd concorde
 
@@ -1319,9 +1319,9 @@ rule install_concorde:
     sed -i "s/h->h_addr/h->h_addr_list[0]/g" UTIL/safe_io.c
 
     # Download QSOpt
-    curl https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.PIC.a
+    wget https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.PIC.a
     mv qsopt.PIC.a qsopt.a
-    curl https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.h
+    wget https://www.math.uwaterloo.ca/~bico/qsopt/beta/codes/PIC/qsopt.h
 
     # Build concorde
     QSOPT=$(pwd)
