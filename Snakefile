@@ -1434,7 +1434,7 @@ rule hamcircuit_generate:
 
 localrules: download_all
 rule download_all:
-    input: reads = [file for genome in genomes.keys() for file in expand("data/downloads/{genome}/reads-{index}.converted.{file_type}", genome=[genome], index=range(len(genomes[genome]["urls"])), file_type=read_url_file_format(genome))],
+    input: reads = [file for genome in genomes.keys() for file in expand("data/downloads/{genome}/reads-{index}.converted.fa", genome=[genome], index=range(len(genomes[genome]["urls"])))],
            correction_short_reads = [file for corrected_genome in corrected_genomes.keys() for file in
                                      expand("data/corrected_reads/{corrected_genome}/reads-{index}.{file_type}",
                                             corrected_genome=[corrected_genome],
