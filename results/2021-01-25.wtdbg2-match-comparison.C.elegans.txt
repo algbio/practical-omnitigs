@@ -1,0 +1,17 @@
+wtdbg2 -x rs -g 100m -i 'data/C.elegans/reads.fa' -t 1 -fo 'data/C.elegans/wtdbg2.localtest'
+Total throw_match_away_min_mat: 0
+Total throw_match_away_min_sim: 364
+Total throw_match_away_max_gap: 71403
+Total throw_match_away_min_aln: 0
+Total throw_match_away_aln_special: 91368
+Total throw_match_away_total: 140134
+Total throw_match_away_total_reasons: 163135
+
+wtdbg2 -x rs -g 100m -i 'data/C.elegans/reads.fa' -t 1 -fo 'data/C.elegans/wtdbg2.localtest' -s 0.1
+Total throw_match_away_min_mat: 0
+Total throw_match_away_min_sim: 27859
+Total throw_match_away_max_gap: 74383
+Total throw_match_away_min_aln: 0
+Total throw_match_away_aln_special: 91836
+Total throw_match_away_total: 153860
+Total throw_match_away_total_reasons: 194078
