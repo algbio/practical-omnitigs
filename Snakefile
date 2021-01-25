@@ -867,7 +867,8 @@ localrules: download_correction_short_reads
 rule download_correction_short_reads:
     output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.{format}"
     params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
-            url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome)
+            url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
+            checksum = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads_checksum"] if "correction_short_reads_checksum" in corrected_genomes[wildcards.corrected_genome] else "",
     wildcard_constraints:
         format = "(fa|bam|sra)",
         index = "\d+",
@@ -882,7 +883,13 @@ rule download_correction_short_reads:
             exit 1
         fi
 
-        wget -O '{output.file}' '{params.url}'
+        if [ -z "{params.checksum}" ]; then
+            wget -c -O '{output.file}' '{params.url}'
+        else
+            wget -c -O '{output.file}' '{params.url}'
+            echo "Checksum given, but not supported yet"
+            exit 1
+        fi
         """
 
 rule convert_correction_short_reads:
