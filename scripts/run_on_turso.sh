@@ -14,8 +14,20 @@ echo "$LOGDIR" > .logdir
 
 echo "Creating jobs"
 
-snakemake --profile config/turso $@ 2>&1 | tee "$LOGDIR/run_on_turso.log"
+echo "Arguments: $@" >> "$LOGDIR/run_on_turso.log"
+nohup snakemake --profile config/turso $@ >> "$LOGDIR/run_on_turso.log" 2>&1 &
+
+echo "Started snakemake in background with PID $!"
+
+
+
+### Below is just for slurm-based scheduling, which never really worked.
+
+exit 0
+
+nohup snakemake --profile config/turso $@ 2>&1 | tee "$LOGDIR/run_on_turso.log"
 rm -f .logdir
+
 
 echo "Created jobs, logging their properties"
 
