@@ -15,7 +15,7 @@ rm -f "$LATEST_LOGDIR_SYMLINK"
 ln -sr "$LOGDIR" "LATEST_LOGDIR_SYMLINK"
 
 echo "Storing logs in directory $LOGDIR"
-echo "Also symlinked as LATEST_LOGDIR_SYMLINK"
+echo "Also symlinked as $LATEST_LOGDIR_SYMLINK"
 echo "$LOGDIR" > .logdir
 
 echo "Creating jobs"
