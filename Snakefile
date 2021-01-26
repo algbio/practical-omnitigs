@@ -723,7 +723,8 @@ localrules: download_packed_source_reads
 rule download_packed_source_reads:
     output: file = "data/downloads/{genome}/packed-reads-{index}.{format}.gz"
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
-            url_format = lambda wildcards: read_url_file_format(wildcards.genome)
+            url_format = lambda wildcards: read_url_file_format(wildcards.genome),
+            checksum = lambda wildcards: genomes[wildcards.genome]["checksums"][int(wildcards.index)] if "checksums" in genomes[wildcards.genome] else "",
     wildcard_constraints:
         format = "(fa|bam|sra)",
         index = "\d+",
@@ -739,6 +740,12 @@ rule download_packed_source_reads:
         fi
 
         wget --progress=dot:mega -O '{output.file}' '{params.url}'
+
+        if [ ! -z "{params.checksum}" ]; then
+            md5sum -c <<< "{params.checksum} {output.file}"
+        else
+            echo "Assuming file '{output.file}' was downloaded correctly since no checksum was provided."
+        fi
         """
 
 def read_raw_input_file_name(wildcards):
