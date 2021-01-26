@@ -419,7 +419,10 @@ rule create_combined_eaxmax_graph:
     params: input_quasts = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quasts)])
     conda: "config/conda-seaborn-env.yml"
     threads: 1
-    shell: "python3 '{input.script}' '{params.input_quasts}' '{output}'"
+    shell: """
+        mkdir -p "$(dirname "{output}")"
+        python3 '{input.script}' '{params.input_quasts}' '{output}'
+        """
 
 localrules: png_to_pdf
 rule png_to_pdf:
