@@ -716,7 +716,7 @@ rule download_raw_source_reads:
             exit 1
         fi
 
-        wget -O --progress=dot:mega '{output.file}' '{params.url}'
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
         """
 
 localrules: download_packed_source_reads
@@ -738,7 +738,7 @@ rule download_packed_source_reads:
             exit 1
         fi
 
-        wget -O --progress=dot:mega '{output.file}' '{params.url}'
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
         """
 
 def read_raw_input_file_name(wildcards):
@@ -817,7 +817,7 @@ rule download_reference_raw:
     threads: 1
     shell: """
         mkdir -p 'data/{wildcards.genome}'
-        wget -O --progress=dot:mega '{output.reference}' '{params.url}'
+        wget --progress=dot:mega -O '{output.reference}' '{params.url}'
         """
 
 localrules: download_reference_gzip
@@ -830,7 +830,7 @@ rule download_reference_gzip:
     threads: 1
     shell: """
         mkdir -p 'data/{wildcards.genome}'
-        wget -O --progress=dot:mega '{output.reference}' '{params.url}'
+        wget --progress=dot:mega -O '{output.reference}' '{params.url}'
         """
 
 def reference_input_file_name(wildcards):
@@ -892,9 +892,9 @@ rule download_correction_short_reads:
         fi
 
         if [ -z "{params.checksum}" ]; then
-            wget -O --progress=dot:mega '{output.file}' '{params.url}'
+            wget --progress=dot:mega -O '{output.file}' '{params.url}'
         else
-            wget -O --progress=dot:mega '{output.file}' '{params.url}'
+            wget --progress=dot:mega -O '{output.file}' '{params.url}'
             echo "Checksum given, but not supported yet"
             exit 1
         fi
@@ -1079,7 +1079,7 @@ rule download_experiment_file:
     params: url = lambda wildcards, output: experiments_bcalm2[wildcards.dir]["url"]
     conda: "config/conda-download-env.yml"
     threads: 1
-    shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget -O --progress=dot:mega raw.fna.gz {params.url}"
+    shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget --progress=dot:mega -O raw.fna.gz {params.url}"
 
 ###################
 ###### QUAST ######
