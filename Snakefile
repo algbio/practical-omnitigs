@@ -1160,7 +1160,7 @@ rule install_quast:
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout 876e802a1d4af4bee651cca4c120d36c77d3e366
+    git checkout 9f0b7c87c685bcd8971954d1cc5c05e640a08c6e
     """
 
 rule run_quast_bcalm2:
@@ -1179,7 +1179,7 @@ rule run_quast:
         script = "external-software/quast/quast.py",
     output: report = directory(QUAST_PREFIX_FORMAT),
     conda: "config/conda-quast-env.yml"
-    threads: 8
+    threads: 4
     resources: mem_mb = 12000,
                cpus = 4,
                time_min = 60,
