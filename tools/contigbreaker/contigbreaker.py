@@ -59,7 +59,7 @@ else:
 		logger.info("Running minimap2")
 
 	try:
-		subprocess.run(["minimap2", "-x", "map-pb", "-t", str(args.threads), "-o", minimap2_paf_file, args.input_contigs, args.input_reads], check = True)
+		subprocess.run(["minimap2", "-x", "map-pb", "-O", "1,3", "-t", str(args.threads), "-o", minimap2_paf_file, args.input_contigs, args.input_reads], check = True)
 	except Exception as e:
 		logger.error("Error running minimap2")
 		print(e)
@@ -92,6 +92,8 @@ logger.info("Computing block qualities")
 
 unmapped_reads = 0
 unmapped_contigs = set()
+total_evidence = 0
+total_blocks = 0
 
 contig_block_evidence = {}
 for contig_name in contigs.keys():
@@ -121,6 +123,7 @@ for contig_name in contigs.keys():
 
 		for i in range(first_block, limit_block):
 			block_evidence[i] += 1
+			total_evidence += 1
 
 ### Compute breakpoints ###
 
@@ -135,6 +138,7 @@ for contig_name, block_evidence in contig_block_evidence.items():
 	first_block = div_int_ceil(args.contig_ends_grace_len, args.blocking_size)
 	last_block = (contig_len - args.contig_ends_grace_len) // args.blocking_size
 	last_existing_block = contig_len // args.blocking_size
+	total_blocks += last_existing_block + 1
 	last_breakpoint_start = None
 
 	for i in range(first_block, last_block):
@@ -248,3 +252,4 @@ logger.info("Unmapped contigs: %d", len(unmapped_contigs))
 logger.info("Unmapped reads: %d", unmapped_reads)
 logger.info("Total breakpoints: %d", total_breakpoints)
 logger.info("Total output contigs: %d", total_broken_contigs)
+logger.info("Average evidence per block: %.2f", total_evidence / total_blocks)
