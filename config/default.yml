@@ -197,6 +197,48 @@ column_templates:
     - shortname: "flye"
       assembler: "flye"
 
+  contigbreaker_columns: &contigbreaker_columns
+    - shortname: "Y-to-V sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "wtdbg2 sfa"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2-wtdbg2": True
+    - shortname: "Y-to-V"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "wtdbg2"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2-wtdbg2": True
+    - shortname: "Y-to-V sfa brk"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2-inject-trivial-omnitigs": True
+        "contigbreaker": True
+    - shortname: "wtdbg2 sfa brk"
+      assembler: "wtdbg2"
+      arguments:
+        "--skip-fragment-assembly": True
+        "wtdbg2-wtdbg2": True
+        "contigbreaker": True
+    - shortname: "Y-to-V brk"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2-inject-trivial-omnitigs": True
+        "contigbreaker": True
+    - shortname: "wtdbg2 brk"
+      assembler: "wtdbg2"
+      arguments:
+        "wtdbg2-wtdbg2": True
+        "contigbreaker": True
+
 reports:
   "Flye_comparison":
     genomes: ["C.elegans"]
@@ -242,6 +284,14 @@ reports:
           - "-x": ["rs"]
             "-s": [0.02, 0.05, 0.1]
     columns: *default_columns
+
+  "C.elegans_contigbreaker":
+    genomes: ["C.elegans"]
+    assemblers:
+      wtdbg2:
+        argument_sets:
+          - "-x": ["rs"]
+    columns: *contigbreaker_columns
 
   "A.thaliana":
     genomes: ["A.thaliana"]
@@ -343,6 +393,8 @@ genomes:
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/623/365/GCA_001623365.2_MH63RS2/GCA_001623365.2_MH63RS2_genomic.fna.gz"
     genome_length: 387000000
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
 
   "HG002":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"

@@ -119,7 +119,7 @@ class Arguments(dict):
         result = ""
         once = True
         for key, value in self.items():
-            if key.startswith("wtdbg2-") or key.startswith("flye-"):
+            if key.startswith("wtdbg2-") or key.startswith("flye-") or key.startswith("contigbreaker"):
                 continue
             argument = Arguments.argument_to_argument_string(key, value)
             if argument != "":
@@ -249,6 +249,7 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
+GENOME_READS_FORMAT = "data/{genome}/reads.fa"
 ALGORITHM_PREFIX_FORMAT = "data/{genome}/{algorithm}/"
 QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
 REPORT_PREFIX_FORMAT = "data/reports/{report_name}/{report_file_name}"
@@ -480,7 +481,7 @@ rule compute_injectable_contigs_wtdbg2:
     input: nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.nodes",
            reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
-           raw_reads = "data/{genome}/reads.fa",
+           raw_reads = GENOME_READS_FORMAT,
            binary = "data/target/release/cli"
     output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.log",
@@ -490,24 +491,38 @@ rule compute_injectable_contigs_wtdbg2:
     resources: mem_mb = 48000
     shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
-####################
-###### wtdbg2 ######
-####################
+#################################
+###### Postprocess Contigs ######
+#################################
 
-localrules: install_wtdbg2
-rule install_wtdbg2:
-    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
-    conda: "config/conda-download-env.yml"
+def get_raw_assembly_file_from_wildcards(wildcards):
+    if wildcards.algorithm.startswith("flye::"):
+        return ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta"
+    elif wildcards.algorithm.startswith("wtdbg2::"):
+        return ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
+    else:
+        sys.exit("Unknown assembler in algorithm: " + wildcards.algorithm)
+
+localrules: select_assembler
+rule select_assembler:
+    input: raw_assembly_from_assembler = get_raw_assembly_file_from_wildcards
+    output: raw_assembly = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa"
     threads: 1
-    shell: """
-    mkdir -p external-software
-    cd external-software
+    shell: "ln -sr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
 
-    git clone https://github.com/sebschmi/wtdbg2.git
-    cd wtdbg2
-    git checkout 7440d6b5d8ee53a3f5fea9163208b7b295407648
-    make
-    """
+def get_assembly_postprocessing_target_file_from_wildcards(wildcards):
+    algorithm = Algorithm.from_str(wildcards.algorithm)
+    if "contigbreaker" in algorithm.arguments:
+        return ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa"
+    else:
+        return ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa"
+
+localrules: request_assembly_postprocessing
+rule request_assembly_postprocessing:
+    input: get_assembly_postprocessing_target_file_from_wildcards
+    output: assembly = ALGORITHM_PREFIX_FORMAT + "assembly.fa"
+    threads: 1
+    shell: "ln -sr '{input}' '{output}'"
 
 def get_source_genome_properties_from_wildcards(wildcards):
     genome_name = wildcards.genome
@@ -518,14 +533,6 @@ def get_source_genome_properties_from_wildcards(wildcards):
     else:
         sys.exit("Genome name not found: " + str(genome_name))
     return genomes[genome_name]
-
-def get_assembler_args_from_wildcards(wildcards):
-    algorithm = Algorithm.from_str(wildcards.algorithm)
-    return algorithm.arguments.to_argument_string()
-
-def get_genome_len_from_wildcards(wildcards):
-    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
-    return str(genome_properties["genome_length"])
 
 def compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb):
     genome_properties = get_source_genome_properties_from_wildcards(wildcards)
@@ -556,8 +563,47 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min):
     else:
         sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
 
+rule run_contigbreaker:
+    input:  contigs = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa",
+            reads = GENOME_READS_FORMAT,
+            script = "tools/contigbreaker/contigbreaker.py"
+    output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
+    threads: 1
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 500),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 10),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 10),
+    conda: "tools/contigbreaker/environment.yml"
+    shell: "'{input.script}' --lazy-minimap2 --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
+
+####################
+###### wtdbg2 ######
+####################
+
+localrules: install_wtdbg2
+rule install_wtdbg2:
+    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    git clone https://github.com/sebschmi/wtdbg2.git
+    cd wtdbg2
+    git checkout 7440d6b5d8ee53a3f5fea9163208b7b295407648
+    make
+    """
+
+def get_assembler_args_from_wildcards(wildcards):
+    algorithm = Algorithm.from_str(wildcards.algorithm)
+    return algorithm.arguments.to_argument_string()
+
+def get_genome_len_from_wildcards(wildcards):
+    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
+    return str(genome_properties["genome_length"])
+
 rule wtdbg2_complete:
-    input: reads = "data/{genome}/reads.fa",
+    input: reads = GENOME_READS_FORMAT,
            binary = "external-software/wtdbg2/wtdbg2",
     output: original_nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.1.nodes",
             nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
@@ -588,7 +634,7 @@ def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
     return ALGORITHM_PREFIX_FORMAT.format(genome = "{genome}", algorithm = str(algorithm))
 
 rule wtdbg2_without_fragment_assembly:
-    input: reads = "data/{genome}/reads.fa",
+    input: reads = GENOME_READS_FORMAT,
            clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
            kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
@@ -611,7 +657,7 @@ rule wtdbg2_without_fragment_assembly:
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
-    input: reads = "data/{genome}/reads.fa",
+    input: reads = GENOME_READS_FORMAT,
            contigs = ALGORITHM_PREFIX_FORMAT + "contigwalks",
            clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
@@ -631,7 +677,7 @@ rule wtdbg2_inject_contigs:
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
-    input: reads = "data/{genome}/reads.fa",
+    input: reads = GENOME_READS_FORMAT,
            contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay",
            binary = "external-software/wtdbg2/wtpoa-cns"
     output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
@@ -658,7 +704,7 @@ def get_flye_input_argument_from_wildcards(wildcards):
         sys.exit("Missing flye input argument: " + str(algorithm.arguments))
 
 rule flye:
-    input: reads = "data/{genome}/reads.fa"
+    input: reads = GENOME_READS_FORMAT
     output: directory = directory(ALGORITHM_PREFIX_FORMAT + "flye/"),
             contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
     params: flye_args = get_assembler_args_from_wildcards,
@@ -808,7 +854,7 @@ localrules: link_reads
 rule link_reads:
     input: file = read_input_file_name
     #input: file = "data/corrected_reads/{genome}/corrected_reads.fa"
-    output: file = "data/{genome}/reads.fa"
+    output: file = GENOME_READS_FORMAT
     wildcard_constraints:
         genome = "((?!downloads).)*",
     threads: 1
@@ -1116,26 +1162,11 @@ rule run_quast_bcalm2:
     threads: 1
     shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
 
-rule run_quast_wtdbg2:
-    input: contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa",
-        reference = "data/{genome}/reference.fa",
-        script = "external-software/quast/quast.py"
-    output: report = directory(QUAST_PREFIX_FORMAT)
-    wildcard_constraints: algorithm = "wtdbg2::.*"
-    conda: "config/conda-quast-env.yml"
-    threads: 8
-    resources: mem_mb = 12000,
-               cpus = 4,
-               time_min = 60,
-    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
-
-rule run_quast_flye:
-    input: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
+rule run_quast:
+    input: contigs = ALGORITHM_PREFIX_FORMAT + "assembly.fa",
         reference = "data/{genome}/reference.fa",
         script = "external-software/quast/quast.py",
-        script_directory = "external-software/quast/"
-    output: report = directory(QUAST_PREFIX_FORMAT)
-    wildcard_constraints: algorithm = "flye::.*"
+    output: report = directory(QUAST_PREFIX_FORMAT),
     conda: "config/conda-quast-env.yml"
     threads: 8
     resources: mem_mb = 12000,
