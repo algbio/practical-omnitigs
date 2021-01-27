@@ -130,6 +130,11 @@ class Arguments(dict):
                 result += argument
         return result
 
+    def pop_postprocessing(self):
+        pop = [argument for argument in self.keys() if argument == "contigbreaker"]
+        for argument in pop:
+            self.pop(argument)
+
 class Algorithm:
     def __init__(self, assembler, arguments):
         self.assembler = assembler
@@ -496,12 +501,17 @@ rule compute_injectable_contigs_wtdbg2:
 #################################
 
 def get_raw_assembly_file_from_wildcards(wildcards):
-    if wildcards.algorithm.startswith("flye::"):
-        return ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta"
-    elif wildcards.algorithm.startswith("wtdbg2::"):
-        return ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
+    algorithm = Algorithm.from_str(wildcards.algorithm)
+
+    if algorithm.assembler == "flye":
+        result = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta"
+    elif algorithm.assembler == "wtdbg2":
+        result = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
     else:
         sys.exit("Unknown assembler in algorithm: " + wildcards.algorithm)
+
+    algorithm.arguments.pop_postprocessing()
+    return result.format(genome = wildcards.genome, algorithm = str(algorithm))
 
 localrules: select_assembler
 rule select_assembler:
