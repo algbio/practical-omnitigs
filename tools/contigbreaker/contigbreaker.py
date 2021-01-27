@@ -6,6 +6,7 @@ import os
 import sys
 import logging
 import pafpy
+import json
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -21,6 +22,7 @@ parser.add_argument("--contig-ends-grace-len", metavar = "BASE_COUNT", type = in
 parser.add_argument("--min-block-evidence", metavar = "ALIGN_COUNT", type = int, default = 2, help = "A block is considered not a breakpoint if it has at least <ALIGN_COUNT> alignments of evidence.")
 parser.add_argument("--min-broken-contig-len", metavar = "BASE_COUNT", type = int, default = 1000, help = "A broken contig is only output if it has at least <BASE_COUNT> bases.")
 parser.add_argument("--threads", metavar = "THREADS", type = int, default = 3, help = "Use <THREADS> threads for minimap2.")
+parser.add_argument("--compare-breakpoints", metavar = "JSON_FILE", type = str, help = "Compare with the breakpoints given in <JSON_FILE>.")
 
 args = parser.parse_args()
 
@@ -150,7 +152,60 @@ for contig_name, block_evidence in contig_block_evidence.items():
 		total_breakpoints += 1
 		last_breakpoint_start = None
 
-	logger.info("Contig '%s' breakpoints: %s", contig_name, ", ".join([str(breakpoint) for breakpoint in breakpoints]))
+	if len(breakpoints) > 0:
+		logger.info("Contig '%s' breakpoints: %s", contig_name, ", ".join([str(breakpoint) for breakpoint in breakpoints]))
+
+### Compare breakpoints ###
+
+if args.compare_breakpoints is not None:
+	logger.info("Comparing breakpoints to real breakpoints given as '%s'", args.compare_breakpoints)	
+	total_correct_breakpoints = 0
+	total_wrong_breakpoints = 0
+	total_real_breakpoints = 0
+	total_found_real_breakpoints = 0
+
+	try:
+		with open(args.compare_breakpoints, 'r') as cb_file:
+			compare_breakpoints = json.load(cb_file)
+	except Exception as e:
+		compare_breakpoints = None
+		logger.error("Could not read compare breakpoints file: '%s'", args.compare_breakpoints)
+		print(e)
+		sys.exit(1)
+
+	for breakpoints in compare_breakpoints.values():
+		breakpoints.sort()
+
+	for contig_name in compare_breakpoints.keys():
+		contig_breakpoints.setdefault(contig_name, [])
+
+	for contig_name, breakpoints in contig_breakpoints.items():
+		real_breakpoints = contig_breakpoints.setdefault(contig_name, [])
+		matched_breakpoints = [False] * len(breakpoints)
+		matched_real_breakpoints = [False] * len(real_breakpoints)
+
+		for index, (breakpoint_start, breakpoint_end) in enumerate(breakpoints):
+			start = breakpoint_start * args.blocking_size
+			end = (breakpoint_end + 1) * args.blocking_size
+
+			# Search overlapping real breakpoints
+			for real_index, (real_start, real_end) in enumerate(real_breakpoints):
+				if real_start <= end and start <= real_end:
+					matched_breakpoints[index] = True
+					matched_real_breakpoints[real_index] = True
+
+		total_correct_breakpoints += matched_breakpoints.count(True)
+		total_wrong_breakpoints += matched_breakpoints.count(False)
+		total_real_breakpoints += len(real_breakpoints)
+		total_found_real_breakpoints += matched_real_breakpoints.count(True)
+
+	logger.info("Total correct breakpoints: %d", total_correct_breakpoints)
+	logger.info("Total wrong breakpoints: %d", total_wrong_breakpoints)
+	logger.info("Total real breakpoints: %d", total_real_breakpoints)
+	logger.info("Total missing real breakpoints: %d", total_real_breakpoints - total_found_real_breakpoints)
+	logger.info("False positive rate: %.2f", total_wrong_breakpoints / total_breakpoints)
+	logger.info("False negative rate: %.2f", 1.0 - (total_found_real_breakpoints / total_real_breakpoints))
+
 
 ### Split contigs ###
 
