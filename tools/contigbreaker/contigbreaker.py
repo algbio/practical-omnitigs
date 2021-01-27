@@ -20,6 +20,7 @@ parser.add_argument("--min-surrounding-aligned-bases", metavar = "BASE_COUNT", t
 parser.add_argument("--contig-ends-grace-len", metavar = "BASE_COUNT", type = int, default = 700, help = "The first and last <BASE_COUNT> bases of a contig are never considered as breakpoints. Note that it does not make sense to set this value lower than --min-surrounding-aligned-bases.")
 parser.add_argument("--min-block-evidence", metavar = "ALIGN_COUNT", type = int, default = 2, help = "A block is considered not a breakpoint if it has at least <ALIGN_COUNT> alignments of evidence.")
 parser.add_argument("--min-broken-contig-len", metavar = "BASE_COUNT", type = int, default = 1000, help = "A broken contig is only output if it has at least <BASE_COUNT> bases.")
+parser.add_argument("--threads", metavar = "THREADS", type = int, default = 3, help = "Use <THREADS> threads for minimap2.")
 
 args = parser.parse_args()
 
@@ -56,7 +57,7 @@ else:
 		logger.info("Running minimap2")
 
 	try:
-		subprocess.run(["minimap2", "-x", "map-pb", "-o", minimap2_paf_file, args.input_contigs, args.input_reads], check = True)
+		subprocess.run(["minimap2", "-x", "map-pb", "-t", str(args.threads), "-o", minimap2_paf_file, args.input_contigs, args.input_reads], check = True)
 	except Exception as e:
 		logger.error("Error running minimap2")
 		print(e)
