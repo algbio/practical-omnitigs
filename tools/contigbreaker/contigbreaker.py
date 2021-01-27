@@ -168,7 +168,6 @@ if args.compare_breakpoints is not None:
 		with open(args.compare_breakpoints, 'r') as cb_file:
 			compare_breakpoints = json.load(cb_file)
 	except Exception as e:
-		compare_breakpoints = None
 		logger.error("Could not read compare breakpoints file: '%s'", args.compare_breakpoints)
 		print(e)
 		sys.exit(1)
@@ -180,7 +179,7 @@ if args.compare_breakpoints is not None:
 		contig_breakpoints.setdefault(contig_name, [])
 
 	for contig_name, breakpoints in contig_breakpoints.items():
-		real_breakpoints = contig_breakpoints.setdefault(contig_name, [])
+		real_breakpoints = compare_breakpoints.setdefault(contig_name, [])
 		matched_breakpoints = [False] * len(breakpoints)
 		matched_real_breakpoints = [False] * len(real_breakpoints)
 
