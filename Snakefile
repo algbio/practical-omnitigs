@@ -848,7 +848,8 @@ rule combine_reads:
         genome = "((?!downloads).)*",
     threads: 1
     resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     shell: "cat {params.input_list} > '{output.reads}'"
 
 rule uniquify_ids:
@@ -982,7 +983,8 @@ rule convert_correction_short_reads:
     conda: "config/conda-convert-reads-env.yml"
     threads: 1
     resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     shell: """
         if [ '{params.file_format}' == 'bam' ]; then
             samtools fasta '{input.file}' > '{output.file}'
@@ -1001,7 +1003,8 @@ rule combine_correction_short_reads:
         genome = "((?!corrected_reads).)*",
     threads: 1
     resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     shell: "cat {params.input_list} > '{output.reads}'"
 
 localrules: install_ratatosk
@@ -1197,6 +1200,7 @@ rule run_quast:
     resources: mem_mb = 12000,
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
 
