@@ -989,6 +989,8 @@ rule combine_correction_short_reads:
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
     threads: 1
+    resources:
+        time_min: lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
     shell: "cat {params.input_list} > '{output.reads}'"
 
 localrules: install_ratatosk
