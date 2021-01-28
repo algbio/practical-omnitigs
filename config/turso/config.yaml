@@ -12,6 +12,7 @@ cluster: >-
   --mail-user=sebastian.schmidt@helsinki.fi
 #  --hold
 #  $(./scripts/parse_sbatch_job_id.sh {dependencies})
+cluster-status: "scripts/get_slurm_job_status.py"
 default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
 rerun-incomplete: true
 #immediate-submit: true
