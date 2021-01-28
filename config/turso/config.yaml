@@ -10,6 +10,7 @@ cluster: >-
   --mem={resources.mem_mb}
   --mail-type={resources.mail_type}
   --mail-user=sebastian.schmidt@helsinki.fi
+  --parsable
 #  --hold
 #  $(./scripts/parse_sbatch_job_id.sh {dependencies})
 cluster-status: "scripts/get_slurm_job_status.py"
