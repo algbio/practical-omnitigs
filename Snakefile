@@ -1192,7 +1192,7 @@ rule run_quast:
     threads: 4
     resources: mem_mb = 12000,
                cpus = 4,
-               time_min = 60,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
     shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
 
 
