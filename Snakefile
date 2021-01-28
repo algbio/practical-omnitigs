@@ -859,6 +859,9 @@ rule uniquify_ids:
         genome = "((?!downloads).)*",
     conda: "config/conda-uniquify-env.yml"
     threads: 1
+    resources:
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
 
 def read_input_file_name(wildcards):
@@ -1004,7 +1007,7 @@ rule combine_correction_short_reads:
     threads: 1
     resources:
         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     shell: "cat {params.input_list} > '{output.reads}'"
 
 localrules: install_ratatosk
