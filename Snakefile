@@ -716,8 +716,7 @@ def get_flye_input_argument_from_wildcards(wildcards):
 
 rule flye:
     input: reads = GENOME_READS_FORMAT
-    output: directory = directory(ALGORITHM_PREFIX_FORMAT + "flye/"),
-            contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
+    output: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
     params: flye_args = get_assembler_args_from_wildcards,
             flye_input_argument = get_flye_input_argument_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
