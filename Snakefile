@@ -535,7 +535,13 @@ rule request_assembly_postprocessing:
     shell: "ln -sr '{input}' '{output}'"
 
 def get_source_genome_properties_from_wildcards(wildcards):
-    genome_name = wildcards.genome
+    if hasattr(wildcards, "genome"):
+        genome_name = wildcards.genome
+    elif hasattr(wildcards, "corrected_genome"):
+        genome_name = wildcards.corrected_genome
+    else:
+        sys.exit("Wildcards has no 'genome' or 'corrected_genome' attribute")
+
     if genome_name in genomes:
         pass
     elif corrected_genomes is not None and genome_name in corrected_genomes:
@@ -720,6 +726,7 @@ rule flye:
     params: flye_args = get_assembler_args_from_wildcards,
             flye_input_argument = get_flye_input_argument_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
+            output_directory = ALGORITHM_PREFIX_FORMAT + "flye",
     conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250000),
@@ -727,7 +734,7 @@ rule flye:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440),
                mail_type = "END",
-    shell: "flye {params.genome_len_arg} {params.flye_args} -t {threads} -o '{output.directory}' {params.flye_input_argument} '{input.reads}'"
+    shell: "flye {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
 
 
 #########################################
@@ -972,6 +979,8 @@ rule convert_correction_short_reads:
         genome = "((?!corrected_reads).)*",
     conda: "config/conda-convert-reads-env.yml"
     threads: 1
+    resources:
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
     shell: """
         if [ '{params.file_format}' == 'bam' ]; then
             samtools fasta '{input.file}' > '{output.file}'
@@ -990,7 +999,7 @@ rule combine_correction_short_reads:
         genome = "((?!corrected_reads).)*",
     threads: 1
     resources:
-        time_min: lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
     shell: "cat {params.input_list} > '{output.reads}'"
 
 localrules: install_ratatosk
