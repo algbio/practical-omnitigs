@@ -21,8 +21,12 @@ parser.add_argument("--min-surrounding-aligned-bases", metavar = "BASE_COUNT", t
 parser.add_argument("--contig-ends-grace-len", metavar = "BASE_COUNT", type = int, default = 700, help = "The first and last <BASE_COUNT> bases of a contig are never considered as breakpoints. Note that it does not make sense to set this value lower than --min-surrounding-aligned-bases.")
 parser.add_argument("--min-block-evidence", metavar = "ALIGN_COUNT", type = int, default = 2, help = "A block is considered not a breakpoint if it has at least <ALIGN_COUNT> alignments of evidence.")
 parser.add_argument("--min-broken-contig-len", metavar = "BASE_COUNT", type = int, default = 1000, help = "A broken contig is only output if it has at least <BASE_COUNT> bases.")
+parser.add_argument("--proper-alignment-contig-ends", metavar = "BASE_COUNT", type = int, default = 10, help = "A read that aligns at most <BASE_COUNT> away from the start or end of a contig is not improperly aligned at that start or end.")
+parser.add_argument("--proper-alignment-read-ends", metavar = "BASE_COUNT", type = int, default = 10, help = "A read that aligns at most <BASE_COUNT> away from its start or end is not improperly aligned at that start or end.")
+parser.add_argument("--max-ignore-terminating-breakpoints-size", metavar = "BASE_COUNT", type = int, default = 1000, help = "A breakpoint that is at the start or end of a contig and is at most <BASE_COUNT> bases long is ignored.")
 parser.add_argument("--threads", metavar = "THREADS", type = int, default = 3, help = "Use <THREADS> threads for minimap2.")
 parser.add_argument("--compare-breakpoints", metavar = "JSON_FILE", type = str, help = "Compare with the breakpoints given in <JSON_FILE>.")
+parser.add_argument("--algorithm", metavar = "ALGORITHM", type = str, default = "any-inner-alignment", choices = ["any-inner-alignment", "only-proper-alignment"], help = "The algorithm to use for breakpoint detection.")
 
 args = parser.parse_args()
 
@@ -59,7 +63,7 @@ else:
 		logger.info("Running minimap2")
 
 	try:
-		subprocess.run(["minimap2", "-x", "map-pb", "-O", "1,3", "-t", str(args.threads), "-o", minimap2_paf_file, args.input_contigs, args.input_reads], check = True)
+		subprocess.run(["minimap2", "-x", "map-pb", "-O", "1,3", "-p", "0.1", "-N", "10000", "-t", str(args.threads), "-o", minimap2_paf_file, args.input_contigs, args.input_reads], check = True)
 	except Exception as e:
 		logger.error("Error running minimap2")
 		print(e)
@@ -73,6 +77,13 @@ contigs = {}
 for record in SeqIO.parse(args.input_contigs, "fasta"):
 	contigs[record.id] = record
 
+### Load read lenghts ###
+
+logger.info("Loading read lengths from '%s'", args.input_reads)
+read_lengths = {}
+
+for record in SeqIO.parse(args.input_reads, "fasta"):
+	read_lengths[record.id] = len(record.seq)
 
 ### Read paf file ###
 
@@ -98,7 +109,7 @@ total_blocks = 0
 contig_block_evidence = {}
 for contig_name in contigs.keys():
 	contig_len = len(contigs[contig_name].seq)
-	block_evidence = contig_block_evidence.setdefault(contig_name, [0] * (contig_len // args.blocking_size))
+	block_evidence = contig_block_evidence.setdefault(contig_name, [0.0] * (contig_len // args.blocking_size))
 
 	if contig_name not in contig_alignments:
 		unmapped_contigs.add(contig_name)
@@ -117,19 +128,38 @@ for contig_name in contigs.keys():
 			logger.warn("Found reverse alignment on target, do not know how to handle this: read '%s'", contig_alignment.qname)
 			continue
 
-		first_block = div_int_ceil(contig_alignment.tstart + args.min_surrounding_aligned_bases, args.blocking_size)
-		# The block after the last block
-		limit_block = (contig_alignment.tend + 1 - args.min_surrounding_aligned_bases) // args.blocking_size
+		if args.algorithm == "any-inner-alignment":
+			first_block = div_int_ceil(contig_alignment.tstart + args.min_surrounding_aligned_bases, args.blocking_size)
+			# The block after the last block
+			limit_block = (contig_alignment.tend + 1 - args.min_surrounding_aligned_bases) // args.blocking_size
 
-		for i in range(first_block, limit_block):
-			block_evidence[i] += 1
-			total_evidence += 1
+			for i in range(first_block, limit_block):
+				block_evidence[i] += 1
+				total_evidence += 1
+		elif args.algorithm == "only-proper-alignment":
+			read_len = read_lengths[contig_alignment.qname]
+			if contig_alignment.tstart > args.proper_alignment_contig_ends and contig_alignment.qstart > args.proper_alignment_read_ends:
+				# Alignment does not start at the start of the read
+				continue
+
+			if contig_alignment.tend < contig_len - args.proper_alignment_contig_ends and contig_alignment.qend < read_len - args.proper_alignment_read_ends:
+				# Alignment does not end at the end of the read
+				continue
+
+			first_block = div_int_ceil(contig_alignment.tstart + args.min_surrounding_aligned_bases, args.blocking_size)
+			# The block after the last block
+			limit_block = (contig_alignment.tend + 1 - args.min_surrounding_aligned_bases) // args.blocking_size
+
+			for i in range(first_block, limit_block):
+				block_evidence[i] += 1
+				total_evidence += 1
 
 ### Compute breakpoints ###
 
 logger.info("Computing breakpoints")
 contig_breakpoints = {}
 total_breakpoints = 0
+non_terminating_breakpoints = 0
 
 for contig_name, block_evidence in contig_block_evidence.items():
 	breakpoints = contig_breakpoints.setdefault(contig_name, [])
@@ -147,13 +177,17 @@ for contig_name, block_evidence in contig_block_evidence.items():
 				last_breakpoint_start = i if i != first_block else 0
 		else:
 			if last_breakpoint_start is not None:
-				breakpoints.append((last_breakpoint_start, i - 1))
-				total_breakpoints += 1
+				if last_breakpoint_start != 0 or i * args.blocking_size > args.max_ignore_terminating_breakpoints_size:
+					breakpoints.append((last_breakpoint_start, i - 1))
+					total_breakpoints += 1
+					if last_breakpoint_start != 0:
+						non_terminating_breakpoints += 1
 				last_breakpoint_start = None
 
 	if last_breakpoint_start is not None:
-		breakpoints.append((last_breakpoint_start, last_existing_block))
-		total_breakpoints += 1
+		if (last_existing_block - last_breakpoint_start) * args.blocking_size > args.max_ignore_terminating_breakpoints_size:
+			breakpoints.append((last_breakpoint_start, last_existing_block))
+			total_breakpoints += 1
 		last_breakpoint_start = None
 
 	if len(breakpoints) > 0:
@@ -165,6 +199,7 @@ if args.compare_breakpoints is not None:
 	logger.info("Comparing breakpoints to real breakpoints given as '%s'", args.compare_breakpoints)	
 	total_correct_breakpoints = 0
 	total_wrong_breakpoints = 0
+	total_wrong_terminating_breakpoints = 0
 	total_real_breakpoints = 0
 	total_found_real_breakpoints = 0
 
@@ -183,6 +218,8 @@ if args.compare_breakpoints is not None:
 		contig_breakpoints.setdefault(contig_name, [])
 
 	for contig_name, breakpoints in contig_breakpoints.items():
+		contig_len = len(contigs[contig_name].seq)
+		last_existing_block = contig_len // args.blocking_size
 		real_breakpoints = compare_breakpoints.setdefault(contig_name, [])
 		matched_breakpoints = [False] * len(breakpoints)
 		matched_real_breakpoints = [False] * len(real_breakpoints)
@@ -197,6 +234,12 @@ if args.compare_breakpoints is not None:
 					matched_breakpoints[index] = True
 					matched_real_breakpoints[real_index] = True
 
+		if len(breakpoints) > 0:
+			if not matched_breakpoints[0] and breakpoints[0][0] == 0:
+				total_wrong_terminating_breakpoints += 1
+			if not matched_breakpoints[-1] and breakpoints[-1][1] == last_existing_block:
+				total_wrong_terminating_breakpoints += 1
+
 		total_correct_breakpoints += matched_breakpoints.count(True)
 		total_wrong_breakpoints += matched_breakpoints.count(False)
 		total_real_breakpoints += len(real_breakpoints)
@@ -204,9 +247,11 @@ if args.compare_breakpoints is not None:
 
 	logger.info("Total correct breakpoints: %d", total_correct_breakpoints)
 	logger.info("Total wrong breakpoints: %d", total_wrong_breakpoints)
+	logger.info("Total wrong non-terminating breakpoints: %d", total_wrong_breakpoints - total_wrong_terminating_breakpoints)
 	logger.info("Total real breakpoints: %d", total_real_breakpoints)
 	logger.info("Total missing real breakpoints: %d", total_real_breakpoints - total_found_real_breakpoints)
 	logger.info("False positive rate: %.2f", total_wrong_breakpoints / total_breakpoints)
+	logger.info("False positive rate without non-terminating: %.2f", (total_wrong_breakpoints - total_wrong_terminating_breakpoints) / total_breakpoints)
 	logger.info("False negative rate: %.2f", 1.0 - (total_found_real_breakpoints / total_real_breakpoints))
 
 
@@ -251,5 +296,6 @@ logger.info("Total input contigs: %d", len(contigs))
 logger.info("Unmapped contigs: %d", len(unmapped_contigs))
 logger.info("Unmapped reads: %d", unmapped_reads)
 logger.info("Total breakpoints: %d", total_breakpoints)
+logger.info("Total non-terminating breakpoints: %d", non_terminating_breakpoints)
 logger.info("Total output contigs: %d", total_broken_contigs)
 logger.info("Average evidence per block: %.2f", total_evidence / total_blocks)
