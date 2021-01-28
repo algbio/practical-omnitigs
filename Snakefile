@@ -847,6 +847,8 @@ rule combine_reads:
     wildcard_constraints:
         genome = "((?!downloads).)*",
     threads: 1
+    resources:
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60)
     shell: "cat {params.input_list} > '{output.reads}'"
 
 rule uniquify_ids:
@@ -1140,6 +1142,8 @@ rule extract:
         #file=r"^.*([^\.]..|.[^g].|..[^z])$"
     conda: "config/conda-extract-env.yml"
     threads: 1
+    resources:
+        time_min = 300
     shell: "cd 'data/{wildcards.dir}'; gunzip -k {wildcards.file}.gz"
 
 #rule extract_dot:
