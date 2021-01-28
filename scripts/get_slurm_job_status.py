@@ -2,10 +2,13 @@
 import subprocess
 import sys
 
-jobid = sys.argv[1]
+jobid = None
+for arg in sys.argv[1:]:
+	if arg.isdigit():
+		jobid = arg
 
-if ";" in jobid:
-	jobid = jobid.split(";")[0]
+if arg is None:
+	sys.exit("Not numeric argument given.")
 
 output = str(subprocess.check_output("sacct -j %s --format State --noheader -M all | head -1 | awk '{print $1}'" % jobid, shell=True).strip())
 
