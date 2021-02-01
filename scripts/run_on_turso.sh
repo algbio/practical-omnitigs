@@ -7,6 +7,9 @@ cd /proj/sebschmi/git/practical-omnitigs
 
 source activate practical-omnitigs
 
+# Remove erroneous outputs from previous run
+echo "Removing erroneous outputs from previous run"
+
 # Create log directory
 LOGDIR="logs/$(date +"%FT%X")/"
 mkdir -p "$LOGDIR"
