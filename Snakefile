@@ -487,10 +487,11 @@ rule compute_injectable_contigs_wtdbg2:
            reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
            raw_reads = GENOME_READS_FORMAT,
-           binary = "data/target/release/cli"
+           binary = "data/target/release/cli",
     output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.log",
-            latex = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.tex"
+            latex = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.tex",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "contigwalks.completed"),
     params: command = get_injectable_contigs_rust_cli_command_from_wildcards
     threads: 1
     resources: mem_mb = 48000
@@ -584,6 +585,7 @@ rule run_contigbreaker:
             reads = GENOME_READS_FORMAT,
             script = "tools/contigbreaker/contigbreaker.py"
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
     threads: 3
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 500),
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 10),
@@ -630,6 +632,7 @@ rule wtdbg2_complete:
             kbm = ALGORITHM_PREFIX_FORMAT + "wtdbg2.kbm",
             ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
     wildcard_constraints: algorithm = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
@@ -662,6 +665,7 @@ rule wtdbg2_without_fragment_assembly:
             dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
             ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
     wildcard_constraints: algorithm = "(.*wtdbg2-wtdbg2.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-wtdbg2.*)"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
@@ -682,6 +686,7 @@ rule wtdbg2_inject_contigs:
            binary = "external-software/wtdbg2/wtdbg2",
     output: ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
     wildcard_constraints: algorithm = ".*wtdbg2-inject-.*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
@@ -696,8 +701,9 @@ rule wtdbg2_inject_contigs:
 rule wtdbg2_consensus:
     input: reads = GENOME_READS_FORMAT,
            contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay",
-           binary = "external-software/wtdbg2/wtpoa-cns"
-    output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
+           binary = "external-software/wtdbg2/wtpoa-cns",
+    output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa.completed"),
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8000),
                cpus = MAX_THREADS,
@@ -727,6 +733,7 @@ rule flye:
             flye_input_argument = get_flye_input_argument_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_directory = ALGORITHM_PREFIX_FORMAT + "flye",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "flye.completed"),
     conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250000),
@@ -762,9 +769,10 @@ ruleorder: download_raw_source_reads > download_packed_source_reads > convert_so
 
 localrules: download_raw_source_reads
 rule download_raw_source_reads:
-    output: file = "data/downloads/{genome}/reads-{index}.{format}"
+    output: file = "data/downloads/{genome}/reads-{index}.{format}",
+            completed = touch("data/downloads/{genome}/reads-{index}.{format}.completed"),
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
-            url_format = lambda wildcards: read_url_file_format(wildcards.genome)
+            url_format = lambda wildcards: read_url_file_format(wildcards.genome),
     wildcard_constraints:
         format = "(fa|bam|sra)",
         index = "\d+",
@@ -784,7 +792,8 @@ rule download_raw_source_reads:
 
 localrules: download_packed_source_reads
 rule download_packed_source_reads:
-    output: file = "data/downloads/{genome}/packed-reads-{index}.{format}.gz"
+    output: file = "data/downloads/{genome}/packed-reads-{index}.{format}.gz",
+            completed = touch("data/downloads/{genome}/packed-reads-{index}.{format}.gz.completed"),
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
             url_format = lambda wildcards: read_url_file_format(wildcards.genome),
             checksum = lambda wildcards: genomes[wildcards.genome]["checksums"][int(wildcards.index)] if "checksums" in genomes[wildcards.genome] else "",
@@ -822,8 +831,9 @@ def read_raw_input_file_name(wildcards):
     return input_file_name
 
 rule convert_source_reads:
-    input: file = read_raw_input_file_name
-    output: file = "data/downloads/{genome}/reads-{index}.converted.fa"
+    input: file = read_raw_input_file_name,
+    output: file = "data/downloads/{genome}/reads-{index}.converted.fa",
+            completed = touch("data/downloads/{genome}/reads-{index}.converted.fa.completed"),
     params: file_format = lambda wildcards: read_url_file_format(wildcards.genome)
     wildcard_constraints:
         index = "\d+",
@@ -842,19 +852,23 @@ rule convert_source_reads:
 
 rule combine_reads:
     input: files = lambda wildcards: expand("data/downloads/{{genome}}/reads-{index}.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
-    output: reads = "data/downloads/{genome}/reads.fa"
+    output: reads = "data/downloads/{genome}/reads.fa",
+            completed = touch("data/downloads/{genome}/reads.fa.completed"),
     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
     wildcard_constraints:
         genome = "((?!downloads).)*",
     threads: 1
     resources:
         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     shell: "cat {params.input_list} > '{output.reads}'"
 
 rule uniquify_ids:
-    input: reads = "data/downloads/{genome}/reads.fa", script = "scripts/uniquify_fasta_ids.py"
-    output: reads = "data/downloads/{genome}/reads.uniquified.fa", log = "data/downloads/{genome}/uniquify.log"
+    input:  reads = "data/downloads/{genome}/reads.fa",
+            script = "scripts/uniquify_fasta_ids.py",
+    output: reads = "data/downloads/{genome}/reads.uniquified.fa",
+            log = "data/downloads/{genome}/uniquify.log",
+            completed = touch("data/downloads/{genome}/reads.uniquified.fa.completed"),
     wildcard_constraints:
         genome = "((?!downloads).)*",
     conda: "config/conda-uniquify-env.yml"
@@ -885,7 +899,8 @@ rule link_reads:
 
 localrules: download_reference_raw
 rule download_reference_raw:
-    output: reference = "data/downloads/{genome}/reference.fa"
+    output: reference = "data/downloads/{genome}/reference.fa",
+            completed = touch("data/downloads/{genome}/reference.fa.completed"),
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -898,7 +913,8 @@ rule download_reference_raw:
 
 localrules: download_reference_gzip
 rule download_reference_gzip:
-    output: reference = "data/downloads/{genome}/packed-reference.fa.gz"
+    output: reference = "data/downloads/{genome}/packed-reference.fa.gz",
+            completed = touch("data/downloads/{genome}/reference.fa.gz.completed"),
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -949,7 +965,8 @@ def correction_read_url_file_format(corrected_genome):
 
 localrules: download_correction_short_reads
 rule download_correction_short_reads:
-    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.{format}"
+    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.{format}",
+            completed = touch("data/corrected_reads/{corrected_genome}/reads-{index}.{format}.completed"),
     params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
             url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
             checksum = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads_checksum"] if "correction_short_reads_checksum" in corrected_genomes[wildcards.corrected_genome] else "",
@@ -977,9 +994,10 @@ rule download_correction_short_reads:
         """
 
 rule convert_correction_short_reads:
-    input: file = lambda wildcards: "data/corrected_reads/{corrected_genome}/reads-{index}." + correction_read_url_file_format(wildcards.corrected_genome)
-    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.converted.fa"
-    params: file_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome)
+    input: file = lambda wildcards: "data/corrected_reads/{corrected_genome}/reads-{index}." + correction_read_url_file_format(wildcards.corrected_genome),
+    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.converted.fa",
+            completed = touch("data/corrected_reads/{corrected_genome}/reads-{index}.converted.fa.completed"),
+    params: file_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
     wildcard_constraints:
         index = "\d+",
         genome = "((?!corrected_reads).)*",
@@ -999,9 +1017,10 @@ rule convert_correction_short_reads:
         """
 
 rule combine_correction_short_reads:
-    input: files = lambda wildcards: expand("data/corrected_reads/{{corrected_genome}}/reads-{index}.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"])))
-    output: reads = "data/corrected_reads/{corrected_genome}/correction_short_reads.fa"
-    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+    input: files = lambda wildcards: expand("data/corrected_reads/{{corrected_genome}}/reads-{index}.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
+    output: reads = "data/corrected_reads/{corrected_genome}/correction_short_reads.fa",
+            completed = touch("data/corrected_reads/{corrected_genome}/correction_short_reads.fa.completed"),
+    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'",
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
     threads: 1
@@ -1035,6 +1054,7 @@ rule ratatosk:
            long_reads = lambda wildcards: "data/downloads/" + corrected_genomes[wildcards.corrected_genome]["source_genome"] + "/reads.uniquified.fa",
            binary = "external-software/Ratatosk/build/src/Ratatosk",
     output: corrected_long_reads = "data/corrected_reads/{corrected_genome}/corrected_reads.fa",
+            completed = touch("data/corrected_reads/{corrected_genome}/corrected_reads.fa.completed"),
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
     threads: MAX_THREADS
@@ -1198,6 +1218,7 @@ rule run_quast:
         reference = "data/{genome}/reference.fa",
         script = "external-software/quast/quast.py",
     output: report = directory(QUAST_PREFIX_FORMAT),
+            completed = touch(QUAST_PREFIX_FORMAT + ".completed"),
     conda: "config/conda-quast-env.yml"
     threads: 4
     resources: mem_mb = 12000,
