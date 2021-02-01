@@ -571,8 +571,6 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min):
     time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
     if time <= 1440:
         return "short"
-    elif time <= 1440 * 3:
-        return "medium"
     elif time <= 1440 * 14:
         return "long"
     elif time <= 1440 * 60:
