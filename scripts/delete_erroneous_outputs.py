@@ -12,7 +12,7 @@ def silentremove(filename):
         if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
             raise # re-raise exception if a different error occurred
 log_path = "logs/latest"
-log_files = [f for f in listdir(log_path) if isfile(join(log_path, f))]
+log_files = [join(log_path, f) for f in listdir(log_path) if isfile(join(log_path, f))]
 
 for log_file in log_files:
 	if "practical-omnitigs" not in log_file:
