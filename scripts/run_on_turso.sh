@@ -9,6 +9,7 @@ source activate practical-omnitigs
 
 # Remove erroneous outputs from previous run
 echo "Removing erroneous outputs from previous run"
+scripts/delete_erroneous_outputs.py
 
 # Create log directory
 LOGDIR="logs/$(date +"%FT%X")/"
