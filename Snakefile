@@ -725,7 +725,7 @@ def get_flye_input_argument_from_wildcards(wildcards):
         sys.exit("Missing flye input argument: " + str(algorithm.arguments))
 
 rule flye:
-    input: reads = GENOME_READS_FORMAT
+    input: reads = GENOME_READS_FORMAT,
     output: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
     params: flye_args = get_assembler_args_from_wildcards,
             flye_input_argument = get_flye_input_argument_from_wildcards,
@@ -736,8 +736,8 @@ rule flye:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 125000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720),
                mail_type = "END",
     shell: "flye {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
 
