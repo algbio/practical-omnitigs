@@ -14,6 +14,9 @@ def silentremove(filename):
             raise # re-raise exception if a different error occurred
 log_path = "logs/latest"
 
+if len(sys.arg) >= 2:
+	log_path = sys.argv[1]
+
 try:
 	log_files = [join(log_path, f) for f in listdir(log_path) if isfile(join(log_path, f))]
 except Exception as e:
