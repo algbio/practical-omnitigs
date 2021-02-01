@@ -419,7 +419,7 @@ rule create_aggregated_report_tex:
 
 localrules: create_combined_eaxmax_graph
 rule create_combined_eaxmax_graph:
-    input: quasts = lambda wildcards: [q + "/aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
+    input: quasts = lambda wildcards: [q + "aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
            script = "scripts/create_combined_eaxmax_plot.py",
     output: REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
     params: input_quasts = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quasts)])
@@ -1217,7 +1217,8 @@ rule run_quast:
     input: contigs = ALGORITHM_PREFIX_FORMAT + "assembly.fa",
         reference = "data/{genome}/reference.fa",
         script = "external-software/quast/quast.py",
-    output: report = directory(QUAST_PREFIX_FORMAT),
+    output: directory = directory(QUAST_PREFIX_FORMAT),
+            eaxmax_csv = QUAST_PREFIX_FORMAT + "aligned_stats/EAxmax_plot.csv",
             completed = touch(QUAST_PREFIX_FORMAT + ".completed"),
     conda: "config/conda-quast-env.yml"
     threads: 4
@@ -1225,7 +1226,7 @@ rule run_quast:
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
-    shell: "{input.script} -t {threads} --fragmented --large -o {output.report} -r {input.reference} {input.contigs}"
+    shell: "{input.script} -t {threads} --fragmented --large -o {output.directory} -r {input.reference} {input.contigs}"
 
 
 ##################
