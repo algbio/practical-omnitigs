@@ -3,6 +3,7 @@
 from os import listdir
 from os.path import isfile, join
 import os
+import sys
 import errno
 
 def silentremove(filename):
@@ -14,7 +15,7 @@ def silentremove(filename):
             raise # re-raise exception if a different error occurred
 log_path = "logs/latest"
 
-if len(sys.arg) >= 2:
+if len(sys.argv) >= 2:
 	log_path = sys.argv[1]
 
 try:
