@@ -1207,8 +1207,8 @@ rule convert_correction_short_reads:
     conda: "config/conda-convert-reads-env.yml"
     threads: 1
     resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120),
     shell: """
         if [ '{params.file_format}' == 'bam' ]; then
             samtools fasta '{input.file}' > '{output.file}'
