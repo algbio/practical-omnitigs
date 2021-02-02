@@ -1,4 +1,4 @@
 channels:
   - conda-forge
 dependencies:
-  - git=2.30.0
+  - git==2.30.0
