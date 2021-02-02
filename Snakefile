@@ -45,7 +45,7 @@ class Arguments(dict):
         return result
 
     def update(self, other):
-        print("Calling update, other: {}".format(other))
+        #print("Calling update, other: {}".format(other))
 
         if other is None:
             return
@@ -177,7 +177,7 @@ class Algorithm:
 
 class Column:
     def __init__(self, root_arguments, additional_arguments):
-        print("Creating column")
+        #print("Creating column")
         assert type(root_arguments) is Arguments
         assert type(additional_arguments) is Arguments
         self.arguments = root_arguments.copy()
@@ -278,11 +278,11 @@ for report_name, report_definition in reports.items():
     argument_matrix = ArgumentMatrix(report_definition.setdefault("argument_matrix", {}))
     report_definition["argument_matrix"] = argument_matrix
 
-    print("Matrix of {} has length {}".format(report_name, len(argument_matrix)))
-    entries = list(iter(argument_matrix))
-    print("Entries in matrix:")
-    for entry in entries:
-        print(entry)
+    #print("Matrix of {} has length {}".format(report_name, len(argument_matrix)))
+    #entries = list(iter(argument_matrix))
+    #print("Entries in matrix:")
+    #for entry in entries:
+    #    print(entry)
 
     for arguments in argument_matrix:
         columns = []
