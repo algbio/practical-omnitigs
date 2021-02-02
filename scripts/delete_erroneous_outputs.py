@@ -9,7 +9,10 @@ import shutil
 
 def silentremove(filename):
     try:
-        shutil.rmtree(filename)
+    	if isfile(filename):
+    		os.remove(filename)
+    	else:
+        	shutil.rmtree(filename)
         print("Removed {}".format(filename))
     except OSError as e: # this would be "except OSError, e:" before Python 2.6
         if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
