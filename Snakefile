@@ -767,10 +767,10 @@ rule run_contigbreaker:
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
     threads: 3
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 500),
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 10),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 6000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
                cpus = 3,
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 10),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
     conda: "tools/contigbreaker/environment.yml"
     shell: "'{input.script}' --threads {threads} --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
 
