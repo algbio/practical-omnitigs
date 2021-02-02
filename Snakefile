@@ -167,7 +167,7 @@ class Arguments(dict):
         return Arguments.from_dict(json.loads(string))
 
     def retain_raw_assembly_arguments(self):
-        if "postprocess" in self:
+        if "postprocessor" in self:
             self.pop("postprocessor")
 
 class Algorithm:

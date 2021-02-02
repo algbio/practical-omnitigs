@@ -171,6 +171,13 @@ reports:
           flye:
             "--pacbio-corr": True
 
+  "contigbreaker_references":
+    argument_matrix:
+      assembler: "reads"
+      postprocessor: "contigbreaker"
+    columns:
+      
+
   "verify_quast":
     argument_matrix:
       assembler: "reference"
@@ -213,6 +220,14 @@ reports:
           "-x": "sq"
     columns: *default_columns
 
+  "A.thaliana_contigbreaker":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          "-x": "sq"
+    columns: *contigbreaker_columns
+
   "D.melanogaster_A4":
     argument_matrix:
       genome: "D.melanogaster_A4"
@@ -221,6 +236,14 @@ reports:
           "-x": "rs"
     columns: *default_columns
 
+  "D.melanogaster_A4_contigbreaker":
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          "-x": "rs"
+    columns: *contigbreaker_columns
+
   "D.melanogaster_ISO1":
     argument_matrix:
       genome: "D.melanogaster_ISO1"
@@ -228,6 +251,14 @@ reports:
         wtdbg2:
           "-x": "ont"
     columns: *default_columns
+
+  "D.melanogaster_ISO1_contigbreaker":
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          "-x": "ont"
+    columns: *contigbreaker_columns
 
   "Minghui63":
     argument_matrix:
@@ -241,6 +272,14 @@ reports:
         flye:
           "--pacbio-hifi": [True]
     columns: *default_columns_with_flye
+
+  "Minghui63_contigbreaker":
+    argument_matrix:
+      genome: "Minghui63"
+      assembler:
+        wtdbg2:
+          - "-x": "ccs"
+    columns: *contigbreaker_columns
 
   "HG002":
     argument_matrix:
