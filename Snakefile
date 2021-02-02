@@ -1434,7 +1434,7 @@ rule download_experiment_file:
 
 localrules: install_quast
 rule install_quast:
-    output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
+    output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/"),
     threads: 1
     shell: """
     mkdir -p external-software
@@ -1468,7 +1468,7 @@ rule run_quast:
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
-    shell: "{input.script} -t {threads} --fragmented --large -o {output.directory} -r {input.reference} {input.contigs}"
+    shell: "{input.script} -t {threads} --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 
 ##################
