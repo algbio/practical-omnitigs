@@ -1435,7 +1435,6 @@ rule download_experiment_file:
 localrules: install_quast
 rule install_quast:
     output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/")
-    conda: "config/conda-install-env.yml"
     threads: 1
     shell: """
     mkdir -p external-software
