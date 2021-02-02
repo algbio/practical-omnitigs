@@ -800,7 +800,6 @@ def get_assembler_args_from_wildcards(wildcards):
         if assembler_arguments is None:
             raise Exception("Arguments have not assembler arguments: {}".format(arguments))
 
-
         return assembler_arguments.to_argument_string()
     except Exception:
         traceback.print_exc()
@@ -913,11 +912,52 @@ rule wtdbg2_consensus:
 ###### Flye ######
 ##################
 
+def get_flye_other_args_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        if assembler_arguments is None:
+            raise Exception("Arguments have not assembler arguments: {}".format(arguments))
+
+        assembler_arguments.pop("--pacbio-raw", None)
+        assembler_arguments.pop("--pacbio-corr", None)
+        assembler_arguments.pop("--pacbio-hifi", None)
+
+        return assembler_arguments.to_argument_string()
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_flye_input_arg_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        if assembler_arguments is None:
+            raise Exception("Arguments have not assembler arguments: {}".format(arguments))
+
+        input_args = []
+        if "--pacbio-raw" in assembler_arguments:
+            input_args.append("--pacbio-raw")
+        if "--pacbio-corr" in assembler_arguments:
+            input_args.append("--pacbio-corr")
+        if "--pacbio-hifi" in assembler_arguments:
+            input_args.append("--pacbio-hifi")
+        
+        if len(input_args) == 0:
+            raise Exception("No flye input args given")
+        elif len(input_args) == 1:
+            return input_args[0]
+        elif len(input_args) > 1:
+            raise Exception("More than one flye input arg given: {}".format(input_args))
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 rule flye:
     input: reads = get_genome_reads_from_wildcards,
     output: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
-    params: flye_args = get_assembler_args_from_wildcards,
-            flye_input_argument = get_assembler_args_from_wildcards,
+    params: flye_args = get_flye_other_args_from_wildcards,
+            flye_input_argument = get_flye_input_arg_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_directory = ALGORITHM_PREFIX_FORMAT + "flye",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "flye.completed"),
