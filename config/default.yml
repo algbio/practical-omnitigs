@@ -173,10 +173,21 @@ reports:
 
   "contigbreaker_references":
     argument_matrix:
-      assembler: "reads"
+      assembler: "reference"
       postprocessor: "contigbreaker"
     columns:
-      
+      - shortname: "C.e."
+        genome: "C.elegans"
+      - shortname: "A.t."
+        genome: "A.thaliana"
+      - shortname: "D.m.A4"
+        genome: "D.melanogaster_A4"
+      - shortname: "D.m.ISO1"
+        genome: "D.melanogaster_ISO1"
+      - shortname: "Ming."
+        genome: "Minghui63"
+      - shortname: "HG002"
+        genome: "HG002"
 
   "verify_quast":
     argument_matrix:
