@@ -772,7 +772,7 @@ rule run_contigbreaker:
                cpus = 3,
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 10),
     conda: "tools/contigbreaker/environment.yml"
-    shell: "'{input.script}' --threads {threads} --lazy-minimap2 --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
+    shell: "'{input.script}' --threads {threads} --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
 
 ####################
 ###### wtdbg2 ######
