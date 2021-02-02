@@ -16,344 +16,313 @@ experiments:
       filter_retain: "NC_002978.6"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
-    #"GRCh38_latest":
-    #  k: [51]
-    #  bcalm2_abundance_min: [1]
-    #  circularised: [true]
-    #  filter_retain: "NC_000010.11"
-    #  algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-    #  url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
-
-  # wtdbg2:
-  #   "C.elegans_-s0.02":
-  #     genome: "C.elegans"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x rs -g 100m -s 0.02"
-
-  #   "C.elegans_-s0.05":
-  #     genome: "C.elegans"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x rs -g 100m -s 0.05"
-
-  #   "C.elegans_-s0.1":
-  #     genome: "C.elegans"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x rs -g 100m -s 0.1"
-
-  #   "C.elegans_-s0.5":
-  #     genome: "C.elegans"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x rs -g 100m -s 0.5"
-
-  #   "A.thaliana":
-  #     genome: "A.thaliana"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x sq -g 125m"
-
-  #   "D.melanogaster_A4":
-  #     genome: "D.melanogaster_A4"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x rs -g 144m"
-
-  #   "D.melanogaster_ISO1":
-  #     genome: "D.melanogaster_ISO1"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ont -g 144m"
-
-  #   "Minghui63_rs":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x rs -g 387m"
-
-  #   "Minghui63_sq":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x sq -g 387m"
-
-  #   "Minghui63_ccs_-s0.4":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.4"
-
-  #   "Minghui63_ccs_-s0.5":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.5"
-
-  #   "Minghui63_ccs_-s0.6":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.6"
-
-  #   "Minghui63_ccs_-s0.7":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.7"
-
-  #   "Minghui63_ccs_-s0.8":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.8"
-
-  #   "Minghui63_ccs_-s0.9":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.9"
-
-  #   "Minghui63_ccs_-s0.95":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.95"
-
-  #   "Minghui63_ccs_-s0.98":
-  #     genome: "Minghui63"
-  #     algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-  #     wtdbg2_args: "-x ccs -g 387m -s 0.98"
-
-  # flye:
-  #   "Minghui63_flye":
-  #     genome: "Minghui63"
-
 column_templates:
   default_columns: &default_columns
     - shortname: "uni sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-inject-unitigs": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2 sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-wtdbg2": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-wtdbg2": True
     - shortname: "uni"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-inject-unitigs": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-wtdbg2": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-wtdbg2": True
 
   default_columns_with_flye: &default_columns_with_flye
-    - shortname: "uni sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2 sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-wtdbg2": True
-    - shortname: "uni"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-inject-unitigs": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-wtdbg2": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-wtdbg2": True
     - shortname: "flye"
-      assembler: "flye"
+      select_assembler: "flye"
 
   wide_comparison_columns: &wide_comparison_columns
     - shortname: "wtdbg2 sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-wtdbg2": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "Y-to-V"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-wtdbg2": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-wtdbg2": True
     - shortname: "flye"
-      assembler: "flye"
+      select_assembler: "flye"
 
   contigbreaker_columns: &contigbreaker_columns
     - shortname: "Y-to-V sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2 sfa"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-wtdbg2": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-inject-trivial-omnitigs": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "wtdbg2"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-wtdbg2": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V sfa brk"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-inject-trivial-omnitigs": True
-        "contigbreaker": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
     - shortname: "wtdbg2 sfa brk"
-      assembler: "wtdbg2"
-      arguments:
-        "--skip-fragment-assembly": True
-        "wtdbg2-wtdbg2": True
-        "contigbreaker": True
+      select_assembler:
+        wtdbg2:
+          "--skip-fragment-assembly": True
+          "wtdbg2-wtdbg2": True
+      select_postprocessor:
+        contigbreaker:
     - shortname: "Y-to-V brk"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-inject-trivial-omnitigs": True
-        "contigbreaker": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
     - shortname: "wtdbg2 brk"
-      assembler: "wtdbg2"
-      arguments:
-        "wtdbg2-wtdbg2": True
-        "contigbreaker": True
+      select_assembler:
+        wtdbg2:
+          "wtdbg2-wtdbg2": True
+      select_postprocessor:
+        contigbreaker:
 
 reports:
   "Flye_comparison":
-    genomes: ["C.elegans"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["rs"]
-      flye:
-        argument_sets: []
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          "-x": "rs"
     columns:
       - shortname: "wtdbg2 sfa"
-        assembler: "wtdbg2"
-        arguments:
-          "--skip-fragment-assembly": True
-          "wtdbg2-wtdbg2": True
+        select_assembler:
+          wtdbg2:
+            "--skip-fragment-assembly": True
+            "wtdbg2-wtdbg2": True
       - shortname: "Y-to-V sfa"
-        assembler: "wtdbg2"
-        arguments:
-          "--skip-fragment-assembly": True
-          "wtdbg2-inject-trivial-omnitigs": True
+        select_assembler:
+          wtdbg2:
+            "--skip-fragment-assembly": True
+            "wtdbg2-inject-trivial-omnitigs": True
       - shortname: "Y-to-V"
-        assembler: "wtdbg2"
-        arguments:
-          "wtdbg2-inject-trivial-omnitigs": True
+        select_assembler:
+          wtdbg2:
+            "wtdbg2-inject-trivial-omnitigs": True
       - shortname: "wtdbg2"
-        assembler: "wtdbg2"
-        arguments:
-          "wtdbg2-wtdbg2": True
+        select_assembler:
+          wtdbg2:
+            "wtdbg2-wtdbg2": True
       - shortname: "flye raw"
-        assembler: "flye"
-        arguments:
-          "flye-pacbio-raw": True
+        select_assembler:
+          flye:
+            "--pacbio-raw": True
       - shortname: "flye corr"
-        assembler: "flye"
-        arguments:
-          "flye-pacbio-corr": True
+        select_assembler:
+          flye:
+            "--pacbio-corr": True
+
+  "verify_quast":
+    argument_matrix:
+      assembler: "reference"
+    columns:
+      - shortname: "C.e."
+        genome: "C.elegans"
+      - shortname: "A.t."
+        genome: "A.thaliana"
+      - shortname: "D.m.A4"
+        genome: "D.melanogaster_A4"
+      - shortname: "D.m.ISO1"
+        genome: "D.melanogaster_ISO1"
+      - shortname: "Ming."
+        genome: "Minghui63"
+      - shortname: "HG002"
+        genome: "HG002"
 
   "C.elegans":
-    genomes: ["C.elegans"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["rs"]
-            "-s": [0.02, 0.05, 0.1]
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          "-x": "rs"
+          "-s": [0.02, 0.05, 0.1]
     columns: *default_columns
 
   "C.elegans_contigbreaker":
-    genomes: ["C.elegans"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["rs"]
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          "-x": "rs"
     columns: *contigbreaker_columns
 
   "A.thaliana":
-    genomes: ["A.thaliana"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["sq"]
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          "-x": "sq"
     columns: *default_columns
 
   "D.melanogaster_A4":
-    genomes: ["D.melanogaster_A4"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["rs"]
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          "-x": "rs"
     columns: *default_columns
 
   "D.melanogaster_ISO1":
-    genomes: ["D.melanogaster_ISO1"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["ont"]
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          "-x": "ont"
     columns: *default_columns
 
   "Minghui63":
-    genomes: ["Minghui63"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["rs"]
-          - "-x": ["sq"]
-          - "-x": ["ccs"]
+    argument_matrix:
+      genome: "Minghui63"
+      assembler:
+        wtdbg2:
+          - "-x": "rs"
+          - "-x": "sq"
+          - "-x": "ccs"
             "-s": [0.4, 0.5, 0.7, 0.95]
-      flye:
-        argument_sets:
-          - "flye-pacbio-hifi": [True]
+        flye:
+          "--pacbio-hifi": [True]
     columns: *default_columns_with_flye
 
   "HG002":
-    genomes: ["HG002"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
-          - "-x": ["rs", "sq", "ccs"]
-      flye:
-        argument_sets:
-          - "flye-pacbio-raw": [True]
-          - "flye-pacbio-corr": [True]
+    argument_matrix:
+      genome: "HG002"
+      assembler:
+        wtdbg2:
+          "-x": ["rs", "sq", "ccs"]
+        flye:
+          - "--pacbio-raw": [True]
+          - "--pacbio-corr": [True]
     columns: *default_columns_with_flye
+  
+  "HG002_Flye":
+    argument_matrix:
+      genome: "HG002"
+    columns:
+      - shortname: "flye raw"
+        assembler: 
+          flye:
+            "--pacbio-raw": True
+      - shortname: "flye corr"
+        assembler:
+          flye:
+            "--pacbio-corr": True
 
   "HG002_ratatosk":
-    genomes: ["HG002_ratatosk"]
-    assemblers:
-      wtdbg2:
-        argument_sets:
+    argument_matrix:
+      genome: "HG002_ratatosk"
+      assembler:
+        wtdbg2:
           - "-x": ["rs", "sq", "ccs"]
-      flye:
-        argument_sets:
-          - "flye-pacbio-corr": [True]
-          - "flye-pacbio-hifi": [True]
+    columns:
+      - shortname: "Y-to-V sfa"
+        select_assembler:
+          wtdbg2:
+            "--skip-fragment-assembly": True
+            "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "wtdbg2 sfa"
+        select_assembler:
+          wtdbg2:
+            "--skip-fragment-assembly": True
+            "wtdbg2-wtdbg2": True
+      - shortname: "Y-to-V"
+        select_assembler:
+          wtdbg2:
+            "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "wtdbg2"
+        select_assembler:
+          wtdbg2:
+            "wtdbg2-wtdbg2": True
+      - shortname: "flye corr"
+        select_assembler:
+          flye:
+            "--pacbio-corr": True
+      - shortname: "flye hifi"
+        select_assembler:
+          flye:
+            "--pacbio-hifi": True
+
+  "HG002_HiFi":
+    argument_matrix:
+      genome: "HG002"
+      assembler:
+        wtdbg2:
+          "-x": ["rs", "sq", "ccs"]
+        flye:
+          - "--pacbio-raw": [True]
+          - "--pacbio-corr": [True]
     columns: *default_columns_with_flye
+  
+  "HG002_HiFi_Flye":
+    argument_matrix:
+      genome: "HG002"
+    columns:
+      - shortname: "flye corr"
+        assembler:
+          flye:
+            "--pacbio-corr": True
+      - shortname: "flye hifi"
+        assembler:
+          flye:
+            "--pacbio-hifi": True
 
 aggregated_reports:
   "aggregated":
@@ -395,6 +364,14 @@ genomes:
     genome_length: 387000000
     assembly_time_factor: 2
     assembly_mem_factor: 1
+
+  "HG002_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
+    genome_length: 3100000000
+    assembly_time_factor: 4
+    assembly_mem_factor: 2
+    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
+    format: "sra"
 
   "HG002":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"

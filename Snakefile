@@ -9,6 +9,8 @@ print("Preprocessing config", flush = True)
 import itertools
 import sys
 import re
+import json
+import traceback
 
 configfile: "config/default.yml"
 
@@ -31,28 +33,66 @@ aggregated_reports = config["aggregated_reports"]
 
 class Arguments(dict):
     @staticmethod
-    def from_list(arguments):
-        result = Arguments()
-        for key, value in arguments:
-            result[key] = value
-        if len(arguments) != len(result):
-            sys.exit("Found duplicate arguments: " + str(arguments))
-        return result
-
-    @staticmethod
     def from_dict(arguments):
+        assert type(arguments) is dict or type(arguments) is OrderedDict
+
         result = Arguments()
-        result.update(arguments)
+        for key, value in arguments.items():
+            if type(value) is dict or type(value) is OrderedDict:
+                result[key] = Arguments.from_dict(value)
+            else:
+                result[key] = value
         return result
 
-    @staticmethod
-    def argument_to_str(key, value):
-        if value is None or value == True:
-            return str(key)
-        elif value == False:
-            return ""
-        else:
-            return str(key) + "_" + str(value)
+    def update(self, other):
+        print("Calling update, other: {}".format(other))
+
+        if other is None:
+            return
+        assert type(other) is Arguments
+
+        SELECT_PREFIX = "select_"
+        for key, value in other.items():
+            if key.startswith(SELECT_PREFIX):
+                key = key[len(SELECT_PREFIX):]
+                select = True
+            else:
+                select = False
+
+            if key not in self or self[key] is None:
+                self[key] = value
+            elif type(value) is str or type(value) is int or type(value) is float or type(value) is bool:
+                # Selection logic: If only one value is given while we have a dict of values,
+                # then select the dict entry with the respective key.
+                if type(self[key]) is Arguments:
+                    unselect = [k for k in self[key].keys() if k != value]
+                    for k in unselect:
+                        self[key].pop(k)
+                else:
+                    assert type(self[key]) is str or type(self[key]) is int or type(self[key]) is float or type(self[key]) is bool, "type(self[key]) is not str, bool, int or float. key: {}, type(self[key]): {}".format(key, type(self[key]))
+                    self[key] = value
+            elif type(value) is dict or type(value) is OrderedDict or type(value) is Arguments or value is None:
+                assert type(self[key]) is dict or type(self[key]) is OrderedDict or type(self[key]) is Arguments
+                # If in selection more, unselect all keys not part of the update.
+                if select:
+                    unselect = [k for k in self[key].keys() if k not in value.keys()]
+                    for k in unselect:
+                        self[key].pop(k)
+
+                self[key].update(value)
+            else:
+                sys.exit("Cannot merge values of types {} and {}".format(type(self[key]), type(value)))
+
+    def copy(self):
+        result = Arguments()
+        for key, value in self.items():
+            if type(value) is str or type(value) is int or type(value) is float or type(value) is bool or value is None:
+                result[key] = value
+            elif type(value) is Arguments:
+                result[key] = value.copy()
+            else:
+                sys.exit("Cannot copy value of type {}".format(type(value)))
+        return result
 
     @staticmethod
     def argument_to_argument_string(key, value):
@@ -63,64 +103,10 @@ class Arguments(dict):
         else:
             return str(key) + " " + str(value)
 
-    @staticmethod
-    def argument_from_str(string):
-        string = string.strip()
-        if string == "":
-            return ("", False)
-        elif "_" in string:
-            split = string.split("_")
-            return (split[0], split[1])
-        else:
-            return (string, True)
-
-    def __str__(self):
-        result = ""
-        once = True
-        for argument in self:
-            string = Arguments.argument_to_str(argument, self[argument])
-            if string != "":
-                if once:
-                    once = False
-                else:
-                    result += ":"
-                result += string
-        return result
-
-    @staticmethod
-    def from_str(string):
-        string = string.strip()
-        result = Arguments()
-        if len(string) == 0:
-            return result
-        for argument in string.split(":"):
-            (key, value) = Arguments.argument_from_str(argument)
-            result[key] = value
-        return result
-
-    def copy(self):
-        result = Arguments()
-        for key, value in self.items():
-            result[key] = value
-        return result
-
-    def __key(self):
-        return str(self)
-
-    def __hash__(self):
-        return hash(self.__key())
-
-    def __eq__(self, other):
-        if isinstance(other, Arguments):
-            return self.__key() == other.__key()
-        return NotImplemented
-
     def to_argument_string(self):
         result = ""
         once = True
         for key, value in self.items():
-            if key.startswith("wtdbg2-") or key.startswith("flye-") or key.startswith("contigbreaker"):
-                continue
             argument = Arguments.argument_to_argument_string(key, value)
             if argument != "":
                 if once:
@@ -130,103 +116,189 @@ class Arguments(dict):
                 result += argument
         return result
 
-    def pop_postprocessing(self):
-        pop = [argument for argument in self.keys() if argument == "contigbreaker"]
-        for argument in pop:
-            self.pop(argument)
+    def subarguments_name(self, name):
+        if name not in self:
+            return None
+
+        result = self[name]
+        if type(result) is Arguments:
+            result = list(result.keys())
+            if len(result) != 1:
+                return None
+            result = result[0]
+        return result
+
+    def subarguments_arguments(self, name):
+        if name not in self:
+            return None
+
+        result = self[name]
+        if type(result) is not Arguments:
+            return None
+
+        result = list(result.values())
+        if len(result) != 1:
+            return None
+
+        return result[0]
+
+    def assembler_name(self):
+        return self.subarguments_name("assembler")
+
+    def assembler_arguments(self):
+        return self.subarguments_arguments("assembler")
+
+    def postprocessor_name(self):
+        return self.subarguments_name("postprocessor")
+
+    def postprocessor_arguments(self):
+        return self.subarguments_arguments("postprocessor")
+
+    def genome(self):
+        if "genome" in self:
+            return self["genome"]
+        else:
+            return None
+
+    def __str__(self):
+        return json.dumps(self, separators = (',', ':'))
+
+    def from_str(string):
+        return Arguments.from_dict(json.loads(string))
+
+    def retain_raw_assembly_arguments(self):
+        if "postprocess" in self:
+            self.pop("postprocessor")
 
 class Algorithm:
     def __init__(self, assembler, arguments):
         self.assembler = assembler
         self.arguments = arguments
 
+class Column:
+    def __init__(self, root_arguments, additional_arguments):
+        print("Creating column")
+        assert type(root_arguments) is Arguments
+        assert type(additional_arguments) is Arguments
+        self.arguments = root_arguments.copy()
+        self.arguments.update(additional_arguments.copy())
+        self.shortname = self.arguments.pop("shortname")
+        self.assembler = self.arguments.assembler_name()
+        self.assembler_arguments = self.arguments.assembler_arguments()
+        self.genome = self.arguments["genome"]
+
     def __str__(self):
-        return self.assembler + "::" + str(self.arguments)
+        return str(self.arguments)
 
     def from_str(string):
-        split = string.split("::")
-        return Algorithm(split[0], Arguments.from_str(split[1]))
-
-class Experiment:
-    def __init__(self, genome, algorithm):
-        self.genome = genome
-        self.algorithm = algorithm
-
-class Column:
-    def __init__(self, shortname, experiment):
-        self.shortname = shortname
-        self.experiment = experiment
+        return Column(Arguments.from_str(string), Arguments())
 
 class ReportFile:
-    def __init__(self, assembler_name_indices, assembler_argument_map_combination, columns):
+    def __init__(self, arguments, columns):
+        self.arguments = arguments
         self.columns = columns
-        # print("Creating report file with columns: " + str([str(column.experiment.algorithm) for column in columns]))
+        self.name = str(arguments)
 
-        self.name = ""
-        once = True
-        for name, index in assembler_name_indices.items():
-            if once:
-                once = False
-            else:
-                self.name += ":::"
-            self.name += name + "::" + str(assembler_argument_map_combination[index])
+    def __str__(self):
+        return "ReportFile(name: {}, arguments: {}, columns: {})".format(self.name, self.arguments, self.columns)
+
+class ArgumentMatrix:
+    def __init__(self, argument_matrix):
+        self.argument_matrix = argument_matrix
+        self.len = ArgumentMatrix._compute_length(argument_matrix)
+
+    def __len__(self):
+        return self.len
+
+    def _compute_length(argument_matrix):
+        if argument_matrix is None:
+            return 1
+
+        if type(argument_matrix) is ArgumentMatrix:
+            argument_matrix = argument_matrix.argument_matrix
+
+        if type(argument_matrix) is dict or type(argument_matrix) is OrderedDict:
+            length = 1
+            for key, value in argument_matrix.items():
+                length *= ArgumentMatrix._compute_length(value)
+            return length
+
+        if type(argument_matrix) is list:
+            length = 0
+            for value in argument_matrix:
+                length += ArgumentMatrix._compute_length(value)
+            return length
+
+        if type(argument_matrix) is str or type(argument_matrix) is int or type(argument_matrix) is float or type(argument_matrix) is bool:
+            return 1
+
+        sys.exit("Illegal type of argument matrix: {}.\nAllowed are dict, OrderedDict, list, str, bool, int and float".format(type(argument_matrix)))
+
+    def __iter__(self):
+        return ArgumentMatrix._iter(self.argument_matrix)
+
+    def _iter(argument_matrix):
+        if argument_matrix is None:
+            return None
+
+        if type(argument_matrix) is ArgumentMatrix:
+            argument_matrix = argument_matrix.argument_matrix
+
+        if type(argument_matrix) is str or type(argument_matrix) is int or type(argument_matrix) is float or type(argument_matrix) is bool:
+            #print("Found str, int or float: {}".format(argument_matrix))
+            yield argument_matrix
+
+        elif type(argument_matrix) is dict or type(argument_matrix) is OrderedDict or type(argument_matrix) is Arguments:
+            keys = [None] * len(argument_matrix)
+            values = [None] * len(argument_matrix)
+            for index, (key, value) in enumerate(argument_matrix.items()):
+                keys[index] = key
+                values[index] = list(ArgumentMatrix._iter(value))
+
+            #print("keys: {}".format(keys))
+            #print("values: {}".format(values))
+
+            for value_combination in itertools.product(*values):
+                result = Arguments()
+                for key, value in zip(keys, value_combination):
+                    result[key] = value
+                yield result
+
+        elif type(argument_matrix) is list:
+            #print("Found list: {}".format(argument_matrix))
+            for value in argument_matrix:
+                for list_item in ArgumentMatrix._iter(value):
+                    yield list_item
+
+        else:
+            sys.exit("Illegal type of argument matrix: {}.\nAllowed are dict, OrderedDict, list, str, bool, int and float".format(type(argument_matrix)))
+
 
 for report_name, report_definition in reports.items():
-    report_definition["report_files"] = {}
-    assembler_argument_maps = {}
+    argument_matrix = ArgumentMatrix(report_definition.setdefault("argument_matrix", {}))
+    report_definition["argument_matrix"] = argument_matrix
 
-    # Build argument maps for each assembler
-    for assembler_name, assembler in report_definition["assemblers"].items():
-        for argument_set in assembler["argument_sets"]:
-            argument_lists = []
-            for key, values in argument_set.items():
-                argument_list = []
-                for value in values:
-                    argument_list.append((key, value))
-                argument_lists.append(argument_list)
+    print("Matrix of {} has length {}".format(report_name, len(argument_matrix)))
+    entries = list(iter(argument_matrix))
+    print("Entries in matrix:")
+    for entry in entries:
+        print(entry)
 
-            argument_maps = []
-            for argument_combination in itertools.product(*argument_lists):
-                argument_map = Arguments(list(argument_combination))
-                argument_maps.append(argument_map)
-            assembler_argument_maps.setdefault(assembler_name, set()).update(argument_maps)
-        if assembler_name not in assembler_argument_maps or len(assembler_argument_maps[assembler_name]) == 0:
-            assembler_argument_maps[assembler_name] = set()
-            assembler_argument_maps[assembler_name].add(Arguments())
+    for arguments in argument_matrix:
+        columns = []
+        for column_definition in report_definition["columns"]:
+            columns.append(Column(arguments, Arguments.from_dict(column_definition)))
+        report_file = ReportFile(arguments, columns)
+        report_definition.setdefault("report_files", {})[report_file.name] = report_file
 
-    # Convert argument maps to list of lists to iterate over their product
-    assembler_name_indices = {}
-    for index, name in enumerate(assembler_argument_maps.keys()):
-        assembler_name_indices[name] = index
-    assembler_argument_map_lists = [None] * len(assembler_name_indices)
-    for name, index in assembler_name_indices.items():
-        assembler_argument_map_list = list(assembler_argument_maps[name])
-        assembler_argument_map_lists[index] = assembler_argument_map_list
-
-    # Iterate over the product of argument map lists to create all report files'
-    for assembler_argument_map_combination in itertools.product(*assembler_argument_map_lists):
-        for genome in report_definition["genomes"]:
-            report_file_columns = []
-            for column in report_definition["columns"]:
-                assembler_name = column["assembler"]
-                assembler_arguments = assembler_argument_map_combination[assembler_name_indices[assembler_name]].copy()
-
-                if "arguments" in column:
-                    additional_arguments = Arguments.from_dict(column["arguments"])
-                    assembler_arguments.update(additional_arguments)
-                else:
-                    additional_arguments = Arguments()
-
-                algorithm = Algorithm(assembler_name, assembler_arguments)
-                experiment = Experiment(genome, algorithm)
-                report_file_columns.append(Column(column["shortname"], experiment))
-            report_file = ReportFile(assembler_name_indices, assembler_argument_map_combination, report_file_columns)
-            report_definition["report_files"][report_file.name] = report_file
 
 import pprint
 pp = pprint.PrettyPrinter(indent = 2, width = 200, compact = True)
 pp.pprint(reports)
-pp.pprint(aggregated_reports)
+#pp.pprint(aggregated_reports)
+
+#print("Exiting for debugging")
+#sys.exit(0)
 
 tests = config["tests"]
 
@@ -254,8 +326,9 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
-GENOME_READS_FORMAT = "data/{genome}/reads.fa"
-ALGORITHM_PREFIX_FORMAT = "data/{genome}/{algorithm}/"
+GENOME_READS_FORMAT = "data/genomes/{genome}/reads.fa"
+GENOME_REFERENCE_FORMAT = "data/genomes/{genome}/reference.fa"
+ALGORITHM_PREFIX_FORMAT = "data/algorithms/{arguments}/"
 QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
 REPORT_PREFIX_FORMAT = "data/reports/{report_name}/{report_file_name}"
 AGGREGATED_REPORT_PREFIX_FORMAT = "data/reports/{aggregated_report_name}/"
@@ -265,15 +338,19 @@ AGGREGATED_REPORT_PREFIX_FORMAT = "data/reports/{aggregated_report_name}/"
 #################################
 
 def get_all_report_files():
-    result = []
-    for report_name, report_definition in reports.items():
-        for report_file_name in report_definition["report_files"].keys():
-            result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.pdf")
+    try:
+        result = []
+        for report_name, report_definition in reports.items():
+            for report_file_name in report_definition["report_files"].keys():
+                result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.pdf")
 
 
-    for aggregated_report_name in aggregated_reports.keys():
-        result.append(AGGREGATED_REPORT_PREFIX_FORMAT.format(aggregated_report_name = aggregated_report_name) + "aggregated-report.pdf")
-    return result
+        for aggregated_report_name in aggregated_reports.keys():
+            result.append(AGGREGATED_REPORT_PREFIX_FORMAT.format(aggregated_report_name = aggregated_report_name) + "aggregated-report.pdf")
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 rule report_all:
     input: get_all_report_files()
@@ -308,70 +385,100 @@ rule create_single_bcalm2_report_tex:
 ### Create single report ###
 
 def get_report_file(report_name, report_file_name):
-    return reports[report_name]["report_files"][report_file_name]
+    try:
+        return reports[report_name]["report_files"][report_file_name]
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_report_file_quasts(report_name, report_file_name):
-    report_file = get_report_file(report_name, report_file_name)
-    quasts = []
-    for column in report_file.columns:
-        genome = column.experiment.genome
-        algorithm = column.experiment.algorithm
-        quasts.append(QUAST_PREFIX_FORMAT.format(genome = genome, algorithm = algorithm))
-    return quasts
+    try:
+        report_file = get_report_file(report_name, report_file_name)
+        quasts = []
+        for column in report_file.columns:
+            quasts.append(QUAST_PREFIX_FORMAT.format(arguments = column.arguments))
+        return quasts
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_report_file_quasts_from_wildcards(wildcards):
-    return get_report_file_quasts(wildcards.report_name, wildcards.report_file_name)
+    try:
+        return get_report_file_quasts(wildcards.report_name, wildcards.report_file_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_report_file_column_shortnames(report_name, report_file_name):
-    report_file = get_report_file(report_name, report_file_name)
-    shortnames = []
-    for column in report_file.columns:
-        shortnames.append(column.shortname)
-    return shortnames
+    try:
+        report_file = get_report_file(report_name, report_file_name)
+        shortnames = []
+        for column in report_file.columns:
+            shortnames.append(column.shortname)
+        return shortnames
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_report_file_column_shortnames_from_wildcards(wildcards):
-    return get_report_file_column_shortnames(wildcards.report_name, wildcards.report_file_name)
+    try:
+        return get_report_file_column_shortnames(wildcards.report_name, wildcards.report_file_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
-def get_report_genome_name(report_name, report_file_name):
-    report_file = get_report_file(report_name, report_file_name)
-    genome_name = None
-    for column in report_file.columns:
-        genome = column.experiment.genome
-        if genome_name is None:
-            genome_name = genome
-        elif genome_name != genome:
-            sys.exit("Report has two separate genomes")
+def get_report_genome_names(report_name, report_file_name):
+    try:
+        report_file = get_report_file(report_name, report_file_name)
+        genome_names = set()
+        for column in report_file.columns:
+            genome = column.genome
+            genome_names.add(genome)
 
-    return genome_name
+        return genome_names
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
-def get_report_genome_name_from_wildcards(wildcards):
-    return get_report_genome_name(wildcards.report_name, wildcards.report_file_name)
+def get_report_genome_names_from_wildcards(wildcards):
+    try:
+        return get_report_genome_names(wildcards.report_name, wildcards.report_file_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_single_report_script_column_arguments(report_name, report_file_name):
-    report_file = get_report_file(report_name, report_file_name)
-    result = ""
-    once = True
-    for column in report_file.columns:
-        if once:
-            once = False
-        else:
-            result += " "
+    try:
+        report_file = get_report_file(report_name, report_file_name)
+        result = ""
+        once = True
+        for column in report_file.columns:
+            if once:
+                once = False
+            else:
+                result += " "
 
-        genome = column.experiment.genome
-        algorithm = column.experiment.algorithm
-        result += "'" + column.shortname + "' '" + ALGORITHM_PREFIX_FORMAT.format(genome = genome, algorithm = algorithm) + "'"
-    return result
+            arguments = column.arguments
+            result += "'" + column.shortname + "' '" + ALGORITHM_PREFIX_FORMAT.format(arguments = arguments) + "'"
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_single_report_script_column_arguments_from_wildcards(wildcards):
-    return get_single_report_script_column_arguments(wildcards.report_name, wildcards.report_file_name)
+    try:
+        return get_single_report_script_column_arguments(wildcards.report_name, wildcards.report_file_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 localrules: create_single_report_tex
 rule create_single_report_tex:
-    input: quasts = get_report_file_quasts_from_wildcards,
-           combined_eaxmax_plot = REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
-           script = "scripts/convert_validation_outputs_to_latex.py",
+    input:  quasts = get_report_file_quasts_from_wildcards,
+            combined_eaxmax_plot = REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
+            script = "scripts/convert_validation_outputs_to_latex.py",
     output: report = REPORT_PREFIX_FORMAT + "::::report.tex",
-    params: genome_name = get_report_genome_name_from_wildcards,
+    params: genome_name = lambda wildcards: ", ".join(get_report_genome_names_from_wildcards(wildcards)),
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
             name_file = REPORT_PREFIX_FORMAT + "::::name.txt"
     conda: "config/conda-latex-gen-env.yml"
@@ -384,25 +491,41 @@ rule create_single_report_tex:
 ### Create aggregated report ###
 
 def get_aggregated_report_file_maps(aggregated_report_name):
-    result = {}
-    for report_name in aggregated_reports[aggregated_report_name]["reports"]:
-        result.setdefault(report_name, {}).update(reports[report_name]["report_files"])
-    return result
+    try:
+        result = {}
+        for report_name in aggregated_reports[aggregated_report_name]["reports"]:
+            result.setdefault(report_name, {}).update(reports[report_name]["report_files"])
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def iterate_aggregated_report_file_source_reports(aggregated_report_name):
-    aggregated_report_files = get_aggregated_report_file_maps(aggregated_report_name)
-    for report_name, report_file_map in aggregated_report_files.items():
-        for report_file_name in report_file_map.keys():
-            yield (report_name, report_file_name)
+    try:
+        aggregated_report_files = get_aggregated_report_file_maps(aggregated_report_name)
+        for report_name, report_file_map in aggregated_report_files.items():
+            for report_file_name in report_file_map.keys():
+                yield (report_name, report_file_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_aggregated_report_file_source_report_paths(aggregated_report_name):
-    result = set()
-    for report_name, report_file_name in iterate_aggregated_report_file_source_reports(aggregated_report_name):
-        result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.tex")
-    return result
+    try:
+        result = set()
+        for report_name, report_file_name in iterate_aggregated_report_file_source_reports(aggregated_report_name):
+            result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.tex")
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_aggregated_report_file_source_report_paths_from_wildcards(wildcards):
-    return get_aggregated_report_file_source_report_paths(wildcards.aggregated_report_name)
+    try:
+        return get_aggregated_report_file_source_report_paths(wildcards.aggregated_report_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 localrules: create_aggregated_report_tex
 rule create_aggregated_report_tex:
@@ -419,8 +542,8 @@ rule create_aggregated_report_tex:
 
 localrules: create_combined_eaxmax_graph
 rule create_combined_eaxmax_graph:
-    input: quasts = lambda wildcards: [q + "aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
-           script = "scripts/create_combined_eaxmax_plot.py",
+    input:  quasts = lambda wildcards: [q + "aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
+            script = "scripts/create_combined_eaxmax_plot.py",
     output: REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
     params: input_quasts = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quasts)])
     conda: "config/conda-seaborn-env.yml"
@@ -470,23 +593,48 @@ rule compute_unitigs:
     threads: 1
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
+### long reads ###
+
 def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
-    algorithm = Algorithm.from_str(wildcards.algorithm)
-    arguments = algorithm.arguments
-    if "wtdbg2-inject-unitigs" in arguments:
-        return "compute-unitigs"
-    elif "wtdbg2-inject-trivial-omnitigs" in arguments:
-        return "compute-trivial-omnitigs --non-scc"
-    elif "wtdbg2-inject-omnitigs" in arguments:
-        return "compute-omnitigs"
-    else:
-        sys.exit("Missing injection command in wildcards: " + str(wildcards))
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        if assembler_arguments is None:
+            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
+
+        if "wtdbg2-inject-unitigs" in assembler_arguments:
+            return "compute-unitigs"
+        elif "wtdbg2-inject-trivial-omnitigs" in assembler_arguments:
+            return "compute-trivial-omnitigs --non-scc"
+        elif "wtdbg2-inject-omnitigs" in assembler_arguments:
+            return "compute-omnitigs"
+        else:
+            raise Exception("Missing injection command in wildcards: " + str(wildcards))
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_genome_reference_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        return GENOME_REFERENCE_FORMAT.format(genome = arguments["genome"])
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_genome_reads_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        return GENOME_READS_FORMAT.format(genome = arguments["genome"])
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 rule compute_injectable_contigs_wtdbg2:
     input: nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.nodes",
            reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
-           raw_reads = GENOME_READS_FORMAT,
+           raw_reads = get_genome_reads_from_wildcards,
            binary = "data/target/release/cli",
     output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.log",
@@ -502,17 +650,24 @@ rule compute_injectable_contigs_wtdbg2:
 #################################
 
 def get_raw_assembly_file_from_wildcards(wildcards):
-    algorithm = Algorithm.from_str(wildcards.algorithm)
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_name = arguments.assembler_name()
 
-    if algorithm.assembler == "flye":
-        result = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta"
-    elif algorithm.assembler == "wtdbg2":
-        result = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
-    else:
-        sys.exit("Unknown assembler in algorithm: " + wildcards.algorithm)
+        if assembler_name == "flye":
+            result = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta"
+        elif assembler_name == "wtdbg2":
+            result = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
+        elif assembler_name == "reference":
+            result = GENOME_REFERENCE_FORMAT
+        else:
+            raise Exception("Unknown assembler {} in arguments: {}".format(assembler_name, arguments))
 
-    algorithm.arguments.pop_postprocessing()
-    return result.format(genome = wildcards.genome, algorithm = str(algorithm))
+        arguments.retain_raw_assembly_arguments()
+        return result.format(genome = arguments.genome(), arguments = str(arguments))
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 localrules: select_assembler
 rule select_assembler:
@@ -522,11 +677,16 @@ rule select_assembler:
     shell: "ln -sr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
 
 def get_assembly_postprocessing_target_file_from_wildcards(wildcards):
-    algorithm = Algorithm.from_str(wildcards.algorithm)
-    if "contigbreaker" in algorithm.arguments:
-        return ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa"
-    else:
-        return ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa"
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        postprocessor_name = arguments.postprocessor_name()
+        if postprocessor_name == "contigbreaker":
+            return ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa"
+        else:
+            return ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa"
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 localrules: request_assembly_postprocessing
 rule request_assembly_postprocessing:
@@ -536,51 +696,73 @@ rule request_assembly_postprocessing:
     shell: "ln -sr '{input}' '{output}'"
 
 def get_source_genome_properties_from_wildcards(wildcards):
-    if hasattr(wildcards, "genome"):
-        genome_name = wildcards.genome
-    elif hasattr(wildcards, "corrected_genome"):
-        genome_name = wildcards.corrected_genome
-    else:
-        sys.exit("Wildcards has no 'genome' or 'corrected_genome' attribute")
+    try:
+        if hasattr(wildcards, "genome"):
+            genome_name = wildcards.genome
+        elif hasattr(wildcards, "corrected_genome"):
+            genome_name = wildcards.corrected_genome
+        elif hasattr(wildcards, "arguments"):
+            arguments = Arguments.from_str(wildcards.arguments)
+            genome_name = arguments.genome()
 
-    if genome_name in genomes:
-        pass
-    elif corrected_genomes is not None and genome_name in corrected_genomes:
-        genome_name = corrected_genomes[genome_name]["source_genome"]
-    else:
-        sys.exit("Genome name not found: " + str(genome_name))
-    return genomes[genome_name]
+            if genome_name is None:
+                raise Exception("Arguments has no 'genome' attribute: {}".format(arguments))
+        else:
+            raise Exception("Wildcards has no 'genome', 'corrected_genome' or 'arguments' attribute")
+
+        if genome_name in genomes:
+            pass
+        elif corrected_genomes is not None and genome_name in corrected_genomes:
+            genome_name = corrected_genomes[genome_name]["source_genome"]
+        else:
+            raise Exception("Genome name not found: " + str(genome_name))
+        return genomes[genome_name]
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb):
-    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
+    try:
+        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
 
-    if "assembly_mem_factor" in genome_properties:
-        return int(float(genome_properties["assembly_mem_factor"]) * float(base_mem_mb))
-    else:
-        return base_mem_mb
+        if "assembly_mem_factor" in genome_properties:
+            return int(float(genome_properties["assembly_mem_factor"]) * float(base_mem_mb))
+        else:
+            return base_mem_mb
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def compute_genome_time_min_from_wildcards(wildcards, base_time_min):
-    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
+    try:
+        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
 
-    if "assembly_time_factor" in genome_properties:
-        return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
-    else:
-        return base_time_min
+        if "assembly_time_factor" in genome_properties:
+            return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
+        else:
+            return base_time_min
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def compute_genome_queue_from_wildcards(wildcards, base_time_min):
-    time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
-    if time <= 1440:
-        return "short"
-    elif time <= 1440 * 14:
-        return "long"
-    elif time <= 1440 * 60:
-        return "extralong"
-    else:
-        sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+    try:
+        time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
+        if time <= 1440:
+            return "short"
+        elif time <= 1440 * 14:
+            return "long"
+        elif time <= 1440 * 60:
+            return "extralong"
+        else:
+            sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 rule run_contigbreaker:
     input:  contigs = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa",
-            reads = GENOME_READS_FORMAT,
+            reads = get_genome_reads_from_wildcards,
             script = "tools/contigbreaker/contigbreaker.py"
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
@@ -612,15 +794,28 @@ rule install_wtdbg2:
     """
 
 def get_assembler_args_from_wildcards(wildcards):
-    algorithm = Algorithm.from_str(wildcards.algorithm)
-    return algorithm.arguments.to_argument_string()
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        if assembler_arguments is None:
+            raise Exception("Arguments have not assembler arguments: {}".format(arguments))
+
+
+        return assembler_arguments.to_argument_string()
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 def get_genome_len_from_wildcards(wildcards):
-    genome_properties = get_source_genome_properties_from_wildcards(wildcards)
-    return str(genome_properties["genome_length"])
+    try:
+        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
+        return str(genome_properties["genome_length"])
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 rule wtdbg2_complete:
-    input: reads = GENOME_READS_FORMAT,
+    input: reads = get_genome_reads_from_wildcards,
            binary = "external-software/wtdbg2/wtdbg2",
     output: original_nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.1.nodes",
             nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
@@ -631,7 +826,7 @@ rule wtdbg2_complete:
             ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
-    wildcard_constraints: algorithm = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
+    wildcard_constraints: arguments = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
@@ -643,16 +838,21 @@ rule wtdbg2_complete:
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
-    algorithm = Algorithm.from_str(wildcards.algorithm)
-    algorithm.arguments.pop("--skip-fragment-assembly", None)
-    algorithm.arguments.pop("wtdbg2-inject-unitigs", None)
-    algorithm.arguments.pop("wtdbg2-inject-trivial-omnitigs", None)
-    algorithm.arguments.pop("wtdbg2-inject-omnitigs", None)
-    algorithm.arguments["wtdbg2-wtdbg2"] = True
-    return ALGORITHM_PREFIX_FORMAT.format(genome = "{genome}", algorithm = str(algorithm))
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        assembler_arguments.pop("--skip-fragment-assembly", None)
+        assembler_arguments.pop("wtdbg2-inject-unitigs", None)
+        assembler_arguments.pop("wtdbg2-inject-trivial-omnitigs", None)
+        assembler_arguments.pop("wtdbg2-inject-omnitigs", None)
+        assembler_arguments["wtdbg2-wtdbg2"] = True
+        return ALGORITHM_PREFIX_FORMAT.format(arguments = str(arguments))
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 rule wtdbg2_without_fragment_assembly:
-    input: reads = GENOME_READS_FORMAT,
+    input: reads = get_genome_reads_from_wildcards,
            clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
            kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
@@ -664,7 +864,7 @@ rule wtdbg2_without_fragment_assembly:
             ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
-    wildcard_constraints: algorithm = "(.*wtdbg2-wtdbg2.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-wtdbg2.*)"
+    wildcard_constraints: arguments = "(.*wtdbg2-wtdbg2.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-wtdbg2.*)"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
@@ -676,7 +876,7 @@ rule wtdbg2_without_fragment_assembly:
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_inject_contigs:
-    input: reads = GENOME_READS_FORMAT,
+    input: reads = get_genome_reads_from_wildcards,
            contigs = ALGORITHM_PREFIX_FORMAT + "contigwalks",
            clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
@@ -685,7 +885,7 @@ rule wtdbg2_inject_contigs:
     output: ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
-    wildcard_constraints: algorithm = ".*wtdbg2-inject-.*"
+    wildcard_constraints: arguments = ".*wtdbg2-inject-.*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
@@ -697,7 +897,7 @@ rule wtdbg2_inject_contigs:
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
 
 rule wtdbg2_consensus:
-    input: reads = GENOME_READS_FORMAT,
+    input: reads = get_genome_reads_from_wildcards,
            contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay",
            binary = "external-software/wtdbg2/wtpoa-cns",
     output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa",
@@ -713,22 +913,11 @@ rule wtdbg2_consensus:
 ###### Flye ######
 ##################
 
-def get_flye_input_argument_from_wildcards(wildcards):
-    algorithm = Algorithm.from_str(wildcards.algorithm)
-    if "flye-pacbio-hifi" in algorithm.arguments:
-        return "--pacbio-hifi"
-    elif "flye-pacbio-corr" in algorithm.arguments:
-        return "--pacbio-corr"
-    elif "flye-pacbio-raw" in algorithm.arguments:
-        return "--pacbio-raw"
-    else:
-        sys.exit("Missing flye input argument: " + str(algorithm.arguments))
-
 rule flye:
-    input: reads = GENOME_READS_FORMAT,
+    input: reads = get_genome_reads_from_wildcards,
     output: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
     params: flye_args = get_assembler_args_from_wildcards,
-            flye_input_argument = get_flye_input_argument_from_wildcards,
+            flye_input_argument = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_directory = ALGORITHM_PREFIX_FORMAT + "flye",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "flye.completed"),
@@ -754,14 +943,18 @@ def url_file_format(url):
         return parts[-1]
 
 def read_url_file_format(genome):
-    format = url_file_format(genomes[genome]["urls"][0])
+    try:
+        format = url_file_format(genomes[genome]["urls"][0])
 
-    if format == "fasta":
-        return "fa"
-    elif genomes[genome].get("format", None) == "sra":
-        return "sra"
-    else:
-        return format
+        if format == "fasta":
+            return "fa"
+        elif genomes[genome].get("format", None) == "sra":
+            return "sra"
+        else:
+            return format
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 ruleorder: download_raw_source_reads > download_packed_source_reads > convert_source_reads > extract
 
@@ -819,14 +1012,18 @@ rule download_packed_source_reads:
         """
 
 def read_raw_input_file_name(wildcards):
-    genome_name = wildcards.genome
-    genome_properties = genomes[genome_name]
+    try:
+        genome_name = wildcards.genome
+        genome_properties = genomes[genome_name]
 
-    if genome_properties["urls"][0].split('.')[-1] == "gz":
-        input_file_name = "data/downloads/" + genome_name + "/packed-reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
-    else:
-        input_file_name = "data/downloads/" + genome_name + "/reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
-    return input_file_name
+        if genome_properties["urls"][0].split('.')[-1] == "gz":
+            input_file_name = "data/downloads/" + genome_name + "/packed-reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+        else:
+            input_file_name = "data/downloads/" + genome_name + "/reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+        return input_file_name
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 rule convert_source_reads:
     input: file = read_raw_input_file_name,
@@ -877,19 +1074,23 @@ rule uniquify_ids:
     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
 
 def read_input_file_name(wildcards):
-    genome_name = wildcards.genome
-    if genome_name in genomes:
-        return "data/downloads/" + genome_name + "/reads.uniquified.fa"
-    elif genome_name in corrected_genomes:
-        return "data/corrected_reads/" + genome_name + "/corrected_reads.fa"
-    else:
-        sys.exit("genome name not found: " + genome_name)
+    try:
+        genome_name = wildcards.genome
+        if genome_name in genomes:
+            return "data/downloads/" + genome_name + "/reads.uniquified.fa"
+        elif genome_name in corrected_genomes:
+            return "data/corrected_reads/" + genome_name + "/corrected_reads.fa"
+        else:
+            sys.exit("genome name not found: " + genome_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 localrules: link_reads
 rule link_reads:
-    input: file = read_input_file_name
+    input: file = read_input_file_name,
     #input: file = "data/corrected_reads/{genome}/corrected_reads.fa"
-    output: file = GENOME_READS_FORMAT
+    output: file = GENOME_READS_FORMAT,
     wildcard_constraints:
         genome = "((?!downloads).)*",
     threads: 1
@@ -924,21 +1125,25 @@ rule download_reference_gzip:
         """
 
 def reference_input_file_name(wildcards):
-    genome_name = wildcards.genome
-    if corrected_genomes is not None and genome_name in corrected_genomes:
-        genome_name = corrected_genomes[genome_name]["source_genome"]
-    reference = genomes[genome_name]["reference"]
+    try:
+        genome_name = wildcards.genome
+        if corrected_genomes is not None and genome_name in corrected_genomes:
+            genome_name = corrected_genomes[genome_name]["source_genome"]
+        reference = genomes[genome_name]["reference"]
 
-    if reference.split('.')[-1] == "gz":
-        input_file_name = "data/downloads/" + genome_name + "/packed-reference.fa"
-    else:
-        input_file_name = "data/downloads/" + genome_name + "/reference.fa"
-    return input_file_name
+        if reference.split('.')[-1] == "gz":
+            input_file_name = "data/downloads/" + genome_name + "/packed-reference.fa"
+        else:
+            input_file_name = "data/downloads/" + genome_name + "/reference.fa"
+        return input_file_name
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 localrules: link_reference
 rule link_reference:
-    input: file = reference_input_file_name
-    output: file = "data/{genome}/reference.fa"
+    input: file = reference_input_file_name,
+    output: file = GENOME_REFERENCE_FORMAT,
     wildcard_constraints:
         genome = "((?!downloads).)*",
     threads: 1
@@ -1212,9 +1417,9 @@ rule run_quast_bcalm2:
     shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
 
 rule run_quast:
-    input: contigs = ALGORITHM_PREFIX_FORMAT + "assembly.fa",
-        reference = "data/{genome}/reference.fa",
-        script = "external-software/quast/quast.py",
+    input:  contigs = ALGORITHM_PREFIX_FORMAT + "assembly.fa",
+            reference = get_genome_reference_from_wildcards,
+            script = "external-software/quast/quast.py",
     output: directory = directory(QUAST_PREFIX_FORMAT),
             eaxmax_csv = QUAST_PREFIX_FORMAT + "aligned_stats/EAxmax_plot.csv",
             completed = touch(QUAST_PREFIX_FORMAT + ".completed"),
@@ -1538,7 +1743,7 @@ rule download_all:
                                             corrected_genome=[corrected_genome],
                                             index=range(len(corrected_genomes[corrected_genome]["correction_short_reads"])),
                                             file_type=correction_read_url_file_format(corrected_genome))] if corrected_genomes is not None else [],
-           references = expand("data/{genome}/reference.fa", genome=genomes.keys()),
+           references = expand(GENOME_REFERENCE_FORMAT, genome=genomes.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
            rust = "data/target/release/cli",
