@@ -924,7 +924,7 @@ rule install_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout a2bebf1a0f76635f505a33a9d3db28902b785671
+        git checkout cd8b7689d6e7434171bf5e3779764f28c5da2680
 
         make
         """
