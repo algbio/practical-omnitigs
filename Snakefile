@@ -914,7 +914,8 @@ rule wtdbg2_consensus:
 
 localrules: install_flye
 rule install_flye:
-    output: "external-software/Flye/bin/flye",
+    output: script = "external-software/Flye/bin/flye",
+            directory = "external-software/Flye",
     conda:  "config/conda-install-flye-env.yml"
     shell:  """
         mkdir -p external-software
