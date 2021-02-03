@@ -912,6 +912,21 @@ rule wtdbg2_consensus:
 ###### Flye ######
 ##################
 
+localrules: install_flye
+rule install_flye:
+    output: "external-software/Flye/bin/flye",
+    conda:  "config/conda-install-flye-env.yml"
+    shell:  """
+        mkdir -p external-software
+        cd external-software
+
+        git clone https://github.com/sebschmi/Flye
+        cd Flye
+        git checkout a2bebf1a0f76635f505a33a9d3db28902b785671
+
+        make
+        """
+
 def get_flye_other_args_from_wildcards(wildcards):
     try:
         arguments = Arguments.from_str(wildcards.arguments)
@@ -954,21 +969,22 @@ def get_flye_input_arg_from_wildcards(wildcards):
         sys.exit("Catched exception")
 
 rule flye:
-    input: reads = get_genome_reads_from_wildcards,
+    input:  reads = get_genome_reads_from_wildcards,
+            script = "external-software/Flye/bin/flye"
     output: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
     params: flye_args = get_flye_other_args_from_wildcards,
             flye_input_argument = get_flye_input_arg_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_directory = ALGORITHM_PREFIX_FORMAT + "flye",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "flye.completed"),
-    conda: "config/conda-flye-env.yml"
+    #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 125000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720),
                mail_type = "END",
-    shell: "flye {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
+    shell: "'{intput.script}' {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
 
 
 #########################################
