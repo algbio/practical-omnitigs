@@ -388,10 +388,6 @@ reports:
         assembler:
           flye:
             "--pacbio-corr": True
-      - shortname: "flye hifi"
-        assembler:
-          flye:
-            "--pacbio-hifi": True
 
 aggregated_reports:
   "aggregated":
