@@ -387,6 +387,12 @@ aggregated_reports:
 
 
 genomes:
+  "E.coli":
+    urls: ["https://sra-download.ncbi.nlm.nih.gov/traces/sra58/SRR/011052/SRR11317948"]
+    format: "sra"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
+    genome_length: 5594605
+
   "C.elegans":
     urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
     reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
