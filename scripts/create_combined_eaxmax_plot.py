@@ -3,7 +3,7 @@
 import sys
 
 input_shortnames = sys.argv[1:-1:2]
-input_quasts = sys.argv[2:-1:2]
+input_quast_csvs = sys.argv[2:-1:2]
 output_file = sys.argv[-1]
 
 from os import path
@@ -12,9 +12,8 @@ from os import path
 import pandas
 df = pandas.DataFrame(columns = ["experiment", "x", "y"])
 
-for shortname, quast_path in zip(input_shortnames, input_quasts):
-    file = path.join(quast_path, "aligned_stats/EAxmax_plot.csv")
-    frame = pandas.read_csv(file, names=["x", "y"])
+for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
+    frame = pandas.read_csv(quast_csv, names=["x", "y"])
     frame["experiment"] = shortname
     df = df.append(frame)
 

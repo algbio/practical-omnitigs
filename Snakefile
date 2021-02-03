@@ -542,15 +542,15 @@ rule create_aggregated_report_tex:
 
 localrules: create_combined_eaxmax_graph
 rule create_combined_eaxmax_graph:
-    input:  quasts = lambda wildcards: [q + "aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
+    input:  quast_csvs = lambda wildcards: [q + "aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
             script = "scripts/create_combined_eaxmax_plot.py",
     output: REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
-    params: input_quasts = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quasts)])
+    params: input_quast_csvs = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quast_csvs)])
     conda: "config/conda-seaborn-env.yml"
     threads: 1
     shell: """
         mkdir -p "$(dirname "{output}")"
-        python3 '{input.script}' '{params.input_quasts}' '{output}'
+        python3 '{input.script}' '{params.input_quast_csvs}' '{output}'
         """
 
 localrules: png_to_pdf
