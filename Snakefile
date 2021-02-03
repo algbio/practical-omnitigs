@@ -974,6 +974,7 @@ rule flye:
     input:  reads = get_genome_reads_from_wildcards,
             script = "external-software/Flye/bin/flye"
     output: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
+            directory = directory(ALGORITHM_PREFIX_FORMAT + "flye"),
     params: flye_args = get_flye_other_args_from_wildcards,
             flye_input_argument = get_flye_input_arg_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
