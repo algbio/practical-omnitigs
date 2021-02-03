@@ -5,7 +5,7 @@ Convert the output of the different validation tools into a LaTeX file.
 Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> [<label> <experiment prefix> ...] 
 """
 
-import sys, subprocess
+import sys, subprocess, hashlib, os, pathlib
 
 genome_name_file_name = sys.argv[1]
 graph_statistics_file_name = sys.argv[2]
@@ -182,12 +182,23 @@ def write_table(output_file, caption, column_count, rows):
 	output_file.write(table_footer)
 
 def write_image(output_file, caption, file, natwidth, natheight):
-	#file = file.replace("{", "\\{").replace("}", "\\}")
+	hasher = hashlib.sha3_512()
+	hasher.update(file.encode())
+	hashlink = "data/latex_hashlinks/" + str(hasher.hexdigest()) + "." + file.split(".")[-1]
+	hashname = "../../../" + hashlink
+
+	try:
+		os.remove(hashlink)
+	except OSError:
+		pass
+
+	pathlib.Path("data/latex_hashlinks").mkdir(parents=True, exist_ok=True)
+	os.symlink(hashlink, file)
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
 	output_file.write("\\centering\n")
-	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{\\detokenize{" + str(file) + "}}\n")
+	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + str(hashname) + "}\n")
 	output_file.write("\\caption{" + str(caption) + "}")
 	output_file.write("\\end{figure*}\n")
 
@@ -229,13 +240,13 @@ from os import path
 
 if combined_eaxmax_plot_name != 'none':
     output_file.write("\\newpage")
-    write_image(output_file, "EAxmax", "../../../" + combined_eaxmax_plot_name, 1000, 1000)
+    write_image(output_file, "EAxmax", combined_eaxmax_plot_name, 1000, 1000)
 
 output_file.write("\\newpage")
 for label, prefix in experiments:
 	plot_file_path = prefix + "quast/aligned_stats/EAxmax_plot.pdf"
 	if path.isfile(plot_file_path):
-		quast_png_name = "../../../" + plot_file_path
+		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST EAxmax graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
@@ -243,14 +254,14 @@ for label, prefix in experiments:
 for label, prefix in experiments:
 	plot_file_path = prefix + "quast/aligned_stats/NGAx_plot.pdf"
 	if path.isfile(plot_file_path):
-		quast_png_name = "../../../" + plot_file_path
+		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
 
 if bandage_png_name != 'none':
 	output_file.write("\\newpage")
-	write_image(output_file, "Bandage genome graph", "../../../" + bandage_png_name, 1000, 1000)
+	write_image(output_file, "Bandage genome graph", bandage_png_name, 1000, 1000)
 
 
 output_file.write(
