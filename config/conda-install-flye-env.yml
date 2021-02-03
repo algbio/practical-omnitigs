@@ -2,3 +2,4 @@ channels:
   - conda-forge
 dependencies:
   - make == 4.3
+  - gcc_impl_linux-64 == 9.3.0
