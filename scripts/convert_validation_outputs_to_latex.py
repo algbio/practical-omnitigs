@@ -193,7 +193,7 @@ def write_image(output_file, caption, file, natwidth, natheight):
 		pass
 
 	pathlib.Path("data/latex_hashlinks").mkdir(parents=True, exist_ok=True)
-	os.symlink(file, hashlink)
+	os.symlink("../../" + file, hashlink)
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
