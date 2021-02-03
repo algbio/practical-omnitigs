@@ -549,7 +549,7 @@ rule create_combined_eaxmax_graph:
     conda: "config/conda-seaborn-env.yml"
     threads: 1
     shell: """
-        mkdir -p "$(dirname '{output}'')"
+        mkdir -p "$(dirname '{output}')"
         python3 '{input.script}' '{params.input_quast_csvs}' '{output}'
         """
 
