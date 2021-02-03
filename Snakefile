@@ -915,12 +915,13 @@ rule wtdbg2_consensus:
 localrules: install_flye
 rule install_flye:
     output: script = "external-software/Flye/bin/flye",
-            directory = "external-software/Flye",
+            directory = directory("external-software/Flye"),
     conda:  "config/conda-install-flye-env.yml"
     shell:  """
         mkdir -p external-software
         cd external-software
 
+        rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
         git checkout a2bebf1a0f76635f505a33a9d3db28902b785671
@@ -1451,7 +1452,8 @@ rule download_experiment_file:
 
 localrules: install_quast
 rule install_quast:
-    output: script = "external-software/quast/quast.py", script_directory = directory("external-software/quast/"),
+    output: script = "external-software/quast/quast.py",
+            script_directory = directory("external-software/quast/"),
     threads: 1
     shell: """
     mkdir -p external-software
