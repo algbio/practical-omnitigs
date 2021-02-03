@@ -376,6 +376,23 @@ reports:
           flye:
             "--pacbio-hifi": True
 
+  "E.coli":
+    argument_matrix:
+      genome: "E.coli"
+    columns:
+      - shortname: "flye raw"
+        assembler:
+          flye:
+            "--pacbio-raw": True
+      - shortname: "flye corr"
+        assembler:
+          flye:
+            "--pacbio-corr": True
+      - shortname: "flye hifi"
+        assembler:
+          flye:
+            "--pacbio-hifi": True
+
 aggregated_reports:
   "aggregated":
     reports:
