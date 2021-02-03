@@ -10,7 +10,8 @@ for arg in sys.argv[1:]:
 if arg is None:
 	sys.exit("Not numeric argument given.")
 
-states = [state.strip() for state in str(subprocess.check_output("sacct -j %s --format State --noheader -M all | head -1 | awk '{print $1}'" % jobid, shell=True).strip()).split('\n')]
+states = [state.strip() for state in str(subprocess.check_output("sacct -j %s --format State --noheader -M all | awk '{print $1}'" % jobid, shell=True)).strip().split('\n')]
+print(states)
 
 running_status=["PENDING", "CONFIGURING", "COMPLETING", "RUNNING", "SUSPENDED", "REVOKED", "REQUEUED", "RESIZING"]
 all_completed = True
