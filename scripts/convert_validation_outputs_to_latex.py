@@ -182,12 +182,12 @@ def write_table(output_file, caption, column_count, rows):
 	output_file.write(table_footer)
 
 def write_image(output_file, caption, file, natwidth, natheight):
-	file = file.replace("{", "\\{").replace("}", "\\}")
+	#file = file.replace("{", "\\{").replace("}", "\\}")
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
 	output_file.write("\\centering\n")
-	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + str(file) + "}\n")
+	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{\\detokenize{" + str(file) + "}}\n")
 	output_file.write("\\caption{" + str(caption) + "}")
 	output_file.write("\\end{figure*}\n")
 
