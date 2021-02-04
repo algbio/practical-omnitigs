@@ -384,10 +384,6 @@ reports:
         assembler:
           flye:
             "--pacbio-raw": True
-      - shortname: "flye corr"
-        assembler:
-          flye:
-            "--pacbio-corr": True
 
 aggregated_reports:
   "aggregated":

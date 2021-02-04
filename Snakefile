@@ -21,6 +21,12 @@ if 'use_conda' in config and config['use_conda']:
 workflow.global_resources["contigvalidator"] = 1
 workflow.global_resources["concorde"] = 1
 
+DATADIR = "data/"
+if "datadir" in config:
+    DATADIR = config["datadir"]
+if DATADIR[-1] != "/":
+    DATADIR += "/"
+
 MAX_THREADS = 56
 print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
 
@@ -326,12 +332,12 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
-GENOME_READS_FORMAT = "data/genomes/{genome}/reads.fa"
-GENOME_REFERENCE_FORMAT = "data/genomes/{genome}/reference.fa"
-ALGORITHM_PREFIX_FORMAT = "data/algorithms/{arguments}/"
+GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads.fa"
+GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference.fa"
+ALGORITHM_PREFIX_FORMAT = DATADIR + "algorithms/{arguments}/"
 QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
-REPORT_PREFIX_FORMAT = "data/reports/{report_name}/{report_file_name}"
-AGGREGATED_REPORT_PREFIX_FORMAT = "data/reports/{aggregated_report_name}/"
+REPORT_PREFIX_FORMAT = DATADIR + "reports/{report_name}/{report_file_name}"
+AGGREGATED_REPORT_PREFIX_FORMAT = DATADIR + "reports/{aggregated_report_name}/"
 
 #################################
 ###### Global report rules ######
@@ -363,21 +369,21 @@ rule report_all:
 
 localrules: create_single_bcalm2_report_tex
 rule create_single_bcalm2_report_tex:
-    input: genome_name = "data/{dir}/name.txt",
-           unitigs = "data/{dir}/{file}.unitigs.tex",
-           unitigs_contigvalidator = "data/{dir}/{file}.unitigs.contigvalidator",
-           unitigs_quast = "data/{dir}/{file}.unitigs.quast",
-           omnitigs = "data/{dir}/{file}.omnitigs.tex",
-           omnitigs_contigvalidator = "data/{dir}/{file}.omnitigs.contigvalidator",
-           omnitigs_quast = "data/{dir}/{file}.omnitigs.quast",
-           trivialomnitigs = "data/{dir}/{file}.trivialomnitigs.tex",
-           trivialomnitigs_contigvalidator = "data/{dir}/{file}.trivialomnitigs.contigvalidator",
-           trivialomnitigs_quast = "data/{dir}/{file}.trivialomnitigs.quast",
-           graphstatistics = "data/{dir}/{file}.bcalm2.graphstatistics",
-           bcalm2_bandage = "data/{dir}/{file}.bcalm2.bandage.png",
+    input: genome_name = DATADIR + "{dir}/name.txt",
+           unitigs = DATADIR + "{dir}/{file}.unitigs.tex",
+           unitigs_contigvalidator = DATADIR + "{dir}/{file}.unitigs.contigvalidator",
+           unitigs_quast = DATADIR + "{dir}/{file}.unitigs.quast",
+           omnitigs = DATADIR + "{dir}/{file}.omnitigs.tex",
+           omnitigs_contigvalidator = DATADIR + "{dir}/{file}.omnitigs.contigvalidator",
+           omnitigs_quast = DATADIR + "{dir}/{file}.omnitigs.quast",
+           trivialomnitigs = DATADIR + "{dir}/{file}.trivialomnitigs.tex",
+           trivialomnitigs_contigvalidator = DATADIR + "{dir}/{file}.trivialomnitigs.contigvalidator",
+           trivialomnitigs_quast = DATADIR + "{dir}/{file}.trivialomnitigs.quast",
+           graphstatistics = DATADIR + "{dir}/{file}.bcalm2.graphstatistics",
+           bcalm2_bandage = DATADIR + "{dir}/{file}.bcalm2.bandage.png",
            script = "scripts/convert_validation_outputs_to_latex.py",
-    output: "data/{dir}/{file}.report.tex"
-    params: prefix = "data/{dir}/{file}"
+    output: DATADIR + "{dir}/{file}.report.tex"
+    params: prefix = DATADIR + "{dir}/{file}"
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
@@ -563,8 +569,8 @@ rule png_to_pdf:
 
 localrules: latex
 rule latex:
-    input: "data/{subpath}report.tex"
-    output: "data/{subpath}report.pdf"
+    input: DATADIR + "{subpath}report.tex"
+    output: DATADIR + "{subpath}report.pdf"
     conda: "config/conda-latex-env.yml"
     threads: 1
     shell: "tectonic '{input}'"
@@ -576,20 +582,20 @@ rule latex:
 ### bcalm2 ###
 
 rule compute_omnitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: file = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
@@ -635,7 +641,7 @@ rule compute_injectable_contigs_wtdbg2:
            reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
            raw_reads = get_genome_reads_from_wildcards,
-           binary = "data/target/release/cli",
+           binary = DATADIR + "target/release/cli",
     output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.log",
             latex = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.tex",
@@ -1019,8 +1025,8 @@ ruleorder: download_raw_source_reads > download_packed_source_reads > convert_so
 
 localrules: download_raw_source_reads
 rule download_raw_source_reads:
-    output: file = "data/downloads/{genome}/reads-{index}.{format}",
-            completed = touch("data/downloads/{genome}/reads-{index}.{format}.completed"),
+    output: file = DATADIR + "downloads/{genome}/reads-{index}.{format}",
+            completed = touch(DATADIR + "downloads/{genome}/reads-{index}.{format}.completed"),
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
             url_format = lambda wildcards: read_url_file_format(wildcards.genome),
     wildcard_constraints:
@@ -1042,8 +1048,8 @@ rule download_raw_source_reads:
 
 localrules: download_packed_source_reads
 rule download_packed_source_reads:
-    output: file = "data/downloads/{genome}/packed-reads-{index}.{format}.gz",
-            completed = touch("data/downloads/{genome}/packed-reads-{index}.{format}.gz.completed"),
+    output: file = DATADIR + "downloads/{genome}/packed-reads-{index}.{format}.gz",
+            completed = touch(DATADIR + "downloads/{genome}/packed-reads-{index}.{format}.gz.completed"),
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
             url_format = lambda wildcards: read_url_file_format(wildcards.genome),
             checksum = lambda wildcards: genomes[wildcards.genome]["checksums"][int(wildcards.index)] if "checksums" in genomes[wildcards.genome] else "",
@@ -1076,9 +1082,9 @@ def read_raw_input_file_name(wildcards):
         genome_properties = genomes[genome_name]
 
         if genome_properties["urls"][0].split('.')[-1] == "gz":
-            input_file_name = "data/downloads/" + genome_name + "/packed-reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
         else:
-            input_file_name = "data/downloads/" + genome_name + "/reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+            input_file_name = DATADIR + "downloads/" + genome_name + "/reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
         return input_file_name
     except Exception:
         traceback.print_exc()
@@ -1086,8 +1092,8 @@ def read_raw_input_file_name(wildcards):
 
 rule convert_source_reads:
     input: file = read_raw_input_file_name,
-    output: file = "data/downloads/{genome}/reads-{index}.converted.fa",
-            completed = touch("data/downloads/{genome}/reads-{index}.converted.fa.completed"),
+    output: file = DATADIR + "downloads/{genome}/reads-{index}.converted.fa",
+            completed = touch(DATADIR + "downloads/{genome}/reads-{index}.converted.fa.completed"),
     params: file_format = lambda wildcards: read_url_file_format(wildcards.genome)
     wildcard_constraints:
         index = "\d+",
@@ -1105,9 +1111,9 @@ rule convert_source_reads:
         """
 
 rule combine_reads:
-    input: files = lambda wildcards: expand("data/downloads/{{genome}}/reads-{index}.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
-    output: reads = "data/downloads/{genome}/reads.fa",
-            completed = touch("data/downloads/{genome}/reads.fa.completed"),
+    input: files = lambda wildcards: expand(DATADIR + "downloads/{{genome}}/reads-{index}.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
+    output: reads = DATADIR + "downloads/{genome}/reads.fa",
+            completed = touch(DATADIR + "downloads/{genome}/reads.fa.completed"),
     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -1118,11 +1124,11 @@ rule combine_reads:
     shell: "cat {params.input_list} > '{output.reads}'"
 
 rule uniquify_ids:
-    input:  reads = "data/downloads/{genome}/reads.fa",
+    input:  reads = DATADIR + "downloads/{genome}/reads.fa",
             script = "scripts/uniquify_fasta_ids.py",
-    output: reads = "data/downloads/{genome}/reads.uniquified.fa",
-            log = "data/downloads/{genome}/uniquify.log",
-            completed = touch("data/downloads/{genome}/reads.uniquified.fa.completed"),
+    output: reads = DATADIR + "downloads/{genome}/reads.uniquified.fa",
+            log = DATADIR + "downloads/{genome}/uniquify.log",
+            completed = touch(DATADIR + "downloads/{genome}/reads.uniquified.fa.completed"),
     wildcard_constraints:
         genome = "((?!downloads).)*",
     conda: "config/conda-uniquify-env.yml"
@@ -1136,9 +1142,9 @@ def read_input_file_name(wildcards):
     try:
         genome_name = wildcards.genome
         if genome_name in genomes:
-            return "data/downloads/" + genome_name + "/reads.uniquified.fa"
+            return DATADIR + "downloads/" + genome_name + "/reads.uniquified.fa"
         elif genome_name in corrected_genomes:
-            return "data/corrected_reads/" + genome_name + "/corrected_reads.fa"
+            return DATADIR + "corrected_reads/" + genome_name + "/corrected_reads.fa"
         else:
             sys.exit("genome name not found: " + genome_name)
     except Exception:
@@ -1148,7 +1154,7 @@ def read_input_file_name(wildcards):
 localrules: link_reads
 rule link_reads:
     input: file = read_input_file_name,
-    #input: file = "data/corrected_reads/{genome}/corrected_reads.fa"
+    #input: file = DATADIR + "corrected_reads/{genome}/corrected_reads.fa"
     output: file = GENOME_READS_FORMAT,
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -1157,8 +1163,8 @@ rule link_reads:
 
 localrules: download_reference_raw
 rule download_reference_raw:
-    output: reference = "data/downloads/{genome}/reference.fa",
-            completed = touch("data/downloads/{genome}/reference.fa.completed"),
+    output: reference = DATADIR + "downloads/{genome}/reference.fa",
+            completed = touch(DATADIR + "downloads/{genome}/reference.fa.completed"),
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -1171,8 +1177,8 @@ rule download_reference_raw:
 
 localrules: download_reference_gzip
 rule download_reference_gzip:
-    output: reference = "data/downloads/{genome}/packed-reference.fa.gz",
-            completed = touch("data/downloads/{genome}/reference.fa.gz.completed"),
+    output: reference = DATADIR + "downloads/{genome}/packed-reference.fa.gz",
+            completed = touch(DATADIR + "downloads/{genome}/reference.fa.gz.completed"),
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -1191,9 +1197,9 @@ def reference_input_file_name(wildcards):
         reference = genomes[genome_name]["reference"]
 
         if reference.split('.')[-1] == "gz":
-            input_file_name = "data/downloads/" + genome_name + "/packed-reference.fa"
+            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reference.fa"
         else:
-            input_file_name = "data/downloads/" + genome_name + "/reference.fa"
+            input_file_name = DATADIR + "downloads/" + genome_name + "/reference.fa"
         return input_file_name
     except Exception:
         traceback.print_exc()
@@ -1227,8 +1233,8 @@ def correction_read_url_file_format(corrected_genome):
 
 localrules: download_correction_short_reads
 rule download_correction_short_reads:
-    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.{format}",
-            completed = touch("data/corrected_reads/{corrected_genome}/reads-{index}.{format}.completed"),
+    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.{format}",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.{format}.completed"),
     params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
             url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
             checksum = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads_checksum"] if "correction_short_reads_checksum" in corrected_genomes[wildcards.corrected_genome] else "",
@@ -1256,9 +1262,9 @@ rule download_correction_short_reads:
         """
 
 rule convert_correction_short_reads:
-    input: file = lambda wildcards: "data/corrected_reads/{corrected_genome}/reads-{index}." + correction_read_url_file_format(wildcards.corrected_genome),
-    output: file = "data/corrected_reads/{corrected_genome}/reads-{index}.converted.fa",
-            completed = touch("data/corrected_reads/{corrected_genome}/reads-{index}.converted.fa.completed"),
+    input: file = lambda wildcards: DATADIR + "corrected_reads/{corrected_genome}/reads-{index}." + correction_read_url_file_format(wildcards.corrected_genome),
+    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.converted.fa",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.converted.fa.completed"),
     params: file_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
     wildcard_constraints:
         index = "\d+",
@@ -1279,9 +1285,9 @@ rule convert_correction_short_reads:
         """
 
 rule combine_correction_short_reads:
-    input: files = lambda wildcards: expand("data/corrected_reads/{{corrected_genome}}/reads-{index}.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
-    output: reads = "data/corrected_reads/{corrected_genome}/correction_short_reads.fa",
-            completed = touch("data/corrected_reads/{corrected_genome}/correction_short_reads.fa.completed"),
+    input: files = lambda wildcards: expand(DATADIR + "corrected_reads/{{corrected_genome}}/reads-{index}.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
+    output: reads = DATADIR + "corrected_reads/{corrected_genome}/correction_short_reads.fa",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/correction_short_reads.fa.completed"),
     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'",
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
@@ -1312,11 +1318,11 @@ rule install_ratatosk:
         """
 
 rule ratatosk:
-    input: correction_short_reads = "data/corrected_reads/{corrected_genome}/correction_short_reads.fa",
-           long_reads = lambda wildcards: "data/downloads/" + corrected_genomes[wildcards.corrected_genome]["source_genome"] + "/reads.uniquified.fa",
+    input: correction_short_reads = DATADIR + "corrected_reads/{corrected_genome}/correction_short_reads.fa",
+           long_reads = lambda wildcards: DATADIR + "downloads/" + corrected_genomes[wildcards.corrected_genome]["source_genome"] + "/reads.uniquified.fa",
            binary = "external-software/Ratatosk/build/src/Ratatosk",
-    output: corrected_long_reads = "data/corrected_reads/{corrected_genome}/corrected_reads.fa",
-            completed = touch("data/corrected_reads/{corrected_genome}/corrected_reads.fa.completed"),
+    output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa.completed"),
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
     threads: MAX_THREADS
@@ -1333,10 +1339,10 @@ rule ratatosk:
 ###############################
 
 def create_experiment_path(experiment):
-    return "data/" + experiment + "/"
+    return DATADIR + "" + experiment + "/"
 
 def create_report_path(experiment, circularised, k, bcalm2_abundance_min):
-    return "data/" + experiment + "/" + ("circular" if circularised else "linear") + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + ".report.pdf"
+    return DATADIR + "" + experiment + "/" + ("circular" if circularised else "linear") + ".k" + str(k) + "-a" + str(bcalm2_abundance_min) + ".report.pdf"
 
 def _generate_read_sim_targets_(experiment, config):
     path = create_experiment_path(experiment)
@@ -1370,7 +1376,7 @@ def generate_report_targets():
 def generate_wtdbg2_report_targets():
     for experiment, config in experiments_wtdbg2.items():
         yield create_experiment_path(experiment) + "wtdbg2.wtdbg2-report.pdf"
-    yield "data/aggregated-report.pdf"
+    yield DATADIR + "aggregated-report.pdf"
 
 def generate_test_report_targets():
     for experiment, config in tests.items():
@@ -1383,7 +1389,7 @@ def generate_test_targets():
             yield target
 
 def generate_hamcircuit_targets(amount, n, c):
-    yield "data/hamcircuit/random.0-" + str(amount - 1) + ".n" + str(n) + "-c" + str(c) + ".overallreport"
+    yield DATADIR + "hamcircuit/random.0-" + str(amount - 1) + ".n" + str(n) + "-c" + str(c) + ".overallreport"
     for target in generate_hamcircuit_single_report_targets(amount, n, c):
         yield target
 
@@ -1394,37 +1400,37 @@ def generate_hamcircuit_overall_report_targets(amount, n, c):
 
 def generate_hamcircuit_single_report_targets(amount, n, c):
     for i in range(amount):
-        yield "data/hamcircuit/random-" + str(i) + ".n" + str(n) + "-c" + str(c) + ".report"
+        yield DATADIR + "hamcircuit/random-" + str(i) + ".n" + str(n) + "-c" + str(c) + ".report"
 
 ######################################
 ###### Input Genome Preparation ######
 ######################################
 
 rule separate_linear_and_circular:
-    input: filtered = "data/{genome}/filtered.fna", verified = "data/{genome}/is_genome_verified.log", binary = "data/target/release/cli"
-    output: circular = "data/{genome}/circular.fna", linear = "data/{genome}/linear.fna", log = "data/{genome}/separate_linear_and_circular.log"
+    input: filtered = DATADIR + "{genome}/filtered.fna", verified = DATADIR + "{genome}/is_genome_verified.log", binary = DATADIR + "target/release/cli"
+    output: circular = DATADIR + "{genome}/circular.fna", linear = DATADIR + "{genome}/linear.fna", log = DATADIR + "{genome}/separate_linear_and_circular.log"
     conda: "config/conda-rust-env.yml"
     threads: 1
     shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli circularise-genome --input '{input.filtered}' 2>&1 --output '{output.circular}' | tee '{output.log}'"
 
 rule verify_genome:
-    input: file = "data/{dir}/filtered.fna", binary = "data/target/release/cli"
-    output: log = "data/{dir}/is_genome_verified.log"
+    input: file = DATADIR + "{dir}/filtered.fna", binary = DATADIR + "target/release/cli"
+    output: log = DATADIR + "{dir}/is_genome_verified.log"
     conda: "config/conda-rust-env.yml"
     threads: 1
-    shell: "data/target/release/cli verify-genome --input '{input.file}' 2>&1 | tee '{output.log}'"
+    shell: DATADIR + "target/release/cli verify-genome --input '{input.file}' 2>&1 | tee '{output.log}'"
 
 rule filter_genome:
-    input: file = "data/{dir}/raw.fna", binary = "data/target/release/cli"
-    output: file = "data/{dir}/filtered.fna", genome_name = "data/{dir}/name.txt", log = "data/{dir}/filtered.log"
+    input: file = DATADIR + "{dir}/raw.fna", binary = DATADIR + "target/release/cli"
+    output: file = DATADIR + "{dir}/filtered.fna", genome_name = DATADIR + "{dir}/name.txt", log = DATADIR + "{dir}/filtered.log"
     params: retain = lambda wildcards: "--retain '" + experiments_bcalm2[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments_bcalm2[wildcards.dir] else ""
     conda: "config/conda-rust-env.yml"
     threads: 1
-    shell: "data/target/release/cli filter --input '{input.file}' --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
+    shell: DATADIR + "target/release/cli filter --input '{input.file}' --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
 rule extract:
-    input: "data/{dir}/{file}.gz"
-    output: "data/{dir}/{file}"
+    input: DATADIR + "{dir}/{file}.gz"
+    output: DATADIR + "{dir}/{file}"
     wildcard_constraints:
         file=".*(?<!\.gz)"
         #file=r"^.*([^\.]..|.[^g].|..[^z])$"
@@ -1435,13 +1441,13 @@ rule extract:
     shell: "cd 'data/{wildcards.dir}'; gunzip -k {wildcards.file}.gz"
 
 #rule extract_dot:
-#    input: "data/{dir}/wtdbg2.3.dot.gz"
-#    output: "data/{dir}/wtdbg2.3.dot"
+#    input: DATADIR + "{dir}/wtdbg2.3.dot.gz"
+#    output: DATADIR + "{dir}/wtdbg2.3.dot"
 #    conda: "config/conda-extract-env.yml"
 #    shell: "cd 'data/{wildcards.dir}'; gunzip -k wtdbg2.3.dot.gz"
 
 rule download_experiment_file:
-    output: "data/{dir}/raw.fna.gz"
+    output: DATADIR + "{dir}/raw.fna.gz"
     params: url = lambda wildcards, output: experiments_bcalm2[wildcards.dir]["url"]
     conda: "config/conda-download-env.yml"
     threads: 1
@@ -1466,11 +1472,11 @@ rule install_quast:
     """
 
 rule run_quast_bcalm2:
-    input: reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
-        reference = "data/{dir}/{file}.fna",
+    input: reads = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
+        reference = DATADIR + "{dir}/{file}.fna",
         script = "external-software/quast/quast.py",
         script_directory = "external-software/quast/"
-    output: report = directory("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
+    output: report = directory(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
     conda: "config/conda-quast-env.yml"
     threads: 1
     shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
@@ -1496,8 +1502,8 @@ rule run_quast:
 ##################
 
 rule build_rust_release:
-    input: "data/is_rust_tested.log"
-    output: "data/target/release/cli"
+    input: DATADIR + "is_rust_tested.log"
+    output: DATADIR + "target/release/cli"
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = 4000,
@@ -1507,7 +1513,7 @@ rule build_rust_release:
 
 rule test_rust:
     input: expand("{source}", source = list(rust_sources))
-    output: touch("data/is_rust_tested.log")
+    output: touch(DATADIR + "is_rust_tested.log")
     conda: "config/conda-rust-env.yml"
     threads: 4
     resources: mem_mb = 4000,
@@ -1523,28 +1529,28 @@ rule test:
     input: generate_test_targets()
 
 rule test_algorithm:
-    input: "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.is_tested"
-    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.is_tested")
+    input: DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.is_tested"
+    output: touch(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.is_tested")
 
 rule test_single_file:
-    input: verify = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify",
-           deterministic = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.deterministic"
-    output: touch("data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.is_tested")
+    input: verify = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify",
+           deterministic = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.deterministic"
+    output: touch(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.is_tested")
     threads: 1
     shell: "cmp --silent {input.verify} {input.deterministic}"
 
 rule make_bcalm_output_deterministic:
-    input: file = "data/{dir}/{file}.bcalm2.fa", script = "scripts/make_bcalm_output_deterministic.py"
-    output: file = "data/{dir}/{file}.bcalm2.fa.deterministic"
+    input: file = DATADIR + "{dir}/{file}.bcalm2.fa", script = "scripts/make_bcalm_output_deterministic.py"
+    output: file = DATADIR + "{dir}/{file}.bcalm2.fa.deterministic"
     threads: 1
     shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output.file}'"
 
 rule verify_genome_graph:
-    input: file = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = "data/target/release/cli"
-    output: verification_copy = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify", log =  "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.properties", latex = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.graphstatistics"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    output: verification_copy = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify", log =  DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.properties", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.graphstatistics"
     conda: "config/conda-rust-env.yml"
     threads: 1
-    shell: "data/target/release/cli verify --input '{input.file}' --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
+    shell: DATADIR + "target/release/cli verify --input '{input.file}' --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
 
 rule selftest:
     conda: "config/conda-selftest-env.yml"
@@ -1556,9 +1562,9 @@ rule selftest:
 #######################################
 
 rule bcalm2:
-    input: genome = "data/{dir}/{file}.fna"
-    output: unitigs = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.bcalm2.fa",
-    #params: tmp = "data/{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.unitigs.bcalm2-tmp/"
+    input: genome = DATADIR + "{dir}/{file}.fna"
+    output: unitigs = DATADIR + "{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.bcalm2.fa",
+    #params: tmp = DATADIR + "{dir}/{file,(circular|linear)}.k{k,[0-9]+}-a{abundance_min,[0-9]+}.unitigs.bcalm2-tmp/"
     conda: "config/conda-bcalm2-env.yml"
     threads: workflow.cores
     shell: 
@@ -1605,20 +1611,20 @@ rule install_contig_validator:
 
 rule run_contig_validator:
     input: cv = "external-software/ContigValidator",
-        reads = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
-        reference = "data/{dir}/{file}.fna"
-    output: result = "data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.contigvalidator",
-        exact_alignments = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.exact"),
-        bwa_bam = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.bwa.bam"),
-        bwa_bam_bai = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.bwa.bam.bai"),
-        fn_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fn.kmc_pre"),
-        fn_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fn.kmc_suf"),
-        fp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fp.kmc_pre"),
-        fp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fp.kmc_suf"),
-        kmc_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.kmc.kmc_pre"),
-        kmc_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.kmc.kmc_suf"),
-        tp_kmc_pre = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_pre"),
-        tp_kmc_suf = temp("data/{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_suf")
+        reads = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
+        reference = DATADIR + "{dir}/{file}.fna"
+    output: result = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.contigvalidator",
+        exact_alignments = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.exact"),
+        bwa_bam = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.bwa.bam"),
+        bwa_bam_bai = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.bwa.bam.bai"),
+        fn_kmc_pre = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fn.kmc_pre"),
+        fn_kmc_suf = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fn.kmc_suf"),
+        fp_kmc_pre = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fp.kmc_pre"),
+        fp_kmc_suf = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.fp.kmc_suf"),
+        kmc_kmc_pre = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.kmc.kmc_pre"),
+        kmc_kmc_suf = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.kmc.kmc_suf"),
+        tp_kmc_pre = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_pre"),
+        tp_kmc_suf = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.tp.kmc_suf")
     conda: "config/conda-contigvalidator-env.yml"
     threads: 1
     resources:
@@ -1647,9 +1653,9 @@ rule download_bcalm2_gfa_converter:
         """
 
 rule convert_bcalm2_output_to_gfa:
-    input: fa = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
+    input: fa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
         converter = "external-software/scripts/convertToGFA.py"
-    output: gfa = "data/{dir}/{file}.k{k}-a{abundance_min}.bcalm2.gfa"
+    output: gfa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.gfa"
     threads: 1
     shell: "external-software/scripts/convertToGFA.py {input.fa} {output.gfa} {wildcards.k}"
 
@@ -1697,72 +1703,72 @@ rule install_concorde:
 
 rule single_hamcircuit_n20_c1_0:
     input: generate_hamcircuit_targets(1, 20, 1.0)
-    output: touch("data/hamcircuit/tested.1.n20-c1.0.touch")
+    output: touch(DATADIR + "hamcircuit/tested.1.n20-c1.0.touch")
 
 rule ten_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10, 20, 1.0)
-    output: touch("data/hamcircuit/tested.10.n20-c1.0.touch")
+    output: touch(DATADIR + "hamcircuit/tested.10.n20-c1.0.touch")
 
 rule hundred_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(100, 20, 1.0)
-    output: touch("data/hamcircuit/tested.100.n20-c1.0.touch")
+    output: touch(DATADIR + "hamcircuit/tested.100.n20-c1.0.touch")
 
 rule thousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(1000, 20, 1.0)
-    output: touch("data/hamcircuit/tested.1000.n20-c1.0.touch")
+    output: touch(DATADIR + "hamcircuit/tested.1000.n20-c1.0.touch")
 
 rule tenthousand_hamcircuits_n20_c1_0:
     input: generate_hamcircuit_targets(10000, 20, 1.0)
-    output: touch("data/hamcircuit/tested.10000.n20-c1.0.touch")
+    output: touch(DATADIR + "hamcircuit/tested.10000.n20-c1.0.touch")
 
 rule hundred_hamcircuits_n300_c0_65:
-    input: "data/hamcircuit/tested.100.n300-c0.65.touch"
+    input: DATADIR + "hamcircuit/tested.100.n300-c0.65.touch"
 
 rule k_hamcircuits_n_c:
     input: lambda wildcards: generate_hamcircuit_targets(int(wildcards.k), int(wildcards.n), float(wildcards.c))
-    output: touch("data/hamcircuit/tested.{k}.n{n}-c{c}.touch")
+    output: touch(DATADIR + "hamcircuit/tested.{k}.n{n}-c{c}.touch")
 
 rule hundred_hamcircuits_n100_call:
-    input: expand("data/hamcircuit/tested.100.n100-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+    input: expand(DATADIR + "hamcircuit/tested.100.n100-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n200_call:
-    input: expand("data/hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
+    input: expand(DATADIR + "hamcircuit/tested.100.n200-c{c}.touch", c = [0.6, 0.65, 0.7, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n300_call:
-    input: expand("data/hamcircuit/tested.100.n300-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+    input: expand(DATADIR + "hamcircuit/tested.100.n300-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n400_call:
-    input: expand("data/hamcircuit/tested.100.n400-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+    input: expand(DATADIR + "hamcircuit/tested.100.n400-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n500_call:
-    input: expand("data/hamcircuit/tested.100.n500-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+    input: expand(DATADIR + "hamcircuit/tested.100.n500-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_n600_call:
-    input: expand("data/hamcircuit/tested.100.n600-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+    input: expand(DATADIR + "hamcircuit/tested.100.n600-c{c}.touch", c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hundred_hamcircuits_nall_call:
-    input: expand("data/hamcircuit/tested.100.n{n}-c{c}.touch", n = [100, 200, 300, 400, 500, 600], c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
+    input: expand(DATADIR + "hamcircuit/tested.100.n{n}-c{c}.touch", n = [100, 200, 300, 400, 500, 600], c = [0.65, 0.7, 0.75, 0.8, 0.9, 1.0])
 
 rule hamcircuit_overall_report:
     input: lambda wildcards: generate_hamcircuit_overall_report_targets(int(wildcards.max) + 1, int(wildcards.n), float(wildcards.c))
-    output: "data/hamcircuit/{name}.0-{max}.n{n}-c{c}.overallreport"
+    output: DATADIR + "hamcircuit/{name}.0-{max}.n{n}-c{c}.overallreport"
     threads: 1
     shell: "scripts/generate_hamcircuit_overall_report.py 'data/hamcircuit/{wildcards.name}' '{wildcards.max}' '{wildcards.n}' '{wildcards.c}'"
 
 rule hamcircuit_report:
-    input: preprocesslog = "data/hamcircuit/{name}.preprocesslog",
-           solution_raw = "data/hamcircuit/{name}.raw.sol",
-           solution_preprocessed = "data/hamcircuit/{name}.preprocessed.sol",
-           tsplog_raw = "data/hamcircuit/{name}.raw.tsplog",
-           tsplog_preprocessed = "data/hamcircuit/{name}.preprocessed.tsplog",
+    input: preprocesslog = DATADIR + "hamcircuit/{name}.preprocesslog",
+           solution_raw = DATADIR + "hamcircuit/{name}.raw.sol",
+           solution_preprocessed = DATADIR + "hamcircuit/{name}.preprocessed.sol",
+           tsplog_raw = DATADIR + "hamcircuit/{name}.raw.tsplog",
+           tsplog_preprocessed = DATADIR + "hamcircuit/{name}.preprocessed.tsplog",
            script = "scripts/generate_hamcircuit_report.py"
-    output: report = "data/hamcircuit/{name}.report"
+    output: report = DATADIR + "hamcircuit/{name}.report"
     threads: 1
     shell: "'{input.script}' 'data/hamcircuit/{wildcards.name}'"
 
 rule hamcircuit_compute_tsp:
-    input: tsp = "data/hamcircuit/{name}.tsp", binary = "external-software/concorde/TSP/concorde"
-    output: solution = "data/hamcircuit/{name}.sol", tsplog = "data/hamcircuit/{name}.tsplog"
+    input: tsp = DATADIR + "hamcircuit/{name}.tsp", binary = "external-software/concorde/TSP/concorde"
+    output: solution = DATADIR + "hamcircuit/{name}.sol", tsplog = DATADIR + "hamcircuit/{name}.tsplog"
     threads: workflow.cores
     resources:
       concorde = 1
@@ -1779,8 +1785,8 @@ rule hamcircuit_compute_tsp:
     """
 
 rule hamcircuit_generate:
-    input: binary = "data/target/release/cli"
-    output: tsp_raw = "data/hamcircuit/{name}.n{n}-c{c}.raw.tsp", tsp_preprocessed = "data/hamcircuit/{name}.n{n}-c{c}.preprocessed.tsp", preprocesslog = "data/hamcircuit/{name}.n{n}-c{c}.preprocesslog"
+    input: binary = DATADIR + "target/release/cli"
+    output: tsp_raw = DATADIR + "hamcircuit/{name}.n{n}-c{c}.raw.tsp", tsp_preprocessed = DATADIR + "hamcircuit/{name}.n{n}-c{c}.preprocessed.tsp", preprocesslog = DATADIR + "hamcircuit/{name}.n{n}-c{c}.preprocesslog"
     shadow: "shallow"
     threads: 1
     shell: """
@@ -1796,16 +1802,16 @@ rule hamcircuit_generate:
 
 localrules: download_all
 rule download_all:
-    input: reads = [file for genome in genomes.keys() for file in expand("data/downloads/{genome}/reads-{index}.converted.fa", genome=[genome], index=range(len(genomes[genome]["urls"])))],
+    input: reads = [file for genome in genomes.keys() for file in expand(DATADIR + "downloads/{genome}/reads-{index}.converted.fa", genome=[genome], index=range(len(genomes[genome]["urls"])))],
            correction_short_reads = [file for corrected_genome in corrected_genomes.keys() for file in
-                                     expand("data/corrected_reads/{corrected_genome}/reads-{index}.{file_type}",
+                                     expand(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.{file_type}",
                                             corrected_genome=[corrected_genome],
                                             index=range(len(corrected_genomes[corrected_genome]["correction_short_reads"])),
                                             file_type=correction_read_url_file_format(corrected_genome))] if corrected_genomes is not None else [],
            references = expand(GENOME_REFERENCE_FORMAT, genome=genomes.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
-           rust = "data/target/release/cli",
+           rust = DATADIR + "target/release/cli",
            ratatosk = "external-software/Ratatosk/build/src/Ratatosk",
 
 #rule prepare_wtdbg2:
