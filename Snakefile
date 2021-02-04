@@ -571,9 +571,13 @@ localrules: latex
 rule latex:
     input: DATADIR + "{subpath}report.tex"
     output: DATADIR + "{subpath}report.pdf"
+    params: datadir = DATADIR
     conda: "config/conda-latex-env.yml"
     threads: 1
-    shell: "tectonic '{input}'"
+    shell: """
+        cd '{params.datadir}'
+        tectonic '{input}'
+        """
 
 ########################
 ###### Algorithms ######

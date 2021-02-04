@@ -184,16 +184,17 @@ def write_table(output_file, caption, column_count, rows):
 def write_image(output_file, caption, file, natwidth, natheight):
 	hasher = hashlib.sha3_512()
 	hasher.update(file.encode())
-	hashlink = "data/latex_hashlinks/" + str(hasher.hexdigest()) + "." + file.split(".")[-1]
-	hashname = "../../../" + hashlink
+	HASHDIR = "latex_hashlinks/"
+	hashlink = HASHDIR + str(hasher.hexdigest()) + "." + file.split(".")[-1]
+	hashname = "../../" + hashlink
 
 	try:
 		os.remove(hashlink)
 	except OSError:
 		pass
 
-	pathlib.Path("data/latex_hashlinks").mkdir(parents=True, exist_ok=True)
-	os.symlink("../../" + file, hashlink)
+	pathlib.Path(HASHDIR).mkdir(parents=True, exist_ok=True)
+	os.symlink("../" + file, hashlink)
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
