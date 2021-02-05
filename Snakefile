@@ -575,7 +575,6 @@ rule latex:
     conda: "config/conda-latex-env.yml"
     threads: 1
     shell: """
-        cd '{params.datadir}'
         tectonic '{input}'
         """
 

@@ -184,9 +184,8 @@ def write_table(output_file, caption, column_count, rows):
 def write_image(output_file, caption, file, natwidth, natheight):
 	hasher = hashlib.sha3_512()
 	hasher.update(file.encode())
-	HASHDIR = "latex_hashlinks/"
-	hashlink = HASHDIR + str(hasher.hexdigest()) + "." + file.split(".")[-1]
-	hashname = "../../" + hashlink
+	HASHDIR = os.path.dirname(os.path.absolute(file))
+	hashlink = os.path.join(HASHDIR, str(hasher.hexdigest()) + "." + file.split(".")[-1])
 
 	try:
 		os.remove(hashlink)
@@ -194,12 +193,12 @@ def write_image(output_file, caption, file, natwidth, natheight):
 		pass
 
 	pathlib.Path(HASHDIR).mkdir(parents=True, exist_ok=True)
-	os.symlink("../" + file, hashlink)
+	os.symlink(file, hashlink)
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
 	output_file.write("\\centering\n")
-	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + str(hashname) + "}\n")
+	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + str(hashlink) + "}\n")
 	output_file.write("\\caption{" + str(caption) + "}")
 	output_file.write("\\end{figure*}\n")
 
