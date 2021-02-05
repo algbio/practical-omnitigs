@@ -10,7 +10,7 @@ for arg in sys.argv[1:]:
 if arg is None:
 	sys.exit("Not numeric argument given.")
 
-states = [state.strip() for state in subprocess.check_output("sacct -j %s --format 'JobID%20,State%20' --noheader -M all" % jobid, shell=True).decode(sys.stdout.encoding).strip().split('\n')]
+states = [state.strip() for state in subprocess.check_output("sacct -j {} --format 'JobID%20,State%20' --noheader -M all".format(jobid), shell=True).decode(sys.stdout.encoding).strip().split('\n')]
 states = [(line.split()[0], line.split()[1]) for line in states]
 states = [state for id, state in states if id.isdigit()]
 
