@@ -184,7 +184,7 @@ def write_table(output_file, caption, column_count, rows):
 def write_image(output_file, caption, file, natwidth, natheight):
 	hasher = hashlib.sha3_512()
 	hasher.update(file.encode())
-	HASHDIR = os.path.dirname(os.path.absolute(file))
+	HASHDIR = os.path.dirname(os.path.abspath(file))
 	hashlink = os.path.join(HASHDIR, str(hasher.hexdigest()) + "." + file.split(".")[-1])
 
 	try:
