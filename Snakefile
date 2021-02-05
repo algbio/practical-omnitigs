@@ -493,7 +493,7 @@ rule create_single_report_tex:
     threads: 1
     shell: """
         echo '{wildcards.report_name} {params.genome_name} {wildcards.report_file_name}' > '{params.name_file}'
-        python3 '{params.datadir}' '{input.script}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
+        python3 '{input.script}' '{params.datadir}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
         """
 
 ### Create aggregated report ###
