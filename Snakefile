@@ -1434,6 +1434,7 @@ rule filter_genome:
 rule extract:
     input: DATADIR + "{dir}/{file}.gz"
     output: DATADIR + "{dir}/{file}"
+    params: working_directory = DATADIR + "{dir}"
     wildcard_constraints:
         file=".*(?<!\.gz)"
         #file=r"^.*([^\.]..|.[^g].|..[^z])$"
@@ -1441,7 +1442,7 @@ rule extract:
     threads: 1
     resources:
         time_min = 300
-    shell: "cd 'data/{wildcards.dir}'; gunzip -k {wildcards.file}.gz"
+    shell: "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
 
 #rule extract_dot:
 #    input: DATADIR + "{dir}/wtdbg2.3.dot.gz"

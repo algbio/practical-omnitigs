@@ -3,7 +3,7 @@ cluster: >-
   sbatch
   --job-name=practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< "{wildcards}")
   --workdir=/proj/sebschmi/git/practical-omnitigs
-  -o $(cat .logdir)/practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< "{wildcards}"):%j.log
+  -o '$(cat .logdir)/practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< "{wildcards}"):%j.log'
   -p {resources.queue}
   -c {resources.cpus}
   -t {resources.time_min}
