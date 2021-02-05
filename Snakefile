@@ -487,12 +487,13 @@ rule create_single_report_tex:
     output: report = REPORT_PREFIX_FORMAT + "::::report.tex",
     params: genome_name = lambda wildcards: ", ".join(get_report_genome_names_from_wildcards(wildcards)),
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
-            name_file = REPORT_PREFIX_FORMAT + "::::name.txt"
+            name_file = REPORT_PREFIX_FORMAT + "::::name.txt",
+    output: DATADIR + "{dir}/{file}.report.tex",
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
         echo '{wildcards.report_name} {params.genome_name} {wildcards.report_file_name}' > '{params.name_file}'
-        python3 '{input.script}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
+        python3 '{params.datadir}' '{input.script}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
         """
 
 ### Create aggregated report ###
