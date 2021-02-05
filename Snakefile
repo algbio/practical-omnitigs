@@ -488,7 +488,7 @@ rule create_single_report_tex:
     params: genome_name = lambda wildcards: ", ".join(get_report_genome_names_from_wildcards(wildcards)),
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
             name_file = REPORT_PREFIX_FORMAT + "::::name.txt",
-    output: DATADIR + "{dir}/{file}.report.tex",
+            datadir = DATADIR,
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
