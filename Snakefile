@@ -680,8 +680,8 @@ def get_raw_assembly_file_from_wildcards(wildcards):
 
 localrules: select_assembler
 rule select_assembler:
-    input: raw_assembly_from_assembler = get_raw_assembly_file_from_wildcards
-    output: raw_assembly = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa"
+    input:  raw_assembly_from_assembler = get_raw_assembly_file_from_wildcards,
+    output: raw_assembly = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa",
     threads: 1
     shell: "ln -sr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
 
@@ -1494,7 +1494,7 @@ rule run_quast:
             completed = touch(QUAST_PREFIX_FORMAT + ".completed"),
     conda: "config/conda-quast-env.yml"
     threads: 4
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 12000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 20000),
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120),
