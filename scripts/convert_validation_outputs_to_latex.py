@@ -7,15 +7,16 @@ Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> 
 
 import sys, subprocess, hashlib, os, pathlib
 
-genome_name_file_name = sys.argv[1]
-graph_statistics_file_name = sys.argv[2]
-bandage_png_name = sys.argv[3]
-combined_eaxmax_plot_name = sys.argv[4]
-output_file_name = sys.argv[5]
+datadir = sys.argv[1]
+genome_name_file_name = sys.argv[2]
+graph_statistics_file_name = sys.argv[3]
+bandage_png_name = sys.argv[4]
+combined_eaxmax_plot_name = sys.argv[5]
+output_file_name = sys.argv[6]
 
 experiments = []
 
-for i in range(6, len(sys.argv), 2):
+for i in range(7, len(sys.argv), 2):
 	if i + 1 >= len(sys.argv):
 		print("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
 		exit(1)
@@ -184,7 +185,7 @@ def write_table(output_file, caption, column_count, rows):
 def write_image(output_file, caption, file, natwidth, natheight):
 	hasher = hashlib.sha3_512()
 	hasher.update(file.encode())
-	HASHDIR = os.path.dirname(os.path.abspath(file))
+	HASHDIR = os.path.join(os.path.abspath(datadir), "latex_hashlinks")
 	hashlink = os.path.join(HASHDIR, str(hasher.hexdigest()) + "." + file.split(".")[-1])
 
 	try:

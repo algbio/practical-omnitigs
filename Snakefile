@@ -369,24 +369,25 @@ rule report_all:
 
 localrules: create_single_bcalm2_report_tex
 rule create_single_bcalm2_report_tex:
-    input: genome_name = DATADIR + "{dir}/name.txt",
-           unitigs = DATADIR + "{dir}/{file}.unitigs.tex",
-           unitigs_contigvalidator = DATADIR + "{dir}/{file}.unitigs.contigvalidator",
-           unitigs_quast = DATADIR + "{dir}/{file}.unitigs.quast",
-           omnitigs = DATADIR + "{dir}/{file}.omnitigs.tex",
-           omnitigs_contigvalidator = DATADIR + "{dir}/{file}.omnitigs.contigvalidator",
-           omnitigs_quast = DATADIR + "{dir}/{file}.omnitigs.quast",
-           trivialomnitigs = DATADIR + "{dir}/{file}.trivialomnitigs.tex",
-           trivialomnitigs_contigvalidator = DATADIR + "{dir}/{file}.trivialomnitigs.contigvalidator",
-           trivialomnitigs_quast = DATADIR + "{dir}/{file}.trivialomnitigs.quast",
-           graphstatistics = DATADIR + "{dir}/{file}.bcalm2.graphstatistics",
-           bcalm2_bandage = DATADIR + "{dir}/{file}.bcalm2.bandage.png",
-           script = "scripts/convert_validation_outputs_to_latex.py",
-    output: DATADIR + "{dir}/{file}.report.tex"
-    params: prefix = DATADIR + "{dir}/{file}"
+    input:  genome_name = DATADIR + "{dir}/name.txt",
+            unitigs = DATADIR + "{dir}/{file}.unitigs.tex",
+            unitigs_contigvalidator = DATADIR + "{dir}/{file}.unitigs.contigvalidator",
+            unitigs_quast = DATADIR + "{dir}/{file}.unitigs.quast",
+            omnitigs = DATADIR + "{dir}/{file}.omnitigs.tex",
+            omnitigs_contigvalidator = DATADIR + "{dir}/{file}.omnitigs.contigvalidator",
+            omnitigs_quast = DATADIR + "{dir}/{file}.omnitigs.quast",
+            trivialomnitigs = DATADIR + "{dir}/{file}.trivialomnitigs.tex",
+            trivialomnitigs_contigvalidator = DATADIR + "{dir}/{file}.trivialomnitigs.contigvalidator",
+            trivialomnitigs_quast = DATADIR + "{dir}/{file}.trivialomnitigs.quast",
+            graphstatistics = DATADIR + "{dir}/{file}.bcalm2.graphstatistics",
+            bcalm2_bandage = DATADIR + "{dir}/{file}.bcalm2.bandage.png",
+            script = "scripts/convert_validation_outputs_to_latex.py",
+    output: DATADIR + "{dir}/{file}.report.tex",
+    params: prefix = DATADIR + "{dir}/{file}",
+            datadir = DATADIR,
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
-    shell: "python3 scripts/convert_validation_outputs_to_latex.py '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
+    shell: "python3 scripts/convert_validation_outputs_to_latex.py '{params.datadir}' '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 ### Create single report ###
 
