@@ -778,10 +778,10 @@ rule run_contigbreaker:
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
     threads: 3
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 6000),
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 12000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 240),
                cpus = 3,
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 240),
     conda: "tools/contigbreaker/environment.yml"
     shell: "'{input.script}' --threads {threads} --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
 
@@ -1331,9 +1331,10 @@ rule ratatosk:
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
     threads: MAX_THREADS
-    resources: mem_mb = 48000,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
                cpus = MAX_THREADS,
-               time_min = 360,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
                mail_type = "END",
     shell: """
         {input.binary} -v -c {threads} -s {input.correction_short_reads} -l {input.long_reads} -o {output.corrected_long_reads}
@@ -1496,7 +1497,7 @@ rule run_quast:
             completed = touch(QUAST_PREFIX_FORMAT + ".completed"),
     conda: "config/conda-quast-env.yml"
     threads: 4
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 20000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120),

@@ -24,4 +24,4 @@ cores: 10000
 local-cores: 8
 latency-wait: 60
 config: "datadir=/wrk/users/sebschmi/data"
-#keep-going: true
+keep-going: true
