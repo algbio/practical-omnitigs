@@ -778,7 +778,7 @@ rule run_contigbreaker:
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
     threads: 3
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 12000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 20000),
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 240),
                cpus = 3,
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 240),
