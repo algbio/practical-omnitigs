@@ -545,7 +545,7 @@ rule create_aggregated_report_tex:
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
-        python3 '{input.script}' --source-reports '{params.source_reports_arg}' --output '{output.file}'
+        python3 '{input.script}' --source-reports '{params.source_reports_arg}' --source-report-names '{params.source_report_names_arg}' --output '{output.file}'
         """
 
 localrules: create_combined_eaxmax_graph
