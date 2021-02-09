@@ -14,7 +14,7 @@ source_reports = args.source_reports
 source_report_names = args.source_report_names
 output_file_name = args.output
 
-if len(source_reports) len(source_report_names):
+if len(source_reports) != len(source_report_names):
 	sys.exit("Source reports and source report names differ in lengths")
 
 ########################

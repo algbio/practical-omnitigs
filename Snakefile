@@ -1000,7 +1000,7 @@ rule flye:
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 75000),
                mail_type = "END",
     shell: "'{input.script}' {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
 
