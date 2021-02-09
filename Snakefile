@@ -778,7 +778,7 @@ rule run_contigbreaker:
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
     threads: 3
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 20000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60000),
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 240),
                cpus = 3,
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 240),
@@ -1331,7 +1331,7 @@ rule ratatosk:
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
@@ -1501,7 +1501,7 @@ rule run_quast:
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120),
-    shell: "{input.script} -t {threads} --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
+    shell: "{input.script} -t {threads} --no-html --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 
 ##################

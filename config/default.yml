@@ -436,7 +436,7 @@ genomes:
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
     genome_length: 3100000000
     assembly_time_factor: 4
-    assembly_mem_factor: 4
+    assembly_mem_factor: 8
     urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
     format: "sra"
 
@@ -444,7 +444,7 @@ genomes:
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
     genome_length: 3100000000
     assembly_time_factor: 4
-    assembly_mem_factor: 4
+    assembly_mem_factor: 8
     urls:
       - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140612_020550_42156.subreads.fasta.gz"
       - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140612_082500_42156.subreads.fasta.gz"
