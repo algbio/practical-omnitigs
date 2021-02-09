@@ -756,10 +756,14 @@ def compute_genome_time_min_from_wildcards(wildcards, base_time_min):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-def compute_genome_queue_from_wildcards(wildcards, base_time_min):
+def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 0):
     try:
         time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
-        if time <= 1440:
+        mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
+
+        if mem >= 250000:
+            return "bigmem"
+        elif time <= 1440:
             return "short"
         elif time <= 1440 * 14:
             return "long"
@@ -993,7 +997,7 @@ rule flye:
             completed = touch(ALGORITHM_PREFIX_FORMAT + "flye.completed"),
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 125000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720),
