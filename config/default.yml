@@ -354,18 +354,18 @@ reports:
 
   "HG002_HiFi":
     argument_matrix:
-      genome: "HG002"
+      genome: "HG002_HiFi"
       assembler:
         wtdbg2:
           "-x": ["rs", "sq", "ccs"]
         flye:
-          - "--pacbio-raw": [True]
           - "--pacbio-corr": [True]
+          - "--pacbio-hifi": [True]
     columns: *default_columns_with_flye
   
   "HG002_HiFi_Flye":
     argument_matrix:
-      genome: "HG002"
+      genome: "HG002_HiFi"
     columns:
       - shortname: "flye corr"
         assembler:
