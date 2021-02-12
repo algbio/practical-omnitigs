@@ -467,7 +467,7 @@ where
             write!(printed_node_id, "{}", node_data.id).map_err(Error::from)?;
             let node_description =
                 write_plain_bcalm2_node_data_to_bcalm2(&node_data, out_neighbors)?;
-            let node_sequence = node_data.sequence.into_vec();
+            let node_sequence = node_data.sequence.clone_as_vec();
 
             writer
                 .write(&printed_node_id, Some(&node_description), &node_sequence)
@@ -677,7 +677,7 @@ where
             write!(printed_node_id, "{}", node_data.id).map_err(Error::from)?;
             let node_description =
                 write_plain_bcalm2_node_data_to_bcalm2(&node_data, out_neighbors)?;
-            let node_sequence = node_data.sequence.into_vec();
+            let node_sequence = node_data.sequence.clone_as_vec();
 
             writer
                 .write(&printed_node_id, Some(&node_description), &node_sequence)

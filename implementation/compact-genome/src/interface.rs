@@ -40,7 +40,7 @@ where
     }
 
     /// Copies this genome string into a `Vec`.
-    fn into_vec(&self) -> Vec<u8> {
+    fn clone_as_vec(&self) -> Vec<u8> {
         self.into_iter().collect()
     }
 
@@ -58,7 +58,7 @@ where
 
     /// Returns the genome as nucleotide string.
     fn as_string(&self) -> String {
-        String::from_utf8(self.into_vec())
+        String::from_utf8(self.clone_as_vec())
             .expect("Genome contains non-utf8 characters (It should be ASCII only).")
     }
 }

@@ -49,7 +49,7 @@ pub fn write_walks_as_fasta<
         }
 
         let record =
-            bio::io::fasta::Record::with_attrs(&format!("{}", i), None, &sequence.into_vec());
+            bio::io::fasta::Record::with_attrs(&format!("{}", i), None, &sequence.clone_as_vec());
         writer.write_record(&record).map_err(Error::from)?;
     }
 
