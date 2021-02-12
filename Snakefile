@@ -781,11 +781,11 @@ rule run_contigbreaker:
             script = "tools/contigbreaker/contigbreaker.py"
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
-    threads: 3
+    threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60000),
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 240),
-               cpus = 3,
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 240),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               cpus = MAX_THREADS,
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720),
     conda: "tools/contigbreaker/environment.yml"
     shell: "'{input.script}' --threads {threads} --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
 
@@ -999,8 +999,8 @@ rule flye:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 75000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
                mail_type = "END",
     shell: "'{input.script}' {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
 

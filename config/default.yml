@@ -302,7 +302,6 @@ reports:
           "-x": ["rs", "sq", "ccs"]
         flye:
           - "--pacbio-raw": [True]
-          - "--pacbio-corr": [True]
     columns: *default_columns_with_flye
   
   "HG002_Flye":
