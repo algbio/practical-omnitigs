@@ -1513,24 +1513,26 @@ rule run_quast:
 ##################
 
 rule build_rust_release:
-    input: DATADIR + "is_rust_tested.log"
-    output: DATADIR + "target/release/cli"
+    input:  DATADIR + "is_rust_tested.log",
+    output: DATADIR + "target/release/cli",
+    params: datadir = DATADIR,
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = 4000,
                cpus = MAX_THREADS,
                time_min = 30,
-    shell: "cargo build -j {threads} --release --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "cargo build -j {threads} --release --target-dir '{params.datadir}/target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
-    input: expand("{source}", source = list(rust_sources))
+    input:  expand("{source}", source = list(rust_sources))
     output: touch(DATADIR + "is_rust_tested.log")
+    params: datadir = DATADIR,
     conda: "config/conda-rust-env.yml"
     threads: 4
     resources: mem_mb = 4000,
                cpus = 2,
                time_min = 30,
-    shell: "cargo test -j {threads} --target-dir 'data/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
+    shell: "cargo test -j {threads} --target-dir '{params.datadir}/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
 
 #####################
 ###### Testing ######
