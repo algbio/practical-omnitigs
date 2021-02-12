@@ -41,6 +41,7 @@ pub struct HamCircuitCommand {
     output_preprocessed: String,
 }
 
+#[allow(clippy::unnecessary_wraps)]
 pub(crate) fn hamcircuit(
     _options: &CliOptions,
     subcommand: &HamCircuitCommand,
