@@ -845,10 +845,10 @@ rule wtdbg2_complete:
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 100000),
     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
 
 def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
