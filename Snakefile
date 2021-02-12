@@ -27,6 +27,12 @@ if "datadir" in config:
 if DATADIR[-1] != "/":
     DATADIR += "/"
 
+PROGRAMDIR = "data/"
+if "programdir" in config:
+    PROGRAMDIR = config["programdir"]
+if PROGRAMDIR[-1] != "/":
+    PROGRAMDIR += "/"
+
 MAX_THREADS = 56
 print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
 
@@ -587,19 +593,19 @@ rule latex:
 ### bcalm2 ###
 
 rule compute_omnitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = PROGRAMDIR + "target/release/cli"
     output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = PROGRAMDIR + "target/release/cli"
     output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = PROGRAMDIR + "target/release/cli"
     output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
@@ -646,7 +652,7 @@ rule compute_injectable_contigs_wtdbg2:
            reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
            raw_reads = get_genome_reads_from_wildcards,
-           binary = DATADIR + "target/release/cli",
+           binary = PROGRAMDIR + "target/release/cli",
     output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.log",
             latex = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.tex",
@@ -1417,21 +1423,21 @@ def generate_hamcircuit_single_report_targets(amount, n, c):
 ######################################
 
 rule separate_linear_and_circular:
-    input: filtered = DATADIR + "{genome}/filtered.fna", verified = DATADIR + "{genome}/is_genome_verified.log", binary = DATADIR + "target/release/cli"
+    input: filtered = DATADIR + "{genome}/filtered.fna", verified = DATADIR + "{genome}/is_genome_verified.log", binary = PROGRAMDIR + "target/release/cli"
     output: circular = DATADIR + "{genome}/circular.fna", linear = DATADIR + "{genome}/linear.fna", log = DATADIR + "{genome}/separate_linear_and_circular.log"
     conda: "config/conda-rust-env.yml"
     threads: 1
     shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli circularise-genome --input '{input.filtered}' 2>&1 --output '{output.circular}' | tee '{output.log}'"
 
 rule verify_genome:
-    input: file = DATADIR + "{dir}/filtered.fna", binary = DATADIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/filtered.fna", binary = PROGRAMDIR + "target/release/cli"
     output: log = DATADIR + "{dir}/is_genome_verified.log"
     conda: "config/conda-rust-env.yml"
     threads: 1
     shell: DATADIR + "target/release/cli verify-genome --input '{input.file}' 2>&1 | tee '{output.log}'"
 
 rule filter_genome:
-    input: file = DATADIR + "{dir}/raw.fna", binary = DATADIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/raw.fna", binary = PROGRAMDIR + "target/release/cli"
     output: file = DATADIR + "{dir}/filtered.fna", genome_name = DATADIR + "{dir}/name.txt", log = DATADIR + "{dir}/filtered.log"
     params: retain = lambda wildcards: "--retain '" + experiments_bcalm2[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments_bcalm2[wildcards.dir] else ""
     conda: "config/conda-rust-env.yml"
@@ -1513,26 +1519,26 @@ rule run_quast:
 ##################
 
 rule build_rust_release:
-    input:  DATADIR + "is_rust_tested.log",
-    output: DATADIR + "target/release/cli",
-    params: datadir = DATADIR,
+    input:  PROGRAMDIR + "is_rust_tested.log",
+    output: PROGRAMDIR + "target/release/cli",
+    params: programdir = PROGRAMDIR,
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = 4000,
                cpus = MAX_THREADS,
                time_min = 30,
-    shell: "cargo build -j {threads} --release --target-dir '{params.datadir}/target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "cargo build -j {threads} --release --target-dir '{params.programdir}target' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
     input:  expand("{source}", source = list(rust_sources))
-    output: touch(DATADIR + "is_rust_tested.log")
-    params: datadir = DATADIR,
+    output: touch(PROGRAMDIR + "is_rust_tested.log")
+    params: programdir = PROGRAMDIR,
     conda: "config/conda-rust-env.yml"
     threads: 4
     resources: mem_mb = 4000,
                cpus = 2,
                time_min = 30,
-    shell: "cargo test -j {threads} --target-dir '{params.datadir}/target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
+    shell: "cargo test -j {threads} --target-dir '{params.programdir}target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
 
 #####################
 ###### Testing ######
@@ -1559,11 +1565,11 @@ rule make_bcalm_output_deterministic:
     shell: "python scripts/make_bcalm_output_deterministic.py '{input.file}' '{output.file}'"
 
 rule verify_genome_graph:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = DATADIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = PROGRAMDIR + "target/release/cli"
     output: verification_copy = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.verify", log =  DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa.properties", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.graphstatistics"
     conda: "config/conda-rust-env.yml"
     threads: 1
-    shell: DATADIR + "target/release/cli verify --input '{input.file}' --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
+    shell: PROGRAMDIR + "target/release/cli verify --input '{input.file}' --kmer-size {wildcards.k} --output '{output.verification_copy}' --latex '{output.latex}' 2>&1 | tee '{output.log}.tmp' && mv '{output.log}.tmp' '{output.log}'"
 
 rule selftest:
     conda: "config/conda-selftest-env.yml"
@@ -1798,7 +1804,7 @@ rule hamcircuit_compute_tsp:
     """
 
 rule hamcircuit_generate:
-    input: binary = DATADIR + "target/release/cli"
+    input: binary = PROGRAMDIR + "target/release/cli"
     output: tsp_raw = DATADIR + "hamcircuit/{name}.n{n}-c{c}.raw.tsp", tsp_preprocessed = DATADIR + "hamcircuit/{name}.n{n}-c{c}.preprocessed.tsp", preprocesslog = DATADIR + "hamcircuit/{name}.n{n}-c{c}.preprocesslog"
     shadow: "shallow"
     threads: 1
@@ -1824,7 +1830,7 @@ rule download_all:
            references = expand(GENOME_REFERENCE_FORMAT, genome=genomes.keys()),
            quast = "external-software/quast/quast.py",
            wtdbg2 = "external-software/wtdbg2/wtdbg2",
-           rust = DATADIR + "target/release/cli",
+           rust = PROGRAMDIR + "target/release/cli",
            ratatosk = "external-software/Ratatosk/build/src/Ratatosk",
 
 #rule prepare_wtdbg2:
