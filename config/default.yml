@@ -396,7 +396,7 @@ aggregated_reports:
 
 genomes:
   "E.coli":
-    urls: ["https://sra-download.ncbi.nlm.nih.gov/traces/sra58/SRR/011052/SRR11317948"]
+    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11317948/SRR11317948.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
     genome_length: 5594605
