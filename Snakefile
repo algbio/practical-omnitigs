@@ -1061,7 +1061,7 @@ rule download_raw_source_reads:
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
-        mkdir -p 'data/downloads/{wildcards.genome}'
+        mkdir -p "$(dirname '{output.file}')"
 
         if [ '{params.url_format}' != '{wildcards.format}' ]; then
             echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
@@ -1085,7 +1085,7 @@ rule download_packed_source_reads:
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
-        mkdir -p 'data/downloads/{wildcards.genome}'
+        mkdir -p "$(dirname '{output.file}')"
 
         if [ '{params.url_format}' != '{wildcards.format}' ]; then
             echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
@@ -1196,7 +1196,7 @@ rule download_reference_raw:
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
-        mkdir -p 'data/{wildcards.genome}'
+        mkdir -p "$(dirname '{output.reference}')"
         wget --progress=dot:mega -O '{output.reference}' '{params.url}'
         """
 
@@ -1210,7 +1210,7 @@ rule download_reference_gzip:
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
-        mkdir -p 'data/{wildcards.genome}'
+        mkdir -p "$(dirname '{output.reference}')"
         wget --progress=dot:mega -O '{output.reference}' '{params.url}'
         """
 
@@ -1238,7 +1238,7 @@ rule link_reference:
         genome = "((?!downloads).)*",
     threads: 1
     shell: """
-        mkdir -p 'data/{wildcards.genome}'
+        mkdir -p "$(dirname '{output.file}')"
         ln -sr -T '{input.file}' '{output.file}'
         """
 
@@ -1270,7 +1270,7 @@ rule download_correction_short_reads:
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
-        mkdir -p 'data/corrected_reads/{wildcards.corrected_genome}'
+        mkdir -p "$(dirname '{output.file}')"
 
         if [ '{params.url_format}' != '{wildcards.format}' ]; then
             echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
@@ -1487,7 +1487,11 @@ rule download_experiment_file:
     params: url = lambda wildcards, output: experiments_bcalm2[wildcards.dir]["url"]
     conda: "config/conda-download-env.yml"
     threads: 1
-    shell: "mkdir -p 'data/{wildcards.dir}'; cd 'data/{wildcards.dir}'; wget --progress=dot:mega -O raw.fna.gz {params.url}"
+    shell: """
+        mkdir -p "$(dirname '{output}')"
+        cd 'data/{wildcards.dir}'
+        wget --progress=dot:mega -O raw.fna.gz {params.url}
+    """
 
 ###################
 ###### QUAST ######
