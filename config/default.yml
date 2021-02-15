@@ -32,7 +32,6 @@ column_templates:
       select_assembler:
         wtdbg2:
           "--skip-fragment-assembly": True
-          "wtdbg2-wtdbg2": True
     - shortname: "uni"
       select_assembler:
         wtdbg2:
@@ -44,7 +43,6 @@ column_templates:
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
-          "wtdbg2-wtdbg2": True
 
   default_columns_with_flye: &default_columns_with_flye
     - shortname: "Y-to-V sfa"
@@ -56,7 +54,6 @@ column_templates:
       select_assembler:
         wtdbg2:
           "--skip-fragment-assembly": True
-          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V"
       select_assembler:
         wtdbg2:
@@ -64,7 +61,6 @@ column_templates:
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
-          "wtdbg2-wtdbg2": True
     - shortname: "flye"
       select_assembler: "flye"
 
@@ -73,7 +69,6 @@ column_templates:
       select_assembler:
         wtdbg2:
           "--skip-fragment-assembly": True
-          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V sfa"
       select_assembler:
         wtdbg2:
@@ -86,7 +81,6 @@ column_templates:
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
-          "wtdbg2-wtdbg2": True
     - shortname: "flye"
       select_assembler: "flye"
 
@@ -100,7 +94,6 @@ column_templates:
       select_assembler:
         wtdbg2:
           "--skip-fragment-assembly": True
-          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V"
       select_assembler:
         wtdbg2:
@@ -108,7 +101,6 @@ column_templates:
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
-          "wtdbg2-wtdbg2": True
     - shortname: "Y-to-V sfa brk"
       select_assembler:
         wtdbg2:
@@ -120,7 +112,6 @@ column_templates:
       select_assembler:
         wtdbg2:
           "--skip-fragment-assembly": True
-          "wtdbg2-wtdbg2": True
       select_postprocessor:
         contigbreaker:
     - shortname: "Y-to-V brk"
@@ -132,7 +123,6 @@ column_templates:
     - shortname: "wtdbg2 brk"
       select_assembler:
         wtdbg2:
-          "wtdbg2-wtdbg2": True
       select_postprocessor:
         contigbreaker:
 
@@ -148,7 +138,6 @@ reports:
         select_assembler:
           wtdbg2:
             "--skip-fragment-assembly": True
-            "wtdbg2-wtdbg2": True
       - shortname: "Y-to-V sfa"
         select_assembler:
           wtdbg2:
@@ -161,7 +150,6 @@ reports:
       - shortname: "wtdbg2"
         select_assembler:
           wtdbg2:
-            "wtdbg2-wtdbg2": True
       - shortname: "flye raw"
         select_assembler:
           flye:
@@ -333,7 +321,6 @@ reports:
         select_assembler:
           wtdbg2:
             "--skip-fragment-assembly": True
-            "wtdbg2-wtdbg2": True
       - shortname: "Y-to-V"
         select_assembler:
           wtdbg2:
@@ -341,7 +328,6 @@ reports:
       - shortname: "wtdbg2"
         select_assembler:
           wtdbg2:
-            "wtdbg2-wtdbg2": True
       - shortname: "flye corr"
         select_assembler:
           flye:
@@ -379,6 +365,15 @@ reports:
     argument_matrix:
       genome: "E.coli"
     columns:
+      - shortname: "wtdbg2 rs"
+        assembler:
+          wtdbg2:
+            "-x": "rs"
+      - shortname: "wtdbg2 rs inj Y-to-V"
+        assembler:
+          wtdbg2:
+            "-x": "rs"
+            "wtdbg2-inject-trivial-omnitigs": True
       - shortname: "flye raw"
         assembler:
           flye:
