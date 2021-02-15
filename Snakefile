@@ -1169,7 +1169,7 @@ def read_input_file_name(wildcards):
         if genome_name in genomes:
             return DATADIR + "downloads/" + genome_name + "/reads/raw_reads.uniquified.fa"
         elif genome_name in corrected_genomes:
-            return DATADIR + "corrected_reads/" + genome_name + "/corrected_reads.fa"
+            return CORRECTION_SHORT_READS_FORMAT.format(corrected_genome = genome_name)
         else:
             sys.exit("genome name not found: " + genome_name)
     except Exception:
@@ -1841,7 +1841,7 @@ rule hamcircuit_generate:
 localrules: download_and_prepare
 rule download_and_prepare:
     input:  reads = expand(GENOME_READS_FORMAT, genome = genomes.keys()),
-            correction_reads = expand(GENOME_READS_FORMAT, genome = corrected_genomes.keys()),
+            correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, genome = corrected_genomes.keys()),
             references = expand(GENOME_REFERENCE_FORMAT, genome = genomes.keys()),
             quast = "external-software/quast/quast.py",
             wtdbg2 = "external-software/wtdbg2/wtdbg2",
