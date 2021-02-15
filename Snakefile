@@ -345,6 +345,7 @@ print("Finished config preprocessing", flush = True)
 #########################
 
 GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads/reads.fa"
+CORRECTION_SHORT_READS_FORMAT = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa"
 GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference/reference.fa"
 
 ALGORITHM_PREFIX_FORMAT = DATADIR + "algorithms/{arguments}/"
@@ -1310,8 +1311,8 @@ rule convert_correction_short_reads:
 
 rule combine_correction_short_reads:
     input: files = lambda wildcards: expand(DATADIR + "corrected_reads/{{corrected_genome}}/reads-{index}/reads.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
-    output: reads = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa.completed"),
+    output: reads = CORRECTION_SHORT_READS_FORMAT,
+            completed = touch(CORRECTION_SHORT_READS_FORMAT + ".completed"),
     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'",
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
@@ -1342,7 +1343,7 @@ rule install_ratatosk:
         """
 
 rule ratatosk:
-    input:  correction_short_reads = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa",
+    input:  correction_short_reads = CORRECTION_SHORT_READS_FORMAT,
             long_reads = lambda wildcards: GENOME_READS_FORMAT.format(genome = corrected_genomes[wildcards.corrected_genome]["source_genome"]),
             binary = "external-software/Ratatosk/build/src/Ratatosk",
     output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
@@ -1837,19 +1838,15 @@ rule hamcircuit_generate:
 ###### Download requirements ######
 ###################################
 
-localrules: download_all
-rule download_all:
-    input: reads = [file for genome in genomes.keys() for file in expand(DATADIR + "downloads/{genome}/reads-{index}.converted.fa", genome=[genome], index=range(len(genomes[genome]["urls"])))],
-           correction_short_reads = [file for corrected_genome in corrected_genomes.keys() for file in
-                                     expand(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.{file_type}",
-                                            corrected_genome=[corrected_genome],
-                                            index=range(len(corrected_genomes[corrected_genome]["correction_short_reads"])),
-                                            file_type=correction_read_url_file_format(corrected_genome))] if corrected_genomes is not None else [],
-           references = expand(GENOME_REFERENCE_FORMAT, genome=genomes.keys()),
-           quast = "external-software/quast/quast.py",
-           wtdbg2 = "external-software/wtdbg2/wtdbg2",
-           rust = PROGRAMDIR + "target/release/cli",
-           ratatosk = "external-software/Ratatosk/build/src/Ratatosk",
+localrules: download_and_prepare
+rule download_and_prepare:
+    input:  reads = expand(GENOME_READS_FORMAT, genome = genomes.keys()),
+            correction_reads = expand(GENOME_READS_FORMAT, genome = corrected_genomes.keys()),
+            references = expand(GENOME_REFERENCE_FORMAT, genome = genomes.keys()),
+            quast = "external-software/quast/quast.py",
+            wtdbg2 = "external-software/wtdbg2/wtdbg2",
+            rust = PROGRAMDIR + "target/release/cli",
+            ratatosk = "external-software/Ratatosk/build/src/Ratatosk",
 
 #rule prepare_wtdbg2:
 
