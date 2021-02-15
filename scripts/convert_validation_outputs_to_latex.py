@@ -7,7 +7,7 @@ Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> 
 
 import sys, subprocess, hashlib, os, pathlib
 
-datadir = sys.argv[1]
+hashdir = sys.argv[1]
 genome_name_file_name = sys.argv[2]
 graph_statistics_file_name = sys.argv[3]
 bandage_png_name = sys.argv[4]
@@ -185,15 +185,14 @@ def write_table(output_file, caption, column_count, rows):
 def write_image(output_file, caption, file, natwidth, natheight):
 	hasher = hashlib.sha3_512()
 	hasher.update(file.encode())
-	HASHDIR = os.path.join(os.path.abspath(datadir), "latex_hashlinks")
-	hashlink = os.path.join(HASHDIR, str(hasher.hexdigest()) + "." + file.split(".")[-1])
+	hashlink = os.path.join(hashdir, str(hasher.hexdigest()) + "." + file.split(".")[-1])
 
 	try:
 		os.remove(hashlink)
 	except OSError:
 		pass
 
-	pathlib.Path(HASHDIR).mkdir(parents=True, exist_ok=True)
+	pathlib.Path(hashdir).mkdir(parents=True, exist_ok=True)
 	os.symlink(file, hashlink)
 
 	pixel_pt_factor = 0.7

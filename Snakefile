@@ -504,12 +504,12 @@ rule create_single_report_tex:
     params: genome_name = lambda wildcards: ", ".join(get_report_genome_names_from_wildcards(wildcards)),
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
             name_file = REPORT_PREFIX_FORMAT + "name.txt",
-            datadir = DATADIR, # TODO Why is this needed?
+            hashdir = REPORT_PREFIX_FORMAT + "hashdir",
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
         echo '{wildcards.report_name} {params.genome_name} {wildcards.report_file_name}' > '{params.name_file}'
-        python3 '{input.script}' '{params.datadir}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
+        python3 '{input.script}' '{params.hashdir}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
         """
 
 ### Create aggregated report ###
@@ -1342,13 +1342,13 @@ rule install_ratatosk:
         """
 
 rule ratatosk:
-    input: correction_short_reads = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa",
-           long_reads = lambda wildcards: DATADIR + "downloads/" + corrected_genomes[wildcards.corrected_genome]["source_genome"] + "/reads/reads.uniquified.fa",
-           binary = "external-software/Ratatosk/build/src/Ratatosk",
+    input:  correction_short_reads = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa",
+            long_reads = lambda wildcards: GENOME_READS_FORMAT.format(genome = corrected_genomes[wildcards.corrected_genome]["source_genome"]),
+            binary = "external-software/Ratatosk/build/src/Ratatosk",
     output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
             completed = touch(DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa.completed"),
     wildcard_constraints:
-        genome = "((?!corrected_reads).)*",
+        corrected_genome = "((?!/ratatosk).)*",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 80000),
                cpus = MAX_THREADS,
@@ -1363,6 +1363,8 @@ localrules: select_read_corrector
 rule select_read_corrector:
     input:  corrected_reads_from_read_corrector = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
     output: corrected_reads = DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa",
+    wildcard_constraints:
+        corrected_genome = "((?!/ratatosk).)*",
     threads: 1
     shell: "ln -sr '{input.corrected_reads_from_read_corrector}' '{output.corrected_reads}'"
 
