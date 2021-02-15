@@ -33,6 +33,12 @@ if "programdir" in config:
 if PROGRAMDIR[-1] != "/":
     PROGRAMDIR += "/"
 
+REPORTDIR = "data/reports/"
+if "reportdir" in config:
+    REPORTDIR = config["reportdir"]
+if REPORTDIR[-1] != "/":
+    REPORTDIR += "/"
+
 MAX_THREADS = 56
 print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
 
@@ -338,12 +344,16 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
-GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads.fa"
-GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference.fa"
+GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads/reads.fa"
+GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference/reference.fa"
+
 ALGORITHM_PREFIX_FORMAT = DATADIR + "algorithms/{arguments}/"
+WTDBG2_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "wtdbg2/"
+
 QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
-REPORT_PREFIX_FORMAT = DATADIR + "reports/{report_name}/{report_file_name}"
-AGGREGATED_REPORT_PREFIX_FORMAT = DATADIR + "reports/{aggregated_report_name}/"
+
+REPORT_PREFIX_FORMAT = REPORTDIR + "{report_name}/{report_file_name}/"
+AGGREGATED_REPORT_PREFIX_FORMAT = REPORTDIR + "{aggregated_report_name}/"
 
 #################################
 ###### Global report rules ######
@@ -354,7 +364,7 @@ def get_all_report_files():
         result = []
         for report_name, report_definition in reports.items():
             for report_file_name in report_definition["report_files"].keys():
-                result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.pdf")
+                result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "report.pdf")
 
 
         for aggregated_report_name in aggregated_reports.keys():
@@ -488,13 +498,13 @@ def get_single_report_script_column_arguments_from_wildcards(wildcards):
 localrules: create_single_report_tex
 rule create_single_report_tex:
     input:  quasts = get_report_file_quasts_from_wildcards,
-            combined_eaxmax_plot = REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
+            combined_eaxmax_plot = REPORT_PREFIX_FORMAT + "combined_eaxmax_plot.pdf",
             script = "scripts/convert_validation_outputs_to_latex.py",
-    output: report = REPORT_PREFIX_FORMAT + "::::report.tex",
+    output: report = REPORT_PREFIX_FORMAT + "report.tex",
     params: genome_name = lambda wildcards: ", ".join(get_report_genome_names_from_wildcards(wildcards)),
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
-            name_file = REPORT_PREFIX_FORMAT + "::::name.txt",
-            datadir = DATADIR,
+            name_file = REPORT_PREFIX_FORMAT + "name.txt",
+            datadir = DATADIR, # TODO Why is this needed?
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
@@ -528,7 +538,7 @@ def get_aggregated_report_file_source_report_paths(aggregated_report_name):
     try:
         result = set()
         for report_name, report_file_name in iterate_aggregated_report_file_source_reports(aggregated_report_name):
-            result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "::::report.tex")
+            result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "report.tex")
         return result
     except Exception:
         traceback.print_exc()
@@ -558,7 +568,7 @@ localrules: create_combined_eaxmax_graph
 rule create_combined_eaxmax_graph:
     input:  quast_csvs = lambda wildcards: [q + "aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
             script = "scripts/create_combined_eaxmax_plot.py",
-    output: REPORT_PREFIX_FORMAT + "::::combined_eaxmax_plot.pdf",
+    output: REPORT_PREFIX_FORMAT + "combined_eaxmax_plot.pdf",
     params: input_quast_csvs = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quast_csvs)])
     conda: "config/conda-seaborn-env.yml"
     threads: 1
@@ -577,9 +587,8 @@ rule png_to_pdf:
 
 localrules: latex
 rule latex:
-    input: DATADIR + "{subpath}report.tex"
-    output: DATADIR + "{subpath}report.pdf"
-    params: datadir = DATADIR
+    input: "{subpath}report.tex"
+    output: "{subpath}report.pdf"
     conda: "config/conda-latex-env.yml"
     threads: 1
     shell: """
@@ -653,10 +662,10 @@ rule compute_injectable_contigs_wtdbg2:
            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
            raw_reads = get_genome_reads_from_wildcards,
            binary = PROGRAMDIR + "target/release/cli",
-    output: file = ALGORITHM_PREFIX_FORMAT + "contigwalks",
-            log = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.log",
-            latex = ALGORITHM_PREFIX_FORMAT + "compute_injectable_contigs.tex",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "contigwalks.completed"),
+    output: file = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
+            log = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.log",
+            latex = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.tex",
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks.completed"),
     params: command = get_injectable_contigs_rust_cli_command_from_wildcards
     threads: 1
     resources: mem_mb = 48000
@@ -674,7 +683,7 @@ def get_raw_assembly_file_from_wildcards(wildcards):
         if assembler_name == "flye":
             result = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta"
         elif assembler_name == "wtdbg2":
-            result = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa"
+            result = WTDBG2_PREFIX_FORMAT + "wtdbg2.raw.fa"
         elif assembler_name == "reference":
             result = GENOME_REFERENCE_FORMAT
         else:
@@ -837,19 +846,19 @@ def get_genome_len_from_wildcards(wildcards):
 rule wtdbg2_complete:
     input: reads = get_genome_reads_from_wildcards,
            binary = "external-software/wtdbg2/wtdbg2",
-    output: original_nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.1.nodes",
-            nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
-            reads = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.reads",
-            dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
-            clips = ALGORITHM_PREFIX_FORMAT + "wtdbg2.clps",
-            kbm = ALGORITHM_PREFIX_FORMAT + "wtdbg2.kbm",
-            ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
-            log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
+    output: original_nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.1.nodes",
+            nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.nodes",
+            reads = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.reads",
+            dot = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
+            clips = WTDBG2_PREFIX_FORMAT + "wtdbg2.clps",
+            kbm = WTDBG2_PREFIX_FORMAT + "wtdbg2.kbm",
+            ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+            log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
+            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
     wildcard_constraints: arguments = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
-            output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+            output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100000),
                cpus = MAX_THREADS,
@@ -866,7 +875,7 @@ def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
         assembler_arguments.pop("wtdbg2-inject-trivial-omnitigs", None)
         assembler_arguments.pop("wtdbg2-inject-omnitigs", None)
         assembler_arguments["wtdbg2-wtdbg2"] = True
-        return ALGORITHM_PREFIX_FORMAT.format(arguments = str(arguments))
+        return WTDBG2_PREFIX_FORMAT.format(arguments = str(arguments))
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -877,17 +886,17 @@ rule wtdbg2_without_fragment_assembly:
            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
            kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
            binary = "external-software/wtdbg2/wtdbg2",
-    output: original_nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.1.nodes",
-            nodes = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.nodes",
-            reads = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.reads",
-            dot = ALGORITHM_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
-            ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
-            log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
+    output: original_nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.1.nodes",
+            nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.nodes",
+            reads = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.reads",
+            dot = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
+            ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+            log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
+            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
     wildcard_constraints: arguments = "(.*wtdbg2-wtdbg2.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-wtdbg2.*)"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
-            output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+            output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
                cpus = MAX_THREADS,
@@ -897,18 +906,18 @@ rule wtdbg2_without_fragment_assembly:
 
 rule wtdbg2_inject_contigs:
     input: reads = get_genome_reads_from_wildcards,
-           contigs = ALGORITHM_PREFIX_FORMAT + "contigwalks",
+           contigs = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
            clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
            kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
            binary = "external-software/wtdbg2/wtdbg2",
-    output: ctg_lay = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
-            log = ALGORITHM_PREFIX_FORMAT + "wtdbg2.log",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.completed"),
+    output: ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+            log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
+            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
     wildcard_constraints: arguments = ".*wtdbg2-inject-.*"
     params: wtdbg2_args = get_assembler_args_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
-            output_prefix = ALGORITHM_PREFIX_FORMAT + "wtdbg2",
+            output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
                cpus = MAX_THREADS,
@@ -918,10 +927,10 @@ rule wtdbg2_inject_contigs:
 
 rule wtdbg2_consensus:
     input: reads = get_genome_reads_from_wildcards,
-           contigs = ALGORITHM_PREFIX_FORMAT + "wtdbg2.ctg.lay",
+           contigs = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay",
            binary = "external-software/wtdbg2/wtpoa-cns",
-    output: consensus = ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "wtdbg2.raw.fa.completed"),
+    output: consensus = WTDBG2_PREFIX_FORMAT + "wtdbg2.raw.fa",
+            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.raw.fa.completed"),
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8000),
                cpus = MAX_THREADS,
@@ -1000,7 +1009,7 @@ rule flye:
             flye_input_argument = get_flye_input_arg_from_wildcards,
             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_directory = ALGORITHM_PREFIX_FORMAT + "flye",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "flye.completed"),
+            completed = touch(ALGORITHM_PREFIX_FORMAT + "flye/.completed"),
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
@@ -1040,8 +1049,8 @@ ruleorder: download_raw_source_reads > download_packed_source_reads > convert_so
 
 localrules: download_raw_source_reads
 rule download_raw_source_reads:
-    output: file = DATADIR + "downloads/{genome}/reads-{index}.{format}",
-            completed = touch(DATADIR + "downloads/{genome}/reads-{index}.{format}.completed"),
+    output: file = DATADIR + "downloads/{genome}/reads-{index}/reads.{format}",
+            completed = touch(DATADIR + "downloads/{genome}/reads-{index}/reads.{format}.completed"),
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
             url_format = lambda wildcards: read_url_file_format(wildcards.genome),
     wildcard_constraints:
@@ -1063,8 +1072,8 @@ rule download_raw_source_reads:
 
 localrules: download_packed_source_reads
 rule download_packed_source_reads:
-    output: file = DATADIR + "downloads/{genome}/packed-reads-{index}.{format}.gz",
-            completed = touch(DATADIR + "downloads/{genome}/packed-reads-{index}.{format}.gz.completed"),
+    output: file = DATADIR + "downloads/{genome}/packed-reads-{index}/reads.{format}.gz",
+            completed = touch(DATADIR + "downloads/{genome}/packed-reads-{index}/reads.{format}.gz.completed"),
     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
             url_format = lambda wildcards: read_url_file_format(wildcards.genome),
             checksum = lambda wildcards: genomes[wildcards.genome]["checksums"][int(wildcards.index)] if "checksums" in genomes[wildcards.genome] else "",
@@ -1097,9 +1106,9 @@ def read_raw_input_file_name(wildcards):
         genome_properties = genomes[genome_name]
 
         if genome_properties["urls"][0].split('.')[-1] == "gz":
-            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reads-" + wildcards.index + "/reads." + read_url_file_format(wildcards.genome)
         else:
-            input_file_name = DATADIR + "downloads/" + genome_name + "/reads-" + wildcards.index + "." + read_url_file_format(wildcards.genome)
+            input_file_name = DATADIR + "downloads/" + genome_name + "/reads-" + wildcards.index + "/reads." + read_url_file_format(wildcards.genome)
         return input_file_name
     except Exception:
         traceback.print_exc()
@@ -1107,8 +1116,8 @@ def read_raw_input_file_name(wildcards):
 
 rule convert_source_reads:
     input: file = read_raw_input_file_name,
-    output: file = DATADIR + "downloads/{genome}/reads-{index}.converted.fa",
-            completed = touch(DATADIR + "downloads/{genome}/reads-{index}.converted.fa.completed"),
+    output: file = DATADIR + "downloads/{genome}/reads-{index}/reads.converted.fa",
+            completed = touch(DATADIR + "downloads/{genome}/reads-{index}/reads.converted.fa.completed"),
     params: file_format = lambda wildcards: read_url_file_format(wildcards.genome)
     wildcard_constraints:
         index = "\d+",
@@ -1126,9 +1135,9 @@ rule convert_source_reads:
         """
 
 rule combine_reads:
-    input: files = lambda wildcards: expand(DATADIR + "downloads/{{genome}}/reads-{index}.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
-    output: reads = DATADIR + "downloads/{genome}/reads.fa",
-            completed = touch(DATADIR + "downloads/{genome}/reads.fa.completed"),
+    input: files = lambda wildcards: expand(DATADIR + "downloads/{{genome}}/reads-{index}/reads.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
+    output: reads = DATADIR + "downloads/{genome}/reads/raw_reads.fa",
+            completed = touch(DATADIR + "downloads/{genome}/reads/raw_reads.fa.completed"),
     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -1139,11 +1148,11 @@ rule combine_reads:
     shell: "cat {params.input_list} > '{output.reads}'"
 
 rule uniquify_ids:
-    input:  reads = DATADIR + "downloads/{genome}/reads.fa",
+    input:  reads = DATADIR + "downloads/{genome}/reads/raw_reads.fa",
             script = "scripts/uniquify_fasta_ids.py",
-    output: reads = DATADIR + "downloads/{genome}/reads.uniquified.fa",
+    output: reads = DATADIR + "downloads/{genome}/reads/raw_reads.uniquified.fa",
             log = DATADIR + "downloads/{genome}/uniquify.log",
-            completed = touch(DATADIR + "downloads/{genome}/reads.uniquified.fa.completed"),
+            completed = touch(DATADIR + "downloads/{genome}/reads/reads.uniquified.fa.completed"),
     wildcard_constraints:
         genome = "((?!downloads).)*",
     conda: "config/conda-uniquify-env.yml"
@@ -1157,7 +1166,7 @@ def read_input_file_name(wildcards):
     try:
         genome_name = wildcards.genome
         if genome_name in genomes:
-            return DATADIR + "downloads/" + genome_name + "/reads.uniquified.fa"
+            return DATADIR + "downloads/" + genome_name + "/reads/raw_reads.uniquified.fa"
         elif genome_name in corrected_genomes:
             return DATADIR + "corrected_reads/" + genome_name + "/corrected_reads.fa"
         else:
@@ -1178,8 +1187,8 @@ rule link_reads:
 
 localrules: download_reference_raw
 rule download_reference_raw:
-    output: reference = DATADIR + "downloads/{genome}/reference.fa",
-            completed = touch(DATADIR + "downloads/{genome}/reference.fa.completed"),
+    output: reference = DATADIR + "downloads/{genome}/reference/raw_reference.fa",
+            completed = touch(DATADIR + "downloads/{genome}/reference/raw_reference.fa.completed"),
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -1192,8 +1201,8 @@ rule download_reference_raw:
 
 localrules: download_reference_gzip
 rule download_reference_gzip:
-    output: reference = DATADIR + "downloads/{genome}/packed-reference.fa.gz",
-            completed = touch(DATADIR + "downloads/{genome}/reference.fa.gz.completed"),
+    output: reference = DATADIR + "downloads/{genome}/packed-reference/raw_reference.fa.gz",
+            completed = touch(DATADIR + "downloads/{genome}/packed-reference/raw_reference.fa.gz.completed"),
     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
     wildcard_constraints:
         genome = "((?!downloads).)*",
@@ -1212,9 +1221,9 @@ def reference_input_file_name(wildcards):
         reference = genomes[genome_name]["reference"]
 
         if reference.split('.')[-1] == "gz":
-            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reference.fa"
+            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reference/raw_reference.fa"
         else:
-            input_file_name = DATADIR + "downloads/" + genome_name + "/reference.fa"
+            input_file_name = DATADIR + "downloads/" + genome_name + "/reference/raw_reference.fa"
         return input_file_name
     except Exception:
         traceback.print_exc()
@@ -1248,8 +1257,8 @@ def correction_read_url_file_format(corrected_genome):
 
 localrules: download_correction_short_reads
 rule download_correction_short_reads:
-    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.{format}",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.{format}.completed"),
+    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.{format}",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.{format}.completed"),
     params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
             url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
             checksum = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads_checksum"] if "correction_short_reads_checksum" in corrected_genomes[wildcards.corrected_genome] else "",
@@ -1277,9 +1286,9 @@ rule download_correction_short_reads:
         """
 
 rule convert_correction_short_reads:
-    input: file = lambda wildcards: DATADIR + "corrected_reads/{corrected_genome}/reads-{index}." + correction_read_url_file_format(wildcards.corrected_genome),
-    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.converted.fa",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}.converted.fa.completed"),
+    input: file = lambda wildcards: DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads." + correction_read_url_file_format(wildcards.corrected_genome),
+    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.converted.fa",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.converted.fa.completed"),
     params: file_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
     wildcard_constraints:
         index = "\d+",
@@ -1300,9 +1309,9 @@ rule convert_correction_short_reads:
         """
 
 rule combine_correction_short_reads:
-    input: files = lambda wildcards: expand(DATADIR + "corrected_reads/{{corrected_genome}}/reads-{index}.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
-    output: reads = DATADIR + "corrected_reads/{corrected_genome}/correction_short_reads.fa",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/correction_short_reads.fa.completed"),
+    input: files = lambda wildcards: expand(DATADIR + "corrected_reads/{{corrected_genome}}/reads-{index}/reads.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
+    output: reads = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa.completed"),
     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'",
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
@@ -1333,11 +1342,11 @@ rule install_ratatosk:
         """
 
 rule ratatosk:
-    input: correction_short_reads = DATADIR + "corrected_reads/{corrected_genome}/correction_short_reads.fa",
-           long_reads = lambda wildcards: DATADIR + "downloads/" + corrected_genomes[wildcards.corrected_genome]["source_genome"] + "/reads.uniquified.fa",
+    input: correction_short_reads = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa",
+           long_reads = lambda wildcards: DATADIR + "downloads/" + corrected_genomes[wildcards.corrected_genome]["source_genome"] + "/reads/reads.uniquified.fa",
            binary = "external-software/Ratatosk/build/src/Ratatosk",
-    output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa.completed"),
+    output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
+            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa.completed"),
     wildcard_constraints:
         genome = "((?!corrected_reads).)*",
     threads: MAX_THREADS
@@ -1349,6 +1358,13 @@ rule ratatosk:
     shell: """
         {input.binary} -v -c {threads} -s {input.correction_short_reads} -l {input.long_reads} -o {output.corrected_long_reads}
         """
+
+localrules: select_read_corrector
+rule select_read_corrector:
+    input:  corrected_reads_from_read_corrector = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
+    output: corrected_reads = DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa",
+    threads: 1
+    shell: "ln -sr '{input.corrected_reads_from_read_corrector}' '{output.corrected_reads}'"
 
 ###############################
 ###### Target Generators ######
