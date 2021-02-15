@@ -1841,7 +1841,7 @@ rule hamcircuit_generate:
 localrules: download_and_prepare
 rule download_and_prepare:
     input:  reads = expand(GENOME_READS_FORMAT, genome = genomes.keys()),
-            correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, genome = corrected_genomes.keys()),
+            correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
             references = expand(GENOME_REFERENCE_FORMAT, genome = genomes.keys()),
             quast = "external-software/quast/quast.py",
             wtdbg2 = "external-software/wtdbg2/wtdbg2",
