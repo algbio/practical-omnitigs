@@ -1169,7 +1169,7 @@ def read_input_file_name(wildcards):
         if genome_name in genomes:
             return DATADIR + "downloads/" + genome_name + "/reads/raw_reads.uniquified.fa"
         elif genome_name in corrected_genomes:
-            return CORRECTION_SHORT_READS_FORMAT.format(corrected_genome = genome_name)
+            return DATADIR + "corrected_reads/" + genome_name + "/corrected_reads.fa"
         else:
             sys.exit("genome name not found: " + genome_name)
     except Exception:
