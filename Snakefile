@@ -155,7 +155,7 @@ class Arguments(dict):
             return None
 
         result = list(result.values())
-        if len(result) != 1:
+        if len(result) != 1 or type(result[0]) is not Arguments:
             return None
 
         return result[0]
@@ -628,15 +628,16 @@ def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
         assembler_arguments = arguments.assembler_arguments()
         if assembler_arguments is None:
             raise Exception("Arguments have no assembler arguments: {}".format(arguments))
+        injections = assembler_arguments.get("injections", {})
 
-        if "wtdbg2-inject-unitigs" in assembler_arguments:
+        if "wtdbg2-inject-unitigs" in injections:
             return "compute-unitigs"
-        elif "wtdbg2-inject-trivial-omnitigs" in assembler_arguments:
+        elif "wtdbg2-inject-trivial-omnitigs" in injections:
             return "compute-trivial-omnitigs --non-scc"
-        elif "wtdbg2-inject-omnitigs" in assembler_arguments:
+        elif "wtdbg2-inject-omnitigs" in injections:
             return "compute-omnitigs"
         else:
-            raise Exception("Missing injection command in wildcards: " + str(wildcards))
+            raise Exception("Missing injection command in assembler arguments: " + str(wildcards))
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -658,11 +659,11 @@ def get_genome_reads_from_wildcards(wildcards):
         sys.exit("Catched exception")
 
 rule compute_injectable_contigs_wtdbg2:
-    input: nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.nodes",
-           reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
-           dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
-           raw_reads = get_genome_reads_from_wildcards,
-           binary = PROGRAMDIR + "target/release/cli",
+    input:  nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.nodes",
+            reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
+            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
+            raw_reads = get_genome_reads_from_wildcards,
+            binary = PROGRAMDIR + "target/release/cli",
     output: file = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.log",
             latex = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.tex",
@@ -824,14 +825,17 @@ rule install_wtdbg2:
     make
     """
 
-def get_assembler_args_from_wildcards(wildcards):
+def get_wtdbg2_args_from_wildcards(wildcards):
     try:
         arguments = Arguments.from_str(wildcards.arguments)
         assembler_arguments = arguments.assembler_arguments()
         if assembler_arguments is None:
-            raise Exception("Arguments have not assembler arguments: {}".format(arguments))
+            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
+        cli_arguments = assembler_arguments.get("cli_arguments", None)
+        if cli_arguments is None:
+            return ""
 
-        return assembler_arguments.to_argument_string()
+        return cli_arguments.to_argument_string()
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -844,9 +848,163 @@ def get_genome_len_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-rule wtdbg2_complete:
-    input: reads = get_genome_reads_from_wildcards,
-           binary = "external-software/wtdbg2/wtdbg2",
+# rule wtdbg2_complete:
+#     input: reads = get_genome_reads_from_wildcards,
+#            binary = "external-software/wtdbg2/wtdbg2",
+#     output: original_nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.1.nodes",
+#             nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.nodes",
+#             reads = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.reads",
+#             dot = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
+#             clips = WTDBG2_PREFIX_FORMAT + "wtdbg2.clps",
+#             kbm = WTDBG2_PREFIX_FORMAT + "wtdbg2.kbm",
+#             ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+#             log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
+#             completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
+#     wildcard_constraints: arguments = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
+#     params: wtdbg2_args = get_assembler_args_from_wildcards,
+#             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
+#             output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
+#     threads: MAX_THREADS
+#     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100000),
+#                cpus = MAX_THREADS,
+#                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+#                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 100000),
+#     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+
+def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        if assembler_arguments is None:
+            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
+        cli_arguments = assembler_arguments.get("cli_arguments", {})
+
+        cli_arguments.pop("--skip-fragment-assembly", None)
+        assembler_arguments.pop("injections", None)
+        return WTDBG2_PREFIX_FORMAT.format(arguments = str(arguments))
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+# rule wtdbg2_without_fragment_assembly:
+#     input: reads = get_genome_reads_from_wildcards,
+#            clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
+#            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
+#            kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
+#            binary = "external-software/wtdbg2/wtdbg2",
+#     output: original_nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.1.nodes",
+#             nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.nodes",
+#             reads = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.reads",
+#             dot = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
+#             ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+#             log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
+#             completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
+#     wildcard_constraints: arguments = "(.*wtdbg2-.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-.*)"
+#     params: wtdbg2_args = get_assembler_args_from_wildcards,
+#             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
+#             output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
+#     threads: MAX_THREADS
+#     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
+#                cpus = MAX_THREADS,
+#                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+#                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
+#     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+
+# rule wtdbg2_inject_contigs:
+#     input: reads = get_genome_reads_from_wildcards,
+#            contigs = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
+#            clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
+#            nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
+#            kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
+#            binary = "external-software/wtdbg2/wtdbg2",
+#     output: ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
+#             log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
+#             completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
+#     wildcard_constraints: arguments = ".*wtdbg2-inject-.*"
+#     params: wtdbg2_args = get_assembler_args_from_wildcards,
+#             genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
+#             output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
+#     threads: MAX_THREADS
+#     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
+#                cpus = MAX_THREADS,
+#                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+#                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
+#     shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+
+def get_wtdbg2_injectable_contigs_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        if assembler_arguments is None:
+            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
+        injections = assembler_arguments.get("injections", {})
+
+        if "wtdbg2-inject-unitigs" in injections or "wtdbg2-inject-trivial-omnitigs" in injections or "wtdbg2-inject-omnitigs" in injections:
+            return ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks"
+
+        return []
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def is_wtdbg2_injecting_contigs_from_wildcards(wildcards):
+    try:
+        return get_wtdbg2_injectable_contigs_from_wildcards(wildcards) != []
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def is_wtdbg2_using_cache_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_arguments = arguments.assembler_arguments()
+        if assembler_arguments is None:
+            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
+        cli_arguments = assembler_arguments.get("cli_arguments", {})
+        injections = assembler_arguments.get("injections", {})
+
+        return "wtdbg2-inject-unitigs" in injections or "wtdbg2-inject-trivial-omnitigs" in injections or "wtdbg2-inject-omnitigs" in injections or "--skip-fragment-assembly" in cli_arguments
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_wtdbg2_cached_nodes_from_wildcards(wildcards):
+    try:
+        if is_wtdbg2_using_cache_from_wildcards(wildcards):
+            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes"
+
+        return []
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_wtdbg2_cached_clips_from_wildcards(wildcards):
+    try:
+        if is_wtdbg2_using_cache_from_wildcards(wildcards):
+            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps"
+
+        return []
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_wtdbg2_cached_kbm_from_wildcards(wildcards):
+    try:
+        if is_wtdbg2_using_cache_from_wildcards(wildcards):
+            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm"
+
+        return []
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+rule wtdbg2:
+    input:  reads = get_genome_reads_from_wildcards,
+            contigs = get_wtdbg2_injectable_contigs_from_wildcards,
+            cached_nodes = get_wtdbg2_cached_nodes_from_wildcards,
+            cached_clips = get_wtdbg2_cached_clips_from_wildcards,
+            cached_kbm = get_wtdbg2_cached_kbm_from_wildcards,
+            binary = "external-software/wtdbg2/wtdbg2",
     output: original_nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.1.nodes",
             nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.nodes",
             reads = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.reads",
@@ -855,76 +1013,27 @@ rule wtdbg2_complete:
             kbm = WTDBG2_PREFIX_FORMAT + "wtdbg2.kbm",
             ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
             log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
-            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
-    wildcard_constraints: arguments = "((?!(--skip-fragment-assembly|wtdbg2-inject-)).)*"
-    params: wtdbg2_args = get_assembler_args_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
+    params: args = get_wtdbg2_args_from_wildcards,
+            cache_args = lambda wildcards, input, output: "--load-nodes '{cached_nodes}' --load-clips '{cached_clips}' --load-kbm '{cached_kbm}'".format(cached_nodes = input.cached_nodes, cached_clips = input.cached_clips, cached_kbm = input.cached_kbm) if is_wtdbg2_using_cache_from_wildcards(wildcards) else "--dump-kbm '{kbm}'".format(kbm = output.kbm),
+            inject_unitigs_args = lambda wildcards, input: "--inject-unitigs '{contigs}'".format(contigs = input.contigs) if is_wtdbg2_injecting_contigs_from_wildcards(wildcards) else "",
+            genome_len_arg = get_genome_len_from_wildcards,
             output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 100000),
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{output.log}'"
+    shell: """
+        '{input.binary}' {params.genome_len_arg} {params.args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' {params.cache_args} {params.inject_unitigs_args} 2>&1 | tee '{output.log}'
 
-def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        assembler_arguments.pop("--skip-fragment-assembly", None)
-        assembler_arguments.pop("wtdbg2-inject-unitigs", None)
-        assembler_arguments.pop("wtdbg2-inject-trivial-omnitigs", None)
-        assembler_arguments.pop("wtdbg2-inject-omnitigs", None)
-        assembler_arguments["wtdbg2-wtdbg2"] = True
-        return WTDBG2_PREFIX_FORMAT.format(arguments = str(arguments))
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+        if [ ! -z '{input.cached_kbm}' ]; then
+            ln -sr '{input.cached_kbm}' '{output.kbm}'
+        fi
 
-rule wtdbg2_without_fragment_assembly:
-    input: reads = get_genome_reads_from_wildcards,
-           clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
-           nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
-           kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
-           binary = "external-software/wtdbg2/wtdbg2",
-    output: original_nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.1.nodes",
-            nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.nodes",
-            reads = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.reads",
-            dot = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
-            ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
-            log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
-            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
-    wildcard_constraints: arguments = "(.*wtdbg2-wtdbg2.*--skip-fragment-assembly.*|.*--skip-fragment-assembly.*wtdbg2-wtdbg2.*)"
-    params: wtdbg2_args = get_assembler_args_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
-            output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
-    threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
-               cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
-
-rule wtdbg2_inject_contigs:
-    input: reads = get_genome_reads_from_wildcards,
-           contigs = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
-           clips = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps",
-           nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes",
-           kbm = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm",
-           binary = "external-software/wtdbg2/wtdbg2",
-    output: ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
-            log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
-            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.completed"),
-    wildcard_constraints: arguments = ".*wtdbg2-inject-.*"
-    params: wtdbg2_args = get_assembler_args_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
-            output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
-    threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48000),
-               cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
-    shell: "{input.binary} {params.genome_len_arg} {params.wtdbg2_args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --inject-unitigs '{input.contigs}' --load-nodes '{input.nodes}' --load-clips '{input.clips}' --load-kbm '{input.kbm}' 2>&1 | tee '{output.log}'"
+        if [ ! -z '{input.cached_clips}' ]; then
+            ln -sr '{input.cached_clips}' '{output.clips}'
+        fi
+    """
 
 rule wtdbg2_consensus:
     input: reads = get_genome_reads_from_wildcards,
@@ -965,13 +1074,18 @@ def get_flye_other_args_from_wildcards(wildcards):
         arguments = Arguments.from_str(wildcards.arguments)
         assembler_arguments = arguments.assembler_arguments()
         if assembler_arguments is None:
-            raise Exception("Arguments have not assembler arguments: {}".format(arguments))
+            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
+        cli_arguments = assembler_arguments.get("cli_arguments", None)
+        if cli_arguments is None:
+            raise Exception("Assembler arguments have no cli arguments: {}".format(assembler_arguments))
+        if type(cli_arguments) is not Arguments:
+            raise Exception("CLI arguments have type '{}' rather than 'Arguments'.".format(type(cli_arguments)))
 
-        assembler_arguments.pop("--pacbio-raw", None)
-        assembler_arguments.pop("--pacbio-corr", None)
-        assembler_arguments.pop("--pacbio-hifi", None)
+        cli_arguments.pop("--pacbio-raw", None)
+        cli_arguments.pop("--pacbio-corr", None)
+        cli_arguments.pop("--pacbio-hifi", None)
 
-        return assembler_arguments.to_argument_string()
+        return cli_arguments.to_argument_string()
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -982,13 +1096,16 @@ def get_flye_input_arg_from_wildcards(wildcards):
         assembler_arguments = arguments.assembler_arguments()
         if assembler_arguments is None:
             raise Exception("Arguments have not assembler arguments: {}".format(arguments))
+        cli_arguments = assembler_arguments.get("cli_arguments", None)
+        if cli_arguments is None:
+            raise Exception("Assembler arguments have no cli arguments: {}".format(assembler_arguments))
 
         input_args = []
-        if "--pacbio-raw" in assembler_arguments:
+        if "--pacbio-raw" in cli_arguments:
             input_args.append("--pacbio-raw")
-        if "--pacbio-corr" in assembler_arguments:
+        if "--pacbio-corr" in cli_arguments:
             input_args.append("--pacbio-corr")
-        if "--pacbio-hifi" in assembler_arguments:
+        if "--pacbio-hifi" in cli_arguments:
             input_args.append("--pacbio-hifi")
         
         if len(input_args) == 0:
