@@ -15,12 +15,15 @@ states = [(line.split()[0], line.split()[1]) for line in states]
 states = [state for id, state in states if id.isdigit()]
 
 
-running_status=["PENDING", "CONFIGURING", "COMPLETING", "RUNNING", "SUSPENDED", "REVOKED", "REQUEUED", "RESIZING"]
+running_status = ["PENDING", "CONFIGURING", "COMPLETING", "RUNNING", "SUSPENDED", "REVOKED", "REQUEUED", "RESIZING"]
 completed_status = ["COMPLETED"]
+failed_status = ["FAILED", "CANCELLED", "BOOT_FAIL", "DEADLINE", "NODE_FAIL", "OUT_OF_MEMORY", "PREEMPTED", "TIMEOUT"]
 
 if any(r in states for r in completed_status):
   print("success")
 elif any(r in states for r in running_status):
   print("running")
-else:
+elif all(r in states for r in failed_status):
   print("failed")
+else:
+  print("Unknown state combination: {}".format(states))
