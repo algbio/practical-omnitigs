@@ -161,7 +161,8 @@ def table_header(caption, column_count):
 	header = """
 	\\begin{table}[ht]
 	\\begin{center}
-	\\caption{""" + caption + """}
+	\\fontsize{6pt}{7pt}\\selectfont
+	\\caption{\\fontsize{6pt}{7pt}\\selectfont\\ """ + caption + """}
 	\\begin{tabular}{|l*{1}|"""
 	for _ in range(column_count):
 		header += "r"
@@ -207,10 +208,13 @@ revision = subprocess.check_output(["git", "describe"]).strip()
 output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
-	\\documentclass[10pt,a4paper]{article}
+	\\documentclass[12pt,a4paper]{article}
 	\\usepackage[cm]{fullpage}
+	\\usepackage{lmodern}
+	\\usepackage[T1]{fontenc}
 	\\usepackage{graphicx}
 	\\begin{document}
+	\\fontsize{6pt}{7pt}\\selectfont
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
 		\\item[Revision:] """ + str(revision) + """
