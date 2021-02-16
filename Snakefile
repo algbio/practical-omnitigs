@@ -890,6 +890,7 @@ def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
 
         cli_arguments.pop("--skip-fragment-assembly", None)
         assembler_arguments.pop("injections", None)
+        assembler_arguments.pop("fragment_injections", None)
         return WTDBG2_PREFIX_FORMAT.format(arguments = str(arguments))
     except Exception:
         traceback.print_exc()
