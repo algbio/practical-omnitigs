@@ -853,7 +853,7 @@ rule install_wtdbg2:
 
     git clone https://github.com/sebschmi/wtdbg2.git
     cd wtdbg2
-    git checkout c1db37ebc410db58f8dd740683949a77ec168ca6
+    git checkout 654f5af8107f0fc6fb5d9b5c588c759324abcb95
     make
     """
 
