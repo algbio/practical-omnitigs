@@ -950,8 +950,9 @@ def is_wtdbg2_using_cache_from_wildcards(wildcards):
             raise Exception("Arguments have no assembler arguments: {}".format(arguments))
         cli_arguments = assembler_arguments.get("cli_arguments", {})
         injections = assembler_arguments.get("injections", {})
+        fragment_injections = assembler_arguments.get("fragment_injections", {})
 
-        return "wtdbg2-inject-unitigs" in injections or "wtdbg2-inject-trivial-omnitigs" in injections or "wtdbg2-inject-omnitigs" in injections or "--skip-fragment-assembly" in cli_arguments
+        return len(injections) > 0 or len(fragment_injections) > 0 or "--skip-fragment-assembly" in cli_arguments
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
