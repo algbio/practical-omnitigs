@@ -18,13 +18,6 @@ experiments:
 
 column_templates:
   default_columns: &default_columns
-    - shortname: "uni sfa"
-      select_assembler:
-        wtdbg2:
-          cli_arguments:
-            "--skip-fragment-assembly": True
-          injections:
-            "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V sfa"
       select_assembler:
         wtdbg2:
@@ -37,16 +30,16 @@ column_templates:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
-    - shortname: "uni"
-      select_assembler:
-        wtdbg2:
-          injections:
-            "wtdbg2-inject-unitigs": True
     - shortname: "Y-to-V"
       select_assembler:
         wtdbg2:
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "frg Y-to-V"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
@@ -69,6 +62,11 @@ column_templates:
         wtdbg2:
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "frg Y-to-V"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
@@ -117,6 +115,11 @@ column_templates:
         wtdbg2:
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "frg Y-to-V"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
@@ -141,6 +144,13 @@ column_templates:
         wtdbg2:
           cli_arguments:
             "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "frg Y-to-V brk"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
       select_postprocessor:
         contigbreaker:
     - shortname: "wtdbg2 brk"
@@ -373,6 +383,11 @@ reports:
           wtdbg2:
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "frg Y-to-V"
+        select_assembler:
+          wtdbg2:
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
       - shortname: "wtdbg2"
         select_assembler:
           wtdbg2:
