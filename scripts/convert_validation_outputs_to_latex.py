@@ -7,7 +7,7 @@ Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> 
 
 import sys, subprocess, hashlib, os, pathlib
 
-hashdir = sys.argv[1]
+hashdir = os.path.abspath(sys.argv[1])
 genome_name_file_name = sys.argv[2]
 graph_statistics_file_name = sys.argv[3]
 bandage_png_name = sys.argv[4]
@@ -54,7 +54,7 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 
 def read_algorithm_file(prefix):
 	try:
-		algorithm_file = open(prefix + "compute_injectable_contigs.tex")
+		algorithm_file = open(os.path.join(prefix, "compute_injectable_contigs.tex"))
 		algorithm_lines = algorithm_file.readlines()
 		return algorithm_lines
 	except:
@@ -65,7 +65,7 @@ headline = "Parameter"
 algorithm_table = []
 for label, prefix in experiments:
 	headline += " & " + label
-	table = read_algorithm_file(prefix)
+	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
 	algorithm_table = append_latex_table_second_column(algorithm_table, table)
 
 algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
@@ -185,15 +185,16 @@ def write_table(output_file, caption, column_count, rows):
 def write_image(output_file, caption, file, natwidth, natheight):
 	hasher = hashlib.sha3_512()
 	hasher.update(file.encode())
-	hashlink = os.path.join(hashdir, str(hasher.hexdigest()) + "." + file.split(".")[-1])
+	hashlinkdir = os.path.join(hashdir, str(hasher.hexdigest()))
+	hashlink = os.path.join(hashlinkdir, "file." + file.split(".")[-1])
 
 	try:
 		os.remove(hashlink)
 	except OSError:
 		pass
 
-	pathlib.Path(hashdir).mkdir(parents=True, exist_ok=True)
-	os.symlink(file, hashlink)
+	pathlib.Path(hashlinkdir).mkdir(parents=True, exist_ok=True)
+	os.symlink(os.path.abspath(file), hashlink)
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
