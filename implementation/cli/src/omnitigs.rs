@@ -3,7 +3,7 @@ use clap::Clap;
 use genome_graph::bigraph::traitgraph::algo::components::{
     decompose_strongly_connected_components, is_strongly_connected,
 };
-use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2Graph};
+use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::interface::GraphBase;
 use std::fs::File;
@@ -16,7 +16,7 @@ pub struct ComputeOmnitigsCommand {
         short,
         long,
         default_value = "bcalm2",
-        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file."
+        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file. If dot, then the input is a .dot file and the output is a list of sequences of node ids."
     )]
     pub file_format: String,
 
@@ -208,8 +208,6 @@ pub(crate) fn compute_omnitigs(
                 maximal_omnitigs.iter(),
                 &subcommand.output,
             )?;
-
-            Ok(())
         }
 
         "wtdbg2" => {
@@ -278,10 +276,37 @@ pub(crate) fn compute_omnitigs(
                     &subcommand.output,
                 )?;
             }
+        }
 
-            Ok(())
+        "dot" => {
+            let dot_file = if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".dot"))
+            {
+                file
+            } else {
+                bail!("Missing .dot file")
+            };
+            info!("Reading bigraph from '{}'", dot_file);
+
+            let genome_graph: PetWtdbg2DotGraph =
+                genome_graph::io::wtdbg2::dot::read_graph_from_wtdbg2_dot_from_file(dot_file)?;
+
+            info!("Computing maximal omnitigs");
+            let mut omnitigs = Omnitigs::compute(&genome_graph);
+            info!("Removing reverse complements");
+            omnitigs.remove_reverse_complements(&genome_graph);
+
+            print_omnitigs_statistics(&omnitigs, &mut latex_file)?;
+
+            info!("Storing omnitigs as node ids to '{}'", subcommand.output);
+            genome_graph::io::wtdbg2::dot::write_dot_contigs_as_wtdbg2_node_ids_to_file(
+                &genome_graph,
+                omnitigs.iter(),
+                &subcommand.output,
+            )?;
         }
 
         unknown => bail!("Unknown file format: {}", unknown),
     }
+
+    Ok(())
 }

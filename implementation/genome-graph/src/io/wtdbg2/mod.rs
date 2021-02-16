@@ -16,6 +16,9 @@ use std::iter::FromIterator;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
+/// Reading and writing the dot format of wtdbg2.
+pub mod dot;
+
 /// Node data as given in a .1.nodes file from wtdbg2.
 #[derive(Clone, Debug)]
 pub struct PlainWtdbg2NodeData {

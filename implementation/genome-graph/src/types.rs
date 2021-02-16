@@ -28,3 +28,13 @@ pub type PetWtdbg2Graph = crate::bigraph::implementation::node_bigraph_wrapper::
         usize,
     >,
 >;
+
+/// Simple type to represent bigraphs from the .dot format.
+pub type PetWtdbg2DotGraph =
+    crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
+        crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
+            String,
+            (),
+            usize,
+        >,
+    >;

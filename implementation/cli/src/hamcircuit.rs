@@ -5,7 +5,7 @@ use genome_graph::bigraph::traitgraph::algo::predefined_graphs::{
     compute_m_from_n_and_c, create_random_graph,
 };
 use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
-use genome_graph::bigraph::traitgraph::io::{
+use genome_graph::bigraph::traitgraph::io::hamcircuit::{
     read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp,
 };
 use omnitigs::hamiltonian::preprocess_hamiltonian_circuit;

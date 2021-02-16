@@ -1,6 +1,6 @@
 use crate::CliOptions;
 use clap::Clap;
-use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2Graph};
+use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::algo::components::is_strongly_connected;
 use omnitigs::traitgraph::interface::GraphBase;
@@ -14,7 +14,7 @@ pub struct ComputeTrivialOmnitigsCommand {
         short,
         long,
         default_value = "bcalm2",
-        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file."
+        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file. If dot, then the input is a .dot file and the output is a list of sequences of node ids."
     )]
     pub file_format: String,
 
@@ -179,8 +179,6 @@ pub(crate) fn compute_trivial_omnitigs(
                 maximal_omnitigs.iter(),
                 &subcommand.output,
             )?;
-
-            Ok(())
         }
 
         "wtdbg2" => {
@@ -252,10 +250,45 @@ pub(crate) fn compute_trivial_omnitigs(
                     &subcommand.output,
                 )?;
             }
+        }
 
-            Ok(())
+        "dot" => {
+            let dot_file = if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".dot"))
+            {
+                file
+            } else {
+                bail!("Missing .dot file")
+            };
+            info!("Reading bigraph from '{}'", dot_file);
+
+            let genome_graph: PetWtdbg2DotGraph =
+                genome_graph::io::wtdbg2::dot::read_graph_from_wtdbg2_dot_from_file(dot_file)?;
+
+            info!("Computing maximal trivial omnitigs");
+            let mut trivial_omnitigs = if subcommand.non_scc {
+                Omnitigs::compute_trivial_only_non_scc(&genome_graph)
+            } else {
+                ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
+                Omnitigs::compute_trivial_only(&genome_graph)
+            };
+            info!("Removing reverse complements");
+            trivial_omnitigs.remove_reverse_complements(&genome_graph);
+
+            print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
+
+            info!(
+                "Storing trivial omnitigs as node ids to '{}'",
+                subcommand.output
+            );
+            genome_graph::io::wtdbg2::dot::write_dot_contigs_as_wtdbg2_node_ids_to_file(
+                &genome_graph,
+                trivial_omnitigs.iter(),
+                &subcommand.output,
+            )?;
         }
 
         unknown => bail!("Unknown file format: {}", unknown),
     }
+
+    Ok(())
 }
