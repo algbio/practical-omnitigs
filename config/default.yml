@@ -431,7 +431,7 @@ reports:
               "-x": "rs"
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
-      - shortname: "wtdbg2 rs inj Y-to-V"
+      - shortname: "wtdbg2 rs injfrg Y-to-V"
         assembler:
           wtdbg2:
             cli_arguments:
