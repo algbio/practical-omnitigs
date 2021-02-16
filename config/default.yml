@@ -206,8 +206,6 @@ reports:
         genome: "D.melanogaster_ISO1"
       - shortname: "Ming."
         genome: "Minghui63"
-      - shortname: "HG002"
-        genome: "HG002"
 
   "verify_quast":
     argument_matrix:
