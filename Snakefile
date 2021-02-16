@@ -1015,7 +1015,7 @@ rule wtdbg2:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 100000),
     shell: """
-        '{input.binary}' {params.genome_len_arg} {params.args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' {params.cache_args} {params.inject_unitigs_args} {params.inject_fragment_unitigs_args} 2>&1 | tee '{output.log}'
+        '{input.binary}' -g {params.genome_len_arg} {params.args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' {params.cache_args} {params.inject_unitigs_args} {params.inject_fragment_unitigs_args} 2>&1 | tee '{output.log}'
 
         if [ ! -z '{input.cached_kbm}' ]; then
             ln -sr '{input.cached_kbm}' '{output.kbm}'
