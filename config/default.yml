@@ -431,6 +431,13 @@ reports:
               "-x": "rs"
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "wtdbg2 rs inj Y-to-V"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
       - shortname: "flye raw"
         assembler:
           flye:
