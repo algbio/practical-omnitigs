@@ -215,7 +215,7 @@ output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
 	\\documentclass[12pt,a4paper]{article}
-	\\usepackage[cm]{fullpage}
+	\\usepackage[margin=0pt]{geometry}
 	\\usepackage{lmodern}
 	\\usepackage[T1]{fontenc}
 	\\usepackage{graphicx}
