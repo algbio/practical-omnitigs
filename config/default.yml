@@ -18,7 +18,7 @@ experiments:
 
 column_templates:
   default_columns: &default_columns
-    - shortname: "Y-to-V sfa"
+    - shortname: "yv sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
@@ -242,7 +242,11 @@ reports:
           cli_arguments:
             "-x": "rs"
             "-s": [0.02, 0.05, 0.1]
-    columns: *default_columns
+        flye:
+          cli_arguments:
+            - "--pacbio-raw": True
+            - "--pacbio-corr": True
+    columns: *default_columns_with_flye
 
   "C.elegans_contigbreaker":
     argument_matrix:
