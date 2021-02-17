@@ -49,6 +49,13 @@ corrected_genomes = config["corrected_genomes"]
 reports = config["reports"]
 aggregated_reports = config["aggregated_reports"]
 
+class SafeDict(dict):
+    def __missing__(self, key):
+        return '{' + key + '}'
+
+def safe_format(str, **kwargs):
+    return str.format_map(SafeDict(kwargs))
+
 class Arguments(dict):
     @staticmethod
     def from_dict(arguments):
@@ -86,18 +93,26 @@ class Arguments(dict):
                     unselect = [k for k in self[key].keys() if k != value]
                     for k in unselect:
                         self[key].pop(k)
+
+                    if len(self[key]) == 0:
+                        sys.exit("Unselected all values")
                 else:
                     assert type(self[key]) is str or type(self[key]) is int or type(self[key]) is float or type(self[key]) is bool, "type(self[key]) is not str, bool, int or float. key: {}, type(self[key]): {}".format(key, type(self[key]))
                     self[key] = value
             elif type(value) is dict or type(value) is OrderedDict or type(value) is Arguments or value is None:
                 assert type(self[key]) is dict or type(self[key]) is OrderedDict or type(self[key]) is Arguments
                 # If in selection more, unselect all keys not part of the update.
+
+                unselect = []
                 if select:
                     unselect = [k for k in self[key].keys() if k not in value.keys()]
                     for k in unselect:
                         self[key].pop(k)
 
                 self[key].update(value)
+
+                if len(self[key]) == 0 and len(unselect) > 0:
+                    sys.exit("Unselected all values: unselect: {}, selected_keys: {}".format(unselect, value.keys()))
             else:
                 sys.exit("Cannot merge values of types {} and {}".format(type(self[key]), type(value)))
 
@@ -160,6 +175,12 @@ class Arguments(dict):
 
         return result[0]
 
+    def read_simulator_name(self):
+        return self.subarguments_name("read_simulator")
+
+    def read_simulator_arguments(self):
+        return self.subarguments_arguments("read_simulator")
+
     def assembler_name(self):
         return self.subarguments_name("assembler")
 
@@ -195,11 +216,12 @@ class Algorithm:
 
 class Column:
     def __init__(self, root_arguments, additional_arguments):
-        #print("Creating column")
+        #print("Creating column\nroot: {}\nadditional: {}".format(root_arguments, additional_arguments))
         assert type(root_arguments) is Arguments
         assert type(additional_arguments) is Arguments
         self.arguments = root_arguments.copy()
         self.arguments.update(additional_arguments.copy())
+        #print("Result arguments: {}".format(self.arguments))
         self.shortname = self.arguments.pop("shortname")
         self.assembler = self.arguments.assembler_name()
         self.assembler_arguments = self.arguments.assembler_arguments()
@@ -267,11 +289,15 @@ class ArgumentMatrix:
             yield argument_matrix
 
         elif type(argument_matrix) is dict or type(argument_matrix) is OrderedDict or type(argument_matrix) is Arguments:
+            #print("Found dict: {}".format(argument_matrix))
             keys = [None] * len(argument_matrix)
             values = [None] * len(argument_matrix)
             for index, (key, value) in enumerate(argument_matrix.items()):
                 keys[index] = key
-                values[index] = list(ArgumentMatrix._iter(value))
+                if value is None:
+                    values[index] = [None]
+                else:
+                    values[index] = list(ArgumentMatrix._iter(value))
 
             #print("keys: {}".format(keys))
             #print("values: {}".format(values))
@@ -279,14 +305,24 @@ class ArgumentMatrix:
             for value_combination in itertools.product(*values):
                 result = Arguments()
                 for key, value in zip(keys, value_combination):
-                    result[key] = value
+                    if value is not None:
+                        result[key] = value
+
+                if len(result) == 1:
+                    if list(result.values())[0] is None:
+                        yield list(result.keys())[0]
+                        continue
+
                 yield result
 
         elif type(argument_matrix) is list:
             #print("Found list: {}".format(argument_matrix))
             for value in argument_matrix:
-                for list_item in ArgumentMatrix._iter(value):
-                    yield list_item
+                if value is None:
+                    yield None
+                else:
+                    for list_item in ArgumentMatrix._iter(value):
+                        yield list_item
 
         else:
             sys.exit("Illegal type of argument matrix: {}.\nAllowed are dict, OrderedDict, list, str, bool, int and float".format(type(argument_matrix)))
@@ -296,11 +332,11 @@ for report_name, report_definition in reports.items():
     argument_matrix = ArgumentMatrix(report_definition.setdefault("argument_matrix", {}))
     report_definition["argument_matrix"] = argument_matrix
 
-    #print("Matrix of {} has length {}".format(report_name, len(argument_matrix)))
-    #entries = list(iter(argument_matrix))
-    #print("Entries in matrix:")
-    #for entry in entries:
-    #    print(entry)
+    # print("Matrix of {} has length {}".format(report_name, len(argument_matrix)))
+    # entries = list(iter(argument_matrix))
+    # print("Entries in matrix:")
+    # for entry in entries:
+    #     print(entry)
 
     for arguments in argument_matrix:
         columns = []
@@ -345,6 +381,7 @@ print("Finished config preprocessing", flush = True)
 #########################
 
 GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads/reads.fa"
+GENOME_SIMULATED_READS_FORMAT = DATADIR + "genomes/{genome}/simulated_reads/{read_simulator_name}/{read_simulator_arguments}/reads.fa"
 CORRECTION_SHORT_READS_FORMAT = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa"
 GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference/reference.fa"
 
@@ -653,7 +690,11 @@ def get_genome_reference_from_wildcards(wildcards):
 def get_genome_reads_from_wildcards(wildcards):
     try:
         arguments = Arguments.from_str(wildcards.arguments)
-        return GENOME_READS_FORMAT.format(genome = arguments["genome"])
+
+        if arguments.read_simulator_name() is None or arguments.read_simulator_name() == "none":
+            return GENOME_READS_FORMAT.format(genome = arguments["genome"])
+        else:
+            return GENOME_SIMULATED_READS_FORMAT.format(genome = arguments["genome"], read_simulator_name = arguments.read_simulator_name(), read_simulator_arguments = arguments.read_simulator_arguments())
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -1129,6 +1170,29 @@ rule flye:
                mail_type = "END",
     shell: "'{input.script}' {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
 
+#############################
+###### Read Simulation ######
+#############################
+
+def get_perfect_read_simulator_args_from_wildcards(wildcards):
+    try:
+        read_simulator_arguments = Arguments.from_str(wildcards.read_simulator_arguments)
+        cli_arguments = read_simulator_arguments.get("cli_arguments", None)
+        if cli_arguments is None:
+            return ""
+
+        return cli_arguments.to_argument_string()
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+rule simulate_perfect_reads:
+    input:  reference = GENOME_REFERENCE_FORMAT,
+            script = "scripts/simulate_perfect_reads.py",
+    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "perfect"),
+    params: cli_arguments = get_perfect_read_simulator_args_from_wildcards,
+    conda: "config/conda-simulate-perfect-reads-env.yml",
+    shell:  "'{input.script}' {params.cli_arguments} --reference '{input.reference}' --output '{output.simulated_reads}'"
 
 #########################################
 ###### Long Read Input Preparation ######

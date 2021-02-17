@@ -160,6 +160,7 @@ column_templates:
         contigbreaker:
 
 reports:
+
   "Flye_comparison":
     argument_matrix:
       genome: "C.elegans"
@@ -246,6 +247,13 @@ reports:
           cli_arguments:
             - "--pacbio-raw": True
             - "--pacbio-corr": True
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
     columns: *default_columns_with_flye
 
   "C.elegans_contigbreaker":
@@ -257,6 +265,21 @@ reports:
             "-x": "rs"
     columns: *contigbreaker_columns
 
+  "C.elegans_simulated":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+      read_simulator:
+        perfect:
+          cli_arguments:
+            "--read-length-interval": "15000 25000"
+            "--coverage": 20
+            "--distribution": "cut"
+    columns: *default_columns
+
   "A.thaliana":
     argument_matrix:
       genome: "A.thaliana"
@@ -264,6 +287,21 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "sq"
+    columns: *default_columns
+
+  "A.thaliana_simulated":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "sq"
+      read_simulator:
+        perfect:
+          cli_arguments:
+            "--read-length-interval": "15000 25000"
+            "--coverage": 20
+            "--distribution": "cut"
     columns: *default_columns
 
   "A.thaliana_contigbreaker":
