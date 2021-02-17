@@ -201,7 +201,7 @@ def write_image(output_file, caption, file, natwidth, natheight):
 		os.symlink(os.path.abspath(file), hashlink)
 	except OSError:
 		print("Error: could not create symlink, but just continuing because it might have been correctly created concurrently.")
-        traceback.print_exc()
+		traceback.print_exc()
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
