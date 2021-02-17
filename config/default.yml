@@ -25,97 +25,97 @@ column_templates:
             "--skip-fragment-assembly": True
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "wtdbg2 sfa"
+    - shortname: "w2 sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
-    - shortname: "Y-to-V"
+    - shortname: "yv"
       select_assembler:
         wtdbg2:
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "frg Y-to-V"
+    - shortname: "frg yv"
       select_assembler:
         wtdbg2:
           fragment_injections:
             "wtdbg2-inject-fragment-trivial-omnitigs": True
-    - shortname: "wtdbg2"
+    - shortname: "w2"
       select_assembler:
         wtdbg2:
 
   default_columns_with_flye: &default_columns_with_flye
-    - shortname: "Y-to-V sfa"
+    - shortname: "yv sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "wtdbg2 sfa"
+    - shortname: "w2 sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
-    - shortname: "Y-to-V"
+    - shortname: "yv"
       select_assembler:
         wtdbg2:
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "frg Y-to-V"
+    - shortname: "frg yv"
       select_assembler:
         wtdbg2:
           fragment_injections:
             "wtdbg2-inject-fragment-trivial-omnitigs": True
-    - shortname: "wtdbg2"
+    - shortname: "w2"
       select_assembler:
         wtdbg2:
     - shortname: "flye"
       select_assembler: "flye"
 
   wide_comparison_columns: &wide_comparison_columns
-    - shortname: "wtdbg2 sfa"
+    - shortname: "w2 sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
-    - shortname: "Y-to-V sfa"
+    - shortname: "yv sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "Y-to-V"
+    - shortname: "yv"
       select_assembler:
         wtdbg2:
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "wtdbg2"
+    - shortname: "w2"
       select_assembler:
         wtdbg2:
-    - shortname: "flye"
+    - shortname: "fy"
       select_assembler: "flye"
 
   contigbreaker_columns: &contigbreaker_columns
-    - shortname: "Y-to-V sfa"
+    - shortname: "yv sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "wtdbg2 sfa"
+    - shortname: "w2 sfa"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
-    - shortname: "Y-to-V"
+    - shortname: "yv"
       select_assembler:
         wtdbg2:
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "frg Y-to-V"
+    - shortname: "frg yv"
       select_assembler:
         wtdbg2:
           fragment_injections:
@@ -123,7 +123,7 @@ column_templates:
     - shortname: "wtdbg2"
       select_assembler:
         wtdbg2:
-    - shortname: "Y-to-V sfa brk"
+    - shortname: "yv sfa brk"
       select_assembler:
         wtdbg2:
           cli_arguments:
@@ -132,28 +132,28 @@ column_templates:
             "wtdbg2-inject-trivial-omnitigs": True
       select_postprocessor:
         contigbreaker:
-    - shortname: "wtdbg2 sfa brk"
+    - shortname: "w2 sfa brk"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "--skip-fragment-assembly": True
       select_postprocessor:
         contigbreaker:
-    - shortname: "Y-to-V brk"
+    - shortname: "yv brk"
       select_assembler:
         wtdbg2:
           cli_arguments:
             "wtdbg2-inject-trivial-omnitigs": True
       select_postprocessor:
         contigbreaker:
-    - shortname: "frg Y-to-V brk"
+    - shortname: "frg yv brk"
       select_assembler:
         wtdbg2:
           fragment_injections:
             "wtdbg2-inject-fragment-trivial-omnitigs": True
       select_postprocessor:
         contigbreaker:
-    - shortname: "wtdbg2 brk"
+    - shortname: "w2 brk"
       select_assembler:
         wtdbg2:
       select_postprocessor:
@@ -168,19 +168,19 @@ reports:
           cli_arguments:
             "-x": "rs"
     columns:
-      - shortname: "wtdbg2 sfa"
+      - shortname: "w2 sfa"
         select_assembler:
           wtdbg2:
             cli_arguments:
               "--skip-fragment-assembly": True
-      - shortname: "Y-to-V sfa"
+      - shortname: "yv sfa"
         select_assembler:
           wtdbg2:
             cli_arguments:
               "--skip-fragment-assembly": True
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
-      - shortname: "Y-to-V"
+      - shortname: "yv"
         select_assembler:
           wtdbg2:
             injections:
@@ -188,12 +188,12 @@ reports:
       - shortname: "wtdbg2"
         select_assembler:
           wtdbg2:
-      - shortname: "flye raw"
+      - shortname: "fy raw"
         select_assembler:
           flye:
             cli_arguments:
               "--pacbio-raw": True
-      - shortname: "flye corr"
+      - shortname: "fy corr"
         select_assembler:
           flye:
             cli_arguments:
@@ -373,30 +373,30 @@ reports:
               "--skip-fragment-assembly": True
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
-      - shortname: "wtdbg2 sfa"
+      - shortname: "w2 sfa"
         select_assembler:
           wtdbg2:
             cli_arguments:
               "--skip-fragment-assembly": True
-      - shortname: "Y-to-V"
+      - shortname: "yv"
         select_assembler:
           wtdbg2:
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
-      - shortname: "frg Y-to-V"
+      - shortname: "frg yv"
         select_assembler:
           wtdbg2:
             fragment_injections:
               "wtdbg2-inject-fragment-trivial-omnitigs": True
-      - shortname: "wtdbg2"
+      - shortname: "w2"
         select_assembler:
           wtdbg2:
-      - shortname: "flye corr"
+      - shortname: "fy corr"
         select_assembler:
           flye:
             cli_arguments:
               "--pacbio-corr": True
-      - shortname: "flye hifi"
+      - shortname: "fy hifi"
         select_assembler:
           flye:
             cli_arguments:
@@ -419,12 +419,12 @@ reports:
     argument_matrix:
       genome: "HG002_HiFi"
     columns:
-      - shortname: "flye corr"
+      - shortname: "fy corr"
         assembler:
           flye:
             cli_arguments:
               "--pacbio-corr": True
-      - shortname: "flye hifi"
+      - shortname: "fy hifi"
         assembler:
           flye:
             cli_arguments:
@@ -434,26 +434,26 @@ reports:
     argument_matrix:
       genome: "E.coli"
     columns:
-      - shortname: "wtdbg2 rs"
+      - shortname: "w2 rs"
         assembler:
           wtdbg2:
             cli_arguments:
               "-x": "rs"
-      - shortname: "wtdbg2 rs inj Y-to-V"
+      - shortname: "yv rs"
         assembler:
           wtdbg2:
             cli_arguments:
               "-x": "rs"
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
-      - shortname: "wtdbg2 rs injfrg Y-to-V"
+      - shortname: "fyv rs"
         assembler:
           wtdbg2:
             cli_arguments:
               "-x": "rs"
             fragment_injections:
               "wtdbg2-inject-fragment-trivial-omnitigs": True
-      - shortname: "flye raw"
+      - shortname: "fy raw"
         assembler:
           flye:
             cli_arguments:
