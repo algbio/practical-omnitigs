@@ -6,6 +6,7 @@ Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> 
 """
 
 import sys, subprocess, hashlib, os, pathlib
+import traceback
 
 hashdir = os.path.abspath(sys.argv[1])
 genome_name_file_name = sys.argv[2]
@@ -195,7 +196,12 @@ def write_image(output_file, caption, file, natwidth, natheight):
 		pass
 
 	pathlib.Path(hashlinkdir).mkdir(parents=True, exist_ok=True)
-	os.symlink(os.path.abspath(file), hashlink)
+
+	try:
+		os.symlink(os.path.abspath(file), hashlink)
+	except OSError:
+		print("Error: could not create symlink, but just continuing because it might have been correctly created concurrently.")
+        traceback.print_exc()
 
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
