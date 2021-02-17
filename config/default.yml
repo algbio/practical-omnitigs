@@ -265,21 +265,6 @@ reports:
             "-x": "rs"
     columns: *contigbreaker_columns
 
-  "C.elegans_simulated":
-    argument_matrix:
-      genome: "C.elegans"
-      assembler:
-        wtdbg2:
-          cli_arguments:
-            "-x": "rs"
-      read_simulator:
-        perfect:
-          cli_arguments:
-            "--read-length-interval": "15000 25000"
-            "--coverage": 20
-            "--distribution": "cut"
-    columns: *default_columns
-
   "A.thaliana":
     argument_matrix:
       genome: "A.thaliana"
@@ -287,21 +272,13 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "sq"
-    columns: *default_columns
-
-  "A.thaliana_simulated":
-    argument_matrix:
-      genome: "A.thaliana"
-      assembler:
-        wtdbg2:
-          cli_arguments:
-            "-x": "sq"
       read_simulator:
-        perfect:
-          cli_arguments:
-            "--read-length-interval": "15000 25000"
-            "--coverage": 20
-            "--distribution": "cut"
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
     columns: *default_columns
 
   "A.thaliana_contigbreaker":
@@ -320,6 +297,13 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "rs"
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
     columns: *default_columns
 
   "D.melanogaster_A4_contigbreaker":
@@ -338,6 +322,13 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "ont"
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
     columns: *default_columns
 
   "D.melanogaster_ISO1_contigbreaker":
@@ -362,6 +353,13 @@ reports:
         flye:
           cli_arguments:
             "--pacbio-hifi": [True]
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
     columns: *default_columns_with_flye
 
   "Minghui63_contigbreaker":
@@ -383,6 +381,13 @@ reports:
         flye:
           cli_arguments:
             - "--pacbio-raw": [True]
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
     columns: *default_columns_with_flye
   
   "HG002_Flye":
