@@ -1971,5 +1971,5 @@ rule sync_results:
     conda: "config/conda-rsync-env.yml"
     shell: """
         mkdir -p data/reports
-        rsync --verbose --recursive --relative turso:'/proj/sebschmi/git/practical-omnitigs/data/reports/./*/*report.pdf' data/reports
+        rsync --verbose --recursive --relative --include="*/" --include="report.pdf" --exclude="*" turso:'/proj/sebschmi/git/practical-omnitigs/data/reports/' data/reports
         """
