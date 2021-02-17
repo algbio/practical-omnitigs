@@ -1117,6 +1117,8 @@ def get_flye_other_args_from_wildcards(wildcards):
         cli_arguments.pop("--pacbio-raw", None)
         cli_arguments.pop("--pacbio-corr", None)
         cli_arguments.pop("--pacbio-hifi", None)
+        cli_arguments.pop("--nano-raw", None)
+        cli_arguments.pop("--nano-corr", None)
 
         return cli_arguments.to_argument_string()
     except Exception:
@@ -1140,6 +1142,10 @@ def get_flye_input_arg_from_wildcards(wildcards):
             input_args.append("--pacbio-corr")
         if "--pacbio-hifi" in cli_arguments:
             input_args.append("--pacbio-hifi")
+        if "--nano-raw" in cli_arguments:
+            input_args.append("--nano-raw")
+        if "--nano-corr" in cli_arguments:
+            input_args.append("--nano-corr")
         
         if len(input_args) == 0:
             raise Exception("No flye input args given")

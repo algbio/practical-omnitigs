@@ -272,6 +272,9 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "sq"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
       read_simulator:
         - null
         - perfect:
@@ -279,7 +282,7 @@ reports:
               "--read-length-interval": "15000 25000"
               "--coverage": 20
               "--distribution": "cut"
-    columns: *default_columns
+    columns: *default_columns_with_flye
 
   "A.thaliana_contigbreaker":
     argument_matrix:
@@ -297,6 +300,9 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "rs"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
       read_simulator:
         - null
         - perfect:
@@ -304,7 +310,7 @@ reports:
               "--read-length-interval": "15000 25000"
               "--coverage": 20
               "--distribution": "cut"
-    columns: *default_columns
+    columns: *default_columns_with_flye
 
   "D.melanogaster_A4_contigbreaker":
     argument_matrix:
@@ -322,6 +328,9 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "ont"
+        flye:
+          cli_arguments:
+            "--nano-raw": True
       read_simulator:
         - null
         - perfect:
@@ -329,7 +338,7 @@ reports:
               "--read-length-interval": "15000 25000"
               "--coverage": 20
               "--distribution": "cut"
-    columns: *default_columns
+    columns: *default_columns_with_flye
 
   "D.melanogaster_ISO1_contigbreaker":
     argument_matrix:
@@ -458,24 +467,8 @@ reports:
             "-x": ["rs", "sq", "ccs"]
         flye:
           cli_arguments:
-            - "--pacbio-corr": [True]
-            - "--pacbio-hifi": [True]
+            "--pacbio-hifi": [True]
     columns: *default_columns_with_flye
-  
-  "HG002_HiFi_Flye":
-    argument_matrix:
-      genome: "HG002_HiFi"
-    columns:
-      - shortname: "fy corr"
-        assembler:
-          flye:
-            cli_arguments:
-              "--pacbio-corr": True
-      - shortname: "fy hifi"
-        assembler:
-          flye:
-            cli_arguments:
-              "--pacbio-hifi": True
 
   "E.coli":
     argument_matrix:
