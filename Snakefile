@@ -1247,16 +1247,20 @@ rule simulate_hifi_reads_bbmap:
     params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads)
     conda:  "config/conda-bbmap-env.yml"
     shell:  """
+        REFERENCE=$(realpath -s '{input.reference}')
+        OUTPUT=$(realpath -s '{output.simulated_reads}')
+        LOG=$(realpath -s '{log.log}')
+
         cd '{params.working_directory}'
         randomreads.sh build=1 \
         ow=t seed=1 \
-        ref='{input.reference}' \
-        illuminanames=t addslash=t \
+        ref="$REFERENCE" \
+        simplenames=t \
         pacbio=t pbmin=0.001 pbmax=0.01 \
         coverage=30 paired=f \
         gaussianlength=t \
         minlength=9000 midlength=10000 maxlength=12000 \
-        out='{output.simulated_reads}' 2>&1 | tee '{log.log}'
+        out="$OUTPUT" 2>&1 | tee "$LOG"
         """
 
 #########################################
