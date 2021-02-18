@@ -1750,7 +1750,7 @@ rule install_quast:
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout 1e9d41ba5928e32e4e3414196fac33d3a232c698
+    git checkout 1f2ba4cf40f963f89fbabc9d48e13ebd5c65a77d
     """
 
 rule run_quast_bcalm2:

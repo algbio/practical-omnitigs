@@ -5,6 +5,7 @@ import sys
 import random
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 
 parser = argparse.ArgumentParser(description="Simulate perfect reads from a reference")
 parser.add_argument("--reference", type=str, required=True, help="Path to the reference file")
@@ -73,20 +74,20 @@ def simulate_cut_reads():
 			for repetition in range(int(coverage)):
 				offset = random.randint(-read_length_interval[0] + 1, 0)
 
-				while offset < len(reference.seq):
+				while offset < len(sequence):
 					length = random.randint(read_length_interval[0], read_length_interval[1])
 					limit = offset + length
 					offset = max(0, offset)
-					limit = min(len(reference.seq), limit)
+					limit = min(len(sequence), limit)
 					if limit - offset >= read_length_interval[0] and limit - offset <= read_length_interval[1]:
-						read_seq = reference.seq[offset:limit]
+						read_seq = sequence[offset:limit]
 						if random.randint(0, 1) == 0:
 							read_name = str(reference.id) + "_" + str(seqence_offset + offset) + "_" + str(seqence_offset + limit)
 						else:
 							read_seq = reverse_complement_sequence(read_seq)
 							read_name = str(reference.id) + "_" + str(seqence_offset + limit) + "_" + str(seqence_offset + offset)
 
-						yield SeqRecord(read_seq, read_name, "", "simulated with cut distribution")
+						yield SeqRecord(Seq(str(read_seq, "ASCII")), read_name, "", "simulated with cut distribution")
 					offset = limit
 					read_id += 1
 

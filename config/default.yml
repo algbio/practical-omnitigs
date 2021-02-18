@@ -551,6 +551,21 @@ reports:
         assembler: "hifiasm"
         read_simulator: "bbmap_hifi"
 
+  "wtdbg2_deep_analysis":
+    columns:
+      - shortname: "w2 rs"
+        genome: "E.coli"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+        read_simulator:
+          perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
+
 aggregated_reports:
   "aggregated":
     reports:
