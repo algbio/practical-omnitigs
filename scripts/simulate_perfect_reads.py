@@ -38,7 +38,7 @@ def break_reference(reference):
 			reference[limit] = ord('T')
 		elif reference[limit] == ord('N'):
 			if limit - offset >= read_length_interval[0]:
-				yield reference[offset:limit]
+				yield offset, reference[offset:limit]
 			offset = limit + 1
 		else:
 			sys.exit("Found unknown character in reference: {}".format(str(reference[limit:limit + 1], "ASCII")))
@@ -46,12 +46,28 @@ def break_reference(reference):
 		limit += 1
 
 	if limit - offset >= read_length_interval[0]:
-		yield reference[offset:limit]
+		yield offset, reference[offset:limit]
+
+def reverse_complement_sequence(sequence):
+	reverse = bytearray(sequence)
+	for i, c in enumerate(sequence):
+		if c == ord('A'):
+			rc = ord('T')
+		elif c == ord('T'):
+			rc = ord('A')
+		elif c == ord('C'):
+			rc = ord('G')
+		elif c == ord('G'):
+			rc = ord('C')
+		else:
+			sys.exit("Found unknown character in sequence: {}".format(str(b"" + c, "ASCII")))
+		reverse[len(sequence) - i - 1] = rc
+	return reverse
 
 def simulate_cut_reads():
 	read_id = 0
 	for reference in SeqIO.parse(reference_path, "fasta"):
-		for sequence in break_reference(bytearray(str(reference.seq).encode("ASCII"))):
+		for seqence_offset, sequence in break_reference(bytearray(str(reference.seq).encode("ASCII"))):
 			print("Got subsequence of length {}".format(len(sequence)))
 
 			for repetition in range(int(coverage)):
@@ -63,7 +79,14 @@ def simulate_cut_reads():
 					offset = max(0, offset)
 					limit = min(len(reference.seq), limit)
 					if limit - offset >= read_length_interval[0] and limit - offset <= read_length_interval[1]:
-						yield SeqRecord(reference.seq[offset:limit], str(read_id), "", "simulated with cut distribution")
+						read_seq = reference.seq[offset:limit]
+						if random.randint(0, 1) == 0:
+							read_name = str(reference.id) + "_" + str(seqence_offset + offset) + "_" + str(seqence_offset + limit)
+						else:
+							read_seq = reverse_complement_sequence(read_seq)
+							read_name = str(reference.id) + "_" + str(seqence_offset + limit) + "_" + str(seqence_offset + offset)
+
+						yield SeqRecord(read_seq, read_name, "", "simulated with cut distribution")
 					offset = limit
 					read_id += 1
 
