@@ -413,8 +413,43 @@ def get_all_report_files():
         traceback.print_exc()
         sys.exit("Catched exception")
 
+def get_all_report_files_without_human():
+    try:
+        result = []
+        reports_with_human = set()
+        for report_name, report_definition in reports.items():
+            for report_file_name in report_definition["report_files"].keys():
+                append = True
+                for column in report_definition["report_files"][report_file_name].columns:
+                    if column.arguments.get("genome", None) in ["HG002", "HG002_HiFi", "HG002_ratatosk"]:
+                        append = False
+                        reports_with_human.add(report_name)
+                        break
+
+                if append:
+                    result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "report.pdf")
+
+        for aggregated_report_name in aggregated_reports.keys():
+            append = True
+            for report_name in aggregated_reports[aggregated_report_name]:
+                if report_name in reports_with_human:
+                    append = False
+                    break
+
+            if append:
+                result.append(AGGREGATED_REPORT_PREFIX_FORMAT.format(aggregated_report_name = aggregated_report_name) + "aggregated-report.pdf")
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+rule report_all_without_human:
+    input:  get_all_report_files_without_human(),
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
 rule report_all:
-    input: get_all_report_files()
+    input:  get_all_report_files(),
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
