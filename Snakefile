@@ -387,6 +387,7 @@ GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference/reference.fa"
 
 ALGORITHM_PREFIX_FORMAT = DATADIR + "algorithms/{arguments}/"
 WTDBG2_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "wtdbg2/"
+HIFIASM_PREFIX_FORMAT = os.path.join(ALGORITHM_PREFIX_FORMAT, "hifiasm")
 
 QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
 
@@ -759,6 +760,8 @@ def get_raw_assembly_file_from_wildcards(wildcards):
             result = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta"
         elif assembler_name == "wtdbg2":
             result = WTDBG2_PREFIX_FORMAT + "wtdbg2.raw.fa"
+        elif assembler_name == "hifiasm":
+            result = os.path.join(HIFIASM_PREFIX_FORMAT, "assembly.p_ctg.fa")
         elif assembler_name == "reference":
             result = GENOME_REFERENCE_FORMAT
         else:
@@ -779,7 +782,12 @@ rule select_assembler:
 
 def get_assembly_postprocessing_target_file_from_wildcards(wildcards):
     try:
-        arguments = Arguments.from_str(wildcards.arguments)
+        try:
+            arguments = Arguments.from_str(wildcards.arguments)
+        except json.decoder.JSONDecodeError:
+            traceback.print_exc()
+            raise Exception("JSONDecodeError: {}".format(wildcards.arguments))
+
         postprocessor_name = arguments.postprocessor_name()
         if postprocessor_name == "contigbreaker":
             return ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa"
@@ -1176,6 +1184,37 @@ rule flye:
                mail_type = "END",
     shell: "'{input.script}' {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
 
+#####################
+###### Hifiasm ######
+#####################
+
+rule hifiasm:
+    input:  reads = get_genome_reads_from_wildcards,
+    output: contigs = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.p_ctg.gfa"),
+            directory = directory(os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm")),
+    params: output_prefix = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly"),
+    conda:  "config/conda-hifiasm-env.yml"
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 50000),
+    shell: "hifiasm -t {threads} -o '{params.output_prefix}' '{input.reads}'"
+
+localrules: hifiasm_gfa_to_fa
+rule hifiasm_gfa_to_fa:
+    input:  gfa = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.p_ctg.gfa"),
+    output: fa = os.path.join(HIFIASM_PREFIX_FORMAT, "assembly.p_ctg.fa"),
+    run:
+            with open(input.gfa, 'r') as input_file, open(output.fa, 'w') as output_file:
+                for line in input_file:
+                    if line[0] != "S":
+                        continue
+
+                    columns = line.split("\t")
+                    output_file.write(">{}\n{}\n".format(columns[1], columns[2]))
+
+
 #############################
 ###### Read Simulation ######
 #############################
@@ -1196,9 +1235,29 @@ rule simulate_perfect_reads:
     input:  reference = GENOME_REFERENCE_FORMAT,
             script = "scripts/simulate_perfect_reads.py",
     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "perfect"),
+    log:    log = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "perfect") + ".log",
     params: cli_arguments = get_perfect_read_simulator_args_from_wildcards,
-    conda: "config/conda-simulate-perfect-reads-env.yml",
+    conda:  "config/conda-simulate-perfect-reads-env.yml",
     shell:  "'{input.script}' {params.cli_arguments} --reference '{input.reference}' --output '{output.simulated_reads}'"
+
+rule simulate_hifi_reads_bbmap:
+    input:  reference = GENOME_REFERENCE_FORMAT,
+    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi"),
+    log:    log = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi") + ".log",
+    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads)
+    conda:  "config/conda-bbmap-env.yml"
+    shell:  """
+        cd '{params.working_directory}'
+        randomreads.sh build=1 \
+        ow=t seed=1 \
+        ref='{input.reference}' \
+        illuminanames=t addslash=t \
+        pacbio=t pbmin=0.001 pbmax=0.01 \
+        coverage=30 paired=f \
+        gaussianlength=t \
+        minlength=9000 midlength=10000 maxlength=12000 \
+        out='{output.simulated_reads}' 2>&1 | tee '{log.log}'
+        """
 
 #########################################
 ###### Long Read Input Preparation ######
