@@ -73,6 +73,49 @@ column_templates:
     - shortname: "flye"
       select_assembler: "flye"
 
+  hifi_columns: &hifi_columns
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+            "-x": "ccs"
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+            "-x": "ccs"
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          cli_arguments:
+            "--pacbio-hifi": True
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+
   wide_comparison_columns: &wide_comparison_columns
     - shortname: "w2 sfa"
       select_assembler:
@@ -160,6 +203,12 @@ column_templates:
         contigbreaker:
 
 reports:
+
+  "sim_hifi":
+    argument_matrix:
+      genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
+      read_simulator: "bbmap_hifi"
+    columns: *hifi_columns
 
   "Flye_comparison":
     argument_matrix:
