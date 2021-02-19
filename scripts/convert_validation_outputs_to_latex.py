@@ -217,9 +217,11 @@ output_file.write(
 	\\documentclass[12pt,a4paper]{article}
 	\\usepackage[margin=0pt]{geometry}
 	\\usepackage{lmodern}
+	\\usepackage{pdflscape}
 	\\usepackage[T1]{fontenc}
 	\\usepackage{graphicx}
 	\\begin{document}
+	\\begin{landscape}
 	\\fontsize{6pt}{7pt}\\selectfont
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
@@ -277,6 +279,7 @@ if bandage_png_name != 'none':
 
 output_file.write(
 	"""
+	\\end{landscape}
 	\\end{document}
 	"""
 )

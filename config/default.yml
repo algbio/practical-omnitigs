@@ -202,6 +202,80 @@ column_templates:
       select_postprocessor:
         contigbreaker:
 
+  fragment_injection_step_columns: &fragment_injection_step_columns
+    - shortname: "wtdbg2"
+      select_assembler: "wtdbg2"
+    - shortname: "w2 frg1 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 1
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 1
+    - shortname: "w2 frg2 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 2
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 2
+    - shortname: "w2 frg3 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 3
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 3
+    - shortname: "w2 frg4 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 4
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 4
+    - shortname: "w2 frg5 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 5
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 5
+    - shortname: "w2 frg6 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 6
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 6
+    - shortname: "w2 frg7 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 7
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 7
+    - shortname: "w2 frg8 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 8
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 8
+    - shortname: "w2 frg9 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 9
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 9
+    - shortname: "w2 frg10 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 10
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 10
+
 reports:
 
   "sim_hifi":
@@ -209,6 +283,16 @@ reports:
       genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
       read_simulator: "bbmap_hifi"
     columns: *hifi_columns
+
+  "sim_hifi_fragment_correction_steps":
+    argument_matrix:
+      genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
+      read_simulator: "bbmap_hifi"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    columns: *fragment_injection_step_columns
 
   "Flye_comparison":
     argument_matrix:
