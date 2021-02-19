@@ -389,6 +389,15 @@ reports:
               "--distribution": "cut"
     columns: *default_columns_with_flye
 
+  "C.elegans_fragment_correction_steps":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+    columns: *fragment_injection_step_columns
+
   "C.elegans_contigbreaker":
     argument_matrix:
       genome: "C.elegans"
@@ -416,6 +425,15 @@ reports:
               "--coverage": 20
               "--distribution": "cut"
     columns: *default_columns_with_flye
+
+  "A.thaliana_fragment_correction_steps":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "sq"
+    columns: *fragment_injection_step_columns
 
   "A.thaliana_contigbreaker":
     argument_matrix:
@@ -445,6 +463,15 @@ reports:
               "--distribution": "cut"
     columns: *default_columns_with_flye
 
+  "D.melanogaster_A4_fragment_correction_steps":
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+    columns: *fragment_injection_step_columns
+
   "D.melanogaster_A4_contigbreaker":
     argument_matrix:
       genome: "D.melanogaster_A4"
@@ -472,6 +499,15 @@ reports:
               "--coverage": 20
               "--distribution": "cut"
     columns: *default_columns_with_flye
+
+  "D.melanogaster_ISO1_fragment_correction_steps":
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ont"
+    columns: *fragment_injection_step_columns
 
   "D.melanogaster_ISO1_contigbreaker":
     argument_matrix:
@@ -502,7 +538,16 @@ reports:
               "--read-length-interval": "15000 25000"
               "--coverage": 20
               "--distribution": "cut"
-    columns: *default_columns_with_flye
+    columns: *hifi_columns
+
+  "Minghui63_fragment_correction_steps":
+    argument_matrix:
+      genome: "Minghui63"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    columns: *fragment_injection_step_columns
 
   "Minghui63_contigbreaker":
     argument_matrix:
@@ -601,7 +646,7 @@ reports:
         flye:
           cli_arguments:
             "--pacbio-hifi": [True]
-    columns: *default_columns_with_flye
+    columns: *hifi_columns
 
   "E.coli":
     argument_matrix:
