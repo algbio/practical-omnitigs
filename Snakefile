@@ -813,7 +813,7 @@ rule compute_injectable_fragment_contigs_wtdbg2:
     params: command = get_injectable_fragment_contigs_rust_cli_command_from_wildcards
     threads: 1
     resources: mem_mb = 48000
-    shell: "'{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 #################################
 ###### Postprocess Contigs ######

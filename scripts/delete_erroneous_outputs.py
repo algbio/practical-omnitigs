@@ -35,13 +35,19 @@ for log_file in log_files:
 
 	with open(log_file, 'r') as f:
 		alllines = '\n'.join(f.readlines())
+		has_outfiles = False
 
-		outfiles = alllines.split("Select jobs to execute...")[1]
-		outfiles = outfiles.split("output:")[1]
-		outfiles = outfiles.split("jobid:")[0].strip()
-		outfiles = outfiles.split(", ")
+		try:
+			outfiles = alllines.split("Select jobs to execute...")[1]
+			outfiles = outfiles.split("output:")[1]
+			outfiles = outfiles.split("jobid:")[0].strip()
+			outfiles = outfiles.split(", ")
+			has_outfiles = True
+		except IndexError:
+			# Apparently, this job did not even get to output its metadata, so it surely produced no output files.
+			pass
 
-		if "1 of 1 steps (100%) done" not in alllines:
+		if has_outfiles and "1 of 1 steps (100%) done" not in alllines:
 			for out_file in outfiles:
 				silentremove(out_file)
 
