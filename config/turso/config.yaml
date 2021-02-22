@@ -1,7 +1,7 @@
 use-conda: true
 cluster: >-
   sbatch
-  --job-name=practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ +//g")
+  --job-name=practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ //g")
   --workdir=/proj/sebschmi/git/practical-omnitigs
   -o "$(cat .logdir)/practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< '{wildcards}'):%j.log"
   -p {resources.queue}
