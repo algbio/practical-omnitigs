@@ -1320,6 +1320,8 @@ rule simulate_hifi_reads_bbmap:
     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi"),
     log:    log = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi") + ".log",
     params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads)
+    resources:
+        mem_mb = 1500,
     conda:  "config/conda-bbmap-env.yml"
     shell:  """
         REFERENCE=$(realpath -s '{input.reference}')
@@ -1328,6 +1330,7 @@ rule simulate_hifi_reads_bbmap:
 
         cd '{params.working_directory}'
         randomreads.sh build=1 \
+        -Xmx1024m \
         ow=t seed=1 \
         ref="$REFERENCE" \
         simplenames=t \
