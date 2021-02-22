@@ -23,7 +23,7 @@ if any(r in states for r in completed_status):
   print("success")
 elif any(r in states for r in running_status):
   print("running")
-elif all(r in states for r in failed_status):
+elif all(r in failed_status for r in states):
   print("failed")
 else:
   print("Unknown state combination: {}".format(states))
