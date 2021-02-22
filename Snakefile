@@ -1180,7 +1180,7 @@ rule install_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout 81b3a4d83e61db21e55c5a44d8761966814ca822
+        git checkout e0df58b32d6611eceda03ea43570a580156387da
 
         make
         """
