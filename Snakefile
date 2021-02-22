@@ -807,9 +807,9 @@ rule compute_injectable_fragment_contigs_wtdbg2:
     input:  dot = get_injectable_fragment_contigs_input_dot_file_from_wildcards,
             binary = PROGRAMDIR + "target/release/cli",
     output: file = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/contigwalks",
-            log = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/compute_injectable_contigs.log",
             latex = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/compute_injectable_contigs.tex",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/contigwalks.completed"),
+    log:    log = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/compute_injectable_contigs.log",
     params: command = get_injectable_fragment_contigs_rust_cli_command_from_wildcards
     threads: 1
     resources: mem_mb = 48000
