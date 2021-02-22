@@ -200,9 +200,13 @@ class Arguments(dict):
             return None
 
     def __str__(self):
-        return json.dumps(self, separators = (',', ':'))
+        string = json.dumps(self, separators = (',', ':'))
+        n = 200
+        result = "/_/".join([string[i:i+n] for i in range(0, len(string), n)])
+        return result
 
     def from_str(string):
+        string = string.replace("/_/", "")
         return Arguments.from_dict(json.loads(string))
 
     def retain_raw_assembly_arguments(self):
@@ -381,7 +385,7 @@ print("Finished config preprocessing", flush = True)
 #########################
 
 GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads/reads.fa"
-GENOME_SIMULATED_READS_FORMAT = DATADIR + "genomes/{genome}/simulated_reads/{read_simulator_name}/{read_simulator_arguments}/reads.fa"
+GENOME_SIMULATED_READS_FORMAT = DATADIR + "genomes/{genome}/simulated_reads/{read_simulator_name}/s/{read_simulator_arguments}/reads.fa"
 CORRECTION_SHORT_READS_FORMAT = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa"
 GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference/reference.fa"
 
@@ -391,7 +395,7 @@ HIFIASM_PREFIX_FORMAT = os.path.join(ALGORITHM_PREFIX_FORMAT, "hifiasm")
 
 QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
 
-REPORT_PREFIX_FORMAT = REPORTDIR + "{report_name}/{report_file_name}/"
+REPORT_PREFIX_FORMAT = REPORTDIR + "{report_name}/s/{report_file_name}/"
 AGGREGATED_REPORT_PREFIX_FORMAT = REPORTDIR + "{aggregated_report_name}/"
 
 #################################
@@ -483,7 +487,13 @@ rule create_single_bcalm2_report_tex:
 
 def get_report_file(report_name, report_file_name):
     try:
-        return reports[report_name]["report_files"][report_file_name]
+        if report_name not in reports:
+            raise Exception("report_name not in reports: {}".format(report_name))
+        report_files = reports[report_name]["report_files"]
+        if report_file_name not in report_files:
+            raise Exception("report_file_name not in report_files: {}".format(report_file_name))
+
+        return report_files[report_file_name]
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
