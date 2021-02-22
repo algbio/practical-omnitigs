@@ -27,3 +27,4 @@ elif all(r in failed_status for r in states):
   print("failed")
 else:
   print("Unknown state combination: {}".format(states))
+  sys.exit(1)
