@@ -1180,7 +1180,7 @@ rule install_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout e0df58b32d6611eceda03ea43570a580156387da
+        git checkout fe23d1280acc4cdfc43adc6ad25aa5c33767779c
 
         make
         """
@@ -1319,9 +1319,10 @@ rule simulate_hifi_reads_bbmap:
     input:  reference = GENOME_REFERENCE_FORMAT,
     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi"),
     log:    log = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi") + ".log",
-    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads)
+    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
+            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
     resources:
-        mem_mb = 1500,
+        mem_mb = lambda wildcards, params: params.mem_mb + 100,
     conda:  "config/conda-bbmap-env.yml"
     shell:  """
         REFERENCE=$(realpath -s '{input.reference}')
@@ -1330,7 +1331,7 @@ rule simulate_hifi_reads_bbmap:
 
         cd '{params.working_directory}'
         randomreads.sh build=1 \
-        -Xmx1024m \
+        -Xmx{params.mem_mb}m \
         ow=t seed=1 \
         ref="$REFERENCE" \
         simplenames=t \
