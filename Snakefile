@@ -997,7 +997,7 @@ def get_genome_len_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
+def get_wtdbg2_caching_arguments_from_wildcards(wildcards):
     try:
         arguments = Arguments.from_str(wildcards.arguments)
         assembler_arguments = arguments.assembler_arguments()
@@ -1009,6 +1009,14 @@ def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
         cli_arguments.pop("--fragment-correction-steps", None)
         assembler_arguments.pop("injections", None)
         assembler_arguments.pop("fragment_injections", None)
+        return arguments
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
+    try:
+        arguments = get_wtdbg2_caching_arguments_from_wildcards(wildcards)
         return WTDBG2_PREFIX_FORMAT.format(arguments = str(arguments))
     except Exception:
         traceback.print_exc()

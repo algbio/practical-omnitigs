@@ -82,10 +82,10 @@ def simulate_cut_reads():
 					if limit - offset >= read_length_interval[0] and limit - offset <= read_length_interval[1]:
 						read_seq = sequence[offset:limit]
 						if random.randint(0, 1) == 0:
-							read_name = str(reference.id) + "_" + str(seqence_offset + offset) + "_" + str(seqence_offset + limit)
+							read_name = str(read_id) + "_" + str(reference.id) + "_" + str(seqence_offset + offset) + "_" + str(seqence_offset + limit)
 						else:
 							read_seq = reverse_complement_sequence(read_seq)
-							read_name = str(reference.id) + "_" + str(seqence_offset + limit) + "_" + str(seqence_offset + offset)
+							read_name = str(read_id) + "_" + str(reference.id) + "_" + str(seqence_offset + limit) + "_" + str(seqence_offset + offset)
 
 						yield SeqRecord(Seq(str(read_seq, "ASCII")), read_name, "", "simulated with cut distribution")
 					offset = limit
