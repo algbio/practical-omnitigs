@@ -199,6 +199,8 @@ def write_image(output_file, caption, file, natwidth, natheight):
 
 	try:
 		os.symlink(os.path.abspath(file), hashlink)
+	except FileExistsError:
+		print("error: could not create symlink because it already exists. We assume that it is correct.")
 	except OSError:
 		print("Error: could not create symlink, but just continuing because it might have been correctly created concurrently.")
 		traceback.print_exc()
