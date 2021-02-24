@@ -99,7 +99,7 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 		global_value_lines.append(source_report_name.replace("_", "\\_") + " & " + " & ".join(combined_value_line) + "\\\\")
 
 	# Add header and write table
-	table = [global_table_header.replace("Parameter", metric_shortname.replace("_", "\\_"))] + global_value_line
+	table = [global_table_header.replace("Parameter", metric_shortname.replace("_", "\\_"))] + global_value_lines
 	write_table(output_file, caption, len(global_table_header.split("&")) - 1, table)
 
 ##############
