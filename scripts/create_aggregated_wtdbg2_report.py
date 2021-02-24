@@ -89,7 +89,7 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 			if global_table_header is None:
 				global_table_header = table_header
 			elif global_table_header != table_header:
-				sys.exit("Found differing table headers")
+				sys.exit("Found differing table headers: {} != {}".format(global_table_header, table_header))
 			value_line = [value.strip() for value in value_line.split("&")[1:]]
 			if combined_value_line is None:
 				combined_value_line = value_line
