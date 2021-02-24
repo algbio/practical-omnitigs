@@ -702,7 +702,6 @@ aggregated_reports:
       - "A.thaliana"
       - "D.melanogaster_A4"
       - "D.melanogaster_ISO1"
-      - "Minghui63"
 
 
 genomes:
