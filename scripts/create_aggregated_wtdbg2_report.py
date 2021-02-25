@@ -112,10 +112,15 @@ output_file = open(output_file_name, 'w')
 
 output_file.write(
 	"""
-	\\documentclass[10pt,a4paper]{article}
-	\\usepackage[cm]{fullpage}
+	\\documentclass[12pt,a4paper]{article}
+	\\usepackage[margin=0pt]{geometry}
+	\\usepackage{lmodern}
+	\\usepackage{pdflscape}
+	\\usepackage[T1]{fontenc}
 	\\usepackage{graphicx}
 	\\begin{document}
+	\\begin{landscape}
+	\\fontsize{6pt}{7pt}\\selectfont
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
 		\\item[Revision:] """ + str(revision) + """
@@ -146,4 +151,4 @@ write_aggregated_table(output_file, "Number of unique/total local misassemblies.
 ### Footer ###
 ##############
 
-output_file.write("\\end{document}")
+output_file.write("\\end{landscape}\\end{document}")

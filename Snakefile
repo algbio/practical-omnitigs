@@ -209,6 +209,32 @@ class Arguments(dict):
         string = string.replace("/_/", "")
         return Arguments.from_dict(json.loads(string))
 
+    def shortstr(self):
+        string = ""
+        shortened = self.copy()
+        shortened.pop("genome", None)
+        cli_arguments = shortened.get("cli_arguments", None)
+        if type(cli_arguments) is Arguments:
+            for k, v in cli_arguments.items():
+                shortened[k] = v
+            shortened.pop("cli_arguments")
+
+        for key, value in shortened.items():
+            if len(string) > 0:
+                string += ","
+            string += key.replace("-", "")[0] + ":"
+
+            if type(value) is Arguments:
+                string += "{" + value.shortstr() + "}"
+            elif type(value) is int or type(value) is float:
+                string += str(value)
+            elif type(value) is bool:
+                assert value == True
+                string = string[:-1]
+            else:
+                string += str(value)[0:2]
+        return string
+
     def retain_raw_assembly_arguments(self):
         if "postprocessor" in self:
             self.pop("postprocessor")
@@ -242,6 +268,7 @@ class ReportFile:
         self.arguments = arguments
         self.columns = columns
         self.name = str(arguments)
+        self.shortname = arguments.shortstr()
 
     def __str__(self):
         return "ReportFile(name: {}, arguments: {}, columns: {})".format(self.name, self.arguments, self.columns)
@@ -612,17 +639,27 @@ def iterate_aggregated_report_file_source_reports(aggregated_report_name):
     try:
         aggregated_report_files = get_aggregated_report_file_maps(aggregated_report_name)
         for report_name, report_file_map in aggregated_report_files.items():
-            for report_file_name in report_file_map.keys():
+            for report_file_name, report_file_definition in report_file_map.items():
                 yield (report_name, report_file_name)
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def iterate_aggregated_report_file_source_reports_short_names(aggregated_report_name):
+    try:
+        aggregated_report_files = get_aggregated_report_file_maps(aggregated_report_name)
+        for report_name, report_file_map in aggregated_report_files.items():
+            for report_file_name, report_file_definition in report_file_map.items():
+                yield (report_name, report_file_definition.shortname)
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
 
 def get_aggregated_report_file_source_report_paths(aggregated_report_name):
     try:
-        result = set()
+        result = []
         for report_name, report_file_name in iterate_aggregated_report_file_source_reports(aggregated_report_name):
-            result.add(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "report.tex")
+            result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "report.tex")
         return result
     except Exception:
         traceback.print_exc()
@@ -641,7 +678,7 @@ rule create_aggregated_report_tex:
            script = "scripts/create_aggregated_wtdbg2_report.py",
     output: file = AGGREGATED_REPORT_PREFIX_FORMAT + "aggregated-report.tex"
     params: source_reports_arg = lambda wildcards: "' '".join(get_aggregated_report_file_source_report_paths_from_wildcards(wildcards)),
-            source_report_names_arg = lambda wildcards: "' '".join([report_name + "/" + report_file_name for report_name, report_file_name in iterate_aggregated_report_file_source_reports(wildcards.aggregated_report_name)]),
+            source_report_names_arg = lambda wildcards: "' '".join([report_name + "/" + report_file_name for report_name, report_file_name in iterate_aggregated_report_file_source_reports_short_names(wildcards.aggregated_report_name)]),
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
@@ -2191,5 +2228,5 @@ rule sync_results:
     conda: "config/conda-rsync-env.yml"
     shell: """
         mkdir -p data/reports
-        rsync --verbose --recursive --no-relative --include="*/" --include="report.pdf" --exclude="*" turso:'/proj/sebschmi/git/practical-omnitigs/data/reports/' data/reports
+        rsync --verbose --recursive --no-relative --include="*/" --include="report.pdf" --include="aggregated-report.pdf" --exclude="*" turso:'/proj/sebschmi/git/practical-omnitigs/data/reports/' data/reports
         """
