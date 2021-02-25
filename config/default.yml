@@ -703,6 +703,10 @@ aggregated_reports:
       - "D.melanogaster_A4"
       - "D.melanogaster_ISO1"
 
+  "aggregated_sim_hifi":
+    reports:
+      - "sim_hifi"
+
 
 genomes:
   "E.coli":
