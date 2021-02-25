@@ -85,9 +85,9 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 			last_table_header = last_table_header.strip()
 			value_line = value_line.strip()
 
-			while last_table_header.endswidth("\\"):
+			while last_table_header.endswith("\\"):
 				last_table_header = last_table_header[:-1]
-			while value_line.endswidth("\\"):
+			while value_line.endswith("\\"):
 				value_line = value_line[:-1]
 
 			table_headers.append(last_table_header)
