@@ -31,6 +31,7 @@ def table_header(caption, column_count):
 	#"""
 	header = """
 	\\begin{table}[ht]
+	\\fontsize{6pt}{7pt}\\selectfont
 	\\begin{center}
 	\\caption{""" + caption + """}
 	\\begin{tabular}{|l*{1}|"""
@@ -80,6 +81,15 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 
 			if last_table_header is None or value_line is None:
 				sys.exit("Found value line outside of table")
+
+			last_table_header = last_table_header.strip()
+			value_line = value_line.strip()
+
+			while last_table_header.endswidth("\\"):
+				last_table_header = last_table_header[:-1]
+			while value_line.endswidth("\\"):
+				value_line = value_line[:-1]
+
 			table_headers.append(last_table_header)
 			value_lines.append(value_line)
 

@@ -225,7 +225,7 @@ class Arguments(dict):
             string += key.replace("-", "")[0] + ":"
 
             if type(value) is Arguments:
-                string += "{" + value.shortstr() + "}"
+                string += "(" + value.shortstr() + ")"
             elif type(value) is int or type(value) is float:
                 string += str(value)
             elif type(value) is bool:
