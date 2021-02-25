@@ -148,7 +148,14 @@ output_file.write("\\end{itemize}\n")
 ### EAxmax tables ###
 #####################
 
-write_aggregated_table(output_file, "EA50max", "EA50max")
+write_aggregated_table(output_file, "EA50max", ["EA50max", "Strict EA50max"])
+write_aggregated_table(output_file, "EA75max", ["EA75max", "Strict EA75max"])
+write_aggregated_table(output_file, "EAmeanmax", ["EAmeanmax", "Strict EAmeanmax"])
+
+write_aggregated_table(output_file, "P5k", ["P5k", "Strict P5k"])
+write_aggregated_table(output_file, "P10k", ["P10k", "Strict P10k"])
+write_aggregated_table(output_file, "P15k", ["P15k", "Strict P15k"])
+write_aggregated_table(output_file, "P20k", ["P20k", "Strict P20k"])
 
 ##########################
 ### Misassembly tables ###
