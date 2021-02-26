@@ -1374,6 +1374,7 @@ rule simulate_hifi_reads_bbmap:
     resources:
         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
         mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
     conda:  "config/conda-bbmap-env.yml"
     shell:  """
         REFERENCE=$(realpath -s '{input.reference}')
