@@ -461,11 +461,16 @@ def get_all_report_files_without_human():
                     result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "report.pdf")
 
         for aggregated_report_name in aggregated_reports.keys():
-            append = True
-            for report_name in aggregated_reports[aggregated_report_name]:
+            append = False
+            pops = []
+            for report_name in aggregated_reports[aggregated_report_name]["reports"]:
                 if report_name in reports_with_human:
-                    append = False
-                    break
+                    pops.append(report_name)
+                else:
+                    append = True
+
+            for pop in pops:
+                aggregated_reports[aggregated_report_name]["reports"].remove(pop)
 
             if append:
                 result.append(AGGREGATED_REPORT_PREFIX_FORMAT.format(aggregated_report_name = aggregated_report_name) + "aggregated-report.pdf")
