@@ -25,25 +25,25 @@ coverage = args.coverage
 def clean_reference(reference):
 	for i in range(len(reference)):
 		if reference[i] == ord('R'):
-			reference[i] = "AG"[random.randint(0, 1)]
+			reference[i] = ord("AG"[random.randint(0, 1)])
 		elif reference[i] == ord('Y'):
-			reference[i] = "CT"[random.randint(0, 1)]
+			reference[i] = ord("CT"[random.randint(0, 1)])
 		elif reference[i] == ord('K'):
-			reference[i] = "GT"[random.randint(0, 1)]
+			reference[i] = ord("GT"[random.randint(0, 1)])
 		elif reference[i] == ord('M'):
-			reference[i] = "AC"[random.randint(0, 1)]
+			reference[i] = ord("AC"[random.randint(0, 1)])
 		elif reference[i] == ord('S'):
-			reference[i] = "CG"[random.randint(0, 1)]
+			reference[i] = ord("CG"[random.randint(0, 1)])
 		elif reference[i] == ord('W'):
-			reference[i] = "AT"[random.randint(0, 1)]
+			reference[i] = ord("AT"[random.randint(0, 1)])
 		elif reference[i] == ord('B'):
-			reference[i] = "CGT"[random.randint(0, 2)]
+			reference[i] = ord("CGT"[random.randint(0, 2)])
 		elif reference[i] == ord('D'):
-			reference[i] = "AGT"[random.randint(0, 2)]
+			reference[i] = ord("AGT"[random.randint(0, 2)])
 		elif reference[i] == ord('H'):
-			reference[i] = "ACT"[random.randint(0, 2)]
+			reference[i] = ord("ACT"[random.randint(0, 2)])
 		elif reference[i] == ord('V'):
-			reference[i] = "ACG"[random.randint(0, 2)]
+			reference[i] = ord("ACG"[random.randint(0, 2)])
 	return reference
 
 def break_reference(reference):
@@ -92,6 +92,7 @@ def reverse_complement_sequence(sequence):
 def simulate_cut_reads():
 	read_id = 0
 	for reference in SeqIO.parse(reference_path, "fasta"):
+		id = reference.id
 		reference = clean_reference(bytearray(str(reference.seq).encode("ASCII")))
 
 		for seqence_offset, sequence in break_reference(reference):
@@ -108,10 +109,10 @@ def simulate_cut_reads():
 					if limit - offset >= read_length_interval[0] and limit - offset <= read_length_interval[1]:
 						read_seq = sequence[offset:limit]
 						if random.randint(0, 1) == 0:
-							read_name = str(read_id) + "_" + str(reference.id) + "_" + str(seqence_offset + offset) + "_" + str(seqence_offset + limit)
+							read_name = str(read_id) + "_" + str(id) + "_" + str(seqence_offset + offset) + "_" + str(seqence_offset + limit)
 						else:
 							read_seq = reverse_complement_sequence(read_seq)
-							read_name = str(read_id) + "_" + str(reference.id) + "_" + str(seqence_offset + limit) + "_" + str(seqence_offset + offset)
+							read_name = str(read_id) + "_" + str(id) + "_" + str(seqence_offset + limit) + "_" + str(seqence_offset + offset)
 
 						yield SeqRecord(Seq(str(read_seq, "ASCII")), read_name, "", "simulated with cut distribution")
 					offset = limit
