@@ -22,6 +22,30 @@ read_length_interval = args.read_length_interval
 distribution = args.distribution
 coverage = args.coverage
 
+def clean_reference(reference):
+	for i in range(len(reference)):
+		if reference[i] == ord('R'):
+			reference[i] = "AG"[random.randint(0, 1)]
+		elif reference[i] == ord('Y'):
+			reference[i] = "CT"[random.randint(0, 1)]
+		elif reference[i] == ord('K'):
+			reference[i] = "GT"[random.randint(0, 1)]
+		elif reference[i] == ord('M'):
+			reference[i] = "AC"[random.randint(0, 1)]
+		elif reference[i] == ord('S'):
+			reference[i] = "CG"[random.randint(0, 1)]
+		elif reference[i] == ord('W'):
+			reference[i] = "AT"[random.randint(0, 1)]
+		elif reference[i] == ord('B'):
+			reference[i] = "CGT"[random.randint(0, 2)]
+		elif reference[i] == ord('D'):
+			reference[i] = "AGT"[random.randint(0, 2)]
+		elif reference[i] == ord('H'):
+			reference[i] = "ACT"[random.randint(0, 2)]
+		elif reference[i] == ord('V'):
+			reference[i] = "ACG"[random.randint(0, 2)]
+	return reference
+
 def break_reference(reference):
 	offset = 0
 	limit = 0
@@ -37,7 +61,7 @@ def break_reference(reference):
 			reference[limit] = ord('G')
 		elif reference[limit] == ord('t'):
 			reference[limit] = ord('T')
-		elif reference[limit] == ord('N'):
+		elif reference[limit] == ord('N') or reference[limit] == ord('-'):
 			if limit - offset >= read_length_interval[0]:
 				yield offset, reference[offset:limit]
 			offset = limit + 1
@@ -68,7 +92,9 @@ def reverse_complement_sequence(sequence):
 def simulate_cut_reads():
 	read_id = 0
 	for reference in SeqIO.parse(reference_path, "fasta"):
-		for seqence_offset, sequence in break_reference(bytearray(str(reference.seq).encode("ASCII"))):
+		reference = clean_reference(bytearray(str(reference.seq).encode("ASCII")))
+
+		for seqence_offset, sequence in break_reference(reference):
 			print("Got subsequence of length {}".format(len(sequence)))
 
 			for repetition in range(int(coverage)):
