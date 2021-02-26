@@ -100,7 +100,7 @@ class Arguments(dict):
                     assert type(self[key]) is str or type(self[key]) is int or type(self[key]) is float or type(self[key]) is bool, "type(self[key]) is not str, bool, int or float. key: {}, type(self[key]): {}".format(key, type(self[key]))
                     self[key] = value
             elif type(value) is dict or type(value) is OrderedDict or type(value) is Arguments or value is None:
-                assert type(self[key]) is dict or type(self[key]) is OrderedDict or type(self[key]) is Arguments
+                assert type(self[key]) is dict or type(self[key]) is OrderedDict or type(self[key]) is Arguments, "wrong type(self[key]): {}".format(type(self[key]))
                 # If in selection more, unselect all keys not part of the update.
 
                 unselect = []

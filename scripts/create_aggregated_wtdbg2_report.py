@@ -157,6 +157,8 @@ write_aggregated_table(output_file, "P10k", ["P10k", "Strict P10k"])
 write_aggregated_table(output_file, "P15k", ["P15k", "Strict P15k"])
 write_aggregated_table(output_file, "P20k", ["P20k", "Strict P20k"])
 
+write_aggregated_table(output_file, "EAmeanmax and unique misassemblies", ["EAmeanmax", "# unique misassemblies"], "EAmeanmax/unique mis")
+
 ##########################
 ### Misassembly tables ###
 ##########################

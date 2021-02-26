@@ -284,6 +284,15 @@ reports:
       read_simulator: "bbmap_hifi"
     columns: *hifi_columns
 
+  "sim_hifi_contigbreaker":
+    argument_matrix:
+      genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+      read_simulator: "bbmap_hifi"
+      assembler:
+        wtdbg2:
+          "-x": "ccs"
+    columns: *contigbreaker_columns
+
   "sim_hifi_fragment_correction_steps":
     argument_matrix:
       genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
@@ -719,9 +728,24 @@ aggregated_reports:
       - "D.melanogaster_A4"
       - "D.melanogaster_ISO1"
 
+  "aggregated_fragment_correction_steps":
+    reports:
+      - "C.elegans_fragment_correction_steps"
+      - "A.thaliana_fragment_correction_steps"
+      - "D.melanogaster_A4_fragment_correction_steps"
+      - "D.melanogaster_ISO1_fragment_correction_steps"
+
   "aggregated_sim_hifi":
     reports:
       - "sim_hifi"
+
+  "aggregated_sim_hifi_fragment_correction_steps":
+    reports:
+      - "sim_hifi_fragment_correction_steps"
+
+  "aggregated_contigbreaker_sim_hifi":
+    reports:
+      - "sim_hifi_contigbreaker"
 
 
 genomes:
