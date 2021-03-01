@@ -75,11 +75,11 @@ def append_latex_table_second_column(table, appendix):
 				sys.exit("Found completely mismatching keys: {} and {}".format(table_key, appendix_key))
 		elif table_index < len(table):
 			# Appendix misses something
-			result.append(append_none(table_line))
+			result.append(append_none(table[table_index]))
 			table_index += 1
 		elif appendix_index < len(appendix):
 			# Appendix contains something extra
-			result.append(new_row(appendix_line))
+			result.append(new_row(appendix[appendix_index]))
 			appendix_index += 1
 		else:
 			assert False
