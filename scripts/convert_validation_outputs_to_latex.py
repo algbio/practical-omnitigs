@@ -44,7 +44,7 @@ def append_latex_table_second_column(table, appendix):
 		return row + appendix
 
 	def new_row(appendix):
-		return appendix[appendix.index("&"):] + (" & " * table_value_column_count) + appendix[:appendix.index("&")]
+		return appendix[:appendix.index("&")] + (" & " * table_value_column_count) + appendix[appendix.index("&"):]
 
 	def append_none(row):
 		row = row.strip()
