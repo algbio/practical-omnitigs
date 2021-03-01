@@ -28,17 +28,30 @@ def append_latex_table_second_column(table, appendix):
 	if len(table) == 0:
 		return appendix
 
-	if len(table) != len(appendix):
-		sys.exit("Table and new column differ in length: {} != {}".format(len(table), len(appendix)))
-		
-	result = []
-	for tl, al in zip(table, appendix):
-		tl = tl.strip()
-		if tl[-2:] == "\\\\":
-			tl = tl[:-2] # Remove trailing new line backslashes
+	appendix_map = {}
+	for line in appendix:
+		key = line[:line.index("&")].strip()
+		value = line[line.index("&") - 1:]
+		appendix_map[key] = value
 
-		al = al[al.index("&"):] # Remove line titles
-		result.append(tl + al)
+	result = []
+	for line in table:
+		line = line.strip()
+		if line[-2:] == "\\\\":
+			line = line[:-2] # Remove trailing new line backslashes
+
+		key = line[:line.index("&")].strip()
+		appendix_value = appendix_map.pop(key, None)
+
+		if appendix_value is None:
+			print("Warning: Missing value {} in appendix".format(key))
+			result.append(line + " & N/A \\\\")
+		else:
+			result.append(line + appendix_value)
+
+	if len(appendix_map) != 0:
+		sys.exit("Some appended metrices were not in the table before: {}".format(appendix_map))
+
 	return result
 
 #########################
