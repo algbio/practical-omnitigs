@@ -76,10 +76,12 @@ def write_aggregated_table(output_file, caption, metrics, metric_shortname=None)
 			for line in source_report_lines:
 				if "Parameter" in line:
 					last_table_header = line
-				if metric == line.split("&")[0].strip():
+				if metric.strip() == line.split("&")[0].strip():
 					value_line = line
 
-			if last_table_header is None or value_line is None:
+			if value_line is None:
+				sys.exit("Did not find value line {} in report {}".format(metric, source_report_name))
+			if last_table_header is None:
 				sys.exit("Found value line outside of table")
 
 			last_table_header = last_table_header.strip()
