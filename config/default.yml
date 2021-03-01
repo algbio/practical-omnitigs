@@ -414,6 +414,18 @@ reports:
               "--distribution": "cut"
     columns: *default_columns_with_flye
 
+  "C.elegans_plain":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+        flye:
+          cli_arguments:
+            - "--pacbio-corr": True
+    columns: *default_columns_with_flye
+
   "C.elegans_fragment_correction_steps":
     argument_matrix:
       genome: "C.elegans"
@@ -449,6 +461,18 @@ reports:
               "--read-length-interval": "15000 25000"
               "--coverage": 20
               "--distribution": "cut"
+    columns: *default_columns_with_flye
+
+  "A.thaliana_plain":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "sq"
+        flye:
+          cli_arguments:
+            - "--pacbio-raw": True
     columns: *default_columns_with_flye
 
   "A.thaliana_fragment_correction_steps":
@@ -488,6 +512,18 @@ reports:
               "--distribution": "cut"
     columns: *default_columns_with_flye
 
+  "D.melanogaster_A4_plain":
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+        flye:
+          cli_arguments:
+            - "--pacbio-raw": True
+    columns: *default_columns_with_flye
+
   "D.melanogaster_A4_fragment_correction_steps":
     argument_matrix:
       genome: "D.melanogaster_A4"
@@ -523,6 +559,18 @@ reports:
               "--read-length-interval": "15000 25000"
               "--coverage": 20
               "--distribution": "cut"
+    columns: *default_columns_with_flye
+
+  "D.melanogaster_ISO1_plain":
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ont"
+        flye:
+          cli_arguments:
+            - "--nano-raw": True
     columns: *default_columns_with_flye
 
   "D.melanogaster_ISO1_fragment_correction_steps":
@@ -723,10 +771,10 @@ reports:
 aggregated_reports:
   "aggregated":
     reports:
-      - "C.elegans"
-      - "A.thaliana"
-      - "D.melanogaster_A4"
-      - "D.melanogaster_ISO1"
+      - "C.elegans_plain"
+      - "A.thaliana_plain"
+      - "D.melanogaster_A4_plain"
+      - "D.melanogaster_ISO1_plain"
 
   "aggregated_fragment_correction_steps":
     reports:
