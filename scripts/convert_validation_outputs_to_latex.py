@@ -40,7 +40,7 @@ def append_latex_table_second_column(table, appendix):
 		row = row.strip()
 		if row[-2:] == "\\\\":
 			row = row[:-2] # Remove trailing new line backslashes
-		appendix = appendix[appendix.index("&") + 1:].strip()
+		appendix = appendix[appendix.index("&"):].strip()
 		return row + appendix
 
 	def new_row(appendix):
