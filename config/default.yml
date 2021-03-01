@@ -783,6 +783,14 @@ aggregated_reports:
       - "D.melanogaster_A4_fragment_correction_steps"
       - "D.melanogaster_ISO1_fragment_correction_steps"
 
+  "aggregated_contigbreaker":
+    reports:
+      - "C.elegans_contigbreaker"
+      - "A.thaliana_contigbreaker"
+      - "D.melanogaster_A4_contigbreaker"
+      - "D.melanogaster_ISO1_contigbreaker"
+      - "Minghui63_contigbreaker"
+
   "aggregated_sim_hifi":
     reports:
       - "sim_hifi"
@@ -794,6 +802,7 @@ aggregated_reports:
   "aggregated_contigbreaker_sim_hifi":
     reports:
       - "sim_hifi_contigbreaker"
+      - "Minghui63_contigbreaker"
 
 
 genomes:
