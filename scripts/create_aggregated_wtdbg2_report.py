@@ -122,9 +122,9 @@ output_file = open(output_file_name, 'w')
 
 output_file.write(
 	"""
-	\\documentclass[12pt,a4paper]{article}
+	\\documentclass[12pt]{article}
 	\\usepackage{lmodern}
-	\\usepackage[pass,margin=0pt,paperwidth=100cm,paperheight=30cm]{geometry}
+	\\usepackage[pass,landscape,margin=0pt,paperwidth=100cm,paperheight=30cm]{geometry}
 	\\usepackage[T1]{fontenc}
 	\\usepackage{graphicx}
 	\\begin{document}
