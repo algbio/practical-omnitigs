@@ -65,21 +65,21 @@ def append_latex_table_second_column(table, appendix):
 				appendix_index += 1
 			elif table_key in appendix_keys:
 				# Appendix contains something extra
-				result.append(new_row(appendix))
+				result.append(new_row(appendix_line))
 				appendix_index += 1
 			elif appendix_key in table_keys:
 				# Appendix misses something
-				result.append(append_none(row))
+				result.append(append_none(table_line))
 				table_index += 1
 			else:
 				sys.exit("Found completely mismatching keys: {} and {}".format(table_key, appendix_key))
 		elif table_index < len(table):
 			# Appendix misses something
-			result.append(append_none(row))
+			result.append(append_none(table_line))
 			table_index += 1
 		elif appendix_index < len(appendix):
 			# Appendix contains something extra
-			result.append(new_row(appendix))
+			result.append(new_row(appendix_line))
 			appendix_index += 1
 		else:
 			assert False
