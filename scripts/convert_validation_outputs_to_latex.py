@@ -28,9 +28,9 @@ def append_latex_table_second_column(table, appendix):
 	if len(table) == 0:
 		return appendix
 
-	while len(appendix) < len(table):
-		appendix.append('N/A & N/A \\\\')
-
+	if len(table) != len(appendix):
+		sys.exit("Table and new column differ in length: {} != {}".format(len(table), len(appendix)))
+		
 	result = []
 	for tl, al in zip(table, appendix):
 		tl = tl.strip()
