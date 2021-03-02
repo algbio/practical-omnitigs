@@ -141,6 +141,14 @@ column_templates:
       select_assembler: "flye"
 
   contigbreaker_columns: &contigbreaker_columns
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+    - shortname: "w2 brk"
+      select_assembler:
+        wtdbg2:
+      select_postprocessor:
+        contigbreaker:
     - shortname: "YV sfa"
       select_assembler:
         wtdbg2:
@@ -148,24 +156,6 @@ column_templates:
             "--skip-fragment-assembly": True
           injections:
             "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "w2 sfa"
-      select_assembler:
-        wtdbg2:
-          cli_arguments:
-            "--skip-fragment-assembly": True
-    - shortname: "YV"
-      select_assembler:
-        wtdbg2:
-          injections:
-            "wtdbg2-inject-trivial-omnitigs": True
-    - shortname: "frg YV"
-      select_assembler:
-        wtdbg2:
-          fragment_injections:
-            "wtdbg2-inject-fragment-trivial-omnitigs": True
-    - shortname: "wtdbg2"
-      select_assembler:
-        wtdbg2:
     - shortname: "YV sfa brk"
       select_assembler:
         wtdbg2:
@@ -175,6 +165,11 @@ column_templates:
             "wtdbg2-inject-trivial-omnitigs": True
       select_postprocessor:
         contigbreaker:
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
     - shortname: "w2 sfa brk"
       select_assembler:
         wtdbg2:
@@ -182,6 +177,11 @@ column_templates:
             "--skip-fragment-assembly": True
       select_postprocessor:
         contigbreaker:
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
     - shortname: "YV brk"
       select_assembler:
         wtdbg2:
@@ -189,6 +189,11 @@ column_templates:
             "wtdbg2-inject-trivial-omnitigs": True
       select_postprocessor:
         contigbreaker:
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
     - shortname: "frg YV brk"
       select_assembler:
         wtdbg2:
@@ -196,9 +201,90 @@ column_templates:
             "wtdbg2-inject-fragment-trivial-omnitigs": True
       select_postprocessor:
         contigbreaker:
+    - shortname: "flye"
+      select_assembler:
+        flye:
+    - shortname: "flye brk"
+      select_assembler:
+        flye:
+      select_postprocessor:
+        contigbreaker:
+
+  contigbreaker_columns: &contigbreaker_hifi_columns
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
     - shortname: "w2 brk"
       select_assembler:
         wtdbg2:
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "YV sfa brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+    - shortname: "w2 sfa brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "YV brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+    - shortname: "frg YV brk"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "flye"
+      select_assembler:
+        flye:
+    - shortname: "flye brk"
+      select_assembler:
+        flye:
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+    - shortname: "hifiasm brk"
+      select_assembler:
+        hifiasm:
       select_postprocessor:
         contigbreaker:
 
@@ -290,8 +376,12 @@ reports:
       read_simulator: "bbmap_hifi"
       assembler:
         wtdbg2:
-          "-x": "ccs"
-    columns: *contigbreaker_columns
+          cli_arguments:
+            "-x": "ccs"
+        flye:
+          cli_arguments:
+            "--pacbio-hifi": True
+    columns: *contigbreaker_hifi_columns
 
   "sim_hifi_fragment_correction_steps":
     argument_matrix:
@@ -442,6 +532,9 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "rs"
+        flye:
+          cli_arguments:
+            - "--pacbio-corr": True
     columns: *contigbreaker_columns
 
   "A.thaliana":
@@ -491,6 +584,9 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "sq"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
     columns: *contigbreaker_columns
 
   "D.melanogaster_A4":
@@ -540,6 +636,9 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "rs"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
     columns: *contigbreaker_columns
 
   "D.melanogaster_ISO1":
@@ -589,6 +688,9 @@ reports:
         wtdbg2:
           cli_arguments:
             "-x": "ont"
+        flye:
+          cli_arguments:
+            "--nano-raw": True
     columns: *contigbreaker_columns
 
   "Minghui63":
@@ -629,7 +731,10 @@ reports:
         wtdbg2:
           cli_arguments:
             - "-x": "ccs"
-    columns: *contigbreaker_columns
+        flye:
+          cli_arguments:
+            - "--pacbio-hifi": True
+    columns: *contigbreaker_hifi_columns
 
   "HG002":
     argument_matrix:
