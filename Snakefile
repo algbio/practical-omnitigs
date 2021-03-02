@@ -1362,6 +1362,10 @@ rule simulate_perfect_reads:
     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "perfect"),
     log:    log = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "perfect") + ".log",
     params: cli_arguments = get_perfect_read_simulator_args_from_wildcards,
+    resources:
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+        mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 1000),
     conda:  "config/conda-simulate-perfect-reads-env.yml",
     shell:  "'{input.script}' {params.cli_arguments} --reference '{input.reference}' --output '{output.simulated_reads}'"
 
