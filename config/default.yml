@@ -754,21 +754,6 @@ reports:
               "--coverage": 20
               "--distribution": "cut"
     columns: *default_columns_with_flye
-  
-  "HG002_Flye":
-    argument_matrix:
-      genome: "HG002"
-    columns:
-      - shortname: "flye raw"
-        assembler: 
-          flye:
-            cli_arguments:
-              "--pacbio-raw": True
-      - shortname: "flye corr"
-        assembler:
-          flye:
-            cli_arguments:
-              "--pacbio-corr": True
 
   "HG002_ratatosk":
     argument_matrix:
