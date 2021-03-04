@@ -1850,7 +1850,7 @@ rule extract:
     conda: "config/conda-extract-env.yml"
     threads: 1
     resources:
-        time_min = 300
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 300)
     shell: "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
 
 #rule extract_dot:
