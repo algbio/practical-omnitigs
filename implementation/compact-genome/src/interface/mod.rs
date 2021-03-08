@@ -1,4 +1,4 @@
-//! The trait providing the abstractions of this crate.
+//! The traits providing the abstractions of this crate.
 
 use itertools::Itertools;
 use std::iter::FromIterator;
