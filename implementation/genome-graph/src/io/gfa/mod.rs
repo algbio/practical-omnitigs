@@ -6,6 +6,7 @@ use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
 use std::path::Path;
 use std::rc::Rc;
+use compact_genome::interface::Genome;
 
 /// Type of graphs read from gfa files.
 pub type PetGFAGraph<NodeData, EdgeData> = crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
@@ -71,7 +72,11 @@ pub fn read_gfa_as_edge_centric_bigraph<
             let node_index: usize = columns.next().unwrap().parse().unwrap();
             assert_eq!((node_index - 1) * 2, graph.node_count());
 
-            let sequence = Rc::new(VectorGenome::from_iter(columns.next().unwrap().bytes()));
+            let sequence = columns.next().unwrap();
+            let sequence = Rc::new(VectorGenome::from_iter(sequence.bytes()));
+            assert!(columns.next().is_none());
+            assert!(sequence.len() >= k, "Node {} has sequence '{}' of length {} (k = {})", node_index, sequence, sequence.len(), k);
+
             let n1 = graph.add_node(BidirectedGFANodeData {
                 sequence: sequence.clone(),
                 forward: true,
@@ -87,11 +92,11 @@ pub fn read_gfa_as_edge_centric_bigraph<
             assert_ne!(k, usize::max_value());
 
             let mut columns = line.split('\t').skip(1);
-            let n1 = (columns.next().unwrap().parse::<usize>().unwrap()
-                + if columns.next().unwrap() == "+" { 0 } else { 1 })
+            let n1 = (columns.next().unwrap().parse::<usize>().unwrap() * 2
+                - if columns.next().unwrap() == "+" { 2 } else { 1 })
             .into();
-            let n2 = (columns.next().unwrap().parse::<usize>().unwrap()
-                + if columns.next().unwrap() == "+" { 0 } else { 1 })
+            let n2 = (columns.next().unwrap().parse::<usize>().unwrap() * 2
+                - if columns.next().unwrap() == "+" { 2 } else { 1 })
             .into();
 
             graph.add_edge(n1, n2, Default::default());
