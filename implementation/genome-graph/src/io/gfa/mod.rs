@@ -7,6 +7,15 @@ use std::iter::FromIterator;
 use std::path::Path;
 use std::rc::Rc;
 
+/// Type of graphs read from gfa files.
+pub type PetGFAGraph<NodeData, EdgeData> = crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
+    crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
+        BidirectedGFANodeData<NodeData>,
+        EdgeData,
+        usize,
+    >,
+>;
+
 /// Node data of a bidirected graph read from GFA
 pub struct BidirectedGFANodeData<T> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.

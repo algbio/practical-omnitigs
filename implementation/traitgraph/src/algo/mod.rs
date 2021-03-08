@@ -6,3 +6,5 @@ pub mod predefined_graphs;
 pub mod queue;
 /// Algorithms for graph traversals, i.e. preorder breadth or depth first search as well as postorder depth first search.
 pub mod traversal;
+/// Dijkstra's shortest path algorithm.
+pub mod dijkstra;
