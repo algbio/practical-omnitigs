@@ -503,6 +503,12 @@ where
     }
 }
 
+impl<Graph: GraphBase> Extend<Graph::NodeIndex> for VecNodeWalk<Graph> {
+    fn extend<T: IntoIterator<Item = Graph::NodeIndex>>(&mut self, iter: T) {
+        self.walk.extend(iter)
+    }
+}
+
 /////////////////////////
 ////// VecEdgeWalk //////
 /////////////////////////

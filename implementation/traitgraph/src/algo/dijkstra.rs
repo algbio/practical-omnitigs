@@ -1,6 +1,6 @@
-use crate::interface::{GraphBase, StaticGraph};
-use std::collections::{BinaryHeap, HashSet, HashMap};
 use crate::index::GraphIndex;
+use crate::interface::{GraphBase, StaticGraph};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
 /// Edge data that has a weight usable for shortest path computation.
 pub trait WeightedEdgeData {
@@ -34,7 +34,12 @@ impl<'a, EdgeData: WeightedEdgeData, Graph: StaticGraph<EdgeData = EdgeData>> Di
     }
 
     /// Compute the shortest paths from source to all targets, with given maximum weight.
-    pub fn shortest_path_lens(&mut self, source: Graph::NodeIndex, targets: &HashSet<Graph::NodeIndex>, max_weight: usize) -> HashMap<Graph::NodeIndex, usize> {
+    pub fn shortest_path_lens(
+        &mut self,
+        source: Graph::NodeIndex,
+        targets: &HashSet<Graph::NodeIndex>,
+        max_weight: usize,
+    ) -> HashMap<Graph::NodeIndex, usize> {
         let mut shortest_path_lens = HashMap::new();
 
         self.queue.push(std::cmp::Reverse((0, source)));
@@ -65,10 +70,14 @@ impl<'a, EdgeData: WeightedEdgeData, Graph: StaticGraph<EdgeData = EdgeData>> Di
 
             // Relax neighbors
             for out_neighbor in self.graph.out_neighbors(node_index) {
-                let new_neighbor_weight = weight + self.graph.edge_data(out_neighbor.edge_id).weight();
+                let new_neighbor_weight =
+                    weight + self.graph.edge_data(out_neighbor.edge_id).weight();
                 if new_neighbor_weight < self.node_weights[out_neighbor.node_id.as_usize()] {
                     self.node_weights[out_neighbor.node_id.as_usize()] = new_neighbor_weight;
-                    self.queue.push(std::cmp::Reverse((new_neighbor_weight, out_neighbor.node_id)));
+                    self.queue.push(std::cmp::Reverse((
+                        new_neighbor_weight,
+                        out_neighbor.node_id,
+                    )));
                     //self.back_pointers[out_neighbor.node_id.as_usize()] = node_index.into();
                 }
             }
@@ -89,9 +98,7 @@ impl<'a, EdgeData: WeightedEdgeData, Graph: StaticGraph<EdgeData = EdgeData>> Di
 mod tests {
     use crate::algo::dijkstra::Dijkstra;
     use crate::implementation::petgraph_impl;
-    use std::collections::{HashSet, HashMap};
     use crate::interface::MutableGraphContainer;
-    use std::iter::FromIterator;
 
     #[test]
     fn test_dijkstra_simple() {
@@ -104,7 +111,8 @@ mod tests {
         graph.add_edge(n1, n3, 5);
 
         let mut dijkstra = Dijkstra::new(&graph);
-        let shortest_path_lens = dijkstra.shortest_path_lens(n1, &HashSet::from_iter([n3].iter().copied()), 6);
-        assert_eq!(shortest_path_lens, HashMap::from_iter([(n3, 4)].iter().copied()));
+        let shortest_path_lens =
+            dijkstra.shortest_path_lens(n1, &[n3].iter().copied().collect(), 6);
+        assert_eq!(shortest_path_lens, [(n3, 4)].iter().copied().collect());
     }
 }

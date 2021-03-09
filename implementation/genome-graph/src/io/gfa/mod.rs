@@ -1,21 +1,22 @@
 use crate::error::Result;
 use bigraph::interface::dynamic_bigraph::DynamicBigraph;
 use compact_genome::implementation::vector_genome_impl::VectorGenome;
+use compact_genome::interface::Genome;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter::FromIterator;
 use std::path::Path;
 use std::rc::Rc;
-use compact_genome::interface::Genome;
 
 /// Type of graphs read from gfa files.
-pub type PetGFAGraph<NodeData, EdgeData> = crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
-    crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
-        BidirectedGFANodeData<NodeData>,
-        EdgeData,
-        usize,
-    >,
->;
+pub type PetGFAGraph<NodeData, EdgeData> =
+    crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
+        crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
+            BidirectedGFANodeData<NodeData>,
+            EdgeData,
+            usize,
+        >,
+    >;
 
 /// Node data of a bidirected graph read from GFA
 pub struct BidirectedGFANodeData<T> {
@@ -75,7 +76,14 @@ pub fn read_gfa_as_edge_centric_bigraph<
             let sequence = columns.next().unwrap();
             let sequence = Rc::new(VectorGenome::from_iter(sequence.bytes()));
             assert!(columns.next().is_none());
-            assert!(sequence.len() >= k, "Node {} has sequence '{}' of length {} (k = {})", node_index, sequence, sequence.len(), k);
+            assert!(
+                sequence.len() >= k,
+                "Node {} has sequence '{}' of length {} (k = {})",
+                node_index,
+                sequence,
+                sequence.len(),
+                k
+            );
 
             let n1 = graph.add_node(BidirectedGFANodeData {
                 sequence: sequence.clone(),
@@ -99,12 +107,23 @@ pub fn read_gfa_as_edge_centric_bigraph<
                 - if columns.next().unwrap() == "+" { 2 } else { 1 })
             .into();
 
-            graph.add_edge(n1, n2, Default::default());
-            graph.add_edge(
-                graph.mirror_node(n2).unwrap(),
-                graph.mirror_node(n1).unwrap(),
-                Default::default(),
+            let has_edge = graph.contains_edge_between(n1, n2);
+            assert_eq!(
+                has_edge,
+                graph.contains_edge_between(
+                    graph.mirror_node(n2).unwrap(),
+                    graph.mirror_node(n1).unwrap()
+                )
             );
+
+            if !has_edge {
+                graph.add_edge(n1, n2, Default::default());
+                graph.add_edge(
+                    graph.mirror_node(n2).unwrap(),
+                    graph.mirror_node(n1).unwrap(),
+                    Default::default(),
+                );
+            }
         }
     }
 

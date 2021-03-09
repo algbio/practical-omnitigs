@@ -74,6 +74,7 @@ dependencies = [
 name = "bigraph"
 version = "0.2.1-alpha.0"
 dependencies = [
+ "bitvector",
  "num-traits",
  "opaque_typedef",
  "opaque_typedef_macros",

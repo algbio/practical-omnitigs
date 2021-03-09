@@ -12,6 +12,22 @@ pub trait StaticBigraph: StaticGraph {
      */
     fn mirror_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex>;
 
+    /// Returns a vector of all edges that mirror the given edge, without considering if the edge data mirrors the given edges edge data.
+    fn topological_mirror_edges(&self, edge_index: Self::EdgeIndex) -> Vec<Self::EdgeIndex> {
+        let endpoints = self.edge_endpoints(edge_index);
+        let reverse_from = if let Some(reverse_from) = self.mirror_node(endpoints.to_node) {
+            reverse_from
+        } else {
+            return Vec::new();
+        };
+        let reverse_to = if let Some(reverse_to) = self.mirror_node(endpoints.from_node) {
+            reverse_to
+        } else {
+            return Vec::new();
+        };
+        self.edges_between(reverse_from, reverse_to).collect()
+    }
+
     /**
      * Returns true if each node has exactly one mirror, and this relation is symmetric.
      * This check allows nodes that are their own mirror.
@@ -63,8 +79,9 @@ pub trait StaticBigraph: StaticGraph {
 }
 
 /**
- * A edge-centric bidirected graph.
+ * A node-centric bidirected graph.
  * That is a graph in which each node has a unique mirror, and this relation is symmetric.
+ * Additionally, the multiplicity of an edge equals the multiplicity of its mirrors.
  */
 pub trait StaticNodeCentricBigraph: StaticBigraph {
     /**
