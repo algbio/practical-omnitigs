@@ -9,6 +9,13 @@ use std::iter::{Cloned, FromIterator};
 #[derive(Eq, PartialEq, Debug, Clone, Ord, PartialOrd, Hash)]
 pub struct VectorGenome(Vec<u8>);
 
+impl VectorGenome {
+    /// Creates a new VectorGenome from the given characters.
+    pub fn new(genome: Vec<u8>) -> Self {
+        Self(genome)
+    }
+}
+
 impl Genome for VectorGenome {
     fn reverse_complement(&self) -> Self {
         self.0

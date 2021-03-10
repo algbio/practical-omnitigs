@@ -1,21 +1,10 @@
-use crate::interface::static_bigraph::StaticBigraph;
+use crate::interface::static_bigraph::StaticEdgeCentricBigraph;
+use crate::interface::BidirectedData;
 use crate::traitgraph::index::GraphIndex;
 use bitvector::BitVector;
-use std::collections::LinkedList;
+use std::collections::{HashSet, LinkedList};
 use std::fmt::Write;
-use traitgraph::walks::VecNodeWalk;
-
-/*fn bitvector_to_string(bitvector: &BitVector) -> String {
-    let mut result = String::new();
-    for i in 0..bitvector.capacity() {
-        if bitvector.contains(i) {
-            write!(result, "1").unwrap()
-        } else {
-            write!(result, "0").unwrap()
-        }
-    }
-    result
-}*/
+use traitgraph::walks::VecEdgeWalk;
 
 fn bitvector_to_index_string(bitvector: &BitVector) -> String {
     let mut result = String::new();
@@ -27,7 +16,10 @@ fn bitvector_to_index_string(bitvector: &BitVector) -> String {
     result
 }
 
-fn mark_edge_and_mirror<Graph: StaticBigraph>(
+fn mark_edge_and_mirror<
+    EdgeData: BidirectedData + Eq,
+    Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
+>(
     bitvector: &mut BitVector,
     graph: &Graph,
     edge_index: Graph::EdgeIndex,
@@ -35,38 +27,33 @@ fn mark_edge_and_mirror<Graph: StaticBigraph>(
     assert!(!bitvector.contains(edge_index.as_usize()));
     bitvector.insert(edge_index.as_usize());
     //println!("Marked edge {}", edge_index.as_usize());
-    let mut inserted_mirror = false;
-    let topological_mirror_edges = graph.topological_mirror_edges(edge_index);
-    if topological_mirror_edges.contains(&edge_index) {
-        inserted_mirror = true;
-        //println!("Topological mirror edges contains self and is {:?}", topological_mirror_edges);
+
+    let mirror_edge = graph.mirror_edge_edge_centric(edge_index).unwrap();
+    if bitvector.insert(mirror_edge.as_usize()) {
+        //println!("Marked edge {}", mirror_edge.as_usize());
     } else {
-        for mirror_edge in topological_mirror_edges {
-            if bitvector.insert(mirror_edge.as_usize()) {
-                //println!("Marked edge {}", mirror_edge.as_usize());
-                inserted_mirror = true;
-                break;
-            }
-        }
+        panic!(
+            "bitvector {}\nforwards {:?}\nmirrors {:?}",
+            bitvector_to_index_string(bitvector),
+            graph
+                .edges_between(
+                    graph.edge_endpoints(edge_index).from_node,
+                    graph.edge_endpoints(edge_index).to_node
+                )
+                .map(|e| e.as_usize())
+                .collect::<Vec<_>>(),
+            graph.topological_mirror_edges(edge_index)
+        );
     }
-    assert!(
-        inserted_mirror,
-        "bitvector {}\nforwards {:?}\nmirrors {:?}",
-        bitvector_to_index_string(bitvector),
-        graph
-            .edges_between(
-                graph.edge_endpoints(edge_index).from_node,
-                graph.edge_endpoints(edge_index).to_node
-            )
-            .collect::<Vec<_>>(),
-        graph.topological_mirror_edges(edge_index)
-    );
 }
 
 /// Computes a Eulerian cycle in the graph.
-pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<Graph: StaticBigraph>(
+pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<
+    EdgeData: BidirectedData + Eq,
+    Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
+>(
     graph: &Graph,
-) -> Vec<VecNodeWalk<Graph>> {
+) -> Vec<VecEdgeWalk<Graph>> {
     let mut used_edges = BitVector::new(graph.edge_count());
     let mut cycles = Vec::new();
 
@@ -83,15 +70,15 @@ pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<Graph: StaticBigr
             //println!("Start edge {}", start_edge_index.as_usize());
             mark_edge_and_mirror(&mut used_edges, graph, start_edge_index);
             let start_node = graph.edge_endpoints(start_edge_index).from_node;
-            cycle.push_back(start_node);
+            cycle.push_back(start_edge_index);
             let mut current_node = graph.edge_endpoints(start_edge_index).to_node;
 
             while current_node != start_node {
                 //println!("Expanding node {}", current_node.as_usize());
-                cycle.push_back(current_node);
                 let mut found_edge = false;
                 for neighbor in graph.out_neighbors(current_node) {
                     if !used_edges.contains(neighbor.edge_id.as_usize()) {
+                        cycle.push_back(neighbor.edge_id);
                         mark_edge_and_mirror(&mut used_edges, graph, neighbor.edge_id);
                         found_edge = true;
                         current_node = graph.edge_endpoints(neighbor.edge_id).to_node;
@@ -100,21 +87,26 @@ pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<Graph: StaticBigr
                 }
                 assert!(
                     found_edge,
-                    "Found no continuation edge at node {}, d- {:?}, d+ {:?}\nbitvector {}",
+                    "Found no continuation edge at node {}, d- {:?}, d+ {:?}, diff {}, self-mirror {}, #d- {:?}, #d+ {:?}\nbitvector {}",
                     current_node.as_usize(),
                     graph.in_neighbors(current_node).collect::<Vec<_>>(),
                     graph.out_neighbors(current_node).collect::<Vec<_>>(),
-                    bitvector_to_index_string(&used_edges)
+                    compute_eulerian_superfluous_out_biedges(graph, current_node),
+                    graph.is_self_mirror_node(current_node),
+                    graph.in_bidegree(current_node),
+                    graph.out_bidegree(current_node),
+                    bitvector_to_index_string(&used_edges),
                 );
             }
 
-            //println!("Closed cycle, used_edges: {}", bitvector_to_string(&used_edges));
+            //println!("Closed cycle, used_edges: {}", bitvector_to_index_string(&used_edges));
 
             // Find new start edge
             start_edge = None;
-            for (cycle_index, &node_index) in cycle.iter().enumerate() {
+            for (cycle_index, &edge_index) in cycle.iter().enumerate() {
                 let mut found_neighbor = false;
-                for neighbor in graph.out_neighbors(node_index) {
+                let from_node = graph.edge_endpoints(edge_index).from_node;
+                for neighbor in graph.out_neighbors(from_node) {
                     //println!("Found edge to continue current cycle {}", neighbor.edge_id.as_usize());
                     if !used_edges.contains(neighbor.edge_id.as_usize()) {
                         start_edge = Some(neighbor.edge_id);
@@ -136,27 +128,21 @@ pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<Graph: StaticBigr
 
         let mut cycle_walk = Vec::new();
         cycle_walk.extend(cycle.iter());
-        cycles.push(VecNodeWalk::new(cycle_walk));
+        cycles.push(VecEdgeWalk::new(cycle_walk));
     }
 
     cycles
 }
 
 /// Returns true if the graph contains a Eulerian bicycle.
-pub fn decomposes_into_eulerian_bicycles<Graph: StaticBigraph>(graph: &Graph) -> bool {
+pub fn decomposes_into_eulerian_bicycles<
+    EdgeData: BidirectedData + Eq,
+    Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
+>(
+    graph: &Graph,
+) -> bool {
     for node_index in graph.node_indices() {
-        let incoming_self_loops = graph
-            .in_neighbors(node_index)
-            .filter(|n| graph.mirror_node(n.node_id).unwrap() == node_index)
-            .count();
-        let outgoing_self_loops = graph
-            .out_neighbors(node_index)
-            .filter(|n| graph.mirror_node(n.node_id).unwrap() == node_index)
-            .count();
-
-        if graph.in_degree(node_index) - incoming_self_loops
-            != graph.out_degree(node_index) - outgoing_self_loops
-        {
+        if compute_eulerian_superfluous_out_biedges(graph, node_index) != 0 {
             return false;
         }
     }
@@ -166,45 +152,85 @@ pub fn decomposes_into_eulerian_bicycles<Graph: StaticBigraph>(graph: &Graph) ->
 
 /// Compute a vector of nodes that has indegree != outdegree.
 /// Bidirected self loops (edges from a node to its mirror) are handled by not counting them.
-pub fn find_non_eulerian_binodes<Graph: StaticBigraph>(graph: &Graph) -> Vec<Graph::NodeIndex> {
+pub fn find_non_eulerian_binodes<
+    EdgeData: BidirectedData + Eq,
+    Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
+>(
+    graph: &Graph,
+) -> Vec<Graph::NodeIndex> {
     let mut result = Vec::new();
     for node_index in graph.node_indices() {
-        let incoming_self_loops = graph
-            .in_neighbors(node_index)
-            .filter(|n| graph.mirror_node(n.node_id).unwrap() == node_index)
-            .count();
-        let outgoing_self_loops = graph
-            .out_neighbors(node_index)
-            .filter(|n| graph.mirror_node(n.node_id).unwrap() == node_index)
-            .count();
-
-        if graph.in_degree(node_index) - incoming_self_loops
-            != graph.out_degree(node_index) - outgoing_self_loops
-        {
+        if compute_eulerian_superfluous_out_biedges(graph, node_index) != 0 {
             result.push(node_index);
         }
     }
     result
 }
 
+/// Computes the number of outgoing edges that need to be added to make the binode Eulerian.
+/// A negative number indicates that incoming edges need to be added.
+pub fn compute_eulerian_superfluous_out_biedges<
+    EdgeData: BidirectedData + Eq,
+    Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
+>(
+    graph: &Graph,
+    node_index: Graph::NodeIndex,
+) -> isize {
+    let mirror_node = graph.mirror_node(node_index).unwrap();
+    if mirror_node == node_index {
+        (graph.out_degree(node_index) % 2) as isize
+    } else {
+        let mut out_neighbor_count = 0;
+        let mut out_inversion_count = 0;
+        let mut out_inversion_mirrors = HashSet::new();
+        for out_neighbor in graph.out_neighbors(node_index) {
+            if out_neighbor.node_id == mirror_node {
+                if out_inversion_mirrors.insert(out_neighbor.edge_id) {
+                    out_inversion_count += 1;
+                    let mirror_edge = graph
+                        .mirror_edge_edge_centric(out_neighbor.edge_id)
+                        .unwrap();
+                    let inserted = out_inversion_mirrors.insert(mirror_edge);
+                    assert!(inserted);
+                }
+            } else {
+                out_neighbor_count += 1;
+            }
+        }
+        let mut in_neighbor_count = 0;
+        let mut in_inversion_count = 0;
+        let mut in_inversion_mirrors = HashSet::new();
+        for in_neighbor in graph.in_neighbors(node_index) {
+            if in_neighbor.node_id == mirror_node {
+                if in_inversion_mirrors.insert(in_neighbor.edge_id) {
+                    in_inversion_count += 1;
+                    let mirror_edge = graph.mirror_edge_edge_centric(in_neighbor.edge_id).unwrap();
+                    let inserted = in_inversion_mirrors.insert(mirror_edge);
+                    assert!(inserted);
+                }
+            } else {
+                in_neighbor_count += 1;
+            }
+        }
+        let inversion_diff = out_inversion_count - in_inversion_count;
+
+        out_neighbor_count += inversion_diff;
+        in_neighbor_count -= inversion_diff;
+        out_neighbor_count - in_neighbor_count
+    }
+}
+
 /// Compute a vector of tuples of nodes and outdegree - indegree that has indegree != outdegree.
 /// Bidirected self loops (edges from a node to its mirror) are handled by not counting them.
-pub fn find_non_eulerian_binodes_with_differences<Graph: StaticBigraph>(
+pub fn find_non_eulerian_binodes_with_differences<
+    EdgeData: BidirectedData + Eq,
+    Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
+>(
     graph: &Graph,
 ) -> Vec<(Graph::NodeIndex, isize)> {
     let mut node_indices_and_differences = Vec::new();
     for node_index in graph.node_indices() {
-        let incoming_self_loops = graph
-            .in_neighbors(node_index)
-            .filter(|n| graph.mirror_node(n.node_id).unwrap() == node_index)
-            .count();
-        let outgoing_self_loops = graph
-            .out_neighbors(node_index)
-            .filter(|n| graph.mirror_node(n.node_id).unwrap() == node_index)
-            .count();
-
-        let difference = (graph.out_degree(node_index) - outgoing_self_loops) as isize
-            - (graph.in_degree(node_index) - incoming_self_loops) as isize;
+        let difference = compute_eulerian_superfluous_out_biedges(graph, node_index);
         if difference != 0 {
             node_indices_and_differences.push((node_index, difference));
         }
@@ -220,7 +246,7 @@ mod tests {
     use crate::interface::static_bigraph::StaticBigraphFromDigraph;
     use crate::traitgraph::interface::MutableGraphContainer;
     use traitgraph::implementation::petgraph_impl;
-    use traitgraph::walks::VecNodeWalk;
+    use traitgraph::walks::VecEdgeWalk;
 
     #[test]
     fn test_bidirected_eulerian_cycle_triangle() {
@@ -235,15 +261,15 @@ mod tests {
         let n6 = bigraph.add_node(());
         bigraph.set_mirror_nodes(n5, n6);
 
-        bigraph.add_edge(n1, n3, 13);
-        bigraph.add_edge(n4, n2, 42);
-        bigraph.add_edge(n3, n5, 35);
-        bigraph.add_edge(n6, n4, 64);
-        bigraph.add_edge(n5, n1, 51);
-        bigraph.add_edge(n2, n6, 26);
+        let e1 = bigraph.add_edge(n1, n3, ());
+        let _e2 = bigraph.add_edge(n4, n2, ());
+        let e3 = bigraph.add_edge(n3, n5, ());
+        let _e4 = bigraph.add_edge(n6, n4, ());
+        let e5 = bigraph.add_edge(n5, n1, ());
+        let _e6 = bigraph.add_edge(n2, n6, ());
 
         let euler_cycles = compute_minimum_bidirected_eulerian_cycle_decomposition(&bigraph);
-        assert_eq!(euler_cycles, vec![VecNodeWalk::new(vec![n1, n3, n5])]);
+        assert_eq!(euler_cycles, vec![VecEdgeWalk::new(vec![e1, e3, e5])]);
     }
 
     #[test]
@@ -265,23 +291,23 @@ mod tests {
         let n10 = bigraph.add_node(());
         bigraph.set_mirror_nodes(n9, n10);
 
-        bigraph.add_edge(n1, n3, 13);
-        bigraph.add_edge(n4, n2, 42);
-        bigraph.add_edge(n3, n5, 35);
-        bigraph.add_edge(n6, n4, 64);
-        bigraph.add_edge(n5, n1, 51);
-        bigraph.add_edge(n2, n6, 26);
-        bigraph.add_edge(n1, n7, 13);
-        bigraph.add_edge(n8, n2, 42);
-        bigraph.add_edge(n7, n9, 35);
-        bigraph.add_edge(n10, n8, 64);
-        bigraph.add_edge(n9, n1, 51);
-        bigraph.add_edge(n2, n10, 26);
+        let e1 = bigraph.add_edge(n1, n3, ());
+        let _e2 = bigraph.add_edge(n4, n2, ());
+        let e3 = bigraph.add_edge(n3, n5, ());
+        let _e4 = bigraph.add_edge(n6, n4, ());
+        let e5 = bigraph.add_edge(n5, n1, ());
+        let _e6 = bigraph.add_edge(n2, n6, ());
+        let e7 = bigraph.add_edge(n1, n7, ());
+        let _e8 = bigraph.add_edge(n8, n2, ());
+        let e9 = bigraph.add_edge(n7, n9, ());
+        let _e10 = bigraph.add_edge(n10, n8, ());
+        let e11 = bigraph.add_edge(n9, n1, ());
+        let _e12 = bigraph.add_edge(n2, n10, ());
 
         let euler_cycles = compute_minimum_bidirected_eulerian_cycle_decomposition(&bigraph);
         assert_eq!(
             euler_cycles,
-            vec![VecNodeWalk::new(vec![n1, n3, n5, n1, n7, n9])]
+            vec![VecEdgeWalk::new(vec![e1, e3, e5, e7, e9, e11])]
         );
     }
 }

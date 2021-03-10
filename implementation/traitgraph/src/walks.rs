@@ -394,6 +394,28 @@ where
     {
         self.is_proper_subsequence_of(other)
     }
+
+    /// Returns true if this is a valid circular walk in the given graph.
+    fn is_circular_walk(&'a self, graph: &Graph) -> bool
+    where
+        Graph: StaticGraph,
+    {
+        if self.is_empty() {
+            return true;
+        }
+
+        let mut connecting_node = graph.edge_endpoints(*self.last().unwrap()).to_node;
+        for &edge in self.iter() {
+            let edge_endpoints = graph.edge_endpoints(edge);
+            if edge_endpoints.from_node != connecting_node {
+                return false;
+            } else {
+                connecting_node = edge_endpoints.to_node;
+            }
+        }
+
+        true
+    }
 }
 
 ////////////////////
