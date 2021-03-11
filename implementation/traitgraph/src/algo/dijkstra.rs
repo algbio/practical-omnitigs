@@ -1,7 +1,7 @@
 use crate::index::GraphIndex;
 use crate::interface::{GraphBase, StaticGraph};
+pub use bitvector::BitVector;
 use std::collections::BinaryHeap;
-use bitvector::BitVector;
 
 /// A Dijkstra implementation with a set of common optimisations.
 pub type DefaultDijkstra<'a, Graph> = Dijkstra<'a, Graph, EpochNodeWeightArray<usize>>;
@@ -109,7 +109,9 @@ impl EpochArray {
     /// Set the given index as current.
     #[inline]
     pub fn update(&mut self, index: usize) {
-        unsafe {*self.epochs.get_unchecked_mut(index) = self.current_epoch;}
+        unsafe {
+            *self.epochs.get_unchecked_mut(index) = self.current_epoch;
+        }
         //self.epochs[index] = self.current_epoch;
     }
 
@@ -280,9 +282,9 @@ impl<
 mod tests {
     use crate::algo::dijkstra::DefaultDijkstra;
     use crate::implementation::petgraph_impl;
+    use crate::index::GraphIndex;
     use crate::interface::MutableGraphContainer;
     use bitvector::BitVector;
-    use crate::index::GraphIndex;
 
     #[test]
     fn test_dijkstra_simple() {
