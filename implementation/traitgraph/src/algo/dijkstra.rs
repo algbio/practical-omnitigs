@@ -207,6 +207,7 @@ impl<
     }
 
     /// Compute the shortest paths from source to all targets, with given maximum weight.
+    #[inline(never)]
     pub fn shortest_path_lens(
         &mut self,
         source: Graph::NodeIndex,
