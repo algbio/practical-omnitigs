@@ -2,39 +2,34 @@ use std::fmt::Debug;
 use std::fmt::Write;
 
 /// A type behaving like a sequence over the type `Item` with a subsequence type `Subsequence`.
-pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
+pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = &'a Item> + Sized {
     /// The iterator type of the sequence.
     type Iterator: Iterator<Item = &'a Item>;
-    /// The mutable iterator type of the sequence.
-    type IteratorMut: Iterator<Item = &'a mut Item>;
 
     /// Returns an iterator over the sequence.
-    fn iter(&'a self) -> Self::Iterator;
-
-    /// Returns a mutable iterator over the sequence.
-    fn iter_mut(&'a mut self) -> Self::IteratorMut;
+    fn iter(self) -> Self::Iterator;
 
     /// Returns the length of the sequence.
-    fn len(&self) -> usize;
+    fn len(self) -> usize;
 
     /// Returns true if the sequence is empty.
-    fn is_empty(&self) -> bool {
+    fn is_empty(self) -> bool {
         self.len() == 0
     }
 
     /// Returns the first item of the sequence.
-    fn first(&'a self) -> Option<&Item> {
+    fn first(self) -> Option<&'a Item> {
         self.iter().next()
     }
 
     /// Returns the last item of the sequence.
-    fn last(&'a self) -> Option<&Item> {
+    fn last(self) -> Option<&'a Item> {
         self.iter().last()
     }
 
     /// Returns true if this is a proper subsequence of the given sequence.
     /// Proper means that the sequences are not equal.
-    fn is_proper_subsequence_of(&'a self, other: &Self) -> bool
+    fn is_proper_subsequence_of(self, other: Self) -> bool
     where
         Item: Eq,
     {
@@ -59,7 +54,7 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
     }
 
     /// Returns true if this sequence contains the given item.
-    fn contains(&'a self, item: &Item) -> bool
+    fn contains(self, item: &Item) -> bool
     where
         Item: Eq,
     {
@@ -72,8 +67,8 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
     /// The method panics if this sequence does not contain the first item of the other sequence or the other sequence is empty.
     /// The method does not fail if the sequences are not mergeable for other reasons.
     fn forward_merge_iter_assume_mergeable(
-        &'a self,
-        suffix: &'a Self,
+        self,
+        suffix: Self,
     ) -> std::iter::Chain<Self::Iterator, std::iter::Skip<Self::Iterator>>
     where
         Item: Eq,
@@ -95,8 +90,8 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
     /// The method panics if the other sequence does not contain the first item of this sequence or this sequence is empty.
     /// The method does not fail if the sequences are not mergeable for other reasons.
     fn backward_merge_iter_assume_mergeable(
-        &'a self,
-        suffix: &'a Self,
+        self,
+        suffix: Self,
     ) -> std::iter::Chain<Self::Iterator, std::iter::Skip<Self::Iterator>>
     where
         Item: Eq,
@@ -115,7 +110,7 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
     /// let sequence = ["a", "c", "b"];
     /// assert_eq!(sequence.to_debug_string(), "[\"a\", \"c\", \"b\"]".to_string());
     /// ```
-    fn to_debug_string(&'a self) -> String
+    fn to_debug_string(self) -> String
     where
         Item: Debug,
     {
@@ -133,6 +128,15 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
         write!(result, "]").unwrap();
         result
     }
+}
+
+/// A type behaving like a sequence over the type `Item` with a subsequence type `Subsequence`.
+pub trait SequenceMut<'a, Item: 'a>: std::ops::Index<usize, Output = &'a mut Item> + Sized {
+    /// The mutable iterator type of the sequence.
+    type IteratorMut: Iterator<Item = &'a mut Item>;
+
+    /// Returns a mutable iterator over the sequence.
+    fn iter_mut(self) -> Self::IteratorMut;
 }
 
 #[cfg(test)]
