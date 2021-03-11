@@ -1,6 +1,7 @@
 use crate::index::GraphIndex;
 use crate::interface::{GraphBase, StaticGraph};
 use std::collections::BinaryHeap;
+use bitvector::BitVector;
 
 /// A Dijkstra implementation with a set of common optimisations.
 pub type DefaultDijkstra<'a, Graph> = Dijkstra<'a, Graph, EpochNodeWeightArray<usize>>;
@@ -185,7 +186,6 @@ pub struct Dijkstra<'a, Graph: GraphBase, NodeWeights> {
     queue: BinaryHeap<std::cmp::Reverse<(usize, Graph::NodeIndex)>>,
     // back_pointers: Vec<Graph::OptionalNodeIndex>,
     node_weights: NodeWeights,
-    target_nodes: EpochArray,
     graph: &'a Graph,
 }
 
@@ -202,7 +202,6 @@ impl<
             queue: BinaryHeap::new(),
             // back_pointers: vec![Default::default(); graph.node_count()],
             node_weights: NodeWeights::new(graph.node_count()),
-            target_nodes: EpochArray::new(graph.node_count()),
             graph,
         }
     }
@@ -212,7 +211,7 @@ impl<
     pub fn shortest_path_lens(
         &mut self,
         source: Graph::NodeIndex,
-        targets: &Vec<Graph::NodeIndex>,
+        targets: &BitVector,
         max_weight: usize,
         distances: &mut Vec<(Graph::NodeIndex, usize)>,
     ) {
@@ -220,40 +219,36 @@ impl<
         self.queue.push(std::cmp::Reverse((0, source)));
         //self.back_pointers[source.as_usize()] = source.into();
         self.node_weights.set(source.as_usize(), 0);
-
         distances.clear();
-        for target in targets {
-            self.target_nodes.update(target.as_usize());
-        }
 
-        let mut iterations = 0;
-        let mut unnecessary_iterations = 0;
-        let max_iterations = self.graph.node_count();
+        //let mut iterations = 0;
+        //let mut unnecessary_iterations = 0;
+        //let max_iterations = self.graph.node_count();
         while let Some(std::cmp::Reverse((weight, node_index))) = self.queue.pop() {
-            iterations += 1;
+            //iterations += 1;
             //println!("Finalising node {}", node_index.as_usize());
             // Check if the node was already processed
             let actual_weight = self.node_weights.get(node_index.as_usize());
             if actual_weight < weight {
-                unnecessary_iterations += 1;
+                //unnecessary_iterations += 1;
                 continue;
             }
             assert_eq!(actual_weight, weight);
 
             // Check if we are still below max_weight
             if weight > max_weight {
-                println!("Aborting early by max_weight after {}/{} iterations of which {} are unnecessary", iterations, max_iterations, unnecessary_iterations);
+                //println!("Aborting early by max_weight after {}/{} iterations of which {} are unnecessary", iterations, max_iterations, unnecessary_iterations);
                 break;
             }
 
             // Check if we found a target
-            if self.target_nodes.get(node_index.as_usize()) {
+            if targets.contains(node_index.as_usize()) {
                 distances.push((node_index, weight));
             }
 
             // Check if we already found all paths
             if distances.len() == targets.len() {
-                println!("Aborting early after finding all targets");
+                //println!("Aborting early after finding all targets");
                 break;
             }
 
@@ -278,7 +273,6 @@ impl<
             *back_pointer = Default::default();
         }*/
         self.node_weights.clear();
-        self.target_nodes.clear();
     }
 }
 
@@ -287,6 +281,8 @@ mod tests {
     use crate::algo::dijkstra::DefaultDijkstra;
     use crate::implementation::petgraph_impl;
     use crate::interface::MutableGraphContainer;
+    use bitvector::BitVector;
+    use crate::index::GraphIndex;
 
     #[test]
     fn test_dijkstra_simple() {
@@ -300,19 +296,23 @@ mod tests {
 
         let mut dijkstra = DefaultDijkstra::new(&graph);
         let mut distances = Vec::new();
-        dijkstra.shortest_path_lens(n1, &[n3].iter().copied().collect(), 6, &mut distances);
+        let mut targets = BitVector::new(3);
+        targets.insert(n3.as_usize());
+        dijkstra.shortest_path_lens(n1, &targets, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
 
-        dijkstra.shortest_path_lens(n1, &[n3].iter().copied().collect(), 6, &mut distances);
+        dijkstra.shortest_path_lens(n1, &targets, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
 
-        dijkstra.shortest_path_lens(n2, &[n3].iter().copied().collect(), 6, &mut distances);
+        dijkstra.shortest_path_lens(n2, &targets, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 2)]);
 
-        dijkstra.shortest_path_lens(n3, &[n3].iter().copied().collect(), 6, &mut distances);
+        dijkstra.shortest_path_lens(n3, &targets, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 0)]);
 
-        dijkstra.shortest_path_lens(n3, &[n2].iter().copied().collect(), 6, &mut distances);
+        targets.clear();
+        targets.insert(n2.as_usize());
+        dijkstra.shortest_path_lens(n3, &targets, 6, &mut distances);
         assert_eq!(distances, vec![]);
     }
 
@@ -328,7 +328,9 @@ mod tests {
 
         let mut dijkstra = DefaultDijkstra::new(&graph);
         let mut distances = Vec::new();
-        dijkstra.shortest_path_lens(n1, &[n3].iter().copied().collect(), 6, &mut distances);
+        let mut targets = BitVector::new(3);
+        targets.insert(n3.as_usize());
+        dijkstra.shortest_path_lens(n1, &targets, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
     }
 }
