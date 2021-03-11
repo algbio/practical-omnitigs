@@ -1,51 +1,10 @@
+use crate::algo::{bitvector_to_index_string, mark_edge_and_mirror};
 use crate::interface::static_bigraph::StaticEdgeCentricBigraph;
 use crate::interface::BidirectedData;
 use crate::traitgraph::index::GraphIndex;
 use bitvector::BitVector;
 use std::collections::{HashSet, LinkedList};
-use std::fmt::Write;
 use traitgraph::walks::VecEdgeWalk;
-
-fn bitvector_to_index_string(bitvector: &BitVector) -> String {
-    let mut result = String::new();
-    for i in 0..bitvector.capacity() {
-        if bitvector.contains(i) {
-            write!(result, "{} ", i).unwrap()
-        }
-    }
-    result
-}
-
-fn mark_edge_and_mirror<
-    EdgeData: BidirectedData + Eq,
-    Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
->(
-    bitvector: &mut BitVector,
-    graph: &Graph,
-    edge_index: Graph::EdgeIndex,
-) {
-    assert!(!bitvector.contains(edge_index.as_usize()));
-    bitvector.insert(edge_index.as_usize());
-    //println!("Marked edge {}", edge_index.as_usize());
-
-    let mirror_edge = graph.mirror_edge_edge_centric(edge_index).unwrap();
-    if bitvector.insert(mirror_edge.as_usize()) {
-        //println!("Marked edge {}", mirror_edge.as_usize());
-    } else {
-        panic!(
-            "bitvector {}\nforwards {:?}\nmirrors {:?}",
-            bitvector_to_index_string(bitvector),
-            graph
-                .edges_between(
-                    graph.edge_endpoints(edge_index).from_node,
-                    graph.edge_endpoints(edge_index).to_node
-                )
-                .map(|e| e.as_usize())
-                .collect::<Vec<_>>(),
-            graph.topological_mirror_edges(edge_index)
-        );
-    }
-}
 
 /// Computes a Eulerian cycle in the graph.
 pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<
@@ -73,20 +32,21 @@ pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<
             cycle.push_back(start_edge_index);
             let mut current_node = graph.edge_endpoints(start_edge_index).to_node;
 
-            while current_node != start_node {
+            let mut has_neighbor = true;
+            while has_neighbor {
                 //println!("Expanding node {}", current_node.as_usize());
-                let mut found_edge = false;
+                has_neighbor = false;
                 for neighbor in graph.out_neighbors(current_node) {
                     if !used_edges.contains(neighbor.edge_id.as_usize()) {
                         cycle.push_back(neighbor.edge_id);
                         mark_edge_and_mirror(&mut used_edges, graph, neighbor.edge_id);
-                        found_edge = true;
-                        current_node = graph.edge_endpoints(neighbor.edge_id).to_node;
+                        has_neighbor = true;
+                        current_node = neighbor.node_id;
                         break;
                     }
                 }
                 assert!(
-                    found_edge,
+                    has_neighbor || current_node == start_node,
                     "Found no continuation edge at node {}, d- {:?}, d+ {:?}, diff {}, self-mirror {}, #d- {:?}, #d+ {:?}\nbitvector {}",
                     current_node.as_usize(),
                     graph.in_neighbors(current_node).collect::<Vec<_>>(),
