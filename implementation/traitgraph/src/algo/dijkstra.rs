@@ -214,6 +214,7 @@ impl<
         &mut self,
         source: Graph::NodeIndex,
         targets: &BitVector,
+        target_amount: usize,
         max_weight: usize,
         distances: &mut Vec<(Graph::NodeIndex, usize)>,
     ) {
@@ -249,7 +250,7 @@ impl<
             }
 
             // Check if we already found all paths
-            if distances.len() == targets.len() {
+            if distances.len() == target_amount {
                 //println!("Aborting early after finding all targets");
                 break;
             }
@@ -300,21 +301,21 @@ mod tests {
         let mut distances = Vec::new();
         let mut targets = BitVector::new(3);
         targets.insert(n3.as_usize());
-        dijkstra.shortest_path_lens(n1, &targets, 6, &mut distances);
+        dijkstra.shortest_path_lens(n1, &targets, 1, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
 
-        dijkstra.shortest_path_lens(n1, &targets, 6, &mut distances);
+        dijkstra.shortest_path_lens(n1, &targets, 1, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
 
-        dijkstra.shortest_path_lens(n2, &targets, 6, &mut distances);
+        dijkstra.shortest_path_lens(n2, &targets, 1, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 2)]);
 
-        dijkstra.shortest_path_lens(n3, &targets, 6, &mut distances);
+        dijkstra.shortest_path_lens(n3, &targets, 1, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 0)]);
 
         targets.clear();
         targets.insert(n2.as_usize());
-        dijkstra.shortest_path_lens(n3, &targets, 6, &mut distances);
+        dijkstra.shortest_path_lens(n3, &targets, 1, 6, &mut distances);
         assert_eq!(distances, vec![]);
     }
 
@@ -332,7 +333,7 @@ mod tests {
         let mut distances = Vec::new();
         let mut targets = BitVector::new(3);
         targets.insert(n3.as_usize());
-        dijkstra.shortest_path_lens(n1, &targets, 6, &mut distances);
+        dijkstra.shortest_path_lens(n1, &targets, 1, 6, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
     }
 }
