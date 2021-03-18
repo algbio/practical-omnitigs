@@ -164,7 +164,7 @@ pub fn read_gfa_as_bigraph<
 }
 
 /// Read an edge-centric bigraph in gfa format from a file.
-/// This method also returns the k-mer length given in the gfa file.
+/// This method also returns the k-mer length given in the gfa file as well as the full gfa header.
 pub fn read_gfa_as_edge_centric_bigraph_from_file<
     P: AsRef<Path>,
     NodeData: Default,
@@ -174,7 +174,7 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
         + std::fmt::Debug,
 >(
     gfa_file: P,
-) -> Result<(Graph, usize)> {
+) -> Result<(Graph, usize, String)> {
     read_gfa_as_edge_centric_bigraph(BufReader::new(File::open(gfa_file)?))
 }
 
@@ -208,7 +208,7 @@ where
 }
 
 /// Read an edge-centric bigraph in gfa format from a `BufRead`.
-/// This method also returns the k-mer length given in the gfa file.
+/// This method also returns the k-mer length given in the gfa file as well as the full gfa header.
 pub fn read_gfa_as_edge_centric_bigraph<
     R: BufRead,
     NodeData: Default,
@@ -218,16 +218,18 @@ pub fn read_gfa_as_edge_centric_bigraph<
         + std::fmt::Debug,
 >(
     gfa: R,
-) -> Result<(Graph, usize)> {
+) -> Result<(Graph, usize, String)> {
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
     let mut k = usize::max_value();
+    let mut header = None;
 
     for line in gfa.lines() {
         let line = line?;
 
         if line.starts_with('H') {
             assert!(bigraph.is_empty());
+            header = Some(line.clone());
             for column in line.split('\t') {
                 if let Some(stripped) = column.strip_prefix("KL:Z:") {
                     assert_eq!(k, usize::max_value());
@@ -282,9 +284,10 @@ pub fn read_gfa_as_edge_centric_bigraph<
     }
 
     //println!("{:?}", bigraph);
+    assert!(header.is_some(), "GFA file has no header");
     assert!(bigraph.verify_node_pairing());
     assert!(bigraph.verify_edge_mirror_property());
-    Ok((bigraph, k))
+    Ok((bigraph, k, header.unwrap()))
 }
 
 #[cfg(test)]
@@ -295,7 +298,7 @@ mod tests {
     #[test]
     fn test_read_gfa_as_edge_centric_bigraph_simple() {
         let gfa = "H\tKL:Z:3\nS\t1\tACGA\nS\t2\tTCGT";
-        let (_bigraph, k): (PetGFAEdgeGraph<(), ()>, _) =
+        let (_bigraph, k, _gfa_header): (PetGFAEdgeGraph<(), ()>, _, _) =
             read_gfa_as_edge_centric_bigraph(BufReader::new(gfa.as_bytes())).unwrap();
         assert_eq!(k, 3);
     }

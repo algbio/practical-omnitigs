@@ -5,6 +5,7 @@ use std::collections::BinaryHeap;
 
 /// A Dijkstra implementation with a set of common optimisations.
 pub type DefaultDijkstra<'a, Graph> = Dijkstra<'a, Graph, EpochNodeWeightArray<usize>>;
+//pub type DefaultDijkstra<'a, Graph> = Dijkstra<'a, Graph, Vec<usize>>;
 
 /// A weight-type usable in Dijkstra's algorithm.
 pub trait Weight {
