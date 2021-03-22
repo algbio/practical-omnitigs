@@ -22,6 +22,12 @@ read_length_interval = args.read_length_interval
 distribution = args.distribution
 coverage = args.coverage
 
+print("reference_path = {}".format(reference_path))
+print("output_path = {}".format(output_path))
+print("read_length_interval = {}".format(read_length_interval))
+print("distribution = {}".format(distribution))
+print("coverage = {}".format(coverage))
+
 def clean_reference(reference):
 	for i in range(len(reference)):
 		if reference[i] == ord('R'):

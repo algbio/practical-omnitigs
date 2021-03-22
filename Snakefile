@@ -167,11 +167,11 @@ class Arguments(dict):
 
         result = self[name]
         if type(result) is not Arguments:
-            return None
+            return Arguments()
 
         result = list(result.values())
         if len(result) != 1 or type(result[0]) is not Arguments:
-            return None
+            return Arguments()
 
         return result[0]
 
@@ -200,12 +200,20 @@ class Arguments(dict):
             return None
 
     def __str__(self):
+        if self is None:
+            return "{}"
+
         string = json.dumps(self, separators = (',', ':'))
         n = 200
         result = "/_/".join([string[i:i+n] for i in range(0, len(string), n)])
         return result
 
     def from_str(string):
+        if string is None:
+            return None
+        elif string is "None":
+            return None
+
         string = string.replace("/_/", "")
         return Arguments.from_dict(json.loads(string))
 
@@ -696,7 +704,7 @@ rule create_combined_eaxmax_graph:
             script = "scripts/create_combined_eaxmax_plot.py",
     output: REPORT_PREFIX_FORMAT + "combined_eaxmax_plot.pdf",
     params: input_quast_csvs = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quast_csvs)])
-    conda: "config/conda-seaborn-env.yml"
+    conda:  "config/conda-seaborn-env.yml"
     threads: 1
     shell: """
         mkdir -p "$(dirname '{output}')"
@@ -720,6 +728,15 @@ rule latex:
     shell: """
         tectonic '{input}'
         """
+
+rule find_wtdbg2_node_errors:
+    input:  nodes = os.path.join(WTDBG2_PREFIX_FORMAT, "wtdbg2.1.nodes"),
+            script = "scripts/find_wtdbg2_node_errors.py",
+    log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log"),
+    params: output_prefix = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors") + "/",
+    conda:  "config/conda-seaborn-env.yml"
+    threads: 1
+    shell: "'{input.script}' '{input.nodes}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
 
 ########################
 ###### Algorithms ######
