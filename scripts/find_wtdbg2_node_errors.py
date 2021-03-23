@@ -101,7 +101,7 @@ for node_id, aligns in node_align_map.items():
 	end_deviation = max_end - min_end
 	deviation = max(start_deviation, end_deviation)
 	if len(contigs) > 1:
-		print(contigs)
+		#print(contigs)
 		deviation = None
 
 	if deviation is not None and deviation < 256:
