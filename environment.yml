@@ -1,6 +1,6 @@
 name: practical-omnitigs
 channels:
-        - bioconda
         - conda-forge
+        - bioconda
 dependencies: 
         - snakemake==6.0.5
