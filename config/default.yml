@@ -754,6 +754,15 @@ reports:
             - "--pacbio-hifi": True
     columns: *contigbreaker_hifi_columns
 
+  "Minghui63_hifiasm_trivial_omnitigs":
+    argument_matrix:
+      genome: "Minghui63"
+      assembler: "hifiasm"
+      postprocessor:
+        "none": True
+        "gfa_trivial_omnitigs": True
+    columns: *hifiasm_trivial_omnitigs_columns
+
   "HG002":
     argument_matrix:
       genome: "HG002"

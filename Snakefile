@@ -489,13 +489,21 @@ def get_all_report_files_without_human():
         traceback.print_exc()
         sys.exit("Catched exception")
 
+localrules: report_all_without_human
 rule report_all_without_human:
     input:  get_all_report_files_without_human(),
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
+localrules: report_all
 rule report_all:
     input:  get_all_report_files(),
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
+localrules: report_all_hifiasm_trivial_omnitigs
+rule report_all_hifiasm_trivial_omnitigs:
+    input:  [f for f in get_all_report_files() if "hifiasm_trivial_omnitigs" in os.path.basename(f)],
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
