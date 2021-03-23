@@ -39,6 +39,10 @@ if "reportdir" in config:
 if REPORTDIR[-1] != "/":
     REPORTDIR += "/"
 
+print("DATADIR: {}".format(DATADIR))
+print("PROGRAMDIR: {}".format(PROGRAMDIR))
+print("REPORTDIR: {}".format(REPORTDIR))
+
 MAX_THREADS = 56
 print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
 
