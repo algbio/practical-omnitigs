@@ -183,8 +183,9 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
         + std::fmt::Debug,
 >(
     gfa_file: P,
+    estimate_k: bool,
 ) -> Result<(Graph, usize, String)> {
-    read_gfa_as_edge_centric_bigraph(BufReader::new(File::open(gfa_file)?))
+    read_gfa_as_edge_centric_bigraph(BufReader::new(File::open(gfa_file)?), estimate_k)
 }
 
 fn get_or_create_node<Graph: DynamicBigraph, G: Genome + Hash>(
@@ -227,7 +228,10 @@ pub fn read_gfa_as_edge_centric_bigraph<
         + std::fmt::Debug,
 >(
     gfa: R,
+    estimate_k: bool,
 ) -> Result<(Graph, usize, String)> {
+    assert!(!estimate_k, "Estimating k not supported yet");
+
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
     let mut k = usize::max_value();
@@ -308,7 +312,7 @@ mod tests {
     fn test_read_gfa_as_edge_centric_bigraph_simple() {
         let gfa = "H\tKL:Z:3\nS\t1\tACGA\nS\t2\tTCGT";
         let (_bigraph, k, _gfa_header): (PetGFAEdgeGraph<(), ()>, _, _) =
-            read_gfa_as_edge_centric_bigraph(BufReader::new(gfa.as_bytes())).unwrap();
+            read_gfa_as_edge_centric_bigraph(BufReader::new(gfa.as_bytes()), false).unwrap();
         assert_eq!(k, 3);
     }
 }

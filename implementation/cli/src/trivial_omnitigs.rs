@@ -197,7 +197,7 @@ pub(crate) fn compute_trivial_omnitigs(
                 PetGFAEdgeGraph<(), BidirectedGFANodeData<()>>,
                 _,
                 _,
-            ) = genome_graph::io::gfa::read_gfa_as_edge_centric_bigraph_from_file(input)?;
+            ) = genome_graph::io::gfa::read_gfa_as_edge_centric_bigraph_from_file(input, true)?;
 
             info!("Computing maximal trivial omnitigs");
             let mut maximal_omnitigs = if subcommand.non_scc {
