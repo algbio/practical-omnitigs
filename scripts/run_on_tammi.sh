@@ -2,10 +2,11 @@
 
 set -e
 
-source /home/sebschmi/.bashrc
-cd /proj/sebschmi/git/practical-omnitigs
+SOURCED_SEBSCHMI_BASHRC="false"
+source /home/sebschmi/.profile
+cd /home/sebschmi/git/practical-omnitigs
 
-source activate practical-omnitigs
+conda activate practical-omnitigs
 
 # Create log directory
 LOGDIR="logs/$(date +"%FT%X")/"
@@ -20,8 +21,8 @@ echo "$LOGDIR" > .logdir
 
 echo "Creating jobs"
 
-echo "Arguments: $@" >> "$LOGDIR/run_on_turso.log"
-nohup snakemake --profile config/turso $@ >> "$LOGDIR/run_on_turso.log" 2>&1 &
+echo "Arguments: $@" >> "$LOGDIR/run_on_tammi.log"
+nohup snakemake --profile config/tammi $@ >> "$LOGDIR/run_on_tammi.log" 2>&1 &
 
 echo "Started snakemake in background with PID $!"
 
