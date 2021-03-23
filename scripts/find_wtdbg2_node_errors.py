@@ -101,7 +101,7 @@ for node_id, aligns in node_align_map.items():
 	end_deviation = max_end - min_end
 	deviation = max(start_deviation, end_deviation)
 	if len(contigs) > 1:
-		print(contigs)
+		#print(contigs)
 		deviation = None
 
 	if deviation is not None and deviation < 256:
@@ -117,7 +117,7 @@ print("{:.0f}% of nodes are transitively correct".format(transitively_correct_no
 print("{:.0f}% of nodes have large errors".format(len([d for d in deviations if d is not None and d >= 1024]) * 100.0 / len(node_align_map)))
 print("{:.0f}% of nodes join contigs".format(len([d for d in deviations if d is None]) * 100.0 / len(node_align_map)))
 
-deviations = [d for d in deviations if d is not None]
+deviations = [d if d > 0 else 1 for d in deviations if d is not None]
 deviation_df = pd.DataFrame({"deviation": deviations})
 
 fig, axes = plt.subplots(1, 2)

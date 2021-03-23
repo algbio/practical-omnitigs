@@ -211,7 +211,7 @@ class Arguments(dict):
     def from_str(string):
         if string is None:
             return None
-        elif string is "None":
+        elif string == "None":
             return None
 
         string = string.replace("/_/", "")
@@ -736,7 +736,7 @@ rule find_wtdbg2_node_errors:
     params: output_prefix = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors") + "/",
     conda:  "config/conda-seaborn-env.yml"
     threads: 1
-    shell: "'{input.script}' '{input.nodes}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
+    shell:  "'{input.script}' '{input.nodes}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
 
 ########################
 ###### Algorithms ######
