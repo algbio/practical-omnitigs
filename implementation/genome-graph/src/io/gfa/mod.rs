@@ -1,4 +1,5 @@
 use crate::error::Result;
+use crate::io::fasta::FastaData;
 use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
@@ -35,7 +36,7 @@ pub type PetGFAEdgeGraph<NodeData, EdgeData> =
     >;
 
 /// Node data of a bidirected graph read from GFA
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Default)]
 pub struct BidirectedGFANodeData<T> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.
     pub sequence: Rc<VectorGenome>,
@@ -58,6 +59,14 @@ impl<T: BidirectedData> BidirectedData for BidirectedGFANodeData<T> {
 impl<T: WeightedEdgeData> WeightedEdgeData for BidirectedGFANodeData<T> {
     fn weight(&self) -> usize {
         self.data.weight()
+    }
+}
+
+impl<T> FastaData for BidirectedGFANodeData<T> {
+    type GenomeSequence = VectorGenome;
+
+    fn sequence(&self) -> &Self::GenomeSequence {
+        &self.sequence
     }
 }
 

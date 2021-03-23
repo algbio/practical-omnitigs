@@ -95,7 +95,7 @@ class Arguments(dict):
                         self[key].pop(k)
 
                     if len(self[key]) == 0:
-                        sys.exit("Unselected all values")
+                        sys.exit("Unselected all values: key: {}; unselect: {}".format(key, unselect))
                 else:
                     assert type(self[key]) is str or type(self[key]) is int or type(self[key]) is float or type(self[key]) is bool, "type(self[key]) is not str, bool, int or float. key: {}, type(self[key]): {}".format(key, type(self[key]))
                     self[key] = value
@@ -105,6 +105,8 @@ class Arguments(dict):
 
                 unselect = []
                 if select:
+                    if self[key] is None:
+                        pass # TODO
                     unselect = [k for k in self[key].keys() if k not in value.keys()]
                     for k in unselect:
                         self[key].pop(k)
@@ -907,6 +909,29 @@ rule select_assembler:
     threads: 1
     shell: "ln -sr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
 
+def get_raw_gfa_assembly_file_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        assembler_name = arguments.assembler_name()
+
+        if assembler_name == "hifiasm":
+            result = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.p_ctg.gfa")
+        else:
+            raise Exception("Assembler {} does not support gfa (in arguments: {})".format(assembler_name, arguments))
+
+        arguments.retain_raw_assembly_arguments()
+        return result.format(genome = arguments.genome(), arguments = str(arguments))
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+localrules: select_gfa_assembler
+rule select_gfa_assembler:
+    input:  raw_assembly_from_assembler = get_raw_gfa_assembly_file_from_wildcards,
+    output: raw_assembly = ALGORITHM_PREFIX_FORMAT + "raw_assembly.gfa",
+    threads: 1
+    shell: "ln -sr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
+
 def get_assembly_postprocessing_target_file_from_wildcards(wildcards):
     try:
         try:
@@ -918,6 +943,8 @@ def get_assembly_postprocessing_target_file_from_wildcards(wildcards):
         postprocessor_name = arguments.postprocessor_name()
         if postprocessor_name == "contigbreaker":
             return ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa"
+        elif postprocessor_name == "gfa_trivial_omnitigs":
+            return os.path.join(ALGORITHM_PREFIX_FORMAT, "gfa_trivial_omnitigs/trivial_omnitigs.fa")
         else:
             return ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa"
     except Exception:
@@ -1013,6 +1040,20 @@ rule run_contigbreaker:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720),
     conda: "tools/contigbreaker/environment.yml"
     shell: "'{input.script}' --threads {threads} --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
+
+rule run_gfa_trivial_omnitigs:
+    input:  contigs = os.path.join(ALGORITHM_PREFIX_FORMAT, "raw_assembly.gfa"),
+            binary = os.path.join(PROGRAMDIR, "target/release/cli"),
+    output: trivial_omnitigs = os.path.join(ALGORITHM_PREFIX_FORMAT, "gfa_trivial_omnitigs", "trivial_omnitigs.fa"),
+    log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "gfa_trivial_omnitigs", "trivial_omnitigs.log"),
+    threads: 1
+    resources:
+            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 10000),
+            time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+            cpus = 1,
+            queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10000),
+    shell: "'{input.binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.contigs}' --output '{output.trivial_omnitigs}' 2>&1 | tee '{log.log}'"
+
 
 ####################
 ###### wtdbg2 ######

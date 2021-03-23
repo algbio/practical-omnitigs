@@ -288,6 +288,14 @@ column_templates:
       select_postprocessor:
         contigbreaker:
 
+  hifiasm_trivial_omnitigs_columns: &hifiasm_trivial_omnitigs_columns
+    - shortname: "hifiasm"
+      select_assembler: "hifiasm"
+      select_postprocessor: "none"
+    - shortname: "hifiasm YV"
+      select_assembler: "hifiasm"
+      select_postprocessor: "gfa_trivial_omnitigs"
+
   fragment_injection_step_columns: &fragment_injection_step_columns
     - shortname: "wtdbg2"
       select_assembler: "wtdbg2"
@@ -392,6 +400,16 @@ reports:
           cli_arguments:
             "-x": "ccs"
     columns: *fragment_injection_step_columns
+
+  "sim_hifi_hifiasm_trivial_omnitigs":
+    argument_matrix:
+      genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+      read_simulator: "bbmap_hifi"
+      assembler: "hifiasm"
+      postprocessor:
+        "none": True
+        "gfa_trivial_omnitigs": True
+    columns: *hifiasm_trivial_omnitigs_columns
 
   "sim_hifi_with_human":
     argument_matrix:

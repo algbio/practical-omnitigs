@@ -2,6 +2,7 @@
 
 use itertools::Itertools;
 use std::iter::FromIterator;
+use traitsequence::interface::Sequence;
 
 /// A genome string.
 /// While the internal representation is implementation specific, externally genome strings are represented as sequences of `u8`,
@@ -9,7 +10,13 @@ use std::iter::FromIterator;
 ///
 /// The ordering implemented should be the lexical order of the genome characters.
 pub trait Genome:
-    for<'a> FromIterator<&'a u8> + FromIterator<u8> + Eq + Clone + Ord + Sized
+    for<'a> FromIterator<&'a u8>
+    + FromIterator<u8>
+    + Eq
+    + Clone
+    + Ord
+    + Sized
+    + for<'a> Sequence<'a, u8>
 where
     for<'a> &'a Self: IntoIterator<Item = u8>,
 {
@@ -36,7 +43,7 @@ where
 
     /// Returns true if this genome string is empty.
     fn is_empty(&self) -> bool {
-        self.len() == 0
+        Genome::len(&self) == 0
     }
 
     /// Copies this genome string into a `Vec`.
@@ -53,7 +60,7 @@ where
     /// Returns a copy of the suffix with length `len` of this genome.
     /// Panics if `len >= self.len()`.
     fn suffix(&self, len: usize) -> Self {
-        Self::from_iter(self.into_iter().skip(self.len() - len))
+        Self::from_iter(self.into_iter().skip(Genome::len(&self) - len))
     }
 
     /// Returns the genome as nucleotide string.

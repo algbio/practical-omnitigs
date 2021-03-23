@@ -1,5 +1,5 @@
-use crate::io::bcalm2::PlainBCalm2NodeData;
 use bigraph::traitgraph::interface::ImmutableGraphContainer;
+use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::EdgeWalk;
 use compact_genome::interface::{ExtendableGenome, Genome};
 use std::path::Path;
@@ -24,10 +24,23 @@ error_chain! {
     }
 }
 
+/// Data that can be output as fasta record.
+pub trait FastaData
+where
+    for<'a> &'a Self::GenomeSequence: IntoIterator<Item = u8>,
+{
+    /// The type storing the genome sequence of this fasta record.
+    type GenomeSequence: Genome;
+
+    /// Returns the sequence of this fasta record.
+    fn sequence(&self) -> &Self::GenomeSequence;
+}
+
 /// Write a sequence of walks in a graph as fasta records.
 pub fn write_walks_as_fasta<
     'ws,
-    Graph: ImmutableGraphContainer<EdgeData = PlainBCalm2NodeData>,
+    EdgeData: FastaData,
+    Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
     Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
     Writer: std::io::Write,
@@ -36,16 +49,21 @@ pub fn write_walks_as_fasta<
     kmer_size: usize,
     walks: WalkSource,
     writer: &mut bio::io::fasta::Writer<Writer>,
-) -> crate::error::Result<()> {
+) -> crate::error::Result<()>
+where
+    for<'a> &'a EdgeData::GenomeSequence: IntoIterator<Item = u8>,
+    EdgeData::GenomeSequence: ExtendableGenome,
+{
     for (i, walk) in walks.into_iter().enumerate() {
         if walk.is_empty() {
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence = graph.edge_data(walk[0]).sequence.clone();
+        let mut sequence = graph.edge_data(walk[0]).sequence().clone();
         for edge in walk.iter().skip(1) {
-            let edge_sequence = &graph.edge_data(*edge).sequence[kmer_size - 1..];
-            sequence.extend(edge_sequence.iter().copied());
+            let edge_sequence = graph.edge_data(*edge).sequence();
+            let edge_sequence = edge_sequence.iter().skip(kmer_size - 1);
+            sequence.extend(edge_sequence.copied());
         }
 
         let record =
@@ -60,7 +78,8 @@ pub fn write_walks_as_fasta<
 /// The given file is created if it does not exist or truncated if it does exist.
 pub fn write_walks_as_fasta_file<
     'ws,
-    Graph: ImmutableGraphContainer<EdgeData = PlainBCalm2NodeData>,
+    EdgeData: FastaData,
+    Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
     Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
     P: AsRef<Path>,
@@ -69,7 +88,11 @@ pub fn write_walks_as_fasta_file<
     kmer_size: usize,
     walks: WalkSource,
     path: P,
-) -> crate::error::Result<()> {
+) -> crate::error::Result<()>
+where
+    for<'a> &'a EdgeData::GenomeSequence: IntoIterator<Item = u8>,
+    EdgeData::GenomeSequence: ExtendableGenome,
+{
     write_walks_as_fasta(
         graph,
         kmer_size,

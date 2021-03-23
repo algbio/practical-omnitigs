@@ -1,5 +1,6 @@
 use crate::CliOptions;
 use clap::Clap;
+use genome_graph::io::gfa::{BidirectedGFANodeData, PetGFAEdgeGraph};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::algo::components::is_strongly_connected;
@@ -14,7 +15,7 @@ pub struct ComputeTrivialOmnitigsCommand {
         short,
         long,
         default_value = "bcalm2",
-        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file. If dot, then the input is a .dot file and the output is a list of sequences of node ids."
+        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file. If dot, then the input is a .dot file and the output is a list of sequences of node ids. If hifiasm, the input is in gfa format, and the output in fasta format."
     )]
     pub file_format: String,
 
@@ -156,6 +157,47 @@ pub(crate) fn compute_trivial_omnitigs(
                 genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
                     &input, kmer_size,
                 )?;
+
+            info!("Computing maximal trivial omnitigs");
+            let mut maximal_omnitigs = if subcommand.non_scc {
+                Omnitigs::compute_trivial_only_non_scc(&genome_graph)
+            } else {
+                ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
+                Omnitigs::compute_trivial_only(&genome_graph)
+            };
+            info!("Removing reverse complements");
+            maximal_omnitigs.remove_reverse_complements(&genome_graph);
+
+            print_trivial_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
+
+            info!(
+                "Storing maximal trivial omnitigs as fasta to '{}'",
+                subcommand.output
+            );
+            genome_graph::io::fasta::write_walks_as_fasta_file(
+                &genome_graph,
+                kmer_size,
+                maximal_omnitigs.iter(),
+                &subcommand.output,
+            )?;
+        }
+
+        "hifiasm" => {
+            if subcommand.output_as_wtdbg2_node_ids {
+                bail!("Output as wtdbg2 node ids not supported for hifiasm format");
+            }
+
+            let input = if let Some(input) = subcommand.input.first() {
+                input
+            } else {
+                bail!("No input file given")
+            };
+            info!("Reading bigraph from '{}'", input);
+            let (genome_graph, kmer_size, _): (
+                PetGFAEdgeGraph<(), BidirectedGFANodeData<()>>,
+                _,
+                _,
+            ) = genome_graph::io::gfa::read_gfa_as_edge_centric_bigraph_from_file(input)?;
 
             info!("Computing maximal trivial omnitigs");
             let mut maximal_omnitigs = if subcommand.non_scc {

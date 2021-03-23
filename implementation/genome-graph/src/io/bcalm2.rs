@@ -1,5 +1,6 @@
 use crate::bigraph::interface::dynamic_bigraph::DynamicEdgeCentricBigraph;
 use crate::bigraph::interface::dynamic_bigraph::DynamicNodeCentricBigraph;
+use crate::io::fasta::FastaData;
 use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedData};
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
@@ -119,6 +120,14 @@ impl BidirectedData for PlainBCalm2NodeData {
         let mut result = self.clone();
         result.sequence = result.sequence.reverse_complement();
         result
+    }
+}
+
+impl FastaData for PlainBCalm2NodeData {
+    type GenomeSequence = VectorGenome;
+
+    fn sequence(&self) -> &Self::GenomeSequence {
+        &self.sequence
     }
 }
 

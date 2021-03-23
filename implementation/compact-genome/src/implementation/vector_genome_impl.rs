@@ -3,10 +3,11 @@
 use crate::interface::ascii_complement;
 use crate::interface::{ExtendableGenome, Genome};
 use std::iter::{Cloned, FromIterator};
+use traitsequence::interface::Sequence;
 
 /// A simple representation of a genome as `Vec<u8>`.
 /// This is not very efficient, but was quick to implement.
-#[derive(Eq, PartialEq, Debug, Clone, Ord, PartialOrd, Hash)]
+#[derive(Eq, PartialEq, Debug, Clone, Ord, PartialOrd, Hash, Default)]
 pub struct VectorGenome(Vec<u8>);
 
 impl VectorGenome {
@@ -37,6 +38,23 @@ impl Genome for VectorGenome {
 impl ExtendableGenome for VectorGenome {
     fn extend<ExtensionSource: IntoIterator<Item = u8>>(&mut self, extension: ExtensionSource) {
         self.0.extend(extension)
+    }
+}
+
+impl<'a> Sequence<'a, u8> for VectorGenome {
+    type Iterator = std::slice::Iter<'a, u8>;
+    type IteratorMut = std::slice::IterMut<'a, u8>;
+
+    fn iter(&'a self) -> Self::Iterator {
+        self.0.iter()
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        self.0.iter_mut()
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
