@@ -1,0 +1,9 @@
+use-conda: true
+rerun-incomplete: true
+#immediate-submit: true
+#notemp: true
+printshellcmds: true
+cores: 60
+config: "datadir=/abga/work/sebschmi/practical-omnitigs"
+config: "programdir=/abga/work/sebschmi/practical-omnitigs"
+config: "reportdir=/abga/work/sebschmi/practical-omnitigs/reports"
