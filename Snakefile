@@ -503,7 +503,7 @@ rule report_all:
 
 localrules: report_all_hifiasm_trivial_omnitigs
 rule report_all_hifiasm_trivial_omnitigs:
-    input:  [f for f in get_all_report_files() if "hifiasm_trivial_omnitigs" in os.path.basename(f)],
+    input:  [f for f in get_all_report_files() if "hifiasm_trivial_omnitigs" in f],
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
