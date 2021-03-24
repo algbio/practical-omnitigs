@@ -1488,7 +1488,10 @@ rule simulate_hifi_reads_simlord:
         mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
     conda:  "config/conda-simlord-env.yml"
-    shell:  "simlord --read-reference '{input.reference}' --no-sam {params.cli_arguments} '{params.output_prefix}'"
+    shell:  """
+        simlord --read-reference '{input.reference}' --no-sam {params.cli_arguments} '{params.output_prefix}'
+        mv '{params.output_prefix}.fastq' '{output.simulated_reads}'
+    """
 
 rule fastq_to_fasta:
     input:  fastq = os.path.join(DATADIR, "{path}.fq"),
