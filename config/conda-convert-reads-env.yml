@@ -5,4 +5,4 @@ channels:
 dependencies:
         - samtools==1.11
         - sra-tools==2.10.9
-        - readseq==2.1.30
+        - fastx_toolkit==0.0.14
