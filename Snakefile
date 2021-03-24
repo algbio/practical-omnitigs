@@ -426,7 +426,9 @@ print("Finished config preprocessing", flush = True)
 #########################
 
 GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads/reads.fa"
-GENOME_SIMULATED_READS_FORMAT = DATADIR + "genomes/{genome}/simulated_reads/{read_simulator_name}/s/{read_simulator_arguments}/reads.fa"
+GENOME_SIMULATED_READS_PREFIX_FORMAT = DATADIR + "genomes/{genome}/simulated_reads/{read_simulator_name}/s/{read_simulator_arguments}/reads"
+GENOME_SIMULATED_READS_FASTA_FORMAT = GENOME_SIMULATED_READS_PREFIX_FORMAT + ".fa"
+GENOME_SIMULATED_READS_FASTQ_FORMAT = GENOME_SIMULATED_READS_PREFIX_FORMAT + ".fq"
 CORRECTION_SHORT_READS_FORMAT = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa"
 GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference/reference.fa"
 
@@ -817,7 +819,7 @@ def get_genome_reads_from_wildcards(wildcards):
         if arguments.read_simulator_name() is None or arguments.read_simulator_name() == "none":
             return GENOME_READS_FORMAT.format(genome = arguments["genome"])
         else:
-            return GENOME_SIMULATED_READS_FORMAT.format(genome = arguments["genome"], read_simulator_name = arguments.read_simulator_name(), read_simulator_arguments = arguments.read_simulator_arguments())
+            return GENOME_SIMULATED_READS_FASTA_FORMAT.format(genome = arguments["genome"], read_simulator_name = arguments.read_simulator_name(), read_simulator_arguments = arguments.read_simulator_arguments())
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -1390,6 +1392,7 @@ rule flye:
 rule hifiasm:
     input:  reads = get_genome_reads_from_wildcards,
     output: contigs = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.p_ctg.gfa"),
+            unitigs = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.r_utg.gfa"),
             directory = directory(os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm")),
     params: output_prefix = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly"),
     conda:  "config/conda-hifiasm-env.yml"
@@ -1418,7 +1421,7 @@ rule hifiasm_gfa_to_fa:
 ###### Read Simulation ######
 #############################
 
-def get_perfect_read_simulator_args_from_wildcards(wildcards):
+def get_read_simulator_args_from_wildcards(wildcards):
     try:
         read_simulator_arguments = Arguments.from_str(wildcards.read_simulator_arguments)
         cli_arguments = read_simulator_arguments.get("cli_arguments", None)
@@ -1433,9 +1436,9 @@ def get_perfect_read_simulator_args_from_wildcards(wildcards):
 rule simulate_perfect_reads:
     input:  reference = GENOME_REFERENCE_FORMAT,
             script = "scripts/simulate_perfect_reads.py",
-    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "perfect"),
-    log:    log = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "perfect") + ".log",
-    params: cli_arguments = get_perfect_read_simulator_args_from_wildcards,
+    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "perfect"),
+    log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "perfect") + ".log",
+    params: cli_arguments = get_read_simulator_args_from_wildcards,
     resources:
         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
         mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
@@ -1445,8 +1448,8 @@ rule simulate_perfect_reads:
 
 rule simulate_hifi_reads_bbmap:
     input:  reference = GENOME_REFERENCE_FORMAT,
-    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi"),
-    log:    log = safe_format(GENOME_SIMULATED_READS_FORMAT, read_simulator_name = "bbmap_hifi") + ".log",
+    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "bbmap_hifi"),
+    log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "bbmap_hifi") + ".log",
     params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
             mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
     resources:
@@ -1471,6 +1474,29 @@ rule simulate_hifi_reads_bbmap:
         minlength=9000 midlength=10000 maxlength=12000 \
         out="$OUTPUT" 2>&1 | tee "$LOG"
         """
+
+rule simulate_hifi_reads_simlord:
+    input:  reference = GENOME_REFERENCE_FORMAT,
+    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord"),
+    log:    log = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord") + ".log",
+    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
+            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+            cli_arguments = get_read_simulator_args_from_wildcards,
+            output_prefix = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "simlord"),
+    resources:
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+        mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
+    conda:  "config/conda-simlord-env.yml"
+    shell:  "simlord --read-reference '{input.reference}' --no-sam {params.cli_arguments} '{params.output_prefix}'"
+
+rule fastq_to_fasta:
+    input:  fastq = os.path.join(DATADIR, "{path}.fq"),
+    output: fasta = os.path.join(DATADIR, "{path}.fa"),
+    log:    log = os.path.join(DATADIR, "{path}.fq_to_fa.log")
+    conda:  "config/conda-convert-reads-env.yml"
+    shell:  "samtools fasta '{input.fastq}' 2>&1 > '{output.fasta}' | tee '{log.log}'"
+
 
 #########################################
 ###### Long Read Input Preparation ######

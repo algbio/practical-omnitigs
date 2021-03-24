@@ -375,13 +375,19 @@ reports:
   "sim_hifi":
     argument_matrix:
       genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-      read_simulator: "bbmap_hifi"
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            "--coverage": "15"
     columns: *hifi_columns
 
   "sim_hifi_contigbreaker":
     argument_matrix:
       genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-      read_simulator: "bbmap_hifi"
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            "--coverage": "15"
       assembler:
         wtdbg2:
           cli_arguments:
@@ -394,7 +400,10 @@ reports:
   "sim_hifi_fragment_correction_steps":
     argument_matrix:
       genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-      read_simulator: "bbmap_hifi"
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            "--coverage": "15"
       assembler:
         wtdbg2:
           cli_arguments:
@@ -404,7 +413,10 @@ reports:
   "sim_hifi_hifiasm_trivial_omnitigs":
     argument_matrix:
       genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-      read_simulator: "bbmap_hifi"
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            "--coverage": "15"
       assembler: "hifiasm"
       postprocessor:
         "none": True
@@ -414,13 +426,19 @@ reports:
   "sim_hifi_with_human":
     argument_matrix:
       genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
-      read_simulator: "bbmap_hifi"
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            "--coverage": "15"
     columns: *hifi_columns
 
   "sim_hifi_fragment_correction_steps_with_human":
     argument_matrix:
       genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
-      read_simulator: "bbmap_hifi"
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            "--coverage": "15"
       assembler:
         wtdbg2:
           cli_arguments:
