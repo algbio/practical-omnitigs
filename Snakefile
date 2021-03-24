@@ -931,7 +931,7 @@ def get_raw_gfa_assembly_file_from_wildcards(wildcards):
         assembler_name = arguments.assembler_name()
 
         if assembler_name == "hifiasm":
-            result = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.p_ctg.gfa")
+            result = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.r_utg.gfa")
         else:
             raise Exception("Assembler {} does not support gfa (in arguments: {})".format(assembler_name, arguments))
 
