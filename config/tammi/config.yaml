@@ -4,4 +4,4 @@ rerun-incomplete: true
 #notemp: true
 printshellcmds: true
 cores: 60
-config: "datadir=/abga/work/sebschmi/practical-omnitigs programdir=/abga/work/sebschmi/practical-omnitigs reportdir=/abga/work/sebschmi/practical-omnitigs/reports"
+config: ["datadir=/abga/work/sebschmi/practical-omnitigs", "programdir=/abga/work/sebschmi/practical-omnitigs", "reportdir=/abga/work/sebschmi/practical-omnitigs/reports"]
