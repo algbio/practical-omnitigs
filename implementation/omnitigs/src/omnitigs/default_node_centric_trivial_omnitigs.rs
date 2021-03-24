@@ -62,13 +62,13 @@ impl<
                 .all(|&n| graph.out_degree(n) == 1);
 
             if is_univocal {
-                let mut prefix = vec![*trivial_omnitig.first().unwrap()];
+                let mut prefix: Vec<_> = trivial_omnitig.iter().rev().copied().collect();
 
                 let mut can_extend = true;
                 while can_extend {
                     can_extend = false;
                     for in_neighbor in graph.in_neighbors(*prefix.last().unwrap()) {
-                        if graph.out_degree(in_neighbor.node_id) == 1 {
+                        if graph.out_degree(in_neighbor.node_id) == 1 && !prefix.contains(&in_neighbor.node_id) {
                             prefix.push(in_neighbor.node_id);
                             can_extend = true;
                             break;
@@ -77,7 +77,6 @@ impl<
                 }
 
                 prefix.reverse();
-                prefix.extend(trivial_omnitig.iter().skip(1));
                 trivial_omnitig = VecNodeWalk::new(prefix);
             }
 
@@ -93,7 +92,7 @@ impl<
                 while can_extend {
                     can_extend = false;
                     for out_neighbor in graph.out_neighbors(*suffix.last().unwrap()) {
-                        if graph.in_degree(out_neighbor.node_id) == 1 {
+                        if graph.in_degree(out_neighbor.node_id) == 1 && !suffix.contains(&out_neighbor.node_id) {
                             suffix.push(out_neighbor.node_id);
                             can_extend = true;
                             break;
@@ -131,10 +130,12 @@ impl<
     }
 }
 
-/*#[cfg(test)]
+#[cfg(test)]
 mod tests {
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::MutableGraphContainer;
+    use crate::omnitigs::NodeCentricOmnitigs;
+    use traitgraph::walks::VecNodeWalk;
 
     #[test]
     fn test_compute_trivial_omnitigs_cycle() {
@@ -146,15 +147,11 @@ mod tests {
         graph.add_edge(n1, n2, ());
         graph.add_edge(n2, n0, ());
 
-        /*let trivial_omnitigs = Omnitigs::compute_trivial_only(&graph);
+        let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs(&graph);
         assert_eq!(
             trivial_omnitigs,
-            Omnitigs::from(vec![Omnitig::new(
-                graph.create_edge_walk(&[e1, e2, e0, e1, e2]),
-                0,
-                4
-            )])
-        );*/
+            vec![VecNodeWalk::new(vec![n1, n2, n0, n1, n2])]
+        );
     }
 
     #[test]
@@ -169,15 +166,11 @@ mod tests {
         graph.add_edge(n1, n2, ());
         graph.add_edge(n2, n0, ());
 
-        /*let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            Omnitigs::from(vec![Omnitig::new(
-                graph.create_edge_walk(&[e0, e1, e2, e3]),
-                0,
-                0
-            )])
-        );*/
+            vec![VecNodeWalk::new(vec![n3, n0, n1, n2])]
+        );
     }
 
     #[test]
@@ -192,15 +185,11 @@ mod tests {
         graph.add_edge(n1, n2, ());
         graph.add_edge(n2, n0, ());
 
-        /*let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            Omnitigs::from(vec![Omnitig::new(
-                graph.create_edge_walk(&[e1, e2, e3, e0]),
-                3,
-                3
-            )])
-        );*/
+            vec![VecNodeWalk::new(vec![n1, n2, n0, n3])]
+        );
     }
 
     #[test]
@@ -215,15 +204,11 @@ mod tests {
         graph.add_edge(n0, n1, ());
         graph.add_edge(n3, n0, ());
 
-        /*let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            Omnitigs::from(vec![Omnitig::new(
-                graph.create_edge_walk(&[e0, e1, e2, e3]),
-                0,
-                0
-            )])
-        );*/
+            vec![VecNodeWalk::new(vec![n3, n0, n1, n2])]
+        );
     }
 
     #[test]
@@ -238,15 +223,11 @@ mod tests {
         graph.add_edge(n0, n1, ());
         graph.add_edge(n0, n3, ());
 
-        /*let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            Omnitigs::from(vec![Omnitig::new(
-                graph.create_edge_walk(&[e1, e2, e3, e0]),
-                3,
-                3
-            )])
-        );*/
+            vec![VecNodeWalk::new(vec![n1, n2, n0, n3])]
+        );
     }
 
     #[test]
@@ -258,11 +239,11 @@ mod tests {
         graph.add_edge(n0, n1, ());
         graph.add_edge(n1, n2, ());
 
-        /*let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
+        let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            Omnitigs::from(vec![Omnitig::new(graph.create_edge_walk(&[e0, e1]), 0, 1)])
-        );*/
+            vec![VecNodeWalk::new(vec![n0, n1, n2])]
+        );
     }
 }
-*/
+
