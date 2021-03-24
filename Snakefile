@@ -1498,7 +1498,7 @@ rule fastq_to_fasta:
     output: fasta = os.path.join(DATADIR, "{path}.fa"),
     log:    log = os.path.join(DATADIR, "{path}.fq_to_fa.log")
     conda:  "config/conda-convert-reads-env.yml"
-    shell:  "samtools fasta '{input.fastq}' 2>&1 > '{output.fasta}' | tee '{log.log}'"
+    shell:  "readseq -a -f fa -o '{output.fasta}' '{input.fastq}' 2>&1 | tee '{log.log}'"
 
 
 #########################################
