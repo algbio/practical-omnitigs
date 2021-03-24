@@ -3,6 +3,7 @@ use crate::io::fasta::FastaData;
 use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
+use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use compact_genome::implementation::vector_genome_impl::VectorGenome;
 use compact_genome::interface::Genome;
@@ -79,8 +80,14 @@ pub fn read_gfa_as_bigraph_from_file<
     Graph: DynamicBigraph<NodeData = BidirectedGFANodeData<NodeData>, EdgeData = EdgeData> + Default,
 >(
     gfa_file: P,
+    ignore_k: bool,
+    allow_messy_edges: bool,
 ) -> Result<(Graph, usize)> {
-    read_gfa_as_bigraph(BufReader::new(File::open(gfa_file)?))
+    read_gfa_as_bigraph(
+        BufReader::new(File::open(gfa_file)?),
+        ignore_k,
+        allow_messy_edges,
+    )
 }
 
 /// Read a bigraph in gfa format from a `BufRead`.
@@ -92,9 +99,12 @@ pub fn read_gfa_as_bigraph<
     Graph: DynamicBigraph<NodeData = BidirectedGFANodeData<NodeData>, EdgeData = EdgeData> + Default,
 >(
     gfa: R,
+    ignore_k: bool,
+    allow_messy_edges: bool,
 ) -> Result<(Graph, usize)> {
     let mut graph = Graph::default();
     let mut k = usize::max_value();
+    let mut node_name_map = HashMap::new();
 
     for line in gfa.lines() {
         let line = line?;
@@ -108,20 +118,23 @@ pub fn read_gfa_as_bigraph<
                 }
             }
         } else if line.starts_with('S') {
-            assert_eq!(graph.edge_count(), 0);
-            assert_ne!(k, usize::max_value());
+            if !allow_messy_edges {
+                assert_eq!(graph.edge_count(), 0);
+            }
+            if !ignore_k {
+                assert_ne!(k, usize::max_value());
+            }
 
             let mut columns = line.split('\t').skip(1);
-            let node_index: usize = columns.next().unwrap().parse().unwrap();
-            assert_eq!((node_index - 1) * 2, graph.node_count());
+            let node_name: &str = columns.next().unwrap();
 
             let sequence = columns.next().unwrap();
             let sequence = Rc::new(VectorGenome::from_iter(sequence.bytes()));
             assert!(columns.next().is_none());
             assert!(
-                sequence.len() >= k,
+                sequence.len() >= k || ignore_k,
                 "Node {} has sequence '{}' of length {} (k = {})",
-                node_index,
+                node_name,
                 sequence,
                 sequence.len(),
                 k
@@ -138,35 +151,45 @@ pub fn read_gfa_as_bigraph<
                 data: Default::default(),
             });
             graph.set_mirror_nodes(n1, n2);
+            node_name_map.insert(node_name.to_owned(), n1);
         } else if line.starts_with('L') {
-            assert_ne!(k, usize::max_value());
+            if !ignore_k {
+                assert_ne!(k, usize::max_value());
+            }
 
             let mut columns = line.split('\t').skip(1);
-            let n1 = (columns.next().unwrap().parse::<usize>().unwrap() * 2
-                - if columns.next().unwrap() == "+" { 2 } else { 1 })
-            .into();
-            let n2 = (columns.next().unwrap().parse::<usize>().unwrap() * 2
-                - if columns.next().unwrap() == "+" { 2 } else { 1 })
-            .into();
+            let n1_name = columns.next().unwrap();
+            let n1_direction = if columns.next().unwrap() == "+" { 0 } else { 1 };
+            let n2_name = columns.next().unwrap();
+            let n2_direction = if columns.next().unwrap() == "+" { 0 } else { 1 };
 
-            let has_edge = graph.contains_edge_between(n1, n2);
-            assert_eq!(
-                has_edge,
-                graph.contains_edge_between(
-                    graph.mirror_node(n2).unwrap(),
-                    graph.mirror_node(n1).unwrap()
-                )
-            );
+            if let (Some(n1), Some(n2)) = (node_name_map.get(n1_name), node_name_map.get(n2_name)) {
+                let n1 = (n1.as_usize() + n1_direction).into();
+                let n2 = (n2.as_usize() + n2_direction).into();
 
-            if !has_edge {
-                graph.add_edge(n1, n2, Default::default());
-                graph.add_edge(
-                    graph.mirror_node(n2).unwrap(),
-                    graph.mirror_node(n1).unwrap(),
-                    Default::default(),
+                let has_edge = graph.contains_edge_between(n1, n2);
+                assert_eq!(
+                    has_edge,
+                    graph.contains_edge_between(
+                        graph.mirror_node(n2).unwrap(),
+                        graph.mirror_node(n1).unwrap()
+                    )
                 );
+
+                if !has_edge {
+                    graph.add_edge(n1, n2, Default::default());
+                    graph.add_edge(
+                        graph.mirror_node(n2).unwrap(),
+                        graph.mirror_node(n1).unwrap(),
+                        Default::default(),
+                    );
+                }
             }
         }
+    }
+
+    if ignore_k {
+        k = 0;
     }
 
     Ok((graph, k))
