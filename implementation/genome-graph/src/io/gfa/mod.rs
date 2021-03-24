@@ -130,7 +130,6 @@ pub fn read_gfa_as_bigraph<
 
             let sequence = columns.next().unwrap();
             let sequence = Rc::new(VectorGenome::from_iter(sequence.bytes()));
-            assert!(columns.next().is_none());
             assert!(
                 sequence.len() >= k || ignore_k,
                 "Node {} has sequence '{}' of length {} (k = {})",
