@@ -443,6 +443,10 @@ AGGREGATED_REPORT_PREFIX_FORMAT = REPORTDIR + "{aggregated_report_name}/"
 ###### Global report rules ######
 #################################
 
+localrules: do_nothing
+rule do_nothing:
+    shell:  "echo 'No target specified'"
+
 def get_all_report_files():
     try:
         result = []
