@@ -68,7 +68,9 @@ impl<
                 while can_extend {
                     can_extend = false;
                     for in_neighbor in graph.in_neighbors(*prefix.last().unwrap()) {
-                        if graph.out_degree(in_neighbor.node_id) == 1 && !prefix.contains(&in_neighbor.node_id) {
+                        if graph.out_degree(in_neighbor.node_id) == 1
+                            && !prefix.contains(&in_neighbor.node_id)
+                        {
                             prefix.push(in_neighbor.node_id);
                             can_extend = true;
                             break;
@@ -92,7 +94,9 @@ impl<
                 while can_extend {
                     can_extend = false;
                     for out_neighbor in graph.out_neighbors(*suffix.last().unwrap()) {
-                        if graph.in_degree(out_neighbor.node_id) == 1 && !suffix.contains(&out_neighbor.node_id) {
+                        if graph.in_degree(out_neighbor.node_id) == 1
+                            && !suffix.contains(&out_neighbor.node_id)
+                        {
                             suffix.push(out_neighbor.node_id);
                             can_extend = true;
                             break;
@@ -132,9 +136,9 @@ impl<
 
 #[cfg(test)]
 mod tests {
+    use crate::omnitigs::NodeCentricOmnitigs;
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::MutableGraphContainer;
-    use crate::omnitigs::NodeCentricOmnitigs;
     use traitgraph::walks::VecNodeWalk;
 
     #[test]
@@ -240,10 +244,6 @@ mod tests {
         graph.add_edge(n1, n2, ());
 
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
-        assert_eq!(
-            trivial_omnitigs,
-            vec![VecNodeWalk::new(vec![n0, n1, n2])]
-        );
+        assert_eq!(trivial_omnitigs, vec![VecNodeWalk::new(vec![n0, n1, n2])]);
     }
 }
-

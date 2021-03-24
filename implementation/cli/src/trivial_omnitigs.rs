@@ -196,7 +196,11 @@ pub(crate) fn compute_trivial_omnitigs(
             let (genome_graph, kmer_size): (PetGFAEdgeGraph<BidirectedGFANodeData<()>, ()>, _) =
                 genome_graph::io::gfa::read_gfa_as_bigraph_from_file(input, true, true)?;
 
-            info!("Graph has {} nodes and {} edges", genome_graph.node_count(), genome_graph.edge_count());
+            info!(
+                "Graph has {} nodes and {} edges",
+                genome_graph.node_count(),
+                genome_graph.edge_count()
+            );
 
             info!("Computing maximal trivial omnitigs");
             let mut maximal_omnitigs = if subcommand.non_scc {
