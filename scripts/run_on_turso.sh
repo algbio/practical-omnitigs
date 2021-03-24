@@ -2,6 +2,11 @@
 
 set -e
 
+if [ -z "$@" ]; then
+    echo "Error: no snakemake target given"
+    exit 1
+fi
+
 source /home/sebschmi/.bashrc
 cd /proj/sebschmi/git/practical-omnitigs
 
