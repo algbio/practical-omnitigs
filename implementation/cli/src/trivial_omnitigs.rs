@@ -4,7 +4,7 @@ use genome_graph::io::gfa::{BidirectedGFANodeData, PetGFAEdgeGraph};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs};
 use omnitigs::traitgraph::algo::components::is_strongly_connected;
-use omnitigs::traitgraph::interface::GraphBase;
+use omnitigs::traitgraph::interface::{GraphBase, ImmutableGraphContainer};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use traitsequence::interface::Sequence;
@@ -196,6 +196,8 @@ pub(crate) fn compute_trivial_omnitigs(
             let (genome_graph, kmer_size): (PetGFAEdgeGraph<BidirectedGFANodeData<()>, ()>, _) =
                 genome_graph::io::gfa::read_gfa_as_bigraph_from_file(input, true, true)?;
 
+            info!("Graph has {} nodes and {} edges", genome_graph.node_count(), genome_graph.edge_count());
+
             info!("Computing maximal trivial omnitigs");
             let mut maximal_omnitigs = if subcommand.non_scc {
                 Vec::compute_trivial_node_centric_omnitigs_non_scc(&genome_graph)
@@ -206,7 +208,7 @@ pub(crate) fn compute_trivial_omnitigs(
             info!("Removing reverse complements");
             maximal_omnitigs.remove_reverse_complements(&genome_graph);
 
-            //print_trivial_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
+            //print_trivial_node_centric_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
 
             info!(
                 "Storing maximal trivial omnitigs as fasta to '{}'",
