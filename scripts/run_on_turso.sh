@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -z "$@" ]; then
+if [ $# -eq 0 ]; then
     echo "Error: no snakemake target given"
     exit 1
 fi
