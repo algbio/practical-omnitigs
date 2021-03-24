@@ -2,7 +2,7 @@ use crate::CliOptions;
 use clap::Clap;
 use genome_graph::io::gfa::{BidirectedGFANodeData, PetGFAEdgeGraph};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
-use omnitigs::omnitigs::Omnitigs;
+use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs};
 use omnitigs::traitgraph::algo::components::is_strongly_connected;
 use omnitigs::traitgraph::interface::GraphBase;
 use std::fs::File;
@@ -193,29 +193,26 @@ pub(crate) fn compute_trivial_omnitigs(
                 bail!("No input file given")
             };
             info!("Reading bigraph from '{}'", input);
-            let (genome_graph, kmer_size, _): (
-                PetGFAEdgeGraph<(), BidirectedGFANodeData<()>>,
-                _,
-                _,
-            ) = genome_graph::io::gfa::read_gfa_as_edge_centric_bigraph_from_file(input, true)?;
+            let (genome_graph, kmer_size): (PetGFAEdgeGraph<BidirectedGFANodeData<()>, ()>, _) =
+                genome_graph::io::gfa::read_gfa_as_bigraph_from_file(input)?;
 
             info!("Computing maximal trivial omnitigs");
             let mut maximal_omnitigs = if subcommand.non_scc {
-                Omnitigs::compute_trivial_only_non_scc(&genome_graph)
+                Vec::compute_trivial_node_centric_omnitigs_non_scc(&genome_graph)
             } else {
                 ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
-                Omnitigs::compute_trivial_only(&genome_graph)
+                Vec::compute_trivial_node_centric_omnitigs(&genome_graph)
             };
             info!("Removing reverse complements");
             maximal_omnitigs.remove_reverse_complements(&genome_graph);
 
-            print_trivial_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
+            //print_trivial_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
 
             info!(
                 "Storing maximal trivial omnitigs as fasta to '{}'",
                 subcommand.output
             );
-            genome_graph::io::fasta::write_walks_as_fasta_file(
+            genome_graph::io::fasta::write_node_centric_walks_as_fasta_file(
                 &genome_graph,
                 kmer_size,
                 maximal_omnitigs.iter(),

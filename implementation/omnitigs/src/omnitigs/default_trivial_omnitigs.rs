@@ -131,6 +131,8 @@ impl<
             ));
         }
 
+        assert_eq!(used_edges.len(), graph.edge_count());
+
         omnitigs
     }
 }

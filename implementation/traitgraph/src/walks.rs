@@ -70,6 +70,20 @@ where
 
     /// Computes the univocal extension of this walk.
     /// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first node of W and R the longest univocal walk from the last node of W.
+    /// This method handles not strongly connected graphs by disallowing L and R to repeat nodes.
+    fn compute_univocal_extension_non_scc<ResultWalk: From<Vec<Graph::NodeIndex>>>(
+        &'a self,
+        graph: &Graph,
+    ) -> ResultWalk
+    where
+        Graph: StaticGraph,
+    {
+        self.compute_univocal_extension_with_original_offset_non_scc(graph)
+            .1
+    }
+
+    /// Computes the univocal extension of this walk.
+    /// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first node of W and R the longest univocal walk from the last node of W.
     ///
     /// Additionally to the univocal extension, this function returns the offset of the original walk in the univocal extension as usize.
     fn compute_univocal_extension_with_original_offset<ResultWalk: From<Vec<Graph::NodeIndex>>>(
@@ -90,7 +104,13 @@ where
             NodeOrEdge::Node(*self.first().unwrap()),
         ) {
             match node_or_edge {
-                NodeOrEdge::Node(node) => result.push(node),
+                NodeOrEdge::Node(node) => {
+                    if &node == self.first().unwrap() {
+                        break;
+                    } else {
+                        result.push(node)
+                    }
+                }
                 NodeOrEdge::Edge(_) => {}
             }
         }
@@ -104,7 +124,74 @@ where
             NodeOrEdge::Node(*self.last().unwrap()),
         ) {
             match node_or_edge {
-                NodeOrEdge::Node(node) => result.push(node),
+                NodeOrEdge::Node(node) => {
+                    if &node == self.last().unwrap() {
+                        break;
+                    } else {
+                        result.push(node)
+                    }
+                }
+                NodeOrEdge::Edge(_) => {}
+            }
+        }
+
+        (original_offset, ResultWalk::from(result))
+    }
+
+    /// Computes the univocal extension of this walk.
+    /// That is the concatenation LWR, where W is the walk, L the longest R-univocal walk to the first node of W and R the longest univocal walk from the last node of W.
+    /// This method handles not strongly connected graphs by disallowing L and R to repeat nodes.
+    ///
+    /// Additionally to the univocal extension, this function returns the offset of the original walk in the univocal extension as usize.
+    fn compute_univocal_extension_with_original_offset_non_scc<
+        ResultWalk: From<Vec<Graph::NodeIndex>>,
+    >(
+        &'a self,
+        graph: &Graph,
+    ) -> (usize, ResultWalk)
+    where
+        Graph: StaticGraph,
+    {
+        assert!(
+            !self.is_empty(),
+            "Cannot compute the univocal extension of an empty walk."
+        );
+
+        let mut result = Vec::new();
+        for node_or_edge in UnivocalIterator::new_backward_without_start(
+            graph,
+            NodeOrEdge::Node(*self.first().unwrap()),
+        ) {
+            match node_or_edge {
+                NodeOrEdge::Node(node) => {
+                    if &node == self.first().unwrap() || result.contains(&node) {
+                        break;
+                    } else {
+                        result.push(node)
+                    }
+                }
+                NodeOrEdge::Edge(_) => {}
+            }
+        }
+
+        result.reverse();
+        let original_offset = result.len();
+        result.extend(self.iter());
+        let right_wing_offset = result.len();
+
+        for node_or_edge in UnivocalIterator::new_forward_without_start(
+            graph,
+            NodeOrEdge::Node(*self.last().unwrap()),
+        ) {
+            match node_or_edge {
+                NodeOrEdge::Node(node) => {
+                    if &node == self.last().unwrap() || result[right_wing_offset..].contains(&node)
+                    {
+                        break;
+                    } else {
+                        result.push(node)
+                    }
+                }
                 NodeOrEdge::Edge(_) => {}
             }
         }
