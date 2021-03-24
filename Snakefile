@@ -2309,9 +2309,16 @@ rule download_and_prepare:
 ###### Download results ######
 ##############################
 
-rule sync_results:
+rule sync_turso_results:
     conda: "config/conda-rsync-env.yml"
     shell: """
         mkdir -p data/reports
         rsync --verbose --recursive --no-relative --include="*/" --include="report.pdf" --include="aggregated-report.pdf" --exclude="*" turso:'/proj/sebschmi/git/practical-omnitigs/data/reports/' data/reports
+        """
+
+rule sync_tammi_results:
+    conda: "config/conda-rsync-env.yml"
+    shell: """
+        mkdir -p data/reports
+        rsync --verbose --recursive --no-relative --include="*/" --include="report.pdf" --include="aggregated-report.pdf" --exclude="*" tammi:'/abga/work/sebschmi/practical-omnitigs/reports/' data/reports
         """
