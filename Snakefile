@@ -1496,9 +1496,7 @@ rule simulate_hifi_reads_simlord:
 rule fastq_to_fasta:
     input:  fastq = os.path.join(DATADIR, "{path}.fq"),
     output: fasta = os.path.join(DATADIR, "{path}.fa"),
-    log:    log = os.path.join(DATADIR, "{path}.fq_to_fa.log")
-    conda:  "config/conda-convert-reads-env.yml"
-    shell:  "fastq_to_fasta -n -o '{output.fasta}' -i '{input.fastq}' 2>&1 | tee '{log.log}'"
+    shell:  "awk '(NR-1)%4<2' '{input.fastq}' > '{output.fasta}'"
 
 
 #########################################
