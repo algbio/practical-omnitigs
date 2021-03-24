@@ -1064,7 +1064,7 @@ rule run_gfa_trivial_omnitigs:
             time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
             cpus = 1,
             queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10000),
-    shell: "'{input.binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.contigs}' --output '{output.trivial_omnitigs}' 2>&1 | tee '{log.log}'"
+    shell: "'{input.binary}' compute-trivial-omnitigs --non-scc --file-format hifiasm --input '{input.contigs}' --output '{output.trivial_omnitigs}' 2>&1 | tee '{log.log}'"
 
 
 ####################
