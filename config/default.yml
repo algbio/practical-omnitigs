@@ -921,6 +921,11 @@ aggregated_reports:
       - "sim_hifi_contigbreaker"
       - "Minghui63_contigbreaker"
 
+  "aggregated_hifiasm_trivial_omnitigs":
+    reports:
+      - "sim_hifi_hifiasm_trivial_omnitigs"
+      - "Minghui63_hifiasm_trivial_omnitigs"
+
 
 genomes:
   "E.coli":
