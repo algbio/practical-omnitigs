@@ -539,6 +539,12 @@ rule report_all_wtdbg2_investigations:
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
+localrules: report_some_wtdbg2_investigations
+rule report_some_wtdbg2_investigations:
+    input:  [os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"{genome}","assembler":{"wtdbg2":{"cli_arguments":{"-x":"ccs"}}},"read_simulator":{"perfect":{"cli_arguments"/_/:{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log").replace("{genome}", genome) for genome in ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]]
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
 ###############################
 ###### Report Generation ######
 ###############################
