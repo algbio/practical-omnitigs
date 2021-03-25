@@ -7,6 +7,7 @@ cluster: >-
   -p {resources.queue}
   -c {resources.cpus}
   -t {resources.time_min}
+  -M ukko2
   --mem={resources.mem_mb}
   --mail-type={resources.mail_type}
   --mail-user=sebastian.schmidt@helsinki.fi
