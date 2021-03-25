@@ -24,6 +24,7 @@ class Align:
 		self.align_start = align_start
 		self.align_end = align_end
 		self.forward = forward
+		self.align_center = (align_start + align_end) // 2
 
 with open(nodes_path, 'r') as nodes_file:
 	node_align_map = {}
@@ -76,8 +77,9 @@ correct_nodes = 0
 transitively_correct_nodes = 0
 
 deviations = []
+large_error_nodes = {}
 for node_id, aligns in node_align_map.items():
-	aligns.sort(key = lambda a: (a.align_start, a.align_end))
+	aligns.sort(key = lambda a: (a.align_center, a.align_start, a.align_end))
 
 	min_start = aligns[0].align_start
 	max_start = aligns[0].align_start
@@ -108,6 +110,9 @@ for node_id, aligns in node_align_map.items():
 		correct_nodes += 1
 	deviations.append(deviation)
 
+	if deviation >= 1024:
+		large_error_nodes[node_id] = aligns
+
 	if is_transitively_correct:
 		transitively_correct_nodes += 1
 
@@ -124,3 +129,7 @@ fig, axes = plt.subplots(1, 2)
 deviation_histogram = sns.histplot(ax = axes[0], data = deviation_df, x = "deviation", stat = "count", log_scale = 2)
 deviation_histogram = sns.histplot(ax = axes[1], data = deviation_df[(deviation_df["deviation"] >= 128) & (deviation_df["deviation"] <= 512)], x = "deviation", stat = "count", log_scale = 2)
 fig.savefig(os.path.join(output_prefix, "deviation_histogram.pdf"))
+
+print("\nInvestigating large error nodes")
+for node_id, aligns in large_error_nodes.items():
+	print([align.align_center for align in aligns])
