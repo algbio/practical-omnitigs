@@ -517,6 +517,28 @@ rule report_all_hifiasm_trivial_omnitigs:
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
+def get_all_wtdbg2_investigation_report_files(wildcards):
+    try:
+        result = set()
+        for report_name, report_definition in reports.items():
+            for report_file_name, report_file in report_definition["report_files"].items():
+                for column in report_file.columns:
+                    arguments = column.arguments
+
+                    if arguments.assembler_name() == "wtdbg2":
+                        result.add(os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log").format(arguments = arguments))
+
+        return [f for f in result if "HG002" not in f and '"read_simulator":{"perfect"' in f]
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+localrules: report_all_wtdbg2_investigations
+rule report_all_wtdbg2_investigations:
+    input:  get_all_wtdbg2_investigation_report_files
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
 ###############################
 ###### Report Generation ######
 ###############################
@@ -1475,7 +1497,7 @@ rule simulate_hifi_reads_bbmap:
         out="$OUTPUT" 2>&1 | tee "$LOG"
         """
 
-rule simulate_hifi_reads_simlord:
+rule simulate_ccs_reads_simlord:
     input:  reference = GENOME_REFERENCE_FORMAT,
     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord"),
     log:    log = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord") + ".log",
@@ -1497,6 +1519,85 @@ rule fastq_to_fasta:
     input:  fastq = os.path.join(DATADIR, "{path}.fq"),
     output: fasta = os.path.join(DATADIR, "{path}.fa"),
     shell:  "awk '(NR-1)%4<2' '{input.fastq}' > '{output.fasta}'"
+
+rule install_sim_it:
+    output: "external-software/sim-it/sim-it.pl"
+    conda:  "config/conda-download-env.yml"
+    shell:  """
+        mkdir -p external-software
+        cd external-software
+
+        wget -O sim-it.tar.gz https://github.com/ndierckx/Sim-it/archive/refs/tags/Sim-it1.2.tar.gz
+
+        rm -rf Sim-it-Sim-it1.2
+        rm -rf sim-it
+        tar -xf sim-it.tar.gz
+        mv Sim-it-Sim-it1.2/ sim-it/
+        mv sim-it/Sim-it1.2.pl sim-it/sim-it.pl
+    """
+
+rule simulate_hifi_reads_sim_it:
+    input:  reference = GENOME_REFERENCE_FORMAT,
+            script = "external-software/sim-it/sim-it.pl",
+    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi"),
+    log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi") + ".log",
+    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
+            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+            cli_arguments = get_read_simulator_args_from_wildcards,
+            output_prefix = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "sim-it_hifi"),
+            config_file = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "sim-it_hifi") + ".config",
+    resources:
+        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+        mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
+    conda:  "config/conda-perl-env.yml"
+    shell:  """
+        echo "Project:
+-----------------------------
+Project name             = Test
+Reference sequence       = {input.reference}
+Replace ambiguous nts(N) = 
+
+
+Structural variation:
+-----------------------------
+VCF input                = 
+Foreign sequences        =
+
+Deletions                = 0
+Length (bp)              = 30-150000
+
+Insertions               = 0
+Length (bp)              = 30-100000
+
+Tandem duplications      = 0
+Length (bp)              = 50-10000
+Copies                   = 1-20
+
+Inversions               = 0
+Length (bp)              = 150-1300000
+
+Complex substitutions    = 0
+Length (bp)              = 30-100000
+
+Inverted duplications    = 0
+Length (bp)              = 150-350000
+
+Heterozygosity           = 60%
+
+
+Long Read simulation:
+-----------------------------
+Coverage                 = 15
+Median length            = 10000
+Length range             = 7000-13000
+Accuracy                 = 99%
+Error profile            = external-software/sim-it/error_profile_PB_Sequel_CCS_hifi.txt" > '{params.config_file}'
+
+        mkdir -p '{params.output_prefix}'
+        perl '{input.script}' -c '{params.config_file}' -o '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        ln -sr -T '{params.output_prefix}/Nanopore_Test.fasta' '{output.simulated_reads}'
+    """
 
 
 #########################################
