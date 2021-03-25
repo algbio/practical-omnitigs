@@ -895,19 +895,32 @@ reports:
         read_simulator: "bbmap_hifi"
 
   "wtdbg2_deep_analysis":
+    argument_matrix:
+      genome: "E.coli"
+      read_simulator:
+        perfect:
+          cli_arguments:
+            "--read-length-interval": "15000 25000"
+            "--coverage": 20
+            "--distribution": "cut"
     columns:
       - shortname: "w2 rs"
-        genome: "E.coli"
         assembler:
           wtdbg2:
             cli_arguments:
               "-x": "rs"
-        read_simulator:
-          perfect:
+      - shortname: "w2 Y-to-V"
+        assembler:
+          wtdbg2:
             cli_arguments:
-              "--read-length-interval": "15000 25000"
-              "--coverage": 20
-              "--distribution": "cut"
+              "-x": "rs"
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
+      - shortname: "w2 ccs"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "ccs"
 
 aggregated_reports:
   "aggregated":

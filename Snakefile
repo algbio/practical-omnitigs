@@ -391,9 +391,9 @@ for report_name, report_definition in reports.items():
         report_definition.setdefault("report_files", {})[report_file.name] = report_file
 
 
-import pprint
-pp = pprint.PrettyPrinter(indent = 2, width = 200, compact = True)
-pp.pprint(reports)
+#import pprint
+#pp = pprint.PrettyPrinter(indent = 2, width = 200, compact = True)
+#pp.pprint(reports)
 #pp.pprint(aggregated_reports)
 
 #print("Exiting for debugging")
@@ -541,7 +541,14 @@ rule report_all_wtdbg2_investigations:
 
 localrules: report_some_wtdbg2_investigations
 rule report_some_wtdbg2_investigations:
-    input:  [os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"{genome}","assembler":{"wtdbg2":{"cli_arguments":{"-x":"ccs"}}},"read_simulator":{"perfect":{"cli_arguments"/_/:{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log").replace("{genome}", genome) for genome in ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]]
+    input:  [os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"{genome}","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log").replace("{genome}", genome) for genome in ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]]
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
+
+localrules: E_coli_wtdbg2_investigation
+rule E_coli_wtdbg2_investigation:
+    input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
@@ -777,14 +784,35 @@ rule latex:
         tectonic '{input}'
         """
 
+def get_genome_reads_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+
+        if arguments.read_simulator_name() is None or arguments.read_simulator_name() == "none":
+            return GENOME_READS_FORMAT.format(genome = arguments["genome"])
+        else:
+            return GENOME_SIMULATED_READS_FASTA_FORMAT.format(genome = arguments["genome"], read_simulator_name = arguments.read_simulator_name(), read_simulator_arguments = arguments.read_simulator_arguments())
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_genome_reference_from_wildcards(wildcards):
+    try:
+        arguments = Arguments.from_str(wildcards.arguments)
+        return GENOME_REFERENCE_FORMAT.format(genome = arguments["genome"])
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 rule find_wtdbg2_node_errors:
     input:  nodes = os.path.join(WTDBG2_PREFIX_FORMAT, "wtdbg2.1.nodes"),
+            reference = get_genome_reference_from_wildcards,
             script = "scripts/find_wtdbg2_node_errors.py",
     log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log"),
     params: output_prefix = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors") + "/",
-    conda:  "config/conda-seaborn-env.yml"
+    conda:  "config/conda-wtdbg2-node-errors-env.yml"
     threads: 1
-    shell:  "'{input.script}' '{input.nodes}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
+    shell:  "PYTHONUNBUFFERED=1 '{input.script}' '{input.nodes}' '{input.reference}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
 
 ########################
 ###### Algorithms ######
@@ -828,26 +856,6 @@ def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
             return "compute-omnitigs"
         else:
             raise Exception("Missing injection command in assembler arguments: " + str(wildcards))
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_genome_reference_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        return GENOME_REFERENCE_FORMAT.format(genome = arguments["genome"])
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_genome_reads_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-
-        if arguments.read_simulator_name() is None or arguments.read_simulator_name() == "none":
-            return GENOME_READS_FORMAT.format(genome = arguments["genome"])
-        else:
-            return GENOME_SIMULATED_READS_FASTA_FORMAT.format(genome = arguments["genome"], read_simulator_name = arguments.read_simulator_name(), read_simulator_arguments = arguments.read_simulator_arguments())
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
