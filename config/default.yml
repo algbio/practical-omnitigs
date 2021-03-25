@@ -909,7 +909,14 @@ reports:
           wtdbg2:
             cli_arguments:
               "-x": "rs"
-      - shortname: "w2 Y-to-V"
+      - shortname: "w2 YV"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "w2 frg YV"
         assembler:
           wtdbg2:
             cli_arguments:
