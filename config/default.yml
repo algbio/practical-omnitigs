@@ -909,14 +909,14 @@ reports:
           wtdbg2:
             cli_arguments:
               "-x": "rs"
-      - shortname: "w2 YV"
+      - shortname: "w2 rs YV"
         assembler:
           wtdbg2:
             cli_arguments:
               "-x": "rs"
             injections:
               "wtdbg2-inject-trivial-omnitigs": True
-      - shortname: "w2 frg YV"
+      - shortname: "w2 rs frg YV"
         assembler:
           wtdbg2:
             cli_arguments:
@@ -928,6 +928,20 @@ reports:
           wtdbg2:
             cli_arguments:
               "-x": "ccs"
+      - shortname: "w2 ccs YV"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "ccs"
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "w2 ccs frg YV"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "ccs"
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
 
 aggregated_reports:
   "aggregated":
