@@ -29,10 +29,6 @@ impl Genome for VectorGenome {
             })
             .collect()
     }
-
-    fn len(&self) -> usize {
-        self.0.len()
-    }
 }
 
 impl ExtendableGenome for VectorGenome {

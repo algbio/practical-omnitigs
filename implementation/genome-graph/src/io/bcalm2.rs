@@ -4,6 +4,7 @@ use crate::io::fasta::FastaData;
 use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedData};
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
+use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bio::io::fasta::Record;
 use compact_genome::{implementation::vector_genome_impl::VectorGenome, interface::Genome};
 use num_traits::NumCast;

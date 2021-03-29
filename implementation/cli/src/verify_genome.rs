@@ -3,6 +3,7 @@ use clap::Clap;
 use compact_genome::implementation::vector_genome_impl::VectorGenome;
 use compact_genome::interface::Genome;
 use std::iter::FromIterator;
+use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct VerifyGenomeCommand {

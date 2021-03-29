@@ -38,14 +38,6 @@ where
             .collect()
     }
 
-    /// Returns the amount of bases in this genome string.
-    fn len(&self) -> usize;
-
-    /// Returns true if this genome string is empty.
-    fn is_empty(&self) -> bool {
-        Genome::len(&self) == 0
-    }
-
     /// Copies this genome string into a `Vec`.
     fn clone_as_vec(&self) -> Vec<u8> {
         self.into_iter().collect()
@@ -60,7 +52,7 @@ where
     /// Returns a copy of the suffix with length `len` of this genome.
     /// Panics if `len >= self.len()`.
     fn suffix(&self, len: usize) -> Self {
-        Self::from_iter(self.into_iter().skip(Genome::len(&self) - len))
+        Self::from_iter(self.into_iter().skip(self.len() - len))
     }
 
     /// Returns the genome as nucleotide string.

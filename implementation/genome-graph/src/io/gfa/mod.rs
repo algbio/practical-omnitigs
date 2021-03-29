@@ -5,6 +5,7 @@ use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
+use bigraph::traitgraph::traitsequence::interface::Sequence;
 use compact_genome::implementation::vector_genome_impl::VectorGenome;
 use compact_genome::interface::Genome;
 use std::collections::HashMap;
