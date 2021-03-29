@@ -546,9 +546,15 @@ rule report_some_wtdbg2_investigations:
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
 
-localrules: E_coli_wtdbg2_investigation
-rule E_coli_wtdbg2_investigation:
+localrules: E_coli_wtdbg2_investigation_rs
+rule E_coli_wtdbg2_investigation_rs:
     input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
+localrules: E_coli_wtdbg2_investigation_ccs
+rule E_coli_wtdbg2_investigation_ccs:
+    input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"ccs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
@@ -808,6 +814,7 @@ rule find_wtdbg2_node_errors:
     input:  nodes = os.path.join(WTDBG2_PREFIX_FORMAT, "wtdbg2.1.nodes"),
             reference = get_genome_reference_from_wildcards,
             script = "scripts/find_wtdbg2_node_errors.py",
+    output: deviation_histogram = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "deviation_histogram.pdf"),
     log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log"),
     params: output_prefix = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors") + "/",
     conda:  "config/conda-wtdbg2-node-errors-env.yml"

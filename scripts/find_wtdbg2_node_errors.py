@@ -8,6 +8,7 @@ import scipy.cluster.hierarchy as hierarchy
 import numpy as np
 import scipy.spatial.distance as ssd
 import Levenshtein
+from matplotlib.backends.backend_pdf import PdfPages
 
 if len(sys.argv) != 4:
     sys.exit("Need exactly the input nodes file, the input reference file and the output prefix.")
@@ -48,7 +49,7 @@ with open(reference_path, 'r') as reference_file:
 print("Reference loading took {}s".format(time.time() - reference_loading_start))
 
 class Align:
-    def __init__(self, node_id, read_id, contig_id, read_start, read_end, align_start, align_end, forward):
+    def __init__(self, node_id, read_id, contig_id, read_start, read_end, align_start, align_end, forward, star):
         self.node_id = node_id
         self.read_id = read_id
         self.contig_id = contig_id
@@ -59,6 +60,7 @@ class Align:
         self.align_end = align_end
         self.align_center = (align_start + align_end) // 2
         self.forward = forward
+        self.star = star
 
 print("Loading aligns")
 with open(nodes_path, 'r') as nodes_file:
@@ -103,7 +105,7 @@ with open(nodes_path, 'r') as nodes_file:
                 align_end = read_end - align_read_offset
                 align_start = align_end - align_len
 
-            align = Align(node_id, read_id, contig_id, read_start, read_end, align_start, align_end, forward)
+            align = Align(node_id, read_id, contig_id, read_start, read_end, align_start, align_end, forward, star)
             aligns.append(align)
 
         node_align_map[node_id] = aligns
@@ -171,7 +173,13 @@ fig.savefig(path)
 
 print("\n === Investigating large error nodes ===\n")
 
-large_error_fig, large_error_axes = plt.subplots(2, len(large_error_nodes), figsize=(5 * len(large_error_nodes), 10), constrained_layout = True)
+large_error_dendrograms_path = os.path.join(output_prefix, "large_error_dendrograms.pdf")
+large_error_dendrograms_pp = PdfPages(large_error_dendrograms_path)
+
+large_error_figs = [None] * len(large_error_nodes)
+large_error_axes = [None] * len(large_error_nodes)
+for i in range(len(large_error_nodes)):
+    large_error_figs[i], large_error_axes[i] = plt.subplots(2, 1, figsize = (5, 10), constrained_layout = True)
 
 for i, (node_id, aligns) in enumerate(large_error_nodes.items()):
     align_centers_np = np.array([[align.align_center, 0] for align in aligns])
@@ -181,13 +189,13 @@ for i, (node_id, aligns) in enumerate(large_error_nodes.items()):
     labelList = range(1, len(align_centers_np) + 1)
 
     #print("linked.shape: {}".format(linked.shape))
-    hierarchy.dendrogram(linked, ax = large_error_axes[0, i],
+    hierarchy.dendrogram(linked, ax = large_error_axes[i][0],
                 orientation='top',
                 labels=labelList,
                 distance_sort='descending',
                 show_leaf_counts=True)
-    large_error_axes[0, i].set_ylim([10, 2e6])
-    large_error_axes[0, i].set_yscale("log")
+    large_error_axes[i][0].set_ylim([10, 2e6])
+    large_error_axes[i][0].set_yscale("log")
 
 # Find transitive subnodes
 largest_transitive_subnode_fraction = []
@@ -279,12 +287,12 @@ for plot_index, (node_id, aligns) in enumerate(large_error_nodes.items()):
     #print(linked)
 
     #print("linked.shape: {}".format(linked.shape))
-    hierarchy.dendrogram(linked, ax = large_error_axes[1, plot_index],
+    hierarchy.dendrogram(linked, ax = large_error_axes[plot_index][1],
                 orientation='top',
                 labels=labelList,
                 distance_sort='descending',
                 show_leaf_counts=True)
-    large_error_axes[1, plot_index].set_ylim([0, 1000])
+    large_error_axes[plot_index][1].set_ylim([0, 1000])
 
     is_transitively_correct = False
     split_count = 1
@@ -314,9 +322,12 @@ for plot_index, (node_id, aligns) in enumerate(large_error_nodes.items()):
 
     large_error_nodes_cluster_split_to_transitive_count.append(split_count)
 
-path = os.path.join(output_prefix, "large_error_dendrograms.pdf")
-print("Saving {}".format(path))
-large_error_fig.savefig(path)
+print("Drawing figures for {}".format(large_error_dendrograms_path))
+for i in range(len(large_error_nodes)):
+    large_error_figs[i].savefig(large_error_dendrograms_pp, format = "pdf")
+
+print("Saving {}".format(large_error_dendrograms_path))
+large_error_dendrograms_pp.close()
 
 large_error_nodes_with_transitively_correct_biclustering_count = large_error_nodes_cluster_split_to_transitive_count.count(2)
 print("{:.0f}% of large error nodes can be split into two transitive correct nodes by exact hierarchical clustering.".format(large_error_nodes_with_transitively_correct_biclustering_count * 100.0 / len(large_error_nodes)))
@@ -329,5 +340,51 @@ large_error_nodes_cluster_split_to_transitive_count_df = pd.DataFrame({"large_er
 fig, axes = plt.subplots(1, 1, figsize=(5, 5))
 large_error_nodes_cluster_split_to_transitive_count_histogram = sns.histplot(ax = axes, data = large_error_nodes_cluster_split_to_transitive_count_df, x = "large_error_nodes_cluster_split_to_transitive_count", stat = "count", binwidth = 1)
 path = os.path.join(output_prefix, "large_error_nodes_cluster_split_to_transitive_count_histogram.pdf")
+print("Saving {}".format(path))
+fig.savefig(path)
+
+# Investigate nodes that should have been glued, but have not been
+
+unglued_nodes = {}
+bucket_node_map = {}
+
+def div_ceil(x, y):
+    return 1 + ((x - 1) // y)
+
+for contig_id, sequence in reference.items():
+    bucket_node_map[contig_id] = []
+    for i in range(div_ceil(len(sequence), 128) + 1):
+        bucket_node_map[contig_id].append(set())
+
+for node_id, aligns in node_align_map.items():
+    for align in aligns:
+        for i in range((align.align_start // 128) + 1, div_ceil(align.align_end, 128)):
+            bucket_node_map[align.contig_id][i].add(node_id)
+
+bucket_count = 0
+empty_bucket_count = 0
+underglued_bucket_count = 0
+bucket_lens = []
+
+for contig_id, buckets in bucket_node_map.items():
+    for bucket_index, bucket in enumerate(buckets):
+        bucket_lens.append(len(bucket))
+        bucket_count += 1
+        if len(bucket) > 1:
+            underglued_bucket_count += 1
+            #print(bucket)
+        elif len(bucket) == 0:
+            empty_bucket_count += 1
+
+        if len(bucket) > 10:
+            print("contig {} bucket {} has len {}".format(contig_id, bucket_index, len(bucket)))
+
+print("{:.0f}% of reference positions are not part of any node".format(empty_bucket_count * 100.0 / bucket_count))
+print("{:.0f}% of reference positions are underglued".format(underglued_bucket_count * 100.0 / bucket_count))
+
+bucket_lens_df = pd.DataFrame({"bucket_lens": bucket_lens})
+fig, axes = plt.subplots(1, 1, figsize=(5, 5))
+underglued_bucket_histogram = sns.histplot(ax = axes, data = bucket_lens_df, x = "bucket_lens", stat = "count", binwidth = 1)
+path = os.path.join(output_prefix, "underglued_bucket_histogram.pdf")
 print("Saving {}".format(path))
 fig.savefig(path)
