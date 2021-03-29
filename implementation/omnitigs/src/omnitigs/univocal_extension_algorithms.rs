@@ -5,10 +5,10 @@ use traitgraph::walks::{EdgeWalk, NodeWalk};
 
 /// Computes the univocal extension of a walk assuming the graph is strongly connected.
 /// Might enter an infinite loop if the graph is not strongly connected.
-pub struct SCCUnivocalExtensionStrategy;
+pub struct SccUnivocalExtensionStrategy;
 
 impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>>
-    UnivocalExtensionAlgorithm<Graph, ResultWalk> for SCCUnivocalExtensionStrategy
+    UnivocalExtensionAlgorithm<Graph, ResultWalk> for SccUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::EdgeIndex]) -> ResultWalk {
         EdgeWalk::compute_univocal_extension(walk.borrow(), graph)
@@ -16,10 +16,10 @@ impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>>
 }
 
 /// Computes the univocal extension of a walk assuming the graph is not strongly connected.
-pub struct NonSCCUnivocalExtensionStrategy;
+pub struct NonSccUnivocalExtensionStrategy;
 
 impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>>
-    UnivocalExtensionAlgorithm<Graph, ResultWalk> for NonSCCUnivocalExtensionStrategy
+    UnivocalExtensionAlgorithm<Graph, ResultWalk> for NonSccUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::EdgeIndex]) -> ResultWalk {
         EdgeWalk::compute_univocal_extension_non_scc(walk.borrow(), graph)
@@ -28,11 +28,11 @@ impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>>
 
 /// Computes the univocal extension of a walk assuming the graph is strongly connected.
 /// Might enter an infinite loop if the graph is not strongly connected.
-pub struct SCCNodeCentricUnivocalExtensionStrategy;
+pub struct SccNodeCentricUnivocalExtensionStrategy;
 
 impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::NodeIndex>>>
     NodeCentricUnivocalExtensionAlgorithm<Graph, ResultWalk>
-    for SCCNodeCentricUnivocalExtensionStrategy
+    for SccNodeCentricUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::NodeIndex]) -> ResultWalk {
         NodeWalk::compute_univocal_extension(walk.borrow(), graph)
@@ -40,11 +40,11 @@ impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::NodeIndex>>>
 }
 
 /// Computes the univocal extension of a walk assuming the graph is not strongly connected.
-pub struct NonSCCNodeCentricUnivocalExtensionStrategy;
+pub struct NonSccNodeCentricUnivocalExtensionStrategy;
 
 impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::NodeIndex>>>
     NodeCentricUnivocalExtensionAlgorithm<Graph, ResultWalk>
-    for NonSCCNodeCentricUnivocalExtensionStrategy
+    for NonSccNodeCentricUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::NodeIndex]) -> ResultWalk {
         NodeWalk::compute_univocal_extension_non_scc(walk.borrow(), graph)

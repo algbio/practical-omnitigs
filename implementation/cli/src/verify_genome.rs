@@ -22,7 +22,7 @@ error_chain! {
             display("the genome has a hole")
         }
 
-        GenomeHasNonUTF8Characters {
+        GenomeHasNonUtf8Characters {
             description("the genome contains characters that are not valid UTF-8")
             display("the genome contains characters that are not valid UTF-8")
         }
@@ -82,7 +82,7 @@ pub(crate) fn verify_genome(
             }
             Err(_) => {
                 error!("Genome contains a hole: characters that are not valid UTF-8");
-                return Err(Error::from(ErrorKind::GenomeHasNonUTF8Characters).into());
+                return Err(Error::from(ErrorKind::GenomeHasNonUtf8Characters).into());
             }
         }
 

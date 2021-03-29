@@ -1,5 +1,5 @@
 use crate::omnitigs::univocal_extension_algorithms::{
-    NonSCCNodeCentricUnivocalExtensionStrategy, SCCNodeCentricUnivocalExtensionStrategy,
+    NonSccNodeCentricUnivocalExtensionStrategy, SccNodeCentricUnivocalExtensionStrategy,
 };
 use crate::omnitigs::{NodeCentricUnivocalExtensionAlgorithm, TrivialNodeCentricOmnitigAlgorithm};
 use bitvector::BitVector;
@@ -15,13 +15,13 @@ pub struct DefaultTrivialNodeCentricOmnitigAlgorithm<NodeCentricUnivocalExtensio
 }
 
 /// An algorithm to extract trivial omnitigs form a strongly connected graph.
-pub type SCCTrivialOmnitigAlgorithm =
-    DefaultTrivialNodeCentricOmnitigAlgorithm<SCCNodeCentricUnivocalExtensionStrategy>;
+pub type SccTrivialOmnitigAlgorithm =
+    DefaultTrivialNodeCentricOmnitigAlgorithm<SccNodeCentricUnivocalExtensionStrategy>;
 
 /// An algorithm to extract trivial omnitigs form a not strongly connected graph.
 /// This runs slightly slower than the counterpart for strongly connected graphs, especially for long univocal extensions.
-pub type NonSCCTrivialOmnitigAlgorithm =
-    DefaultTrivialNodeCentricOmnitigAlgorithm<NonSCCNodeCentricUnivocalExtensionStrategy>;
+pub type NonSccTrivialOmnitigAlgorithm =
+    DefaultTrivialNodeCentricOmnitigAlgorithm<NonSccNodeCentricUnivocalExtensionStrategy>;
 
 impl<
         Graph: StaticGraph,

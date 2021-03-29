@@ -1,6 +1,6 @@
 use crate::CliOptions;
 use clap::Clap;
-use genome_graph::io::gfa::{BidirectedGFANodeData, PetGFAEdgeGraph};
+use genome_graph::io::gfa::{BidirectedGfaNodeData, PetGfaEdgeGraph};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs};
 use omnitigs::traitgraph::algo::components::is_strongly_connected;
@@ -193,7 +193,7 @@ pub(crate) fn compute_trivial_omnitigs(
                 bail!("No input file given")
             };
             info!("Reading bigraph from '{}'", input);
-            let (genome_graph, kmer_size): (PetGFAEdgeGraph<BidirectedGFANodeData<()>, ()>, _) =
+            let (genome_graph, kmer_size): (PetGfaEdgeGraph<BidirectedGfaNodeData<()>, ()>, _) =
                 genome_graph::io::gfa::read_gfa_as_bigraph_from_file(input, true, true)?;
 
             info!(

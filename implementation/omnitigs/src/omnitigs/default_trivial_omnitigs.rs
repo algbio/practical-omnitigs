@@ -1,5 +1,5 @@
 use crate::omnitigs::univocal_extension_algorithms::{
-    NonSCCUnivocalExtensionStrategy, SCCUnivocalExtensionStrategy,
+    NonSccUnivocalExtensionStrategy, SccUnivocalExtensionStrategy,
 };
 use crate::omnitigs::{Omnitig, Omnitigs, TrivialOmnitigAlgorithm, UnivocalExtensionAlgorithm};
 use bitvector::BitVector;
@@ -16,12 +16,12 @@ pub struct DefaultTrivialOmnitigAlgorithm<UnivocalExtensionStrategy> {
 }
 
 /// An algorithm to extract trivial omnitigs form a strongly connected graph.
-pub type SCCTrivialOmnitigAlgorithm = DefaultTrivialOmnitigAlgorithm<SCCUnivocalExtensionStrategy>;
+pub type SccTrivialOmnitigAlgorithm = DefaultTrivialOmnitigAlgorithm<SccUnivocalExtensionStrategy>;
 
 /// An algorithm to extract trivial omnitigs form a not strongly connected graph.
 /// This runs slightly slower than the counterpart for strongly connected graphs, especially for long univocal extensions.
-pub type NonSCCTrivialOmnitigAlgorithm =
-    DefaultTrivialOmnitigAlgorithm<NonSCCUnivocalExtensionStrategy>;
+pub type NonSccTrivialOmnitigAlgorithm =
+    DefaultTrivialOmnitigAlgorithm<NonSccUnivocalExtensionStrategy>;
 
 /// Returns true if the edge is in a trivial omnitig heart.
 pub fn is_edge_in_maximal_trivial_omnitig_heart<Graph: StaticGraph>(
@@ -150,7 +150,7 @@ mod tests {
     use traitgraph::interface::MutableGraphContainer;
     use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
     use crate::omnitigs::{MacrotigBasedNonTrivialOmnitigAlgorithm, Omnitigs, TrivialOmnitigAlgorithm, Omnitig};
-    use crate::omnitigs::default_trivial_omnitigs::SCCTrivialOmnitigAlgorithm;
+    use crate::omnitigs::default_trivial_omnitigs::SccTrivialOmnitigAlgorithm;
 
     #[test]
     fn test_compute_omnitigs_simple() {
@@ -245,7 +245,7 @@ mod tests {
             ])
         );
 
-        let maximal_omnitigs = SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
+        let maximal_omnitigs = SccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
             &graph,
             maximal_non_trivial_omnitigs,
         );

@@ -18,28 +18,28 @@ use std::rc::Rc;
 //use bigraph::traitgraph::index::GraphIndex;
 
 /// Type of graphs read from gfa files.
-pub type PetGFAGraph<NodeData, EdgeData> =
+pub type PetGfaGraph<NodeData, EdgeData> =
     crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
         crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
-            BidirectedGFANodeData<NodeData>,
+            BidirectedGfaNodeData<NodeData>,
             EdgeData,
             usize,
         >,
     >;
 
 /// The edge-centric variant of the type of graphs read from gfa files.
-pub type PetGFAEdgeGraph<NodeData, EdgeData> =
+pub type PetGfaEdgeGraph<NodeData, EdgeData> =
     crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
         crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
             NodeData,
-            BidirectedGFANodeData<EdgeData>,
+            BidirectedGfaNodeData<EdgeData>,
             usize,
         >,
     >;
 
 /// Node data of a bidirected graph read from GFA
 #[derive(Eq, PartialEq, Debug, Clone, Default)]
-pub struct BidirectedGFANodeData<T> {
+pub struct BidirectedGfaNodeData<T> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.
     pub sequence: Rc<VectorGenome>,
     /// True if this node is the forward node of sequence, false if it is the reverse complement node.
@@ -48,7 +48,7 @@ pub struct BidirectedGFANodeData<T> {
     pub data: T,
 }
 
-impl<T: BidirectedData> BidirectedData for BidirectedGFANodeData<T> {
+impl<T: BidirectedData> BidirectedData for BidirectedGfaNodeData<T> {
     fn mirror(&self) -> Self {
         Self {
             sequence: self.sequence.clone(),
@@ -58,13 +58,13 @@ impl<T: BidirectedData> BidirectedData for BidirectedGFANodeData<T> {
     }
 }
 
-impl<T: WeightedEdgeData> WeightedEdgeData for BidirectedGFANodeData<T> {
+impl<T: WeightedEdgeData> WeightedEdgeData for BidirectedGfaNodeData<T> {
     fn weight(&self) -> usize {
         self.data.weight()
     }
 }
 
-impl<T> FastaData for BidirectedGFANodeData<T> {
+impl<T> FastaData for BidirectedGfaNodeData<T> {
     type GenomeSequence = VectorGenome;
 
     fn sequence(&self) -> &Self::GenomeSequence {
@@ -78,7 +78,7 @@ pub fn read_gfa_as_bigraph_from_file<
     P: AsRef<Path>,
     NodeData: Default,
     EdgeData: Default,
-    Graph: DynamicBigraph<NodeData = BidirectedGFANodeData<NodeData>, EdgeData = EdgeData> + Default,
+    Graph: DynamicBigraph<NodeData = BidirectedGfaNodeData<NodeData>, EdgeData = EdgeData> + Default,
 >(
     gfa_file: P,
     ignore_k: bool,
@@ -97,7 +97,7 @@ pub fn read_gfa_as_bigraph<
     R: BufRead,
     NodeData: Default,
     EdgeData: Default,
-    Graph: DynamicBigraph<NodeData = BidirectedGFANodeData<NodeData>, EdgeData = EdgeData> + Default,
+    Graph: DynamicBigraph<NodeData = BidirectedGfaNodeData<NodeData>, EdgeData = EdgeData> + Default,
 >(
     gfa: R,
     ignore_k: bool,
@@ -140,12 +140,12 @@ pub fn read_gfa_as_bigraph<
                 k
             );
 
-            let n1 = graph.add_node(BidirectedGFANodeData {
+            let n1 = graph.add_node(BidirectedGfaNodeData {
                 sequence: sequence.clone(),
                 forward: true,
                 data: Default::default(),
             });
-            let n2 = graph.add_node(BidirectedGFANodeData {
+            let n2 = graph.add_node(BidirectedGfaNodeData {
                 sequence: sequence.clone(),
                 forward: false,
                 data: Default::default(),
@@ -201,7 +201,7 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
     P: AsRef<Path>,
     NodeData: Default,
     EdgeData: Default + BidirectedData + Eq + Clone,
-    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = BidirectedGFANodeData<EdgeData>>
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = BidirectedGfaNodeData<EdgeData>>
         + Default
         + std::fmt::Debug,
 >(
@@ -246,7 +246,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
     R: BufRead,
     NodeData: Default,
     EdgeData: Default + BidirectedData + Eq + Clone,
-    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = BidirectedGFANodeData<EdgeData>>
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = BidirectedGfaNodeData<EdgeData>>
         + Default
         + std::fmt::Debug,
 >(
@@ -282,7 +282,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
             let sequence = columns.next().unwrap();
             //println!("sequence {}", sequence);
             let sequence = Rc::new(VectorGenome::from_iter(sequence.bytes()));
-            let edge_data = BidirectedGFANodeData {
+            let edge_data = BidirectedGfaNodeData {
                 sequence: sequence.clone(),
                 forward: true,
                 data: Default::default(),
@@ -328,13 +328,13 @@ pub fn read_gfa_as_edge_centric_bigraph<
 
 #[cfg(test)]
 mod tests {
-    use crate::io::gfa::{read_gfa_as_edge_centric_bigraph, PetGFAEdgeGraph};
+    use crate::io::gfa::{read_gfa_as_edge_centric_bigraph, PetGfaEdgeGraph};
     use std::io::BufReader;
 
     #[test]
     fn test_read_gfa_as_edge_centric_bigraph_simple() {
         let gfa = "H\tKL:Z:3\nS\t1\tACGA\nS\t2\tTCGT";
-        let (_bigraph, k, _gfa_header): (PetGFAEdgeGraph<(), ()>, _, _) =
+        let (_bigraph, k, _gfa_header): (PetGfaEdgeGraph<(), ()>, _, _) =
             read_gfa_as_edge_centric_bigraph(BufReader::new(gfa.as_bytes()), false).unwrap();
         assert_eq!(k, 3);
     }

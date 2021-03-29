@@ -28,7 +28,7 @@ error_chain! {
 
     errors {
         /// A node id that cannot be parsed into `usize`.
-        BCalm2IDError(id: String) {
+        BCalm2IdError(id: String) {
             description("invalid node id")
             display("invalid node id: '{:?}'", id)
         }
@@ -153,7 +153,7 @@ impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
         let id = value
             .id()
             .parse()
-            .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IDError(value.id().to_owned())))?;
+            .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IdError(value.id().to_owned())))?;
         let sequence = VectorGenome::from_iter(value.seq()); // TODO store with bio
                                                              // TODO check if genome is valid
 

@@ -10,11 +10,11 @@ pub mod univocal_extension_algorithms;
 use crate::macrotigs::macrotigs::Macrotigs;
 use crate::omnitigs::default_node_centric_trivial_omnitigs::DefaultTrivialNodeCentricOmnitigAlgorithm;
 use crate::omnitigs::default_trivial_omnitigs::{
-    NonSCCTrivialOmnitigAlgorithm, SCCTrivialOmnitigAlgorithm,
+    NonSccTrivialOmnitigAlgorithm, SccTrivialOmnitigAlgorithm,
 };
 use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
 use crate::omnitigs::univocal_extension_algorithms::{
-    NonSCCNodeCentricUnivocalExtensionStrategy, SCCNodeCentricUnivocalExtensionStrategy,
+    NonSccNodeCentricUnivocalExtensionStrategy, SccNodeCentricUnivocalExtensionStrategy,
 };
 use bigraph::interface::static_bigraph::{StaticBigraph, StaticEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
@@ -186,7 +186,7 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
     pub fn compute(graph: &Graph) -> Self {
         let maximal_macrotigs = Macrotigs::compute(graph);
         let maximal_non_trivial_omnitigs = IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm::compute_maximal_non_trivial_omnitigs(graph, &maximal_macrotigs);
-        SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
+        SccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
             graph,
             maximal_non_trivial_omnitigs,
         )
@@ -194,13 +194,13 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
 
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     pub fn compute_trivial_only(graph: &Graph) -> Self {
-        SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
+        SccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
     }
 
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     /// This algorithm allows the graph to be not strongly connected, but it is a bit slower, especially for long trivial omnitigs.
     pub fn compute_trivial_only_non_scc(graph: &Graph) -> Self {
-        NonSCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
+        NonSccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
     }
 }
 
@@ -407,7 +407,7 @@ pub trait NodeCentricOmnitigs<Graph: GraphBase>:
     where
         Graph: StaticGraph,
     {
-        DefaultTrivialNodeCentricOmnitigAlgorithm::<SCCNodeCentricUnivocalExtensionStrategy>::compute_maximal_trivial_node_centric_omnitigs(graph, Vec::new()).into()
+        DefaultTrivialNodeCentricOmnitigAlgorithm::<SccNodeCentricUnivocalExtensionStrategy>::compute_maximal_trivial_node_centric_omnitigs(graph, Vec::new()).into()
     }
 
     /// Compute the trivial node-centric omnitigs in the given graph that may not be strongly connected.
@@ -415,7 +415,7 @@ pub trait NodeCentricOmnitigs<Graph: GraphBase>:
     where
         Graph: StaticGraph,
     {
-        DefaultTrivialNodeCentricOmnitigAlgorithm::<NonSCCNodeCentricUnivocalExtensionStrategy>::compute_maximal_trivial_node_centric_omnitigs(graph, Vec::new()).into()
+        DefaultTrivialNodeCentricOmnitigAlgorithm::<NonSccNodeCentricUnivocalExtensionStrategy>::compute_maximal_trivial_node_centric_omnitigs(graph, Vec::new()).into()
     }
 
     /// Retains only one direction of each pair of reverse-complemental omnitigs.
