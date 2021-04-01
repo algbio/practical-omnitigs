@@ -1,7 +1,7 @@
 use crate::CliOptions;
 use clap::Clap;
-use compact_genome::implementation::vec::AsciiVectorGenome;
-use compact_genome::interface::GenomeSequence;
+use compact_genome::implementation::vec_sequence::AsciiVectorGenome;
+use compact_genome::interface::sequence::GenomeSequence;
 
 #[derive(Clap)]
 pub struct VerifyGenomeCommand {

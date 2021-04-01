@@ -1,6 +1,6 @@
 //! A simple representation of a genome as `Vec<u8>`.
 
-use crate::interface::{
+use crate::interface::sequence::{
     EditableGenomeSequence, GenomeSequence, GenomeSequenceMut, OwnedGenomeSequence,
 };
 
@@ -17,8 +17,8 @@ impl<'a> EditableGenomeSequence<'a, [u8]> for Vec<u8> {}
 
 #[cfg(test)]
 mod tests {
-    use crate::implementation::vec::AsciiVectorGenome;
-    use crate::interface::{GenomeSequence, OwnedGenomeSequence};
+    use crate::implementation::vec_sequence::AsciiVectorGenome;
+    use crate::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 
     #[test]
     fn test_reverse_complement() {

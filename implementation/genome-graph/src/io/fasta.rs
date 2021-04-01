@@ -1,8 +1,10 @@
 use bigraph::traitgraph::interface::ImmutableGraphContainer;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, NodeWalk};
-use compact_genome::implementation::vec::AsciiVectorGenome;
-use compact_genome::interface::{EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence};
+use compact_genome::implementation::vec_sequence::AsciiVectorGenome;
+use compact_genome::interface::sequence::{
+    EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence,
+};
 use std::path::Path;
 
 error_chain! {

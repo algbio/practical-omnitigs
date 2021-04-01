@@ -1,6 +1,6 @@
 //! A simple represenation of a genome as `[u8]`
 
-use crate::interface::{GenomeSequence, GenomeSequenceMut};
+use crate::interface::sequence::{GenomeSequence, GenomeSequenceMut};
 
 impl<'a> GenomeSequence<'a, [u8]> for [u8] {}
 
