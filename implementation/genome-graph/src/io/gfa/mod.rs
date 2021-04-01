@@ -13,7 +13,7 @@ use std::fs::File;
 use std::hash::Hash;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use std::rc::Rc;
+use std::sync::Arc;
 //use bigraph::traitgraph::index::GraphIndex;
 
 /// Type of graphs read from gfa files.
@@ -40,7 +40,7 @@ pub type PetGfaEdgeGraph<NodeData, EdgeData> =
 #[derive(Eq, PartialEq, Debug, Clone, Default)]
 pub struct BidirectedGfaNodeData<T> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.
-    pub sequence: Rc<AsciiVectorGenome>,
+    pub sequence: Arc<AsciiVectorGenome>,
     /// True if this node is the forward node of sequence, false if it is the reverse complement node.
     pub forward: bool,
     /// Further data.
@@ -131,7 +131,7 @@ pub fn read_gfa_as_bigraph<
 
             let sequence = columns.next().unwrap();
             let sequence: AsciiVectorGenome = sequence.bytes().collect();
-            let sequence = Rc::new(sequence);
+            let sequence = Arc::new(sequence);
             assert!(
                 sequence.len() >= k || ignore_k,
                 "Node {} has sequence '{:?}' of length {} (k = {})",
@@ -287,7 +287,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
             let sequence = columns.next().unwrap();
             //println!("sequence {}", sequence);
             let sequence: AsciiVectorGenome = sequence.bytes().collect();
-            let sequence = Rc::new(sequence);
+            let sequence = Arc::new(sequence);
             let edge_data = BidirectedGfaNodeData {
                 sequence: sequence.clone(),
                 forward: true,
