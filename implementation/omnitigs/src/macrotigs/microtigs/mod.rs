@@ -43,7 +43,9 @@ impl<Graph: GraphBase> Microtigs<Graph> {
     }
 }
 
-impl<'a, Graph: 'a + GraphBase> Sequence<'a, VecEdgeWalk<Graph>, [VecEdgeWalk<Graph>]> for Microtigs<Graph> {
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, VecEdgeWalk<Graph>, [VecEdgeWalk<Graph>]>
+    for Microtigs<Graph>
+{
     type Iterator = std::slice::Iter<'a, VecEdgeWalk<Graph>>;
 
     fn iter(&'a self) -> Self::Iterator {

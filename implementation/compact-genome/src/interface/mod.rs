@@ -2,7 +2,7 @@
 
 use itertools::Itertools;
 use std::iter::{Copied, FromIterator, Map, Rev};
-use traitsequence::interface::{Sequence, SequenceMut, EditableSequence};
+use traitsequence::interface::{EditableSequence, Sequence, SequenceMut};
 
 /// An iterator over the reverse complement of a genome sequence.
 pub type ReverseComplementIterator<I> =
@@ -20,7 +20,8 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
 
     /// Returns a duplicate-free vector of all invalid characters in this genome string.
     fn get_invalid_characters(&'a self) -> Vec<u8> {
-        self.iter().copied()
+        self.iter()
+            .copied()
             .filter(|c| !is_valid_ascii_genome_character(*c))
             .unique()
             .collect()
@@ -45,35 +46,39 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
     /// Returns an iterator over the reverse complement of this genome.
     /// Panics if the iterator his an invalid character (see [not valid](is_valid)).
     fn reverse_complement_iter(&'a self) -> ReverseComplementIterator<Self::Iterator> {
-        /*self.iter()
+        self.iter()
             .copied()
             .rev()
-            .map(ascii_complement)
-            .map(Option::unwrap)*/
-        todo!()
+            .map(ascii_complement as fn(u8) -> Option<u8>)
+            .map(Option::unwrap as fn(Option<u8>) -> u8)
     }
 }
 
 /// A genome sequence that is owned, i.e. not a reference.
-pub trait OwnedGenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized>: for<'s> GenomeSequence<'s, GenomeSubsequence> + FromIterator<u8> {
+pub trait OwnedGenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized>:
+    for<'s> GenomeSequence<'s, GenomeSubsequence> + FromIterator<u8>
+{
     /// Returns the reverse complement of this genome.
     /// Panics if this genome is [not valid](is_valid).
     fn reverse_complement(&'a self) -> Self {
-        Self::from_iter(self.reverse_complement_iter())
+        self.reverse_complement_iter().collect()
     }
 }
 
 /// A mutable genome sequence.
-pub trait GenomeSequenceMut<'a, GenomeSubsequenceMut: GenomeSequenceMut<'a, GenomeSubsequenceMut> + ?Sized>:
-    SequenceMut<'a, u8, GenomeSubsequenceMut> + GenomeSequence<'a, GenomeSubsequenceMut>
+pub trait GenomeSequenceMut<
+    'a,
+    GenomeSubsequenceMut: GenomeSequenceMut<'a, GenomeSubsequenceMut> + ?Sized,
+>: SequenceMut<'a, u8, GenomeSubsequenceMut> + GenomeSequence<'a, GenomeSubsequenceMut>
 {
 }
 
 /// An editable genome sequence.
-pub trait EditableGenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized>:
-EditableSequence<'a, u8, GenomeSubsequence> + GenomeSequence<'a, GenomeSubsequence>
+pub trait EditableGenomeSequence<
+    'a,
+    GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized,
+>: EditableSequence<'a, u8, GenomeSubsequence> + GenomeSequence<'a, GenomeSubsequence>
 {
-
 }
 
 /*

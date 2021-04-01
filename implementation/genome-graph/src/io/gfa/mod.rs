@@ -6,15 +6,14 @@ use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
+use compact_genome::implementation::vec::AsciiVectorGenome;
+use compact_genome::interface::{GenomeSequence, OwnedGenomeSequence};
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::rc::Rc;
-use compact_genome::implementation::vec::AsciiVectorGenome;
-use compact_genome::interface::{GenomeSequence, OwnedGenomeSequence};
-use std::iter::FromIterator;
 //use bigraph::traitgraph::index::GraphIndex;
 
 /// Type of graphs read from gfa files.
@@ -131,7 +130,8 @@ pub fn read_gfa_as_bigraph<
             let node_name: &str = columns.next().unwrap();
 
             let sequence = columns.next().unwrap();
-            let sequence = Rc::new(AsciiVectorGenome::from_iter(sequence.bytes()));
+            let sequence: AsciiVectorGenome = sequence.bytes().collect();
+            let sequence = Rc::new(sequence);
             assert!(
                 sequence.len() >= k || ignore_k,
                 "Node {} has sequence '{:?}' of length {} (k = {})",
@@ -212,7 +212,11 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
     read_gfa_as_edge_centric_bigraph(BufReader::new(File::open(gfa_file)?), estimate_k)
 }
 
-fn get_or_create_node<Graph: DynamicBigraph, G: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone, GenomeSubsequence: for <'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized> (
+fn get_or_create_node<
+    Graph: DynamicBigraph,
+    G: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone,
+    GenomeSubsequence: for<'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized,
+>(
     bigraph: &mut Graph,
     id_map: &mut HashMap<G, <Graph as GraphBase>::NodeIndex>,
     genome: G,
@@ -282,7 +286,8 @@ pub fn read_gfa_as_edge_centric_bigraph<
 
             let sequence = columns.next().unwrap();
             //println!("sequence {}", sequence);
-            let sequence = Rc::new(AsciiVectorGenome::from_iter(sequence.bytes()));
+            let sequence: AsciiVectorGenome = sequence.bytes().collect();
+            let sequence = Rc::new(sequence);
             let edge_data = BidirectedGfaNodeData {
                 sequence: sequence.clone(),
                 forward: true,
@@ -300,10 +305,12 @@ pub fn read_gfa_as_edge_centric_bigraph<
                 k
             );
 
-            let pre_plus = AsciiVectorGenome::from(sequence.prefix(k - 1));
-            let pre_minus = AsciiVectorGenome::from_iter(sequence.suffix(k - 1).reverse_complement_iter());
-            let succ_plus = AsciiVectorGenome::from(sequence.suffix(k - 1));
-            let succ_minus = AsciiVectorGenome::from_iter(sequence.prefix(k - 1).reverse_complement_iter());
+            let pre_plus: AsciiVectorGenome = sequence.prefix(k - 1).iter().copied().collect();
+            let pre_minus: AsciiVectorGenome =
+                sequence.suffix(k - 1).reverse_complement_iter().collect();
+            let succ_plus: AsciiVectorGenome = sequence.suffix(k - 1).iter().copied().collect();
+            let succ_minus: AsciiVectorGenome =
+                sequence.prefix(k - 1).reverse_complement_iter().collect();
 
             let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);
             let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, pre_minus);

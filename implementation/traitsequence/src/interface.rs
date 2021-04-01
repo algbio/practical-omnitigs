@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Write};
-use std::ops::{Index, IndexMut, Range};
 use std::iter::FromIterator;
+use std::ops::{Index, IndexMut, Range};
 
 /// A type behaving like a sequence over the type `Item`.
 pub trait Sequence<'a, Item: 'a, Subsequence: Sequence<'a, Item, Subsequence> + ?Sized>:
@@ -165,17 +165,17 @@ pub trait SequenceMut<'a, Item: 'a, Subsequence: SequenceMut<'a, Item, Subsequen
 /// A type behaving like a sequence over the type `Item` that can be edited.
 /// This sequences items can not necessarily be mutated themselves, but they can be rearranged or new items can be appended etc.
 /// For a sequence where the items themselves can be mutated, see [SequenceMut].
-pub trait EditableSequence<
-    'a,
-    Item: 'a,
-    Subsequence: Sequence<'a, Item, Subsequence> + ?Sized,
->: Sequence<'a, Item, Subsequence> + Extend<Item> + IntoIterator<Item = Item> + FromIterator<Item>
+pub trait EditableSequence<'a, Item: 'a, Subsequence: Sequence<'a, Item, Subsequence> + ?Sized>:
+    Sequence<'a, Item, Subsequence> + Extend<Item> + IntoIterator<Item = Item> + FromIterator<Item>
 {
     /// Extend this sequence from a sequence of compatible items.
     fn extend_into<
         ExtensionItem: Into<Item>,
         ExtensionSource: IntoIterator<Item = ExtensionItem>,
-    >(&mut self, extension: ExtensionSource) {
+    >(
+        &mut self,
+        extension: ExtensionSource,
+    ) {
         self.extend(extension.into_iter().map(Into::into));
     }
 }

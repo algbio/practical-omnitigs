@@ -137,7 +137,6 @@ mod tests {
     use crate::omnitigs::NodeCentricOmnitigs;
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::MutableGraphContainer;
-    use traitgraph::walks::VecNodeWalk;
 
     #[test]
     fn test_compute_trivial_omnitigs_cycle() {
@@ -150,10 +149,7 @@ mod tests {
         graph.add_edge(n2, n0, ());
 
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs(&graph);
-        assert_eq!(
-            trivial_omnitigs,
-            vec![vec![n1, n2, n0, n1, n2]]
-        );
+        assert_eq!(trivial_omnitigs, vec![vec![n1, n2, n0, n1, n2]]);
     }
 
     #[test]
@@ -169,10 +165,7 @@ mod tests {
         graph.add_edge(n2, n0, ());
 
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
-        assert_eq!(
-            trivial_omnitigs,
-            vec![vec![n3, n0, n1, n2]]
-        );
+        assert_eq!(trivial_omnitigs, vec![vec![n3, n0, n1, n2]]);
     }
 
     #[test]
@@ -188,10 +181,7 @@ mod tests {
         graph.add_edge(n2, n0, ());
 
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
-        assert_eq!(
-            trivial_omnitigs,
-            vec![vec![n1, n2, n0, n3]]
-        );
+        assert_eq!(trivial_omnitigs, vec![vec![n1, n2, n0, n3]]);
     }
 
     #[test]
@@ -207,10 +197,7 @@ mod tests {
         graph.add_edge(n3, n0, ());
 
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
-        assert_eq!(
-            trivial_omnitigs,
-            vec![vec![n3, n0, n1, n2]]
-        );
+        assert_eq!(trivial_omnitigs, vec![vec![n3, n0, n1, n2]]);
     }
 
     #[test]
@@ -226,10 +213,7 @@ mod tests {
         graph.add_edge(n0, n3, ());
 
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
-        assert_eq!(
-            trivial_omnitigs,
-            vec![vec![n1, n2, n0, n3]]
-        );
+        assert_eq!(trivial_omnitigs, vec![vec![n1, n2, n0, n3]]);
     }
 
     #[test]

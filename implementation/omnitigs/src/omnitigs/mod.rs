@@ -99,13 +99,17 @@ impl<Graph: GraphBase> Omnitig<Graph> {
     }
 }
 
-impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for Omnitig<Graph> where Graph::EdgeIndex: 'a {}
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for Omnitig<Graph> where
+    Graph::EdgeIndex: 'a
+{
+}
 
 impl<'a, Graph: GraphBase> Sequence<'a, Graph::EdgeIndex, [Graph::EdgeIndex]> for Omnitig<Graph>
 where
     Graph::EdgeIndex: 'a,
 {
-    type Iterator = <VecEdgeWalk<Graph> as Sequence<'a, Graph::EdgeIndex, [Graph::EdgeIndex]>>::Iterator;
+    type Iterator =
+        <VecEdgeWalk<Graph> as Sequence<'a, Graph::EdgeIndex, [Graph::EdgeIndex]>>::Iterator;
 
     fn iter(&'a self) -> Self::Iterator {
         self.omnitig.iter()
@@ -394,8 +398,12 @@ pub trait UnivocalExtensionAlgorithm<Graph: StaticGraph, ResultWalk: From<Vec<Gr
 }
 
 /// A collection of node-centric omnitigs.
-pub trait NodeCentricOmnitigs<Graph: GraphBase, NodeCentricOmnitigsSubsequence: for<'a> Sequence<'a, VecNodeWalk<Graph>, NodeCentricOmnitigsSubsequence> + ?Sized>:
-    From<Vec<VecNodeWalk<Graph>>> + for<'a> Sequence<'a, VecNodeWalk<Graph>, NodeCentricOmnitigsSubsequence>
+pub trait NodeCentricOmnitigs<
+    Graph: GraphBase,
+    NodeCentricOmnitigsSubsequence: for<'a> Sequence<'a, VecNodeWalk<Graph>, NodeCentricOmnitigsSubsequence> + ?Sized,
+>:
+    From<Vec<VecNodeWalk<Graph>>>
+    + for<'a> Sequence<'a, VecNodeWalk<Graph>, NodeCentricOmnitigsSubsequence>
 {
     /// Compute the trivial node-centric omnitigs in the given strongly connected graph.
     fn compute_trivial_node_centric_omnitigs(graph: &Graph) -> Self
@@ -488,7 +496,10 @@ pub trait NodeCentricOmnitigs<Graph: GraphBase, NodeCentricOmnitigsSubsequence: 
     }
 }
 
-impl<Graph: 'static + GraphBase> NodeCentricOmnitigs<Graph, [VecNodeWalk<Graph>]> for Vec<VecNodeWalk<Graph>> {}
+impl<Graph: 'static + GraphBase> NodeCentricOmnitigs<Graph, [VecNodeWalk<Graph>]>
+    for Vec<VecNodeWalk<Graph>>
+{
+}
 
 /// A trait abstracting over the concrete algorithm used to compute maximal trivial node-centric omnitigs.
 pub trait TrivialNodeCentricOmnitigAlgorithm<Graph: StaticGraph> {

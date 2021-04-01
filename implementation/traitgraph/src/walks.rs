@@ -3,7 +3,8 @@ use crate::interface::{GraphBase, NodeOrEdge, StaticGraph};
 use traitsequence::interface::Sequence;
 
 /// A sequence of nodes in a graph, where each consecutive pair of nodes is connected by an edge.
-pub trait NodeWalk<'a, Graph: GraphBase, NodeSubwalk: NodeWalk<'a, Graph, NodeSubwalk> + ?Sized>: Sequence<'a, Graph::NodeIndex, NodeSubwalk>
+pub trait NodeWalk<'a, Graph: GraphBase, NodeSubwalk: NodeWalk<'a, Graph, NodeSubwalk> + ?Sized>:
+    Sequence<'a, Graph::NodeIndex, NodeSubwalk>
 where
     Graph::NodeIndex: 'a,
 {
@@ -244,7 +245,8 @@ where
 }
 
 /// A sequence of edges in a graph, where each consecutive pair of edges is connected by a node.
-pub trait EdgeWalk<'a, Graph: GraphBase, EdgeSubwalk: EdgeWalk<'a, Graph, EdgeSubwalk> + ?Sized>: Sequence<'a, Graph::EdgeIndex, EdgeSubwalk>
+pub trait EdgeWalk<'a, Graph: GraphBase, EdgeSubwalk: EdgeWalk<'a, Graph, EdgeSubwalk> + ?Sized>:
+    Sequence<'a, Graph::EdgeIndex, EdgeSubwalk>
 where
     Graph::EdgeIndex: 'a,
 {
@@ -508,24 +510,36 @@ where
 ////// Slices //////
 ////////////////////
 
-impl<'a, Graph: GraphBase> NodeWalk<'a, Graph, [Graph::NodeIndex]> for [Graph::NodeIndex] where Graph::NodeIndex: 'a {}
+impl<'a, Graph: GraphBase> NodeWalk<'a, Graph, [Graph::NodeIndex]> for [Graph::NodeIndex] where
+    Graph::NodeIndex: 'a
+{
+}
 
-impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for [Graph::EdgeIndex] where Graph::EdgeIndex: 'a {}
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for [Graph::EdgeIndex] where
+    Graph::EdgeIndex: 'a
+{
+}
 
 /////////////////////////
 ////// VecNodeWalk //////
 /////////////////////////
 
 /// A node walk that is represented as a vector of node indices.
-pub type VecNodeWalk<Graph: GraphBase> = Vec<Graph::NodeIndex>;
+pub type VecNodeWalk<Graph> = Vec<<Graph as GraphBase>::NodeIndex>;
 
-impl<'a, Graph: GraphBase> NodeWalk<'a, Graph, [Graph::NodeIndex]> for VecNodeWalk<Graph> where Graph::NodeIndex: 'a {}
+impl<'a, Graph: GraphBase> NodeWalk<'a, Graph, [Graph::NodeIndex]> for VecNodeWalk<Graph> where
+    Graph::NodeIndex: 'a
+{
+}
 
 /////////////////////////
 ////// VecEdgeWalk //////
 /////////////////////////
 
 /// An edge walk that is represented as a vector of edge indices.
-pub type VecEdgeWalk<Graph: GraphBase> = Vec<Graph::EdgeIndex>;
+pub type VecEdgeWalk<Graph> = Vec<<Graph as GraphBase>::EdgeIndex>;
 
-impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for VecEdgeWalk<Graph> where Graph::EdgeIndex: 'a {}
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for VecEdgeWalk<Graph> where
+    Graph::EdgeIndex: 'a
+{
+}

@@ -4,6 +4,8 @@ use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer, StaticGraph};
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, VecNodeWalk};
+use compact_genome::implementation::vec::AsciiVectorGenome;
+use compact_genome::interface::GenomeSequence;
 use regex::Regex;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -12,9 +14,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::path::Path;
 use std::time::{Duration, Instant};
-use compact_genome::implementation::vec::AsciiVectorGenome;
-use std::iter::FromIterator;
-use compact_genome::interface::GenomeSequence;
 
 /// Reading and writing the dot format of wtdbg2.
 pub mod dot;
@@ -844,7 +843,7 @@ pub fn convert_walks_to_wtdbg2_contigs<
         if let Some(genome) = read_map.get_mut(&id) {
             genome.extend(record.seq().iter().copied());
         } else {
-            read_map.insert(id.to_owned(), AsciiVectorGenome::from_iter(record.seq().iter().copied()));
+            read_map.insert(id.to_owned(), record.seq().iter().copied().collect());
         }
     }
     info!("Finished loading {} reads", read_map.len());
@@ -902,11 +901,9 @@ pub fn convert_walks_to_wtdbg2_contigs<
                     direction: read_association.location.direction,
                     offset,
                     len,
-                    sequence: AsciiVectorGenome::from_iter(
-                        read_map.get(&read_association.read_id).unwrap()[offset..offset + len]
-                            .iter().copied(),
-                    )
-                    .as_string(),
+                    sequence: read_map.get(&read_association.read_id).unwrap()
+                        [offset..offset + len]
+                        .as_string(),
                 });
             }
 
@@ -1090,7 +1087,7 @@ pub fn write_contigs_to_wtdbg2<
         if let Some(genome) = read_map.get_mut(&id) {
             genome.extend(record.seq().iter().copied());
         } else {
-            read_map.insert(id.to_owned(), AsciiVectorGenome::from_iter(record.seq().iter().copied()));
+            read_map.insert(id.to_owned(), record.seq().iter().copied().collect());
         }
     }
     info!("Finished loading {} reads", read_map.len());
@@ -1180,10 +1177,7 @@ pub fn write_contigs_to_wtdbg2<
                     },
                     offset,
                     len,
-                    AsciiVectorGenome::from_iter(
-                        read_map.get(&read_association.read_id).unwrap()[offset..offset + len]
-                            .iter().copied()
-                    )
+                    &read_map.get(&read_association.read_id).unwrap()[offset..offset + len]
                 )?;
             }
         }

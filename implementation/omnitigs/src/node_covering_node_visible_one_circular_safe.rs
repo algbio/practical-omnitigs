@@ -77,7 +77,9 @@ where
     for (i, walk) in safe_walks.iter().enumerate() {
         let mut delete = false;
         for (j, superwalk) in safe_walks.iter().enumerate().filter(|(j, _)| i != *j) {
-            if (walk == superwalk && i < j) || NodeWalk::<Graph, [Graph::NodeIndex]>::is_proper_subwalk_of(walk, superwalk) {
+            if (walk == superwalk && i < j)
+                || NodeWalk::<Graph, [Graph::NodeIndex]>::is_proper_subwalk_of(walk, superwalk)
+            {
                 delete = true;
                 break;
             }
@@ -100,7 +102,7 @@ where
 /// Computes the maximal subwalks that are safe under the node-covering node-visible 1-circular walk model.
 fn compute_maximal_node_covering_node_visible_one_circular_safe_subwalks<Graph: StaticGraph>(
     graph: &Graph,
-    walk: &VecEdgeWalk<Graph>,
+    walk: &[Graph::EdgeIndex],
 ) -> Vec<VecNodeWalk<Graph>>
 where
     Graph::NodeIndex: 'static,
@@ -367,10 +369,7 @@ mod tests {
                 &graph,
                 &maximal_macrotigs,
             );
-        assert_eq!(
-            maximal_node_centric_omnitigs,
-            vec![Vec::from([n0, n1, n0])]
-        );
+        assert_eq!(maximal_node_centric_omnitigs, vec![Vec::from([n0, n1, n0])]);
     }
 
     #[test]

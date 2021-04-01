@@ -1,4 +1,4 @@
-use crate::interface::{Sequence, SequenceMut, EditableSequence};
+use crate::interface::{EditableSequence, Sequence, SequenceMut};
 
 impl<'a, Item: 'a> Sequence<'a, Item, [Item]> for Vec<Item> {
     type Iterator = std::slice::Iter<'a, Item>;
@@ -19,6 +19,4 @@ impl<'a, Item: 'a> SequenceMut<'a, Item, [Item]> for Vec<Item> {
     }
 }
 
-impl<'a, Item: 'a> EditableSequence<'a, Item, [Item]> for Vec<Item> {
-
-}
+impl<'a, Item: 'a> EditableSequence<'a, Item, [Item]> for Vec<Item> {}

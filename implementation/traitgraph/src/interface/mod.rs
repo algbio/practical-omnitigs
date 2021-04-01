@@ -179,16 +179,20 @@ pub trait NavigableGraph<'a>: ImmutableGraphContainer + Sized {
 /// This is the factory pattern, where a graph is a factory for walks.
 pub trait WalkableGraph: GraphBase + Sized {
     /// Create a node-centric walk over the given nodes in this graph.
-    fn create_node_walk<WalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + FromIterator<Self::NodeIndex>, SubwalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + ?Sized>(
+    fn create_node_walk<
+        WalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + FromIterator<Self::NodeIndex>,
+        SubwalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + ?Sized,
+    >(
         &self,
         walk: &[Self::NodeIndex],
     ) -> WalkType {
-        WalkType::from_iter(walk.iter().copied())
+        walk.iter().copied().collect()
     }
 
     /// Create an empty node-centric walk in this graph.
     fn create_empty_node_walk<
-        WalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + Default, SubwalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + ?Sized
+        WalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + Default,
+        SubwalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + ?Sized,
     >(
         &self,
     ) -> WalkType {
@@ -196,16 +200,20 @@ pub trait WalkableGraph: GraphBase + Sized {
     }
 
     /// Create an edge-centric walk over the given edges in this graph.
-    fn create_edge_walk<WalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + FromIterator<Self::EdgeIndex>, SubwalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + ?Sized>(
+    fn create_edge_walk<
+        WalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + FromIterator<Self::EdgeIndex>,
+        SubwalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + ?Sized,
+    >(
         &self,
         walk: &[Self::EdgeIndex],
     ) -> WalkType {
-        WalkType::from_iter(walk.iter().copied())
+        walk.iter().copied().collect()
     }
 
     /// Create an empty edge-centric walk in this graph.
     fn create_empty_edge_walk<
-        WalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + Default, SubwalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + ?Sized
+        WalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + Default,
+        SubwalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + ?Sized,
     >(
         &self,
     ) -> WalkType {

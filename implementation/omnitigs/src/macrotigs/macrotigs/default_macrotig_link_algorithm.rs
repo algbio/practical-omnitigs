@@ -108,7 +108,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                     let microtig = &microtigs[microtig_index];
                     macrotig_walk.extend(microtig.iter().skip(1));
                 }
-                result.push(macrotig_walk.into());
+                result.push(macrotig_walk);
             }
         }
 

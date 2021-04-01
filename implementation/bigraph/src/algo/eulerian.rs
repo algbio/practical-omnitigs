@@ -264,9 +264,6 @@ mod tests {
         let _e12 = bigraph.add_edge(n2, n10, ());
 
         let euler_cycles = compute_minimum_bidirected_eulerian_cycle_decomposition(&bigraph);
-        assert_eq!(
-            euler_cycles,
-            vec![vec![e1, e3, e5, e7, e9, e11]]
-        );
+        assert_eq!(euler_cycles, vec![vec![e1, e3, e5, e7, e9, e11]]);
     }
 }
