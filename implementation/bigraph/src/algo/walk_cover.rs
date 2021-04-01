@@ -63,7 +63,7 @@ pub fn arbitrary_biwalk_cover<
             }
         }
 
-        walks.push(VecEdgeWalk::new(walk));
+        walks.push(walk);
     }
 
     walks

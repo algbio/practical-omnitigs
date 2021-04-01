@@ -6,14 +6,15 @@ use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bio::io::fasta::Record;
-use compact_genome::{implementation::vector_genome_impl::VectorGenome, interface::Genome};
 use num_traits::NumCast;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Debug, Write};
 use std::hash::Hash;
-use std::iter::FromIterator;
 use std::path::Path;
+use std::iter::FromIterator;
+use compact_genome::implementation::vec::AsciiVectorGenome;
+use compact_genome::interface::{GenomeSequence, OwnedGenomeSequence};
 
 error_chain! {
     foreign_links {
@@ -95,7 +96,7 @@ pub struct PlainBCalm2NodeData {
     /// The numeric id of the bcalm2 node.
     pub id: usize,
     /// The sequence of the bcalm2 node.
-    pub sequence: VectorGenome,
+    pub sequence: AsciiVectorGenome,
     /// The length of the sequence of the bcalm2 node.
     pub length: usize,
     /// The total k-mer abundance of the sequence of the bcalm2 node.
@@ -125,9 +126,10 @@ impl BidirectedData for PlainBCalm2NodeData {
 }
 
 impl FastaData for PlainBCalm2NodeData {
-    type GenomeSequence = VectorGenome;
+    type Genome = AsciiVectorGenome;
+    type GenomeSubsequence = [u8];
 
-    fn sequence(&self) -> &Self::GenomeSequence {
+    fn sequence(&self) -> &Self::Genome {
         &self.sequence
     }
 }
@@ -154,8 +156,8 @@ impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
             .id()
             .parse()
             .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IdError(value.id().to_owned())))?;
-        let sequence = VectorGenome::from_iter(value.seq()); // TODO store with bio
-                                                             // TODO check if genome is valid
+        let sequence = Vec::from_iter(value.seq().iter().copied()); // TODO store with bio
+        // TODO check if genome is valid
 
         let mut length = None;
         let mut total_abundance = None;
@@ -508,30 +510,30 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     )
 }
 
-fn get_or_create_node<Graph: DynamicBigraph, G: Genome + Hash>(
+fn get_or_create_node<Graph: DynamicBigraph, Genome: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone, GenomeSubsequence: for<'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized>(
     bigraph: &mut Graph,
-    id_map: &mut HashMap<G, <Graph as GraphBase>::NodeIndex>,
-    genome: &G,
+    id_map: &mut HashMap<Genome, <Graph as GraphBase>::NodeIndex>,
+    genome: Genome,
 ) -> <Graph as GraphBase>::NodeIndex
 where
-    for<'a> &'a G: IntoIterator<Item = u8>,
     <Graph as GraphBase>::NodeData: Default,
     <Graph as GraphBase>::EdgeData: Clone,
 {
-    if let Some(node) = id_map.get(genome) {
+    if let Some(node) = id_map.get(&genome) {
         *node
     } else {
         let node = bigraph.add_node(Default::default());
-        id_map.insert(genome.clone(), node);
-
         let reverse_complement = genome.reverse_complement();
-        if &reverse_complement == genome {
+
+        if reverse_complement == genome {
             bigraph.set_mirror_nodes(node, node);
         } else {
             let mirror_node = bigraph.add_node(Default::default());
             id_map.insert(reverse_complement, mirror_node);
             bigraph.set_mirror_nodes(node, mirror_node);
         }
+
+        id_map.insert(genome, node);
 
         node
     }
@@ -558,15 +560,15 @@ where
         let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
         let reverse_complement = record.mirror();
 
-        let pre_plus = record.sequence.prefix(node_kmer_size);
-        let pre_minus = reverse_complement.sequence.prefix(node_kmer_size);
-        let succ_plus = record.sequence.suffix(node_kmer_size);
-        let succ_minus = reverse_complement.sequence.suffix(node_kmer_size);
+        let pre_plus = AsciiVectorGenome::from(record.sequence.prefix(node_kmer_size));
+        let pre_minus = AsciiVectorGenome::from(reverse_complement.sequence.prefix(node_kmer_size));
+        let succ_plus = AsciiVectorGenome::from(record.sequence.suffix(node_kmer_size));
+        let succ_minus = AsciiVectorGenome::from(reverse_complement.sequence.suffix(node_kmer_size));
 
-        let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, &pre_plus);
-        let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, &pre_minus);
-        let succ_plus = get_or_create_node(&mut bigraph, &mut id_map, &succ_plus);
-        let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, &succ_minus);
+        let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);
+        let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, pre_minus);
+        let succ_plus = get_or_create_node(&mut bigraph, &mut id_map, succ_plus);
+        let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, succ_minus);
 
         bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
         bigraph.add_edge(pre_minus, succ_minus, record.mirror().into());

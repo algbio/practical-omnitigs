@@ -1,1 +1,2 @@
-pub mod vector_genome_impl;
+pub mod slice;
+pub mod vec;

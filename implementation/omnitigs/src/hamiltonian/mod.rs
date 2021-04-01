@@ -8,6 +8,7 @@ use traitgraph::index::OptionalGraphIndex;
 use traitgraph::interface::{DynamicGraph, ImmutableGraphContainer, StaticGraph};
 use traitgraph::walks::VecNodeWalk;
 use traitsequence::interface::Sequence;
+use std::iter::FromIterator;
 
 #[derive(Debug)]
 enum WalkOverlap {
@@ -116,7 +117,7 @@ fn check_walk_overlap<Graph: StaticGraph>(
     if let (Some((_, forward_overlap_end)), Some((backward_overlap_start, _))) =
         (forward_overlap, backward_overlap)
     {
-        let walk = VecNodeWalk::<Graph>::new(
+        let walk = VecNodeWalk::<Graph>::from_iter(
             walk.iter()
                 .chain(
                     other_walk
@@ -125,34 +126,31 @@ fn check_walk_overlap<Graph: StaticGraph>(
                         .skip(forward_overlap_end + 1),
                 )
                 .copied()
-                .collect::<Vec<_>>(),
         );
-        if check_walk_invalid_self_overlap(&walk) {
+        if check_walk_invalid_self_overlap::<Graph>(&walk) {
             WalkOverlap::Invalid
         } else {
             WalkOverlap::Both
         }
     } else if let Some((_, forward_overlap_end)) = forward_overlap {
-        let walk = VecNodeWalk::<Graph>::new(
+        let walk = VecNodeWalk::<Graph>::from_iter(
             walk.iter()
                 .chain(other_walk.iter().skip(forward_overlap_end + 1))
                 .copied()
-                .collect::<Vec<_>>(),
         );
-        if check_walk_invalid_self_overlap(&walk) {
+        if check_walk_invalid_self_overlap::<Graph>(&walk) {
             WalkOverlap::Invalid
         } else {
             WalkOverlap::Forward
         }
     } else if let Some((_, backward_overlap_end)) = backward_overlap {
-        let walk = VecNodeWalk::<Graph>::new(
+        let walk = VecNodeWalk::<Graph>::from_iter(
             other_walk
                 .iter()
                 .chain(walk.iter().skip(backward_overlap_end + 1))
                 .copied()
-                .collect::<Vec<_>>(),
         );
-        if check_walk_invalid_self_overlap(&walk) {
+        if check_walk_invalid_self_overlap::<Graph>(&walk) {
             WalkOverlap::Invalid
         } else {
             WalkOverlap::Backward
@@ -260,7 +258,7 @@ where
 
     for walk in safe_walks
         .iter()
-        .filter(|walk| check_walk_any_self_overlap(walk))
+        .filter(|walk| check_walk_any_self_overlap::<Graph>(walk))
     {
         if !check_if_walk_has_prefix_of_all_unique_nodes(graph, walk) {
             return None;
@@ -296,7 +294,7 @@ where
 
                 let walk = &safe_walks[walk_index];
                 let other_walk = &safe_walks[other_walk_index];
-                let walk_overlap = check_walk_overlap(walk, other_walk);
+                let walk_overlap = check_walk_overlap::<Graph>(walk, other_walk);
 
                 println!(
                     "Walk overlap from {:?} to {:?} is {:?}",
@@ -458,11 +456,10 @@ where
         } else {
             let mut merged_walk = safe_walks[walk_indices[0]].clone();
             for walk_index in walk_indices.iter().copied().skip(1) {
-                merged_walk = VecNodeWalk::<Graph>::new(
+                merged_walk = VecNodeWalk::<Graph>::from_iter(
                     merged_walk
                         .forward_merge_iter_assume_mergeable(&safe_walks[walk_index])
                         .copied()
-                        .collect::<Vec<_>>(),
                 );
             }
             merged_walks.push(merged_walk);

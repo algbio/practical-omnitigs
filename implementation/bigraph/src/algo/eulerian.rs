@@ -88,7 +88,7 @@ pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<
 
         let mut cycle_walk = Vec::new();
         cycle_walk.extend(cycle.iter());
-        cycles.push(VecEdgeWalk::new(cycle_walk));
+        cycles.push(cycle_walk);
     }
 
     cycles
@@ -206,7 +206,6 @@ mod tests {
     use crate::interface::static_bigraph::StaticBigraphFromDigraph;
     use crate::traitgraph::interface::MutableGraphContainer;
     use traitgraph::implementation::petgraph_impl;
-    use traitgraph::walks::VecEdgeWalk;
 
     #[test]
     fn test_bidirected_eulerian_cycle_triangle() {
@@ -229,7 +228,7 @@ mod tests {
         let _e6 = bigraph.add_edge(n2, n6, ());
 
         let euler_cycles = compute_minimum_bidirected_eulerian_cycle_decomposition(&bigraph);
-        assert_eq!(euler_cycles, vec![VecEdgeWalk::new(vec![e1, e3, e5])]);
+        assert_eq!(euler_cycles, vec![vec![e1, e3, e5]]);
     }
 
     #[test]
@@ -267,7 +266,7 @@ mod tests {
         let euler_cycles = compute_minimum_bidirected_eulerian_cycle_decomposition(&bigraph);
         assert_eq!(
             euler_cycles,
-            vec![VecEdgeWalk::new(vec![e1, e3, e5, e7, e9, e11])]
+            vec![vec![e1, e3, e5, e7, e9, e11]]
         );
     }
 }

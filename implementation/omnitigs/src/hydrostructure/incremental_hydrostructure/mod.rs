@@ -724,8 +724,9 @@ mod tests {
                 //println!("Setting initial fingers for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_both_fingers(0, subwalk_len - 1);
                 for offset in 0..(macrotig.len() - subwalk_len) {
-                    let subwalk: VecEdgeWalk<_> =
-                        graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    //let subwalk: VecEdgeWalk<_> =
+                    //    graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    let subwalk = Vec::from(&macrotig[offset..offset + subwalk_len]);
                     //println!("{:?}", subwalk);
                     /*println!(
                         "has rightmost split/join: {:?}/{:?}; left/right finger: {}/{}",
@@ -876,8 +877,9 @@ mod tests {
                 //println!("Setting initial right finger for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_right_finger(subwalk_len - 1);
                 for offset in 0..(macrotig.len() - subwalk_len) {
-                    let subwalk: VecEdgeWalk<_> =
-                        graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    //let subwalk: VecEdgeWalk<_> =
+                    //    graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    let subwalk = Vec::from(&macrotig[offset..offset+ subwalk_len]);
                     //println!("{:?}", subwalk);
                     //println!("has rightmost split/join: {:?}/{:?}; left/right finger: {}/{}", incremental_hydrostructure.rightmost_split, incremental_hydrostructure.rightmost_join, incremental_hydrostructure.left_finger, incremental_hydrostructure.right_finger);
                     let static_hydrostructure =

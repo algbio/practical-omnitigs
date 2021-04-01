@@ -6,15 +6,15 @@ use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
-use compact_genome::implementation::vector_genome_impl::VectorGenome;
-use compact_genome::interface::Genome;
 use std::collections::HashMap;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::{BufRead, BufReader};
-use std::iter::FromIterator;
 use std::path::Path;
 use std::rc::Rc;
+use compact_genome::implementation::vec::AsciiVectorGenome;
+use compact_genome::interface::{GenomeSequence, OwnedGenomeSequence};
+use std::iter::FromIterator;
 //use bigraph::traitgraph::index::GraphIndex;
 
 /// Type of graphs read from gfa files.
@@ -41,7 +41,7 @@ pub type PetGfaEdgeGraph<NodeData, EdgeData> =
 #[derive(Eq, PartialEq, Debug, Clone, Default)]
 pub struct BidirectedGfaNodeData<T> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.
-    pub sequence: Rc<VectorGenome>,
+    pub sequence: Rc<AsciiVectorGenome>,
     /// True if this node is the forward node of sequence, false if it is the reverse complement node.
     pub forward: bool,
     /// Further data.
@@ -65,9 +65,10 @@ impl<T: WeightedEdgeData> WeightedEdgeData for BidirectedGfaNodeData<T> {
 }
 
 impl<T> FastaData for BidirectedGfaNodeData<T> {
-    type GenomeSequence = VectorGenome;
+    type Genome = AsciiVectorGenome;
+    type GenomeSubsequence = [u8];
 
-    fn sequence(&self) -> &Self::GenomeSequence {
+    fn sequence(&self) -> &Self::Genome {
         &self.sequence
     }
 }
@@ -130,10 +131,10 @@ pub fn read_gfa_as_bigraph<
             let node_name: &str = columns.next().unwrap();
 
             let sequence = columns.next().unwrap();
-            let sequence = Rc::new(VectorGenome::from_iter(sequence.bytes()));
+            let sequence = Rc::new(AsciiVectorGenome::from_iter(sequence.bytes()));
             assert!(
                 sequence.len() >= k || ignore_k,
-                "Node {} has sequence '{}' of length {} (k = {})",
+                "Node {} has sequence '{:?}' of length {} (k = {})",
                 node_name,
                 sequence,
                 sequence.len(),
@@ -211,30 +212,30 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
     read_gfa_as_edge_centric_bigraph(BufReader::new(File::open(gfa_file)?), estimate_k)
 }
 
-fn get_or_create_node<Graph: DynamicBigraph, G: Genome + Hash>(
+fn get_or_create_node<Graph: DynamicBigraph, G: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone, GenomeSubsequence: for <'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized> (
     bigraph: &mut Graph,
     id_map: &mut HashMap<G, <Graph as GraphBase>::NodeIndex>,
-    genome: &G,
+    genome: G,
 ) -> <Graph as GraphBase>::NodeIndex
 where
-    for<'a> &'a G: IntoIterator<Item = u8>,
     <Graph as GraphBase>::NodeData: Default,
     <Graph as GraphBase>::EdgeData: Clone,
 {
-    if let Some(node) = id_map.get(genome) {
+    if let Some(node) = id_map.get(&genome) {
         *node
     } else {
         let node = bigraph.add_node(Default::default());
-        id_map.insert(genome.clone(), node);
 
         let reverse_complement = genome.reverse_complement();
-        if &reverse_complement == genome {
+        if reverse_complement == genome {
             bigraph.set_mirror_nodes(node, node);
         } else {
             let mirror_node = bigraph.add_node(Default::default());
             id_map.insert(reverse_complement, mirror_node);
             bigraph.set_mirror_nodes(node, mirror_node);
         }
+
+        id_map.insert(genome, node);
 
         node
     }
@@ -281,7 +282,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
 
             let sequence = columns.next().unwrap();
             //println!("sequence {}", sequence);
-            let sequence = Rc::new(VectorGenome::from_iter(sequence.bytes()));
+            let sequence = Rc::new(AsciiVectorGenome::from_iter(sequence.bytes()));
             let edge_data = BidirectedGfaNodeData {
                 sequence: sequence.clone(),
                 forward: true,
@@ -292,22 +293,22 @@ pub fn read_gfa_as_edge_centric_bigraph<
             assert!(columns.next().is_none());
             assert!(
                 sequence.len() >= k,
-                "Node {} has sequence '{}' of length {} (k = {})",
+                "Node {} has sequence '{:?}' of length {} (k = {})",
                 node_index,
                 sequence,
                 sequence.len(),
                 k
             );
 
-            let pre_plus = sequence.prefix(k - 1);
-            let pre_minus = sequence.suffix(k - 1).reverse_complement();
-            let succ_plus = sequence.suffix(k - 1);
-            let succ_minus = sequence.prefix(k - 1).reverse_complement();
+            let pre_plus = AsciiVectorGenome::from(sequence.prefix(k - 1));
+            let pre_minus = AsciiVectorGenome::from_iter(sequence.suffix(k - 1).reverse_complement_iter());
+            let succ_plus = AsciiVectorGenome::from(sequence.suffix(k - 1));
+            let succ_minus = AsciiVectorGenome::from_iter(sequence.prefix(k - 1).reverse_complement_iter());
 
-            let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, &pre_plus);
-            let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, &pre_minus);
-            let succ_plus = get_or_create_node(&mut bigraph, &mut id_map, &succ_plus);
-            let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, &succ_minus);
+            let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);
+            let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, pre_minus);
+            let succ_plus = get_or_create_node(&mut bigraph, &mut id_map, succ_plus);
+            let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, succ_minus);
 
             //println!("Adding edge ({}, {}) and reverse ({}, {})", pre_plus.as_usize(), succ_plus.as_usize(), pre_minus.as_usize(), succ_minus.as_usize());
             bigraph.add_edge(pre_plus, succ_plus, edge_data);

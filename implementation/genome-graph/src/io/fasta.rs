@@ -1,8 +1,10 @@
 use bigraph::traitgraph::interface::ImmutableGraphContainer;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, NodeWalk};
-use compact_genome::interface::{ExtendableGenome, Genome};
 use std::path::Path;
+use compact_genome::interface::{GenomeSequence, EditableGenomeSequence, OwnedGenomeSequence};
+use compact_genome::implementation::vec::AsciiVectorGenome;
+use std::iter::FromIterator;
 
 error_chain! {
     foreign_links {
@@ -26,14 +28,14 @@ error_chain! {
 
 /// Data that can be output as fasta record.
 pub trait FastaData
-where
-    for<'a> &'a Self::GenomeSequence: IntoIterator<Item = u8>,
 {
     /// The type storing the genome sequence of this fasta record.
-    type GenomeSequence: Genome;
+    type Genome: for<'a> OwnedGenomeSequence<'a, Self::GenomeSubsequence> + for<'a> EditableGenomeSequence<'a, Self::GenomeSubsequence>;
+    /// The subsequence type of `Genome`.
+    type GenomeSubsequence: for <'a> GenomeSequence<'a, Self::GenomeSubsequence> + ?Sized;
 
     /// Returns the sequence of this fasta record.
-    fn sequence(&self) -> &Self::GenomeSequence;
+    fn sequence(&self) -> &Self::Genome;
 }
 
 /// Write a sequence of walks in a graph as fasta records.
@@ -41,7 +43,8 @@ pub fn write_walks_as_fasta<
     'ws,
     EdgeData: FastaData,
     Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
     Writer: std::io::Write,
 >(
@@ -50,16 +53,13 @@ pub fn write_walks_as_fasta<
     walks: WalkSource,
     writer: &mut bio::io::fasta::Writer<Writer>,
 ) -> crate::error::Result<()>
-where
-    for<'a> &'a EdgeData::GenomeSequence: IntoIterator<Item = u8>,
-    EdgeData::GenomeSequence: ExtendableGenome,
 {
     for (i, walk) in walks.into_iter().enumerate() {
         if walk.is_empty() {
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence = graph.edge_data(walk[0]).sequence().clone();
+        let mut sequence = AsciiVectorGenome::from_iter(graph.edge_data(walk[0]).sequence().iter().copied());
         for edge in walk.iter().skip(1) {
             let edge_sequence = graph.edge_data(*edge).sequence();
             let edge_sequence = edge_sequence.iter().skip(kmer_size - 1);
@@ -80,7 +80,8 @@ pub fn write_walks_as_fasta_file<
     'ws,
     EdgeData: FastaData,
     Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
     P: AsRef<Path>,
 >(
@@ -89,9 +90,6 @@ pub fn write_walks_as_fasta_file<
     walks: WalkSource,
     path: P,
 ) -> crate::error::Result<()>
-where
-    for<'a> &'a EdgeData::GenomeSequence: IntoIterator<Item = u8>,
-    EdgeData::GenomeSequence: ExtendableGenome,
 {
     write_walks_as_fasta(
         graph,
@@ -106,7 +104,8 @@ pub fn write_node_centric_walks_as_fasta<
     'ws,
     NodeData: FastaData,
     Graph: ImmutableGraphContainer<NodeData = NodeData>,
-    Walk: 'ws + for<'w> NodeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
     Writer: std::io::Write,
 >(
@@ -115,16 +114,13 @@ pub fn write_node_centric_walks_as_fasta<
     walks: WalkSource,
     writer: &mut bio::io::fasta::Writer<Writer>,
 ) -> crate::error::Result<()>
-where
-    for<'a> &'a NodeData::GenomeSequence: IntoIterator<Item = u8>,
-    NodeData::GenomeSequence: ExtendableGenome,
 {
     for (i, walk) in walks.into_iter().enumerate() {
         if walk.is_empty() {
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence = graph.node_data(walk[0]).sequence().clone();
+        let mut sequence = AsciiVectorGenome::from_iter(graph.node_data(walk[0]).sequence().iter().copied());
         for node in walk.iter().skip(1) {
             let node_sequence = graph.node_data(*node).sequence();
             let node_sequence = node_sequence.iter().skip(kmer_size - 1);
@@ -145,7 +141,8 @@ pub fn write_node_centric_walks_as_fasta_file<
     'ws,
     NodeData: FastaData,
     Graph: ImmutableGraphContainer<NodeData = NodeData>,
-    Walk: 'ws + for<'w> NodeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
     P: AsRef<Path>,
 >(
@@ -154,9 +151,6 @@ pub fn write_node_centric_walks_as_fasta_file<
     walks: WalkSource,
     path: P,
 ) -> crate::error::Result<()>
-where
-    for<'a> &'a NodeData::GenomeSequence: IntoIterator<Item = u8>,
-    NodeData::GenomeSequence: ExtendableGenome,
 {
     write_node_centric_walks_as_fasta(
         graph,

@@ -2,6 +2,8 @@
 
 import sys, os, time
 import matplotlib.pyplot as plt
+from matplotlib import collections  as mc
+from matplotlib.lines import Line2D # Imported for legends
 import seaborn as sns
 import pandas as pd
 import scipy.cluster.hierarchy as hierarchy
@@ -116,6 +118,7 @@ transitively_correct_nodes = 0
 
 deviations = []
 large_error_nodes = {}
+transitive_subnode_intervals = []
 for node_id, aligns in node_align_map.items():
     aligns.sort(key = lambda a: (a.align_center, a.align_start, a.align_end))
 
@@ -123,6 +126,7 @@ for node_id, aligns in node_align_map.items():
     max_start = aligns[0].align_start
     min_end = aligns[0].align_end
     max_end = aligns[0].align_end
+    last_transitive_start = min_start
     contigs = set()
     contigs.add(aligns[0].contig_id)
     is_transitively_correct = True
@@ -136,6 +140,10 @@ for node_id, aligns in node_align_map.items():
 
         if abs(align.align_start - last_align.align_start) > 128 or abs(align.align_end - last_align.align_end) > 128:
             is_transitively_correct = False
+            transitive_subnode_intervals.append((last_transitive_start, last_align.align_end))
+            last_transitive_start = align.align_start
+
+    transitive_subnode_intervals.append((last_transitive_start, max_end))
 
     start_deviation = max_start - min_start
     end_deviation = max_end - min_end
@@ -153,6 +161,8 @@ for node_id, aligns in node_align_map.items():
 
     if is_transitively_correct:
         transitively_correct_nodes += 1
+
+transitive_subnode_intervals.sort()
 
 print("{} nodes".format(len(node_align_map)))
 print("{:.0f}% of nodes are correct".format(correct_nodes * 100.0 / len(node_align_map)))
@@ -388,3 +398,42 @@ underglued_bucket_histogram = sns.histplot(ax = axes, data = bucket_lens_df, x =
 path = os.path.join(output_prefix, "underglued_bucket_histogram.pdf")
 print("Saving {}".format(path))
 fig.savefig(path)
+
+# Investigate node align overlaps
+
+intervals = transitive_subnode_intervals[:10]
+
+#viridis = plt.cm.get_cmap('viridis', num_intervals)
+#colors = np.array([viridis(idx / num_intervals) for idx in range(len(intervals))])
+
+# Prepare the input data in correct format for LineCollection 
+lines = []
+layer_ends = [0]
+for interval in intervals:
+    layer_index = None
+    for layer_end_index in range(len(layer_ends)):
+        if layer_ends[layer_end_index] <= interval[0] - 1.0:
+            layer_index = layer_end_index
+            break
+
+    if layer_index is None:
+        layer_index = len(layer_ends)
+        layer_ends.append(None)
+
+    lines.append([(interval[0], layer_index), (interval[1], layer_index)])
+    layer_ends[layer_index] = interval[1]
+
+lc = mc.LineCollection(lines, linewidths = 1)
+fig, ax = plt.subplots()
+ax.add_collection(lc)
+ax.margins(0.1)
+#plt.yticks([], [])
+
+# Adding annotations
+#for i, x in enumerate(intervals):
+#    plt.text(x[0], i+0.1, x[0])
+#    plt.text(x[1], i+0.1, x[1])
+
+path = os.path.join(output_prefix, "align_overlaps.pdf")
+print("Saving {}".format(path))
+plt.savefig(path)

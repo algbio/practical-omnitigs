@@ -4,17 +4,17 @@ use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer, StaticGraph};
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, VecNodeWalk};
-use compact_genome::implementation::vector_genome_impl::VectorGenome;
-use compact_genome::interface::{ExtendableGenome, Genome};
 use regex::Regex;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
-use std::iter::FromIterator;
 use std::path::Path;
 use std::time::{Duration, Instant};
+use compact_genome::implementation::vec::AsciiVectorGenome;
+use std::iter::FromIterator;
+use compact_genome::interface::GenomeSequence;
 
 /// Reading and writing the dot format of wtdbg2.
 pub mod dot;
@@ -789,7 +789,8 @@ pub fn convert_walks_to_wtdbg2_contigs_with_file<
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,
@@ -811,14 +812,15 @@ pub fn convert_walks_to_wtdbg2_contigs<
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,
     walks: WalkSource,
     raw_reads: bio::io::fasta::Reader<R>,
 ) -> Result<RawWtdbg2Contigs> {
-    let mut read_map = HashMap::<_, VectorGenome>::new();
+    let mut read_map = HashMap::<_, AsciiVectorGenome>::new();
     info!("Loading reads");
     let mut last_print_time = Instant::now();
 
@@ -842,7 +844,7 @@ pub fn convert_walks_to_wtdbg2_contigs<
         if let Some(genome) = read_map.get_mut(&id) {
             genome.extend(record.seq().iter().copied());
         } else {
-            read_map.insert(id.to_owned(), VectorGenome::from_iter(record.seq().iter()));
+            read_map.insert(id.to_owned(), AsciiVectorGenome::from_iter(record.seq().iter().copied()));
         }
     }
     info!("Finished loading {} reads", read_map.len());
@@ -900,9 +902,9 @@ pub fn convert_walks_to_wtdbg2_contigs<
                     direction: read_association.location.direction,
                     offset,
                     len,
-                    sequence: VectorGenome::from_iter(
+                    sequence: AsciiVectorGenome::from_iter(
                         read_map.get(&read_association.read_id).unwrap()[offset..offset + len]
-                            .iter(),
+                            .iter().copied(),
                     )
                     .as_string(),
                 });
@@ -1030,7 +1032,8 @@ pub fn write_contigs_to_wtdbg2_to_file<
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,
@@ -1054,7 +1057,8 @@ pub fn write_contigs_to_wtdbg2<
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,
@@ -1062,7 +1066,7 @@ pub fn write_contigs_to_wtdbg2<
     raw_reads: bio::io::fasta::Reader<R>,
     output: &mut W,
 ) -> Result<()> {
-    let mut read_map = HashMap::<_, VectorGenome>::new();
+    let mut read_map = HashMap::<_, AsciiVectorGenome>::new();
     info!("Loading reads");
     let mut last_print_time = Instant::now();
 
@@ -1086,7 +1090,7 @@ pub fn write_contigs_to_wtdbg2<
         if let Some(genome) = read_map.get_mut(&id) {
             genome.extend(record.seq().iter().copied());
         } else {
-            read_map.insert(id.to_owned(), VectorGenome::from_iter(record.seq().iter()));
+            read_map.insert(id.to_owned(), AsciiVectorGenome::from_iter(record.seq().iter().copied()));
         }
     }
     info!("Finished loading {} reads", read_map.len());
@@ -1167,7 +1171,7 @@ pub fn write_contigs_to_wtdbg2<
                 let len = read_association.location.bucket_len * 256;
                 writeln!(
                     output,
-                    "S\t{}\t{}\t{}\t{}\t{}",
+                    "S\t{}\t{}\t{}\t{}\t{:?}",
                     read_association.read_id,
                     if read_association.location.direction {
                         '+'
@@ -1176,9 +1180,9 @@ pub fn write_contigs_to_wtdbg2<
                     },
                     offset,
                     len,
-                    VectorGenome::from_iter(
+                    AsciiVectorGenome::from_iter(
                         read_map.get(&read_association.read_id).unwrap()[offset..offset + len]
-                            .iter()
+                            .iter().copied()
                     )
                 )?;
             }
@@ -1199,7 +1203,8 @@ pub fn write_contigs_as_wtdbg2_node_ids_to_file<
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,
@@ -1220,7 +1225,8 @@ pub fn write_contigs_as_wtdbg2_node_ids<
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = EdgeData>,
-    Walk: 'ws + for<'w> EdgeWalk<'w, Graph>,
+    Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
     WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
 >(
     graph: &Graph,

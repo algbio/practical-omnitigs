@@ -62,7 +62,8 @@ impl<
                 .all(|&n| graph.out_degree(n) == 1);
 
             if is_univocal {
-                let mut prefix: Vec<_> = trivial_omnitig.iter().rev().copied().collect();
+                let prefix = &mut trivial_omnitig;
+                prefix.reverse();
 
                 let mut can_extend = true;
                 while can_extend {
@@ -79,7 +80,6 @@ impl<
                 }
 
                 prefix.reverse();
-                trivial_omnitig = VecNodeWalk::new(prefix);
             }
 
             let is_r_univocal = trivial_omnitig
@@ -88,7 +88,7 @@ impl<
                 .all(|&n| graph.in_degree(n) == 1);
 
             if is_r_univocal {
-                let mut suffix: Vec<_> = trivial_omnitig.iter().copied().collect();
+                let suffix = &mut trivial_omnitig;
 
                 let mut can_extend = true;
                 while can_extend {
@@ -103,8 +103,6 @@ impl<
                         }
                     }
                 }
-
-                trivial_omnitig = VecNodeWalk::new(suffix);
             }
 
             /*let last_split_edge = trivial_omnitig
@@ -154,7 +152,7 @@ mod tests {
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs(&graph);
         assert_eq!(
             trivial_omnitigs,
-            vec![VecNodeWalk::new(vec![n1, n2, n0, n1, n2])]
+            vec![vec![n1, n2, n0, n1, n2]]
         );
     }
 
@@ -173,7 +171,7 @@ mod tests {
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            vec![VecNodeWalk::new(vec![n3, n0, n1, n2])]
+            vec![vec![n3, n0, n1, n2]]
         );
     }
 
@@ -192,7 +190,7 @@ mod tests {
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            vec![VecNodeWalk::new(vec![n1, n2, n0, n3])]
+            vec![vec![n1, n2, n0, n3]]
         );
     }
 
@@ -211,7 +209,7 @@ mod tests {
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            vec![VecNodeWalk::new(vec![n3, n0, n1, n2])]
+            vec![vec![n3, n0, n1, n2]]
         );
     }
 
@@ -230,7 +228,7 @@ mod tests {
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
         assert_eq!(
             trivial_omnitigs,
-            vec![VecNodeWalk::new(vec![n1, n2, n0, n3])]
+            vec![vec![n1, n2, n0, n3]]
         );
     }
 
@@ -244,6 +242,6 @@ mod tests {
         graph.add_edge(n1, n2, ());
 
         let trivial_omnitigs = Vec::compute_trivial_node_centric_omnitigs_non_scc(&graph);
-        assert_eq!(trivial_omnitigs, vec![VecNodeWalk::new(vec![n0, n1, n2])]);
+        assert_eq!(trivial_omnitigs, vec![vec![n0, n1, n2]]);
     }
 }

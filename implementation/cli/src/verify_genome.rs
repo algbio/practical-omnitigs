@@ -1,9 +1,9 @@
 use crate::CliOptions;
 use clap::Clap;
-use compact_genome::implementation::vector_genome_impl::VectorGenome;
-use compact_genome::interface::Genome;
 use std::iter::FromIterator;
 use traitsequence::interface::Sequence;
+use compact_genome::implementation::vec::AsciiVectorGenome;
+use compact_genome::interface::GenomeSequence;
 
 #[derive(Clap)]
 pub struct VerifyGenomeCommand {
@@ -62,7 +62,7 @@ pub(crate) fn verify_genome(
     for record in records {
         records_found += 1;
         let genome = match record {
-            Ok(record) => VectorGenome::from_iter(record.seq()),
+            Ok(record) => AsciiVectorGenome::from_iter(record.seq().iter().copied()),
             Err(err) => {
                 error!("Error reading genome file");
                 return Err(err.into());

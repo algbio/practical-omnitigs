@@ -9,6 +9,7 @@
 
 use crate::index::{GraphIndex, GraphIndices, OptionalGraphIndex};
 use crate::walks::{EdgeWalk, NodeWalk};
+use std::iter::FromIterator;
 
 /// A set of traits for subgraphs.
 /// A subgraph is a graph that is backed by an actual graph implementation, but that filters out some nodes or edges.
@@ -178,37 +179,37 @@ pub trait NavigableGraph<'a>: ImmutableGraphContainer + Sized {
 /// This is the factory pattern, where a graph is a factory for walks.
 pub trait WalkableGraph: GraphBase + Sized {
     /// Create a node-centric walk over the given nodes in this graph.
-    fn create_node_walk<'w, WalkType: for<'a> NodeWalk<'a, Self> + From<&'w [Self::NodeIndex]>>(
+    fn create_node_walk<WalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + FromIterator<Self::NodeIndex>, SubwalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + ?Sized>(
         &self,
-        walk: &'w [Self::NodeIndex],
+        walk: &[Self::NodeIndex],
     ) -> WalkType {
-        WalkType::from(&walk)
+        WalkType::from_iter(walk.iter().copied())
     }
 
     /// Create an empty node-centric walk in this graph.
     fn create_empty_node_walk<
-        WalkType: for<'a> NodeWalk<'a, Self> + for<'w> From<&'w [Self::NodeIndex]>,
+        WalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + Default, SubwalkType: for<'a> NodeWalk<'a, Self, SubwalkType> + ?Sized
     >(
         &self,
     ) -> WalkType {
-        self.create_node_walk(&[])
+        Default::default()
     }
 
     /// Create an edge-centric walk over the given edges in this graph.
-    fn create_edge_walk<'w, WalkType: for<'a> EdgeWalk<'a, Self> + From<&'w [Self::EdgeIndex]>>(
+    fn create_edge_walk<WalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + FromIterator<Self::EdgeIndex>, SubwalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + ?Sized>(
         &self,
-        walk: &'w [Self::EdgeIndex],
+        walk: &[Self::EdgeIndex],
     ) -> WalkType {
-        WalkType::from(&walk)
+        WalkType::from_iter(walk.iter().copied())
     }
 
     /// Create an empty edge-centric walk in this graph.
     fn create_empty_edge_walk<
-        WalkType: for<'a> EdgeWalk<'a, Self> + for<'w> From<&'w [Self::EdgeIndex]>,
+        WalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + Default, SubwalkType: for<'a> EdgeWalk<'a, Self, SubwalkType> + ?Sized
     >(
         &self,
     ) -> WalkType {
-        self.create_edge_walk(&[])
+        Default::default()
     }
 }
 impl<Graph: GraphBase> WalkableGraph for Graph {}

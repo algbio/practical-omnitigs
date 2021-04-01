@@ -24,7 +24,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
         let mut result = Vec::new();
         let mut macronodes_without_microtig_amount = 0;
 
-        for macronode in macronodes {
+        for macronode in macronodes.iter() {
             assert!(!macronode.is_empty());
             let mut has_microtig = false;
             let center_in_node = *macronode.iter().next().unwrap();

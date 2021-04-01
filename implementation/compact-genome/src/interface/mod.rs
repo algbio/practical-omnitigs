@@ -1,75 +1,98 @@
 //! The traits providing the abstractions of this crate.
 
 use itertools::Itertools;
-use std::iter::FromIterator;
-use traitsequence::interface::Sequence;
+use std::iter::{Copied, FromIterator, Map, Rev};
+use traitsequence::interface::{Sequence, SequenceMut, EditableSequence};
 
-/// A genome string.
-/// While the internal representation is implementation specific, externally genome strings are represented as sequences of `u8`,
-/// which ASCII encode the valid genome characters specified by [is_valid_ascii_genome_character()](is_valid_ascii_genome_character).
-///
-/// The ordering implemented should be the lexical order of the genome characters.
-pub trait Genome:
-    for<'a> FromIterator<&'a u8>
-    + FromIterator<u8>
-    + Eq
-    + Clone
-    + Ord
-    + Sized
-    + for<'a> Sequence<'a, u8>
-where
-    for<'a> &'a Self: IntoIterator<Item = u8>,
+/// An iterator over the reverse complement of a genome sequence.
+pub type ReverseComplementIterator<I> =
+    Map<Map<Rev<Copied<I>>, fn(u8) -> Option<u8>>, fn(Option<u8>) -> u8>;
+
+/// A genome sequence.
+pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized>:
+    Sequence<'a, u8, GenomeSubsequence>
 {
-    /// Returns the reverse complement of this genome.
-    /// Panics if this genome is [not valid](is_valid).
-    fn reverse_complement(&self) -> Self;
-
     /// Returns true if this genome is valid, i.e. it contains no invalid characters.
     /// Valid characters are defined by [is_valid_ascii_genome_character()](is_valid_ascii_genome_character)
-    fn is_valid(&self) -> bool {
-        self.into_iter().all(is_valid_ascii_genome_character)
+    fn is_valid(&'a self) -> bool {
+        self.iter().copied().all(is_valid_ascii_genome_character)
     }
 
     /// Returns a duplicate-free vector of all invalid characters in this genome string.
-    fn get_invalid_characters(&self) -> Vec<u8> {
-        self.into_iter()
+    fn get_invalid_characters(&'a self) -> Vec<u8> {
+        self.iter().copied()
             .filter(|c| !is_valid_ascii_genome_character(*c))
             .unique()
             .collect()
     }
 
     /// Copies this genome string into a `Vec`.
-    fn clone_as_vec(&self) -> Vec<u8> {
-        self.into_iter().collect()
+    fn clone_as_vec(&'a self) -> Vec<u8> {
+        self.iter().copied().collect()
     }
 
-    /// Returns a copy of the prefix with length `len` of this genome.
-    /// Panics if `len >= self.len()`.
-    fn prefix(&self, len: usize) -> Self {
-        Self::from_iter(self.into_iter().take(len))
-    }
-
-    /// Returns a copy of the suffix with length `len` of this genome.
-    /// Panics if `len >= self.len()`.
-    fn suffix(&self, len: usize) -> Self {
-        Self::from_iter(self.into_iter().skip(self.len() - len))
+    /// Get a reference to this genome as its subsequence type.
+    fn as_genome_subsequence(&self) -> &GenomeSubsequence {
+        self.index(0..self.len())
     }
 
     /// Returns the genome as nucleotide string.
-    fn as_string(&self) -> String {
+    fn as_string(&'a self) -> String {
         String::from_utf8(self.clone_as_vec())
             .expect("Genome contains non-utf8 characters (It should be ASCII only).")
     }
+
+    /// Returns an iterator over the reverse complement of this genome.
+    /// Panics if the iterator his an invalid character (see [not valid](is_valid)).
+    fn reverse_complement_iter(&'a self) -> ReverseComplementIterator<Self::Iterator> {
+        /*self.iter()
+            .copied()
+            .rev()
+            .map(ascii_complement)
+            .map(Option::unwrap)*/
+        todo!()
+    }
+}
+
+/// A genome sequence that is owned, i.e. not a reference.
+pub trait OwnedGenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized>: for<'s> GenomeSequence<'s, GenomeSubsequence> + FromIterator<u8> {
+    /// Returns the reverse complement of this genome.
+    /// Panics if this genome is [not valid](is_valid).
+    fn reverse_complement(&'a self) -> Self {
+        Self::from_iter(self.reverse_complement_iter())
+    }
+}
+
+/// A mutable genome sequence.
+pub trait GenomeSequenceMut<'a, GenomeSubsequenceMut: GenomeSequenceMut<'a, GenomeSubsequenceMut> + ?Sized>:
+    SequenceMut<'a, u8, GenomeSubsequenceMut> + GenomeSequence<'a, GenomeSubsequenceMut>
+{
+}
+
+/// An editable genome sequence.
+pub trait EditableGenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized>:
+EditableSequence<'a, u8, GenomeSubsequence> + GenomeSequence<'a, GenomeSubsequence>
+{
+
+}
+
+/*
+/// A genome string.
+/// While the internal representation is implementation specific, externally genome strings are represented as sequences of `u8`,
+/// which ASCII encode the valid genome characters specified by [is_valid_ascii_genome_character()](is_valid_ascii_genome_character).
+///
+/// The ordering implemented should be the lexical order of the genome characters.
+pub trait Genome<Subgenome: Genome<Subgenome>>:
+{
+    type Subgenome: Genome<Self::Subgenome>;
 }
 
 /// A genome string that can be extended with another genome string.
-pub trait ExtendableGenome: Genome
+pub trait ExtendableGenome<Subgenome: Genome<Subgenome>>: Genome<Subgenome>
 where
     for<'a> &'a Self: IntoIterator<Item = u8>,
 {
-    /// Append the elements of the given source to this genome.
-    fn extend<ExtensionSource: IntoIterator<Item = u8>>(&mut self, extension: ExtensionSource);
-}
+}*/
 
 /// Returns the complement of the given genome char.
 /// Returns `None` if the given char [is invalid](is_valid_ascii_genome_character).
@@ -89,3 +112,21 @@ pub fn ascii_complement(char: u8) -> Option<u8> {
 pub fn is_valid_ascii_genome_character(char: u8) -> bool {
     matches!(char, b'A' | b'T' | b'G' | b'C')
 }
+/*
+/// A store for sequence data, which gives out handles that can be used to retrieve concrete sequences.
+pub trait SequenceStore {
+    /// A handle to a sequence in this store. Can be used to retrieve the respective sequence.
+    type Handle;
+
+    /// A reference to a sequence stored in this store.
+    type SequenceRef;
+
+    /// Adds a sequence to this store and returns a handle for later retrieval.
+    fn add<Sequence: Genome>(s: Sequence) -> Self::Handle
+    where
+        for<'a> &'a Sequence: IntoIterator<Item = u8>;
+
+    /// Returns
+    fn get(handle: &Self::Handle) -> Self::SequenceRef;
+}
+*/
