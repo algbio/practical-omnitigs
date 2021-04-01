@@ -4,6 +4,7 @@ use crate::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use crate::interface::sequence_store::SequenceStore;
 
 /// An ASCII vector based sequence store.
+#[derive(Default, Clone, Eq, PartialEq, Debug)]
 pub struct AsciiVectorSequenceStore {
     sequence: Vec<u8>,
 }
