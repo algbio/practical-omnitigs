@@ -4,7 +4,7 @@ use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer, StaticGraph};
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, VecNodeWalk};
-use compact_genome::implementation::vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
 use compact_genome::interface::sequence::GenomeSequence;
 use regex::Regex;
 use std::cmp::Ordering;

@@ -17,7 +17,7 @@ impl<'a> EditableGenomeSequence<'a, [u8]> for Vec<u8> {}
 
 #[cfg(test)]
 mod tests {
-    use crate::implementation::vec_sequence::AsciiVectorGenome;
+    use crate::implementation::ascii_vec_sequence::AsciiVectorGenome;
     use crate::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 
     #[test]

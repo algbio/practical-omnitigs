@@ -1,7 +1,7 @@
 use bigraph::traitgraph::interface::ImmutableGraphContainer;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, NodeWalk};
-use compact_genome::implementation::vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
 use compact_genome::interface::sequence::{
     EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence,
 };

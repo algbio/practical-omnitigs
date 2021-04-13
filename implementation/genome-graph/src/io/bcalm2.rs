@@ -6,7 +6,7 @@ use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bio::io::fasta::Record;
-use compact_genome::implementation::vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
 use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use num_traits::NumCast;
 use std::collections::HashMap;

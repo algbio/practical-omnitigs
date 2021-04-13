@@ -1,6 +1,6 @@
 use crate::CliOptions;
 use clap::Clap;
-use compact_genome::implementation::vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
 use compact_genome::interface::sequence::GenomeSequence;
 
 #[derive(Clap)]
