@@ -1,7 +1,8 @@
 use crate::CliOptions;
 use clap::Clap;
-use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::DefaultGenome;
 use compact_genome::interface::sequence::GenomeSequence;
+use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct VerifyGenomeCommand {
@@ -59,7 +60,7 @@ pub(crate) fn verify_genome(
     let mut records_found = 0;
     for record in records {
         records_found += 1;
-        let genome: AsciiVectorGenome = match record {
+        let genome: DefaultGenome = match record {
             Ok(record) => record.seq().iter().copied().collect(),
             Err(err) => {
                 error!("Error reading genome file");

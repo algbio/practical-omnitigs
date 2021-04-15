@@ -4,7 +4,7 @@ use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer, StaticGraph};
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, VecNodeWalk};
-use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::DefaultGenome;
 use compact_genome::interface::sequence::GenomeSequence;
 use regex::Regex;
 use std::cmp::Ordering;
@@ -819,7 +819,7 @@ pub fn convert_walks_to_wtdbg2_contigs<
     walks: WalkSource,
     raw_reads: bio::io::fasta::Reader<R>,
 ) -> Result<RawWtdbg2Contigs> {
-    let mut read_map = HashMap::<_, AsciiVectorGenome>::new();
+    let mut read_map = HashMap::<_, DefaultGenome>::new();
     info!("Loading reads");
     let mut last_print_time = Instant::now();
 
@@ -1063,7 +1063,7 @@ pub fn write_contigs_to_wtdbg2<
     raw_reads: bio::io::fasta::Reader<R>,
     output: &mut W,
 ) -> Result<()> {
-    let mut read_map = HashMap::<_, AsciiVectorGenome>::new();
+    let mut read_map = HashMap::<_, DefaultGenome>::new();
     info!("Loading reads");
     let mut last_print_time = Instant::now();
 

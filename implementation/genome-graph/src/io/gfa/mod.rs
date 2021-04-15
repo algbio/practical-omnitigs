@@ -6,7 +6,7 @@ use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
-use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::{DefaultGenome, DefaultSubGenome};
 use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use std::collections::HashMap;
 use std::fs::File;
@@ -40,7 +40,7 @@ pub type PetGfaEdgeGraph<NodeData, EdgeData> =
 #[derive(Eq, PartialEq, Debug, Clone, Default)]
 pub struct BidirectedGfaNodeData<T> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.
-    pub sequence: Arc<AsciiVectorGenome>,
+    pub sequence: Arc<DefaultGenome>,
     /// True if this node is the forward node of sequence, false if it is the reverse complement node.
     pub forward: bool,
     /// Further data.
@@ -64,8 +64,8 @@ impl<T: WeightedEdgeData> WeightedEdgeData for BidirectedGfaNodeData<T> {
 }
 
 impl<T> FastaData for BidirectedGfaNodeData<T> {
-    type Genome = AsciiVectorGenome;
-    type GenomeSubsequence = [u8];
+    type Genome = DefaultGenome;
+    type GenomeSubsequence = DefaultSubGenome;
 
     fn sequence(&self) -> &Self::Genome {
         &self.sequence
@@ -130,7 +130,7 @@ pub fn read_gfa_as_bigraph<
             let node_name: &str = columns.next().unwrap();
 
             let sequence = columns.next().unwrap();
-            let sequence: AsciiVectorGenome = sequence.bytes().collect();
+            let sequence: DefaultGenome = sequence.bytes().collect();
             let sequence = Arc::new(sequence);
             assert!(
                 sequence.len() >= k || ignore_k,
@@ -286,7 +286,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
 
             let sequence = columns.next().unwrap();
             //println!("sequence {}", sequence);
-            let sequence: AsciiVectorGenome = sequence.bytes().collect();
+            let sequence: DefaultGenome = sequence.bytes().collect();
             let sequence = Arc::new(sequence);
             let edge_data = BidirectedGfaNodeData {
                 sequence: sequence.clone(),
@@ -305,11 +305,11 @@ pub fn read_gfa_as_edge_centric_bigraph<
                 k
             );
 
-            let pre_plus: AsciiVectorGenome = sequence.prefix(k - 1).iter().copied().collect();
-            let pre_minus: AsciiVectorGenome =
+            let pre_plus: DefaultGenome = sequence.prefix(k - 1).iter().copied().collect();
+            let pre_minus: DefaultGenome =
                 sequence.suffix(k - 1).reverse_complement_iter().collect();
-            let succ_plus: AsciiVectorGenome = sequence.suffix(k - 1).iter().copied().collect();
-            let succ_minus: AsciiVectorGenome =
+            let succ_plus: DefaultGenome = sequence.suffix(k - 1).iter().copied().collect();
+            let succ_minus: DefaultGenome =
                 sequence.prefix(k - 1).reverse_complement_iter().collect();
 
             let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);

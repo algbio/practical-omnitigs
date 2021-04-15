@@ -1,7 +1,7 @@
 use bigraph::traitgraph::interface::ImmutableGraphContainer;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, NodeWalk};
-use compact_genome::implementation::ascii_vec_sequence::AsciiVectorGenome;
+use compact_genome::implementation::DefaultGenome;
 use compact_genome::interface::sequence::{
     EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence,
 };
@@ -59,7 +59,7 @@ pub fn write_walks_as_fasta<
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence: AsciiVectorGenome = graph
+        let mut sequence: DefaultGenome = graph
             .edge_data(walk[0])
             .sequence()
             .iter()
@@ -123,7 +123,7 @@ pub fn write_node_centric_walks_as_fasta<
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence: AsciiVectorGenome = graph
+        let mut sequence: DefaultGenome = graph
             .node_data(walk[0])
             .sequence()
             .iter()
