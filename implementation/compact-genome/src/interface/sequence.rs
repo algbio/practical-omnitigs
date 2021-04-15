@@ -34,6 +34,7 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
 
     /// Get a reference to this genome as its subsequence type.
     fn as_genome_subsequence(&self) -> &GenomeSubsequence {
+        println!("as_genome_subsequence()");
         self.index(0..self.len())
     }
 

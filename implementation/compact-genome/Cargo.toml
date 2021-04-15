@@ -17,3 +17,5 @@ license = "BSD-2-Clause"
 [dependencies]
 traitsequence = {path = "../traitsequence", version = "0.2.1-alpha.0"}
 itertools = "0.9"
+bitvec = "0.22"
+ref-cast = "1"
