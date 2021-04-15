@@ -46,6 +46,14 @@ pub struct TwoBitVectorSubGenomeIterator<'a> {
     slice: &'a TwoBitVectorSubGenome,
 }
 
+impl TwoBitVectorGenome {
+    /// Returns the amount of memory this genome sequence uses in bytes.
+    /// This is meant to be accurate, but might be off by a constant number of bytes.
+    pub fn size_in_memory(&self) -> usize {
+        std::mem::size_of::<BitVec>() + self.bits.capacity() / 8
+    }
+}
+
 impl<'a> Sequence<'a, u8, TwoBitVectorSubGenome> for TwoBitVectorGenome {
     type Iterator = TwoBitVectorSubGenomeIterator<'a>;
 
