@@ -217,7 +217,7 @@ impl Extend<u8> for TwoBitVectorGenome {
                     self.bits.push(true);
                     self.bits.push(true);
                 }
-                c => panic!("Invalid character {}", c),
+                c => panic!("Invalid character {} with ASCII code {}", c as char, c),
             }
         }
     }
