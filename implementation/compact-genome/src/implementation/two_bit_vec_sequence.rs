@@ -5,7 +5,7 @@ use bitvec::prelude::*;
 use ref_cast::RefCast;
 use std::borrow::Borrow;
 use std::iter::FromIterator;
-use std::ops::{Index, Range};
+use std::ops::{Index, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 use traitsequence::interface::{EditableSequence, Sequence};
 
 const ASCII_A: u8 = b'A';
@@ -80,6 +80,46 @@ impl Index<Range<usize>> for TwoBitVectorGenome {
     }
 }
 
+impl Index<RangeFrom<usize>> for TwoBitVectorGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeFrom<usize>) -> &Self::Output {
+        self.as_genome_subsequence().index(index)
+    }
+}
+
+impl Index<RangeTo<usize>> for TwoBitVectorGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeTo<usize>) -> &Self::Output {
+        self.as_genome_subsequence().index(index)
+    }
+}
+
+impl Index<RangeFull> for TwoBitVectorGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeFull) -> &Self::Output {
+        self.as_genome_subsequence().index(index)
+    }
+}
+
+impl Index<RangeInclusive<usize>> for TwoBitVectorGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeInclusive<usize>) -> &Self::Output {
+        self.as_genome_subsequence().index(index)
+    }
+}
+
+impl Index<RangeToInclusive<usize>> for TwoBitVectorGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeToInclusive<usize>) -> &Self::Output {
+        self.as_genome_subsequence().index(index)
+    }
+}
+
 impl Index<usize> for TwoBitVectorGenome {
     type Output = u8;
 
@@ -93,6 +133,46 @@ impl Index<Range<usize>> for TwoBitVectorSubGenome {
 
     fn index(&self, index: Range<usize>) -> &Self::Output {
         TwoBitVectorSubGenome::ref_cast(&self.bits[index.start * 2..index.end * 2])
+    }
+}
+
+impl Index<RangeFrom<usize>> for TwoBitVectorSubGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeFrom<usize>) -> &Self::Output {
+        self.index(index.start..self.len())
+    }
+}
+
+impl Index<RangeTo<usize>> for TwoBitVectorSubGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeTo<usize>) -> &Self::Output {
+        self.index(0..index.end)
+    }
+}
+
+impl Index<RangeFull> for TwoBitVectorSubGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, _index: RangeFull) -> &Self::Output {
+        self.index(0..self.len())
+    }
+}
+
+impl Index<RangeInclusive<usize>> for TwoBitVectorSubGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeInclusive<usize>) -> &Self::Output {
+        TwoBitVectorSubGenome::ref_cast(&self.bits[index.start() * 2..=index.end() * 2])
+    }
+}
+
+impl Index<RangeToInclusive<usize>> for TwoBitVectorSubGenome {
+    type Output = TwoBitVectorSubGenome;
+
+    fn index(&self, index: RangeToInclusive<usize>) -> &Self::Output {
+        self.index(0..=index.end)
     }
 }
 
