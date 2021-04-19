@@ -5,8 +5,6 @@ use traitgraph::algo::traversal::{
 use traitgraph::implementation::incremental_subgraph::IncrementalSubgraph;
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, NodeOrEdge, StaticGraph};
-use traitgraph::walks::VecEdgeWalk;
-use traitsequence::interface::Sequence;
 
 /// Returns the reachable subgraph from a node without using an edge.
 pub fn compute_restricted_edge_reachability<
@@ -41,7 +39,7 @@ pub fn compute_restricted_edge_reachability<
 /// Returns the reachable subgraph from a node without using an edge incrementally.
 pub fn compute_incremental_restricted_forward_edge_reachability<'a, Graph: StaticGraph>(
     graph: &'a Graph,
-    walk: &VecEdgeWalk<Graph>,
+    walk: &[Graph::EdgeIndex],
 ) -> IncrementalSubgraph<'a, Graph> {
     let mut subgraph = IncrementalSubgraph::new_with_incremental_steps(graph, walk.len());
     let mut traversal = PreOrderTraversal::<
@@ -76,7 +74,7 @@ pub fn compute_incremental_restricted_forward_edge_reachability<'a, Graph: Stati
 /// Returns the backwards reachable subgraph from a node without using an edge incrementally.
 pub fn compute_incremental_restricted_backward_edge_reachability<'a, Graph: StaticGraph>(
     graph: &'a Graph,
-    walk: &VecEdgeWalk<Graph>,
+    walk: &[Graph::EdgeIndex],
 ) -> IncrementalSubgraph<'a, Graph> {
     let mut subgraph = IncrementalSubgraph::new_with_incremental_steps(graph, walk.len());
     let mut traversal = PreOrderTraversal::<
@@ -229,7 +227,7 @@ pub fn compute_hydrostructure_forward_reachability<
     SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
 >(
     graph: SubgraphType::ParentGraphRef,
-    azb: &VecEdgeWalk<SubgraphType::ParentGraph>,
+    azb: &[<<SubgraphType as DecoratingSubgraph>::ParentGraph as GraphBase>::EdgeIndex],
 ) -> Option<SubgraphType> {
     let a = *azb.iter().next().unwrap();
     let b = *azb.iter().last().unwrap();
@@ -264,7 +262,7 @@ pub fn compute_hydrostructure_backward_reachability<
     SubgraphType: DecoratingSubgraph<ParentGraph = Graph, ParentGraphRef = &'a Graph>,
 >(
     graph: SubgraphType::ParentGraphRef,
-    azb: &VecEdgeWalk<SubgraphType::ParentGraph>,
+    azb: &[<<SubgraphType as DecoratingSubgraph>::ParentGraph as GraphBase>::EdgeIndex],
 ) -> Option<SubgraphType> {
     let a = *azb.iter().next().unwrap();
     let b = *azb.iter().last().unwrap();

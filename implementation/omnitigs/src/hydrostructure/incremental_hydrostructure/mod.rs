@@ -8,8 +8,6 @@ use crate::restricted_reachability::{
 use traitgraph::implementation::incremental_subgraph::IncrementalSubgraph;
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, StaticGraph};
-use traitgraph::walks::VecEdgeWalk;
-use traitsequence::interface::Sequence;
 use vapor_is_path_tracker::VaporIsPathTracker;
 
 /// A type that combines two safety trackers under conjunction.
@@ -46,7 +44,7 @@ pub struct IncrementalHydrostructure<
     /// An incremental version of the set `R⁻(W)` for each join of the underlying walk.
     r_minus: IncrementalSubgraph<'graph, Graph>,
     /// The walk the incremental hydrostructure corresponds to.
-    walk: &'walk VecEdgeWalk<Graph>,
+    walk: &'walk [Graph::EdgeIndex],
     /// The first edge of the walk for which the hydrostructure should be valid.
     left_finger: usize,
     /// The last edge of the walk for which the hydrostructure should be valid.
@@ -70,13 +68,13 @@ impl<
     /// Sets the fingers to cover the whole walk.
     ///
     /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
-    pub fn compute(graph: &'graph Graph, walk: &'walk VecEdgeWalk<Graph>) -> Self {
+    pub fn compute(graph: &'graph Graph, walk: &'walk [Graph::EdgeIndex]) -> Self {
         assert!(
             walk.len() >= 2,
             "The hydrostructure is defined only for walks of at least two edges."
         );
-        let r_plus = compute_incremental_restricted_forward_edge_reachability(graph, &walk);
-        let r_minus = compute_incremental_restricted_backward_edge_reachability(graph, &walk);
+        let r_plus = compute_incremental_restricted_forward_edge_reachability(graph, walk);
+        let r_minus = compute_incremental_restricted_backward_edge_reachability(graph, walk);
         let mut result = Self {
             left_finger: 0,
             right_finger: walk.len() - 1,
@@ -98,7 +96,7 @@ impl<
     /// Also panics if the fingers are set outside of the walk or the left finger is not left of the right finger.
     pub fn compute_and_set_fingers_to(
         graph: &'graph Graph,
-        walk: &'walk VecEdgeWalk<Graph>,
+        walk: &'walk [Graph::EdgeIndex],
         left_finger: usize,
         right_finger: usize,
     ) -> Self {
@@ -136,7 +134,7 @@ impl<
     /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
     pub fn compute_and_set_fingers_left(
         graph: &'graph Graph,
-        walk: &'walk VecEdgeWalk<Graph>,
+        walk: &'walk [Graph::EdgeIndex],
     ) -> Self {
         assert!(
             walk.len() >= 2,
@@ -472,7 +470,6 @@ mod tests {
     use crate::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
     use crate::macrotigs::macrotigs::{MaximalMacrotigsAlgorithm, Macrotigs};
     use crate::hydrostructure::incremental_hydrostructure::{BridgeLikeIncrementalHydrostructure};
-    use traitgraph::walks::VecEdgeWalk;
     use crate::hydrostructure::static_hydrostructure::StaticHydrostructure;
     use crate::hydrostructure::Hydrostructure;
     use traitsequence::interface::Sequence;
@@ -486,7 +483,7 @@ mod tests {
         let e0 = graph.add_edge(n0, n1, ());
         let e1 = graph.add_edge(n1, n2, ());
 
-        let walk = graph.create_edge_walk(&[e0, e1]);
+        let walk: Vec<_> = graph.create_edge_walk(&[e0, e1]);
         let incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_river(n0));
@@ -507,7 +504,7 @@ mod tests {
         let e1 = graph.add_edge(n1, n2, ());
         let e2 = graph.add_edge(n2, n3, ());
 
-        let walk = graph.create_edge_walk(&[e0, e1, e2]);
+        let walk: Vec<_> = graph.create_edge_walk(&[e0, e1, e2]);
         let mut incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_river(n0));
@@ -557,7 +554,7 @@ mod tests {
         let e2 = graph.add_edge(n1, n2, ());
         let e3 = graph.add_edge(n2, n0, ());
 
-        let walk = graph.create_edge_walk(&[e0, e1, e2]);
+        let walk: Vec<_> = graph.create_edge_walk(&[e0, e1, e2]);
         let mut incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_node_vapor(n0));
@@ -607,7 +604,7 @@ mod tests {
         let e2 = graph.add_edge(n2, n2, ());
         let e3 = graph.add_edge(n2, n0, ());
 
-        let walk = graph.create_edge_walk(&[e0, e1, e2]);
+        let walk: Vec<_> = graph.create_edge_walk(&[e0, e1, e2]);
         let mut incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
         assert!(incremental_hydrostructure.is_edge_sea(e3));
@@ -724,8 +721,9 @@ mod tests {
                 //println!("Setting initial fingers for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_both_fingers(0, subwalk_len - 1);
                 for offset in 0..(macrotig.len() - subwalk_len) {
-                    let subwalk: VecEdgeWalk<_> =
-                        graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    //let subwalk: VecEdgeWalk<_> =
+                    //    graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    let subwalk = Vec::from(&macrotig[offset..offset + subwalk_len]);
                     //println!("{:?}", subwalk);
                     /*println!(
                         "has rightmost split/join: {:?}/{:?}; left/right finger: {}/{}",
@@ -876,8 +874,9 @@ mod tests {
                 //println!("Setting initial right finger for subwalk len {}", subwalk_len);
                 incremental_hydrostructure.set_right_finger(subwalk_len - 1);
                 for offset in 0..(macrotig.len() - subwalk_len) {
-                    let subwalk: VecEdgeWalk<_> =
-                        graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    //let subwalk: VecEdgeWalk<_> =
+                    //    graph.create_edge_walk(&macrotig[offset..offset + subwalk_len]);
+                    let subwalk = Vec::from(&macrotig[offset..offset + subwalk_len]);
                     //println!("{:?}", subwalk);
                     //println!("has rightmost split/join: {:?}/{:?}; left/right finger: {}/{}", incremental_hydrostructure.rightmost_split, incremental_hydrostructure.rightmost_join, incremental_hydrostructure.left_finger, incremental_hydrostructure.right_finger);
                     let static_hydrostructure =

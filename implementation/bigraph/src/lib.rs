@@ -12,6 +12,8 @@
 //! For edge-centric genome graphs, the same holds for the edges.
 #![warn(missing_docs)]
 
+/// Abstract algorithms on bigraphs.
+pub mod algo;
 /// Different implementations of bigraphs.
 pub mod implementation;
 /// Traits describing the features of bigraphs.

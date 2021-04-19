@@ -5,16 +5,19 @@ Convert the output of the different validation tools into a LaTeX file.
 Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> [<label> <experiment prefix> ...] 
 """
 
-import sys, subprocess
+import sys, subprocess, hashlib, os, pathlib
+import traceback
 
-genome_name_file_name = sys.argv[1]
-graph_statistics_file_name = sys.argv[2]
-bandage_png_name = sys.argv[3]
-output_file_name = sys.argv[4]
+hashdir = os.path.abspath(sys.argv[1])
+genome_name_file_name = sys.argv[2]
+graph_statistics_file_name = sys.argv[3]
+bandage_png_name = sys.argv[4]
+combined_eaxmax_plot_name = sys.argv[5]
+output_file_name = sys.argv[6]
 
 experiments = []
 
-for i in range(5, len(sys.argv), 2):
+for i in range(7, len(sys.argv), 2):
 	if i + 1 >= len(sys.argv):
 		print("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
 		exit(1)
@@ -25,17 +28,62 @@ def append_latex_table_second_column(table, appendix):
 	if len(table) == 0:
 		return appendix
 
-	while len(appendix) < len(table):
-		appendix.append('N/A & N/A \\\\')
+	table_keys = set([line[:line.index("&")].strip() for line in table])
+	appendix_keys = set([line[:line.index("&")].strip() for line in appendix])
+	table_value_column_count = table[0].count("&")
 
+	table_index = 0
+	appendix_index = 0
 	result = []
-	for tl, al in zip(table, appendix):
-		tl = tl.strip()
-		if tl[-2:] == "\\\\":
-			tl = tl[:-2] # Remove trailing new line backslashes
 
-		al = al[al.index("&"):] # Remove line titles
-		result.append(tl + al)
+	def append_rows(row, appendix):
+		row = row.strip()
+		if row[-2:] == "\\\\":
+			row = row[:-2] # Remove trailing new line backslashes
+		appendix = appendix[appendix.index("&"):].strip()
+		return row + appendix
+
+	def new_row(appendix):
+		return appendix[:appendix.index("&")] + (" & " * table_value_column_count) + appendix[appendix.index("&"):]
+
+	def append_none(row):
+		row = row.strip()
+		if row[-2:] == "\\\\":
+			row = row[:-2] # Remove trailing new line backslashes
+		return row + " & N/A \\\\"
+
+	while table_index < len(table) or appendix_index < len(appendix):
+		if table_index < len(table) and appendix_index < len(appendix):
+			table_line = table[table_index]
+			table_key = table_line[:table_line.index("&")].strip()
+			appendix_line = appendix[appendix_index]
+			appendix_key = appendix_line[:appendix_line.index("&")].strip()
+
+			if table_key == appendix_key:
+				result.append(append_rows(table_line, appendix_line))
+				table_index += 1
+				appendix_index += 1
+			elif table_key in appendix_keys:
+				# Appendix contains something extra
+				result.append(new_row(appendix_line))
+				appendix_index += 1
+			elif appendix_key in table_keys:
+				# Appendix misses something
+				result.append(append_none(table_line))
+				table_index += 1
+			else:
+				sys.exit("Found completely mismatching keys: {} and {}".format(table_key, appendix_key))
+		elif table_index < len(table):
+			# Appendix misses something
+			result.append(append_none(table[table_index]))
+			table_index += 1
+		elif appendix_index < len(appendix):
+			# Appendix contains something extra
+			result.append(new_row(appendix[appendix_index]))
+			appendix_index += 1
+		else:
+			assert False
+
 	return result
 
 #########################
@@ -52,7 +100,7 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 
 def read_algorithm_file(prefix):
 	try:
-		algorithm_file = open(prefix + ".tex")
+		algorithm_file = open(os.path.join(prefix, "compute_injectable_contigs.tex"))
 		algorithm_lines = algorithm_file.readlines()
 		return algorithm_lines
 	except:
@@ -63,7 +111,7 @@ headline = "Parameter"
 algorithm_table = []
 for label, prefix in experiments:
 	headline += " & " + label
-	table = read_algorithm_file(prefix)
+	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
 	algorithm_table = append_latex_table_second_column(algorithm_table, table)
 
 algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
@@ -73,26 +121,36 @@ algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
 ### Process QUAST files ###
 ##########################
 
-def read_quast_file(prefix):
+def read_quast_file(filename):
 	try:
-		quast_file = open(prefix + ".quast/report.tex", 'r')
+		quast_file = open(filename, 'r')
 		quast_lines = quast_file.readlines()
 		quast_lines = [x.strip() for x in quast_lines]
 		quast_lines = [x.replace("\\hline", "") for x in quast_lines]
 		quast_lines = quast_lines[8:-4] # Remove LaTeX header and footer
+		quast_lines = [line.replace("misassemblies caused by fragmented reference", "mis. caused by frag. ref.") for line in quast_lines]
 		return quast_lines
 	except:
-		print("Did not find quast file for '" + prefix + "'")
+		print("Did not find quast file for '" + filename + "'")
 		return []
 
 headline = "Parameter"
 quast_table = []
 for (label, prefix) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix)
+	table = read_quast_file(prefix + "quast/report.tex")
 	quast_table = append_latex_table_second_column(quast_table, table)
 
 quast_table = [headline + "\\\\ \\hline"] + quast_table
+
+headline = "Parameter"
+quast_misassemblies_table = []
+for (label, prefix) in experiments:
+	headline += " & " + label
+	table = read_quast_file(prefix + "quast/contigs_reports/misassemblies_report.tex")
+	quast_misassemblies_table = append_latex_table_second_column(quast_misassemblies_table, table)
+
+quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_table
 
 
 ####################################
@@ -149,7 +207,8 @@ def table_header(caption, column_count):
 	header = """
 	\\begin{table}[ht]
 	\\begin{center}
-	\\caption{""" + caption + """}
+	\\fontsize{6pt}{7pt}\\selectfont
+	\\caption{\\fontsize{6pt}{7pt}\\selectfont\\ """ + caption + """}
 	\\begin{tabular}{|l*{1}|"""
 	for _ in range(column_count):
 		header += "r"
@@ -170,21 +229,47 @@ def write_table(output_file, caption, column_count, rows):
 		output_file.write(row + '\n')
 	output_file.write(table_footer)
 
-def write_image(output_file, caption, name, natwidth, natheight):
+def write_image(output_file, caption, file, natwidth, natheight):
+	hasher = hashlib.sha3_512()
+	hasher.update(file.encode())
+	hashlinkdir = os.path.join(hashdir, str(hasher.hexdigest()))
+	hashlink = os.path.join(hashlinkdir, "file." + file.split(".")[-1])
+
+	try:
+		os.remove(hashlink)
+	except OSError:
+		pass
+
+	pathlib.Path(hashlinkdir).mkdir(parents=True, exist_ok=True)
+
+	try:
+		os.symlink(os.path.abspath(file), hashlink)
+	except FileExistsError:
+		print("error: could not create symlink because it already exists. We assume that it is correct.")
+	except OSError:
+		print("Error: could not create symlink, but just continuing because it might have been correctly created concurrently.")
+		traceback.print_exc()
+
 	pixel_pt_factor = 0.7
 	output_file.write("\\begin{figure*}\n")
 	output_file.write("\\centering\n")
-	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + name + "}\n")
+	output_file.write("\\includegraphics[width=\\textwidth,natwidth=" + str(natwidth * pixel_pt_factor) + "pt,natheight=" + str(natheight * pixel_pt_factor) + "pt]{" + str(hashlink) + "}\n")
+	output_file.write("\\caption{" + str(caption) + "}")
 	output_file.write("\\end{figure*}\n")
 
 revision = subprocess.check_output(["git", "describe"]).strip()
 output_file = open(output_file_name, 'w')
 output_file.write(
 	"""
-	\\documentclass[10pt,a4paper]{article}
-	\\usepackage[cm]{fullpage}
+	\\documentclass[12pt,a4paper]{article}
+	\\usepackage[margin=0pt]{geometry}
+	\\usepackage{lmodern}
+	\\usepackage{pdflscape}
+	\\usepackage[T1]{fontenc}
 	\\usepackage{graphicx}
 	\\begin{document}
+	\\begin{landscape}
+	\\fontsize{6pt}{7pt}\\selectfont
 	\\begin{description}
 		\\item[Attention:] this file was produced automatically, and some statistics might not make sense for certain pipelines.
 		\\item[Revision:] """ + str(revision) + """
@@ -206,24 +291,30 @@ write_table(output_file, "ContigValidator", len(experiments), contig_validator_t
 
 write_table(output_file, "QUAST: \\# of contigs", len(experiments), quast_table[0:7])
 write_table(output_file, "QUAST: total length of contigs", len(experiments), [quast_table[0]] + quast_table[7:13])
-write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[13:27])
-write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp", len(experiments), [quast_table[0]] + quast_table[27:])
+write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[13:28])
+write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[28:])
+write_table(output_file, "QUAST: misassembly statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), quast_misassemblies_table)
 
 
 from os import path
+
+if combined_eaxmax_plot_name != 'none':
+    output_file.write("\\newpage")
+    write_image(output_file, "EAxmax", combined_eaxmax_plot_name, 1000, 1000)
+
 output_file.write("\\newpage")
 for label, prefix in experiments:
-	plot_file_path = prefix + ".quast/aligned_stats/EAxmax_plot.pdf"
+	plot_file_path = prefix + "quast/aligned_stats/EAxmax_plot.pdf"
 	if path.isfile(plot_file_path):
-		quast_png_name = "../../" + plot_file_path
+		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST EAxmax graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
 
 for label, prefix in experiments:
-	plot_file_path = prefix + ".quast/aligned_stats/NGAx_plot.pdf"
+	plot_file_path = prefix + "quast/aligned_stats/NGAx_plot.pdf"
 	if path.isfile(plot_file_path):
-		quast_png_name = "../../" + plot_file_path
+		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
@@ -235,6 +326,7 @@ if bandage_png_name != 'none':
 
 output_file.write(
 	"""
+	\\end{landscape}
 	\\end{document}
 	"""
 )

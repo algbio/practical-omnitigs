@@ -24,7 +24,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
         let mut result = Vec::new();
         let mut macronodes_without_microtig_amount = 0;
 
-        for macronode in macronodes {
+        for macronode in macronodes.iter() {
             assert!(!macronode.is_empty());
             let mut has_microtig = false;
             let center_in_node = *macronode.iter().next().unwrap();
@@ -62,8 +62,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                 extend_right_micro_omnitig(
                     graph,
                     *mlmo1
-                        .iter()
-                        .nth(mlmo1.len() - macronode.len() - 1)
+                        .get(mlmo1.len() - macronode.len() - 1)
                         .expect("Found left-micro omnitig, but it appears to be too short."),
                 )
             } else {
@@ -77,8 +76,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
             if let (Some(mlmo1), Some(mrmo1)) = (&mlmo1, &mrmo1) {
                 assert_eq!(
                     mlmo1
-                        .iter()
-                        .nth(mlmo1.len() - macronode.len() - 1)
+                        .get(mlmo1.len() - macronode.len() - 1)
                         .expect("Left-micro omnitig misses macronode."),
                     mrmo1.iter().next().expect("Right-micro omnitig is empty."),
                     "Left-micro and right-micro omnitigs do not match."
@@ -86,19 +84,18 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                 assert_eq!(
                     mlmo1.iter().last().expect("Left-micro omnitig is empty."),
                     mrmo1
-                        .iter()
-                        .nth(macronode.len())
+                        .get(macronode.len())
                         .expect("Right-micro omnitig misses macronode."),
                     "Left-micro and right-micro omnitigs do not match."
                 );
-                result.push(VecEdgeWalk::<Graph>::from(
+                result.push(
                     mlmo1
                         .iter()
                         .take(mlmo1.len() - macronode.len() - 1)
                         .chain(mrmo1.iter())
                         .copied()
                         .collect::<Vec<_>>(),
-                ));
+                );
                 has_microtig = true;
             }
 
@@ -116,7 +113,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                     let mlmo2 = if let Some(mrmo2) = &mrmo2 {
                         extend_left_micro_omnitig(
                             graph,
-                            *mrmo2.iter().nth(macronode.len()).expect(
+                            *mrmo2.get(macronode.len()).expect(
                                 "Found right-micro omnitig, but it appears to be too short.",
                             ),
                         )
@@ -131,28 +128,26 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                     if let (Some(mlmo2), Some(mrmo2)) = (mlmo2, mrmo2) {
                         assert_eq!(
                             mlmo2
-                                .iter()
-                                .nth(mlmo2.len() - macronode.len() - 1)
+                                .get(mlmo2.len() - macronode.len() - 1)
                                 .expect("Left-micro omnitig misses macronode."),
-                            mrmo2.iter().next().expect("Right-micro omnitig is empty."),
+                            mrmo2.get(0).expect("Right-micro omnitig is empty."),
                             "Left-micro and right-micro omnitigs do not match: {:?} -> {:?} via {:?}", mlmo2, mrmo2, macronode
                         );
                         assert_eq!(
                             mlmo2.iter().last().expect("Left-micro omnitig is empty."),
                             mrmo2
-                                .iter()
-                                .nth(macronode.len())
+                                .get(macronode.len())
                                 .expect("Right-micro omnitig misses macronode."),
                             "Left-micro and right-micro omnitigs do not match."
                         );
-                        result.push(VecEdgeWalk::<Graph>::from(
+                        result.push(
                             mlmo2
                                 .iter()
                                 .take(mlmo2.len() - macronode.len() - 1)
                                 .chain(mrmo2.iter())
                                 .copied()
                                 .collect::<Vec<_>>(),
-                        ));
+                        );
                         has_microtig = true;
                     }
                 }
@@ -207,7 +202,7 @@ fn extend_right_micro_omnitig<Graph: StaticGraph>(
     }
 
     if non_trivial {
-        Some(rmo.into())
+        Some(rmo)
     } else {
         None
     }
@@ -263,7 +258,7 @@ fn extend_left_micro_omnitig<Graph: StaticGraph>(
 
     if non_trivial {
         lmo.reverse();
-        Some(lmo.into())
+        Some(lmo)
     } else {
         None
     }

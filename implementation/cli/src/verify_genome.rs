@@ -1,8 +1,8 @@
 use crate::CliOptions;
 use clap::Clap;
-use compact_genome::implementation::vector_genome_impl::VectorGenome;
-use compact_genome::interface::Genome;
-use std::iter::FromIterator;
+use compact_genome::implementation::DefaultGenome;
+use compact_genome::interface::sequence::GenomeSequence;
+use traitsequence::interface::Sequence;
 
 #[derive(Clap)]
 pub struct VerifyGenomeCommand {
@@ -21,7 +21,7 @@ error_chain! {
             display("the genome has a hole")
         }
 
-        GenomeHasNonUTF8Characters {
+        GenomeHasNonUtf8Characters {
             description("the genome contains characters that are not valid UTF-8")
             display("the genome contains characters that are not valid UTF-8")
         }
@@ -60,8 +60,8 @@ pub(crate) fn verify_genome(
     let mut records_found = 0;
     for record in records {
         records_found += 1;
-        let genome = match record {
-            Ok(record) => VectorGenome::from_iter(record.seq()),
+        let genome: DefaultGenome = match record {
+            Ok(record) => record.seq().iter().copied().collect(),
             Err(err) => {
                 error!("Error reading genome file");
                 return Err(err.into());
@@ -81,7 +81,7 @@ pub(crate) fn verify_genome(
             }
             Err(_) => {
                 error!("Genome contains a hole: characters that are not valid UTF-8");
-                return Err(Error::from(ErrorKind::GenomeHasNonUTF8Characters).into());
+                return Err(Error::from(ErrorKind::GenomeHasNonUtf8Characters).into());
             }
         }
 

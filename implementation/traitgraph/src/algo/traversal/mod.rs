@@ -186,7 +186,7 @@ impl<
 
                 if !forbidden_subgraph.is_node_forbidden(neighbor.node_id) {
                     let rank_entry = &mut self.rank[neighbor.node_id.as_usize()];
-                    if *rank_entry == None.into() {
+                    if rank_entry.is_none() {
                         *rank_entry = self.current_rank.into();
                         self.current_rank = self.current_rank + 1;
                         QueueStrategy::push(&mut self.queue, neighbor.node_id);
@@ -293,13 +293,13 @@ impl<
                 self.current_rank = self.current_rank + 1;
 
                 return Some(first);
-            } else if *rank_entry == None.into() {
+            } else if rank_entry.is_none() {
                 self.queue.push_back(first);
                 *rank_entry = Self::explored_rank();
 
                 for neighbor in NeighborStrategy::neighbor_iterator(graph, first) {
                     let rank_entry = &mut self.rank[neighbor.node_id.as_usize()];
-                    if *rank_entry == None.into() {
+                    if rank_entry.is_none() {
                         self.queue.push_back(neighbor.node_id);
                     }
                 }

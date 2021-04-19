@@ -7,7 +7,7 @@ use genome_graph::bigraph::traitgraph::algo::components::{
 use genome_graph::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph;
 use genome_graph::bigraph::traitgraph::interface::GraphBase;
 use genome_graph::io::wtdbg2::build_wtdbg2_unitigs_graph;
-use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2Graph};
+use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::unitigs::EdgeUnitigs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -19,7 +19,7 @@ pub struct ComputeUnitigsCommand {
         short,
         long,
         default_value = "bcalm2",
-        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file."
+        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file. If dot, then the input is a .dot file and the output is a list of sequences of node ids."
     )]
     pub file_format: String,
 
@@ -48,7 +48,6 @@ pub struct ComputeUnitigsCommand {
     pub latex: Option<String>,
 
     #[clap(
-        short,
         long,
         about = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
     )]
@@ -118,7 +117,7 @@ pub(crate) fn compute_unitigs(
     subcommand: &ComputeUnitigsCommand,
 ) -> crate::Result<()> {
     let mut latex_file = if let Some(latex_file_name) = &subcommand.latex {
-        info!("Creating/truncating LaTeX file");
+        info!("Creating/truncating LaTeX file '{}'", latex_file_name);
         Some(std::io::BufWriter::new(std::fs::File::create(
             latex_file_name,
         )?))
@@ -264,6 +263,33 @@ pub(crate) fn compute_unitigs(
                     &subcommand.output,
                 )?;
             }
+        }
+
+        "dot" => {
+            let dot_file = if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".dot"))
+            {
+                file
+            } else {
+                bail!("Missing .dot file")
+            };
+            info!("Reading bigraph from '{}'", dot_file);
+
+            let genome_graph: PetWtdbg2DotGraph =
+                genome_graph::io::wtdbg2::dot::read_graph_from_wtdbg2_dot_from_file(dot_file)?;
+
+            info!("Computing maximal unitigs");
+            let mut unitigs = EdgeUnitigs::compute(&genome_graph);
+            info!("Removing reverse complements");
+            unitigs.remove_reverse_complements(&genome_graph);
+
+            print_unitig_statistics(&unitigs, &mut latex_file)?;
+
+            info!("Storing unitigs as node ids to '{}'", subcommand.output);
+            genome_graph::io::wtdbg2::dot::write_dot_contigs_as_wtdbg2_node_ids_to_file(
+                &genome_graph,
+                unitigs.iter(),
+                &subcommand.output,
+            )?;
         }
 
         unknown => bail!("Unknown file format: {}", unknown),

@@ -1,0 +1,6 @@
+name: simlord
+channels:
+        - conda-forge
+        - bioconda
+dependencies:
+        - simlord==1.0.4

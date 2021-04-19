@@ -16,19 +16,1620 @@ experiments:
       filter_retain: "NC_002978.6"
       algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
 
-    #"GRCh38_latest":
-    #  k: [51]
-    #  bcalm2_abundance_min: [1]
-    #  circularised: [true]
-    #  filter_retain: "NC_000010.11"
-    #  algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-    #  url: "ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/annotation/GRCh38_latest/refseq_identifiers/GRCh38_latest_genomic.fna.gz"
+column_templates:
+  default_columns: &default_columns
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
 
-  wtdbg2:
-    "C.elegans":
-      urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
-      reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
+  default_columns_with_flye: &default_columns_with_flye
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+    - shortname: "flye"
+      select_assembler: "flye"
+
+  hifi_columns: &hifi_columns
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+            "-x": "ccs"
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+            "-x": "ccs"
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          cli_arguments:
+            "--pacbio-hifi": True
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+
+  wide_comparison_columns: &wide_comparison_columns
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+    - shortname: "flye"
+      select_assembler: "flye"
+
+  contigbreaker_columns: &contigbreaker_columns
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+    - shortname: "w2 brk"
+      select_assembler:
+        wtdbg2:
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "YV sfa brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+    - shortname: "w2 sfa brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "YV brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+    - shortname: "frg YV brk"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "flye"
+      select_assembler:
+        flye:
+    - shortname: "flye brk"
+      select_assembler:
+        flye:
+      select_postprocessor:
+        contigbreaker:
+
+  contigbreaker_columns: &contigbreaker_hifi_columns
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+    - shortname: "w2 brk"
+      select_assembler:
+        wtdbg2:
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "YV sfa brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+    - shortname: "w2 sfa brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+    - shortname: "YV brk"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "wtdbg2-inject-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "frg YV"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+    - shortname: "frg YV brk"
+      select_assembler:
+        wtdbg2:
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": True
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "flye"
+      select_assembler:
+        flye:
+    - shortname: "flye brk"
+      select_assembler:
+        flye:
+      select_postprocessor:
+        contigbreaker:
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+    - shortname: "hifiasm brk"
+      select_assembler:
+        hifiasm:
+      select_postprocessor:
+        contigbreaker:
+
+  hifiasm_trivial_omnitigs_columns: &hifiasm_trivial_omnitigs_columns
+    - shortname: "hifiasm"
+      select_assembler: "hifiasm"
+      select_postprocessor: "none"
+    - shortname: "hifiasm YV"
+      select_assembler: "hifiasm"
+      select_postprocessor: "gfa_trivial_omnitigs"
+
+  fragment_injection_step_columns: &fragment_injection_step_columns
+    - shortname: "wtdbg2"
+      select_assembler: "wtdbg2"
+    - shortname: "w2 frg1 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 1
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 1
+    - shortname: "w2 frg2 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 2
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 2
+    - shortname: "w2 frg3 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 3
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 3
+    - shortname: "w2 frg4 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 4
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 4
+    - shortname: "w2 frg5 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 5
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 5
+    - shortname: "w2 frg6 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 6
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 6
+    - shortname: "w2 frg7 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 7
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 7
+    - shortname: "w2 frg8 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 8
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 8
+    - shortname: "w2 frg9 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 9
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 9
+    - shortname: "w2 frg10 YV"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--fragment-correction-steps": 10
+          fragment_injections:
+            "wtdbg2-inject-fragment-trivial-omnitigs": 10
+
+reports:
+
+  "sim_hifi":
+    argument_matrix:
+      genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            cli_arguments:
+              "--coverage": "15"
+    columns: *hifi_columns
+
+  "sim_hifi_contigbreaker":
+    argument_matrix:
+      genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            cli_arguments:
+              "--coverage": "15"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+        flye:
+          cli_arguments:
+            "--pacbio-hifi": True
+    columns: *contigbreaker_hifi_columns
+
+  "sim_hifi_fragment_correction_steps":
+    argument_matrix:
+      genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            cli_arguments:
+              "--coverage": "15"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    columns: *fragment_injection_step_columns
+
+  "sim_hifi_hifiasm_trivial_omnitigs":
+    argument_matrix:
+      genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            cli_arguments:
+              "--coverage": "15"
+      assembler: "hifiasm"
+      postprocessor:
+        "none": True
+        "gfa_trivial_omnitigs": True
+    columns: *hifiasm_trivial_omnitigs_columns
+
+  "sim_hifi_with_human":
+    argument_matrix:
+      genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            cli_arguments:
+              "--coverage": "15"
+    columns: *hifi_columns
+
+  "sim_hifi_fragment_correction_steps_with_human":
+    argument_matrix:
+      genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
+      read_simulator:
+        - "bbmap_hifi"
+        - simlord:
+            cli_arguments:
+              "--coverage": "15"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    columns: *fragment_injection_step_columns
+
+  "Flye_comparison":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+    columns:
+      - shortname: "w2 sfa"
+        select_assembler:
+          wtdbg2:
+            cli_arguments:
+              "--skip-fragment-assembly": True
+      - shortname: "YV sfa"
+        select_assembler:
+          wtdbg2:
+            cli_arguments:
+              "--skip-fragment-assembly": True
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "YV"
+        select_assembler:
+          wtdbg2:
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "wtdbg2"
+        select_assembler:
+          wtdbg2:
+      - shortname: "flye raw"
+        select_assembler:
+          flye:
+            cli_arguments:
+              "--pacbio-raw": True
+      - shortname: "flye corr"
+        select_assembler:
+          flye:
+            cli_arguments:
+              "--pacbio-corr": True
+
+  "contigbreaker_references":
+    argument_matrix:
+      assembler: "reference"
+      postprocessor:
+        contigbreaker:
+          "--min-surrounding-aligned-bases": 0
+    columns:
+      - shortname: "C.e."
+        genome: "C.elegans"
+      - shortname: "A.t."
+        genome: "A.thaliana"
+      - shortname: "D.m.A4"
+        genome: "D.melanogaster_A4"
+      - shortname: "D.m.ISO1"
+        genome: "D.melanogaster_ISO1"
+      - shortname: "Ming."
+        genome: "Minghui63"
+
+  "verify_quast":
+    argument_matrix:
+      assembler: "reference"
+    columns:
+      - shortname: "C.e."
+        genome: "C.elegans"
+      - shortname: "A.t."
+        genome: "A.thaliana"
+      - shortname: "D.m.A4"
+        genome: "D.melanogaster_A4"
+      - shortname: "D.m.ISO1"
+        genome: "D.melanogaster_ISO1"
+      - shortname: "Ming."
+        genome: "Minghui63"
+      - shortname: "HG002"
+        genome: "HG002"
+
+  "C.elegans":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+            "-s": [0.02, 0.05, 0.1]
+        flye:
+          cli_arguments:
+            - "--pacbio-raw": True
+            - "--pacbio-corr": True
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
+    columns: *default_columns_with_flye
+
+  "C.elegans_plain":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+        flye:
+          cli_arguments:
+            - "--pacbio-corr": True
+    columns: *default_columns_with_flye
+
+  "C.elegans_fragment_correction_steps":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+    columns: *fragment_injection_step_columns
+
+  "C.elegans_contigbreaker":
+    argument_matrix:
+      genome: "C.elegans"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+        flye:
+          cli_arguments:
+            - "--pacbio-corr": True
+    columns: *contigbreaker_columns
+
+  "A.thaliana":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "sq"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
+    columns: *default_columns_with_flye
+
+  "A.thaliana_plain":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "sq"
+        flye:
+          cli_arguments:
+            - "--pacbio-raw": True
+    columns: *default_columns_with_flye
+
+  "A.thaliana_fragment_correction_steps":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "sq"
+    columns: *fragment_injection_step_columns
+
+  "A.thaliana_contigbreaker":
+    argument_matrix:
+      genome: "A.thaliana"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "sq"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
+    columns: *contigbreaker_columns
+
+  "D.melanogaster_A4":
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
+    columns: *default_columns_with_flye
+
+  "D.melanogaster_A4_plain":
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+        flye:
+          cli_arguments:
+            - "--pacbio-raw": True
+    columns: *default_columns_with_flye
+
+  "D.melanogaster_A4_fragment_correction_steps":
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+    columns: *fragment_injection_step_columns
+
+  "D.melanogaster_A4_contigbreaker":
+    argument_matrix:
+      genome: "D.melanogaster_A4"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "rs"
+        flye:
+          cli_arguments:
+            "--pacbio-raw": True
+    columns: *contigbreaker_columns
+
+  "D.melanogaster_ISO1":
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ont"
+        flye:
+          cli_arguments:
+            "--nano-raw": True
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
+    columns: *default_columns_with_flye
+
+  "D.melanogaster_ISO1_plain":
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ont"
+        flye:
+          cli_arguments:
+            - "--nano-raw": True
+    columns: *default_columns_with_flye
+
+  "D.melanogaster_ISO1_fragment_correction_steps":
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ont"
+    columns: *fragment_injection_step_columns
+
+  "D.melanogaster_ISO1_contigbreaker":
+    argument_matrix:
+      genome: "D.melanogaster_ISO1"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ont"
+        flye:
+          cli_arguments:
+            "--nano-raw": True
+    columns: *contigbreaker_columns
+
+  "Minghui63":
+    argument_matrix:
+      genome: "Minghui63"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            - "-x": "rs"
+            - "-x": "sq"
+            - "-x": "ccs"
+              "-s": [0.4, 0.5, 0.7, 0.95]
+        flye:
+          cli_arguments:
+            "--pacbio-hifi": [True]
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
+    columns: *hifi_columns
+
+  "Minghui63_fragment_correction_steps":
+    argument_matrix:
+      genome: "Minghui63"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    columns: *fragment_injection_step_columns
+
+  "Minghui63_contigbreaker":
+    argument_matrix:
+      genome: "Minghui63"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            - "-x": "ccs"
+        flye:
+          cli_arguments:
+            - "--pacbio-hifi": True
+    columns: *contigbreaker_hifi_columns
+
+  "Minghui63_hifiasm_trivial_omnitigs":
+    argument_matrix:
+      genome: "Minghui63"
+      assembler: "hifiasm"
+      postprocessor:
+        "none": True
+        "gfa_trivial_omnitigs": True
+    columns: *hifiasm_trivial_omnitigs_columns
+
+  "HG002":
+    argument_matrix:
+      genome: "HG002"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": ["rs", "sq", "ccs"]
+        flye:
+          cli_arguments:
+            - "--pacbio-raw": [True]
+      read_simulator:
+        - null
+        - perfect:
+            cli_arguments:
+              "--read-length-interval": "15000 25000"
+              "--coverage": 20
+              "--distribution": "cut"
+    columns: *default_columns_with_flye
+
+  "HG002_ratatosk":
+    argument_matrix:
+      genome: "HG002_ratatosk"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            - "-x": ["rs", "sq", "ccs"]
+    columns:
+      - shortname: "Y-to-V sfa"
+        select_assembler:
+          wtdbg2:
+            cli_arguments:
+              "--skip-fragment-assembly": True
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "w2 sfa"
+        select_assembler:
+          wtdbg2:
+            cli_arguments:
+              "--skip-fragment-assembly": True
+      - shortname: "YV"
+        select_assembler:
+          wtdbg2:
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "frg YV"
+        select_assembler:
+          wtdbg2:
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
+      - shortname: "w2"
+        select_assembler:
+          wtdbg2:
+      - shortname: "flye corr"
+        select_assembler:
+          flye:
+            cli_arguments:
+              "--pacbio-corr": True
+      - shortname: "flye hifi"
+        select_assembler:
+          flye:
+            cli_arguments:
+              "--pacbio-hifi": True
+
+  "HG002_HiFi":
+    argument_matrix:
+      genome: "HG002_HiFi"
+      assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": ["rs", "sq", "ccs"]
+        flye:
+          cli_arguments:
+            "--pacbio-hifi": [True]
+    columns: *hifi_columns
+
+  "E.coli":
+    argument_matrix:
+      genome: "E.coli"
+    columns:
+      - shortname: "w2 rs"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+      - shortname: "YV rs"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "fYV rs"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
+      - shortname: "flye raw"
+        assembler:
+          flye:
+            cli_arguments:
+              "--pacbio-raw": True
+      - shortname: "ha"
+        assembler: "hifiasm"
+        read_simulator: "bbmap_hifi"
+
+  "wtdbg2_deep_analysis":
+    argument_matrix:
+      genome: "E.coli"
+      read_simulator:
+        perfect:
+          cli_arguments:
+            "--read-length-interval": "15000 25000"
+            "--coverage": 20
+            "--distribution": "cut"
+    columns:
+      - shortname: "w2 rs"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+      - shortname: "w2 rs YV"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "w2 rs frg YV"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "rs"
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
+      - shortname: "w2 ccs"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "ccs"
+      - shortname: "w2 ccs YV"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "ccs"
+            injections:
+              "wtdbg2-inject-trivial-omnitigs": True
+      - shortname: "w2 ccs frg YV"
+        assembler:
+          wtdbg2:
+            cli_arguments:
+              "-x": "ccs"
+            fragment_injections:
+              "wtdbg2-inject-fragment-trivial-omnitigs": True
+
+aggregated_reports:
+  "aggregated":
+    reports:
+      - "C.elegans_plain"
+      - "A.thaliana_plain"
+      - "D.melanogaster_A4_plain"
+      - "D.melanogaster_ISO1_plain"
+
+  "aggregated_fragment_correction_steps":
+    reports:
+      - "C.elegans_fragment_correction_steps"
+      - "A.thaliana_fragment_correction_steps"
+      - "D.melanogaster_A4_fragment_correction_steps"
+      - "D.melanogaster_ISO1_fragment_correction_steps"
+
+  "aggregated_contigbreaker":
+    reports:
+      - "C.elegans_contigbreaker"
+      - "A.thaliana_contigbreaker"
+      - "D.melanogaster_A4_contigbreaker"
+      - "D.melanogaster_ISO1_contigbreaker"
+      - "Minghui63_contigbreaker"
+
+  "aggregated_sim_hifi":
+    reports:
+      - "sim_hifi"
+
+  "aggregated_sim_hifi_fragment_correction_steps":
+    reports:
+      - "sim_hifi_fragment_correction_steps"
+
+  "aggregated_contigbreaker_sim_hifi":
+    reports:
+      - "sim_hifi_contigbreaker"
+      - "Minghui63_contigbreaker"
+
+  "aggregated_hifiasm_trivial_omnitigs":
+    reports:
+      - "sim_hifi_hifiasm_trivial_omnitigs"
+      - "Minghui63_hifiasm_trivial_omnitigs"
+
+
+genomes:
+  "E.coli":
+    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11317948/SRR11317948.1"]
+    format: "sra"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
+    genome_length: 5594605
+
+  "C.elegans":
+    urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
+    reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
+    genome_length: 100000000
+
+  "A.thaliana":
+    urls: ["https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam", "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam"]
+    reference: "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/Assembly/Arabidopsis_assembly.fasta"
+    genome_length: 125000000
+
+  "D.melanogaster_A4":
+    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-7/SRR5439404/SRR5439404.1"]
+    format: "sra"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/300/595/GCA_002300595.1_Dmel_A4_1.0/GCA_002300595.1_Dmel_A4_1.0_genomic.fna.gz"
+    genome_length: 144000000
+
+  "D.melanogaster_ISO1":
+    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-13/SRR6702603/SRR6702603.2"]
+    format: "sra"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
+    genome_length: 144000000
+
+  "Minghui63":  
+    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1018837/SRR10188372.1"]
+    format: "sra"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/623/365/GCA_001623365.2_MH63RS2/GCA_001623365.2_MH63RS2_genomic.fna.gz"
+    genome_length: 387000000
+    assembly_time_factor: 2
+    assembly_mem_factor: 1
+
+  "HG002_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
+    genome_length: 3100000000
+    assembly_time_factor: 4
+    assembly_mem_factor: 4
+    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
+    format: "sra"
+
+  "HG002":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
+    genome_length: 3100000000
+    assembly_time_factor: 4
+    assembly_mem_factor: 4
+    urls:
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140612_020550_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140612_082500_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140614_092436_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140614_154356_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141004_003611_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141004_065519_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141007_105101_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141007_170730_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141007_232646_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141008_054919_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141008_121115_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141008_135459_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141008_201617_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141012_032032_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141012_093908_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141012_160036_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141114_203257_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141115_025211_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141118_043300_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141118_105052_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141118_171015_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141118_232934_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141119_234821_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141120_060729_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141120_122856_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141120_184610_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141121_041751_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141121_103624_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141121_165532_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141121_231437_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141124_065146_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141124_131042_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141124_192948_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141125_014852_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141125_080805_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141125_142738_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141126_040754_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141126_102554_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141126_164454_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141126_230423_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141129_070930_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141129_132748_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141129_194859_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141130_020554_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141130_082727_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141130_144724_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141202_060128_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141202_122138_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141202_184002_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141203_010033_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141203_072135_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141203_134235_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141203_200625_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141204_022607_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141207_095219_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141207_160908_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141207_222838_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141208_044734_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141210_105204_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141210_171117_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141211_043339_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141211_104910_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141222_190327_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141223_012647_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141223_074153_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141224_133842_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141224_220915_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141225_043134_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141227_203142_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141228_025602_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141228_092303_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141228_154532_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141229_001808_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141229_064248_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141229_130433_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141229_192903_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141230_185412_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141231_011325_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141231_073633_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m141231_135355_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150104_052356_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150104_114301_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150104_180420_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150105_002357_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150105_064027_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150105_125953_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150105_192231_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150106_014109_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150106_030341_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150106_092507_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150106_154558_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150107_042351_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150107_103943_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150107_232026_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150109_220407_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150110_042518_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150110_104156_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150110_170014_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150110_232147_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150111_053828_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150111_120318_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150111_182307_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150115_071022_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150115_132713_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150115_194636_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150116_020812_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150116_082508_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150116_144703_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_002905_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_004822_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_064521_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_070331_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_130130_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_131941_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_191806_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150121_193615_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150122_013411_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150122_015221_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150122_075028_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150122_080841_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150123_002317_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150123_063937_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150123_125557_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150123_185255_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150123_191227_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_010846_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_012843_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_072937_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_074513_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_135118_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_140408_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_194017_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_201043_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150124_201759_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_015640_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_023225_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_045059_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_082021_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_085113_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_110521_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_144047_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_172210_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_205714_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150125_233800_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150126_031811_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150126_055426_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150126_093705_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150126_121037_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150126_183011_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150127_004314_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_030257_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_031217_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_092208_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_092719_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_154132_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_154506_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_215808_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150129_220045_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150130_022735_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150130_041419_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150130_084316_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150130_103025_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150130_145930_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150130_165055_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150130_211544_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_015113_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_033204_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_080744_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_095117_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_142353_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_161359_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_204023_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150131_222943_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150201_025636_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150201_070534_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150201_091546_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150201_132016_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150201_153803_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150201_193636_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150201_215412_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_015256_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_063008_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_071750_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_080928_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_124445_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_133241_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_142836_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_190108_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_194911_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150202_205059_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_011715_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_020544_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_030655_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_073346_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_082154_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_135249_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_144059_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_201518_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150203_210324_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150204_023115_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150204_031927_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150204_103948_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150204_165901_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150204_231815_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150205_053738_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150205_120032_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150205_181553_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150206_002524_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150206_064449_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150206_130655_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150207_003049_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150207_065017_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150207_130915_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150207_192829_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150208_014741_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150208_080654_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150208_142859_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150208_204533_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150209_050949_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150209_112726_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150209_174639_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150210_000552_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150210_062505_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150210_124418_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150211_010455_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150211_072408_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150211_134321_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150211_200234_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_001104_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_022147_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_063017_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_084112_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_124930_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_150358_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_190843_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150212_211940_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150213_054428_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150213_120132_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150215_025731_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150215_061036_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150215_091401_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150215_122941_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150215_153747_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150215_185239_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150215_215335_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150216_011055_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150216_062108_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150216_123755_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150216_185716_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150217_011615_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150217_073528_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150217_135441_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150217_201729_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150218_023507_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150219_010608_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150219_072459_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150219_134412_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150219_200325_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150220_022242_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150220_084151_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150220_150351_42163.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_003109_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_004056_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_065149_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_065910_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_131133_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_131823_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_193226_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150221_193749_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150222_015316_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150222_015652_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150222_081345_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150222_081617_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150222_143834_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150222_204301_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150222_205428_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150223_051122_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150223_052224_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150223_113024_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150223_114004_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150223_174943_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150223_175917_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_000927_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_001830_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_062910_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_063755_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_124902_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_125656_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_191026_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150224_192013_42156.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150225_012540_42177.subreads.fasta.gz"
+      - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m150225_013529_42156.subreads.fasta.gz"
+    checksums:
+      - "a1e5c84a313463861c0098a0729b2a97"
+      - "41f5bae5d6d879b369d82648cb34c483"
+      - "2b4d8da7856ea10f023cf801f8a796c8"
+      - "257c68504656238f0a3b968ef88815e6"
+      - "12b8214b14da6b6df5a8038e2f8c51fd"
+      - "efe6c0f07ad13a0dc102d3201786581d"
+      - "d031c4ff02a3bc8982429ebb15151baa"
+      - "b93509751ebcd0fed5ab0ba5c85f03fa"
+      - "04fa64847d2196fbf313d34d82b46349"
+      - "f0f9a8ec82abc976e52f4023640d7e81"
+      - "9d3eef52fcf2d2e1cb2ada483b45c163"
+      - "22fcfd13beb9ca911a022bc31b6cca20"
+      - "764a7dc5dcb3bba25f1397e11d65e551"
+      - "d556dd2786ffcb51468040dbe10d62db"
+      - "7aeb09f1aef8516606801a27312327d2"
+      - "0312b80742af0e2d82ad5c92b2197088"
+      - "cc505597d39b430472be0e3628b4b6d6"
+      - "41029a88f1a565c2a0b62202ddd05a29"
+      - "20c15d414a9d3eef609b5bf77ee38e93"
+      - "ca9e16402a18bb4182612cbb56337297"
+      - "a4964cf7562216c20973e7eeafb1bd8a"
+      - "6c5fee77eccc4f5b1d0b7ce8cac6143c"
+      - "27e7273ae366fd68ca76bb2edbe43b40"
+      - "20974bf9a5f496725111449526f8ca06"
+      - "b0ff215ca5ad7bfc7b75d32871e8ec2f"
+      - "ed7b36b28e7c03a0c4d2cb18e0d2af54"
+      - "7f290fc789efbc3a71b88684845147e5"
+      - "b4648e79c77e049692290fd8357026e1"
+      - "9ae613ca82815efe676d2b802af114aa"
+      - "ad4b4b37c314f23143f228e74f10a686"
+      - "241df9608198989f63b7c7afa789481d"
+      - "382a0ed966d31d6d0c1b92c24bdad745"
+      - "1d64725e40c5fbbfae5b5d73575ea8ea"
+      - "fe9db1f74501853f99f75e71869305ce"
+      - "09c7b1c8e520c43f13b4b316da8c1d5f"
+      - "8861ee6614419b6d93b0e27e879924b6"
+      - "cb829e71df94d9dfc6bb5c7fa9cf3168"
+      - "c003e3cc2db65501204c5840c629d004"
+      - "dbf68b7dc7a486d956c2ff075f6e9444"
+      - "f42dd588ddb38c471e500eaaaf588044"
+      - "67f506e25f92ef3ac64d52bec2a1f24d"
+      - "1371be57fcb4e806d5189c84f19b2727"
+      - "b5f280c8dabdc294e96ba7c61b7b80d9"
+      - "c16aa8ff316ec22ac0db55671cb31963"
+      - "db944209c886f40581f649948fd716cf"
+      - "3254492d79d6bdfa48a96a86299a59e3"
+      - "4b2cfc47d394cb36fe5a08cabf91258f"
+      - "f0e3702c0394ee62289b7953c21afc67"
+      - "3ea268ca57bf016d593f4f5db5c1d5a2"
+      - "009a37d81b1819aa70bd27fef0bc5ca6"
+      - "475356a846654a476273cdde0daaae4d"
+      - "b3bd44300cbf8cf5d10824bea24b9d66"
+      - "e684712d8ee8e98bc8480666296f137c"
+      - "d92bf0c094f85c9a8f24a7513f34f458"
+      - "6c16bf48b18e5c5de5955c93f6218e61"
+      - "77a5a4fe3d073eb99182426bbafe1e3d"
+      - "43dbf825a270666f856f214b740bb8a0"
+      - "bea72fb478c21e4cf9b0e35c2b026571"
+      - "91a11a3cfdcd00f090600511ac559778"
+      - "632e06220d585ec0ba68b2ae4a8cdca7"
+      - "6bcc5dd4487f2c79784aa50a05339ab4"
+      - "654e5f5bd1cf9c65339a8f567b867aa6"
+      - "c37fb16e26262aaeaab4d90525f5f79c"
+      - "0f4fc717820306efe739be3af2d023ff"
+      - "f762f0a601c7edad168595685844141f"
+      - "e739a65d2c352fc712c93cda40472eb0"
+      - "6f03e98d5d6b4e6edc7f01bfc61b738e"
+      - "499de5f8552c28324ad9e98a3c1e05df"
+      - "d7a04b1a5ecb29a919e5977044853eea"
+      - "8beadc06bd536f757a3ca1ca96318f1a"
+      - "49804c85c2e53a34fdfca113f63cfef9"
+      - "36aae5fa36a799d9b4d1ea7792f6b8bb"
+      - "149776936da192690ec2d578cd618413"
+      - "dfa8ec7af876cab026072d418bceda0c"
+      - "b7628385ed85164cb7537c54f2068479"
+      - "d3243dd2f77c9c976ecaebeebd453c91"
+      - "24e0b814be4c3344c0aa7f8bb4992cc9"
+      - "22f92794680fc76ad49c71c3e9a5f922"
+      - "7152b5a13a2ceb5a62f1585490c8b428"
+      - "6722adbcadf24e2e255027567b984de7"
+      - "66e9a26c912994d0ea055495057caa9c"
+      - "217306bc4f9c0a2ef154c1020633fc75"
+      - "f18ed883fe21bb103925bcefaac0f74c"
+      - "1b371d2fa3f832ee5456c1199e87e7dc"
+      - "3b5c90b5c5ad672c3377eeb344947082"
+      - "760ecf9bf5fffb29f3e5223b44b26ae3"
+      - "cafe7bf73874e36aad03944eb116c916"
+      - "a6afb9fb17ca4a3af4b803fa66ae6e97"
+      - "909c0c070d5f00a0bd822747de850599"
+      - "6b2f0e63d6da414c31b16adf5b8135a6"
+      - "9c8d49323a041e4c5b0daafda068d5f2"
+      - "cc635f834901c4d5ebe3504c38782535"
+      - "3462bd78a16ff6b4bdfb95af3b2585ad"
+      - "0eb0b5e614b20adbc616ee7fccdb619b"
+      - "f308e7596f5d65ef5386ba81e616caba"
+      - "e07f5f982ad69e4ba576b2b2fda81e94"
+      - "d572b2a4acd3d46b07282e2d31655766"
+      - "5dd3d30687ba5824b48a01fbcbe25d5d"
+      - "42da8aad4acdc84943a9267cfdf11e1e"
+      - "2c1996c1b9dcde84c2fc41bf95ee5563"
+      - "003a29881e360dcfe8d568cb4cb00bc6"
+      - "b65be2126a30a3819c243b675afdbe84"
+      - "2de1cdc5a9153260a33cf1aa0da2e3c9"
+      - "3696b3b5638ce75c864eeaf1896cc30d"
+      - "fd6bc8eb0c147de6c89835d6b9a62088"
+      - "c7702944d84be6c47b46872fbb2b6820"
+      - "f15dba2da4cc1a9245daa7189a9c6c4b"
+      - "cf0e3be392324f5652c887a8d7ea4a97"
+      - "fde8613d633c21bf625b37ef94604b6d"
+      - "5d3b0a4a3da8ffd4e930ff6c51d61990"
+      - "5dbb42dbe33594456e30cd5a6d8ed60b"
+      - "4efa07f76ed1f42f1ebf03afc11c2bb2"
+      - "7a5dccfd66047bbabb3955922632d13a"
+      - "1d5fc59bea30c68ae9dc5d4fbbc55169"
+      - "355c259705a482f37bd6fea0a85e330a"
+      - "e0645674d0bc204ad1f8590d1fb2af00"
+      - "4e3e14bbaeaab4ebc6ab805af70bfe43"
+      - "e1d233f78f563a36088265c3c610fac1"
+      - "31e3ff1a459fb76f2f4c5571b1c662df"
+      - "d970446841bc9f09b5657fdabfe3cc70"
+      - "1d405773a1c91da6118bb1dd8ca1f9d1"
+      - "6910228dabeefec647cab456e064ed4c"
+      - "874fffbda23abdd698b2b8e03d95e04d"
+      - "16f410dada1de88d149f4e586542b296"
+      - "78f6bf7b8c09ec7e524c6618e0aecc05"
+      - "9e51d0c453b455467bf44996ff6a9574"
+      - "c0992dd85f19017b28d1116430eca4ba"
+      - "b323f712bf79d24b5eb48a59e4b8b6ea"
+      - "aa3379d8a3a49d1aa5a57c542528ea73"
+      - "b2b3d8446c033b5c3af7387d104b74d9"
+      - "80334fa0e8a86c1a4aeff5a52ad852d6"
+      - "90345432a304446d158c939655be72b4"
+      - "c8b59d98aeda952b2f4267328e56bd39"
+      - "195e26766ddedd7993f9490407bacaf0"
+      - "02d4bc5c793f7266e5cd7b1178be530c"
+      - "750ed28b50b0ab500b650ddebf7a2458"
+      - "41bbc86d9114d606fbc36b277548754f"
+      - "04273fca515b08610078968519533a39"
+      - "93448d9db18ea406d7bf54df9e4296b9"
+      - "4a55075bb994cce12419c9e0778cbe9a"
+      - "9435d730857e01a45b23146a097c3072"
+      - "fda5cb001c472b3b3865a750da1af036"
+      - "6ad53f4e13b59dfd6d4f06a2497ec260"
+      - "eaa7aaf297f59385bcbdf3a009d338a3"
+      - "56bbfe78df63347504ef8a1cb240b219"
+      - "c5d47d0c0458ca4a69b11a49fd92af8b"
+      - "d0f755202b305a61bd4e2f0261d312da"
+      - "efaae71f7317fb7ae2810ef39676b6c2"
+      - "1c63b1b56a22869002058004fd97778d"
+      - "328b2b42fed9de8f41de5b099ae8014d"
+      - "03b587e7ffb7beac0f45ecf7e1b10468"
+      - "541d4c3beb1bba4c74e6cbc9cb99372a"
+      - "a44f3a1db01eaa0d5a946d55bcf7b869"
+      - "fbb0b6472916225816f39e9f79d9d3cf"
+      - "68f73b8610170a195b5bc809ea0265d1"
+      - "bb7bde8f040d5e5933af47ffc5c4b40e"
+      - "20919a54d8f93058379fdd2ce722aece"
+      - "28f9f79630afac6f2166b895cba016cc"
+      - "b6c012afe0e3d3e6348f3dabda216773"
+      - "4ce7563b76f5ff6cdd43defea3681a26"
+      - "48a33ea0605237af8c038b216c591b57"
+      - "c7e7be82ed791fb4c033a13ba55de425"
+      - "ecd3506114508e7bd67d1832e6c33b70"
+      - "5a2283685fccec4a63a390efe007b444"
+      - "d47385f581811b18c0de9688a849ab0c"
+      - "b2942a4697a48c0043f092612020dbe9"
+      - "2cdd77affc47943af51a74633db550a2"
+      - "e835ec773c41f8941d32ec81b008de2c"
+      - "a55e01b87925bd87d8bf94fd0e293c09"
+      - "6a578347b3ff90fa346ddd665c7c0f3f"
+      - "a35baf773d24604a7455eeea14d09072"
+      - "5f76c4e02eb70138d59cb356257f2703"
+      - "26a20d6f695303a574c5f56f4a92514d"
+      - "4e2ee8a42c8d9a12257ac8dd47ea7a60"
+      - "787ad8dc847a672d1492a67510907e48"
+      - "f3da27b9a4dcd3c6b85e4fc2e0c51789"
+      - "a2ad41df2f77c884584fdfd970d3187a"
+      - "3c11fd1c54921616492097e9a28ccc3d"
+      - "9f546ce069ed8729423ff67e8527d3ec"
+      - "0b85e8befebb27139ca9ea23d5f6394a"
+      - "581538158b0c3020a3dcfd109a7eb39a"
+      - "8d939a616f8e512421033370cb4cfba2"
+      - "ebe483579b356c834a04edcf4aa5d790"
+      - "4f9b582f979932907fee6360dfb56344"
+      - "829bd67469ac1f5c7297e2227cba3d35"
+      - "ad4d74cb400384e149bb0bc0ee61cb15"
+      - "ff416db49c80529fce8148b79825f059"
+      - "720c4e11eb89f7f921657876f4656b1e"
+      - "dde1eeb908e5805177db73d194632b9e"
+      - "b511629a8882bb6ee8274de3af06a63e"
+      - "b01f5a6b925c4cbf23142b8403c6a10d"
+      - "343edfe9e66063ba7e84e67c26e7ed9e"
+      - "ca37d79e9048d632656a96bb729f8047"
+      - "b553f024894e1309e89a4548eb7730bd"
+      - "5e55d879e6f51db83ffffcf3edbc4fee"
+      - "92faf058a5c17b54ddb6ff97b27be6fc"
+      - "de054de8882280fd15a8beec3e3518a0"
+      - "2c39de226d971ca681e466714ba2f093"
+      - "9e52d5092633c79f78d7d32fa8c2d3f0"
+      - "c5285fa9cd09d9cfa3aca0509bf402ad"
+      - "ff922376368866f0d28b06829840de5e"
+      - "3c6e6bd4d90a2aecf9c25f84279498ae"
+      - "e825a3d0b59e8b3004bcd9f93709c073"
+      - "9135e111d48146650c26ad49eb86fe2a"
+      - "9ac1c0c9a1a112cf746aeb7f62eae364"
+      - "9429b18862e454c6d8a16a91f36898f7"
+      - "f1f8f7358f7212571d99502cd67cb25b"
+      - "25a5e26300fbe129b0a48c44a54311ec"
+      - "19ba03eef513adc80daf2dcc128d4ff9"
+      - "62780dcf22c1bea9c6a216bcea052b68"
+      - "59e65d40512ec2c322c3ab2dc10aafee"
+      - "2087a4ed3e7b3ced8e94c0c2e666af0c"
+      - "85b18f2225199ff9dc8ddfd278b22b7e"
+      - "93db6ba534450e01ed1a0afac29945df"
+      - "ca2bc0ec5508ea0ac0632297bf9e0cf8"
+      - "5bfdeeaf8082f26053d0cc8a0e38bb52"
+      - "85eb6e1213c777c2185c9522b5ea45c0"
+      - "c7c2042635588e89f3b0994efac456d2"
+      - "8aebbee0632536b780e3df04b167ae05"
+      - "50e938c7382bf2d5f57a440200d882c3"
+      - "5d5bbac926142a6dde585ee08732a26d"
+      - "6eff8edbdb0ac1603ecd6946a2bf5e46"
+      - "c404df9e97d5f079fa192b62fd8c292f"
+      - "9f511296d85e2b7e25d9972993d263eb"
+      - "6f027b71cf52e2a1d5ebe1c2e28c5d75"
+      - "46f97969f703a88625016f7d46228ac9"
+      - "33398748e9e84c903a79e76985246fd6"
+      - "5fb7d9296312b34b94287a9ee3dfe371"
+      - "94bc87c51bd682610438dc66b6d81fc3"
+      - "49cc53631679c2ba9b31b243f30d3a27"
+      - "fb8c88905d272e2bfa52b89e09d3c092"
+      - "d3bcef99f24d7d021990a316933cd7c0"
+      - "63d5e22831cb7b2fae2808bc3901689e"
+      - "22e26ec1a42b82fa4d7960b6fcb2f662"
+      - "1ca172c4c3dba0ff20675afd843e39da"
+      - "0b6ccfc59571b8f99a523511d3f5fa3b"
+      - "bc6b88aa264bb662b2626890e79cf12f"
+      - "23ad9d6dfb3bdeea810400888b171b17"
+      - "3fece97f6651e066680864f3fe7cf284"
+      - "a48bd3966e4f5d064a168461527d4290"
+      - "c47e722bb129e19edebf32601605edd0"
+      - "402fee3a814f7e0edcbc615f683668ed"
+      - "a6bc499ae534d41ad8c86e3ae6f86d59"
+      - "be23e3446629847516c8e5d723920e76"
+      - "a6b20eb940c19e8cddf915902c25bff5"
+      - "c7de7173e437fce698b222462117b7f7"
+      - "64cb5fc59fe8773a451bb69770fb413e"
+      - "2fead1effd4c4b85745b862b3f0daf29"
+      - "0bb42b482b3b19784dd905bb3df0853c"
+      - "b352ae21b88b5e546221728cf8da30d4"
+      - "7215e757ddf4d1d0454627d5534bdc70"
+      - "6b037faba4019eebb5ba64f82b94f814"
+      - "271a0f9a25809bd18da785e82a04772e"
+      - "339ba472cf4989907205733c3b9784c7"
+      - "60893e8e4bed74efb840b16538ec4f09"
+      - "d96ed29db4f50dd62b5d690b5229ede8"
+      - "fa691e1a7fcc46b8963730d09f3f9ae7"
+      - "c509e9ae142c7716c5395faf90dbee7a"
+      - "c5198b2481ee7c3f1578596b2ee11062"
+      - "6fab147caa963e4343860ee62697b6d0"
+      - "fa6955c9c1e8c58536bb1a35a3c864a0"
+      - "eeb7a81c4e16458e3ce395a3121ad86f"
+      - "d4dff1ffb3a29a545d90cceded23f745"
+      - "0aefa08de73010e4a13d66e90a1e2ba7"
+      - "1b8293bd8436197269e4df580679c0b8"
+      - "4f7b8e81c4e504081b58fac89cf17ba5"
+      - "bc5eb69b54b6c791420a5b9af2cf3d58"
+      - "2059aba9579df52364a8fcdfbc810c65"
+      - "78f6d07504522e962c86fe5be22cf668"
+      - "1b94aa632975bb837ee1221ffc480d61"
+      - "e6a0e3e1f572cf50f28590ce16bc5dd8"
+      - "8a83a9bd3ece942162cd5632e624c628"
+      - "f2e199ab5862cf34652d0eee7a92b513"
+      - "a4962ebb6ec9902be44b3821799aebc8"
+      - "a8605d74972f015eb1ef0b07c5541685"
+      - "7a0d4016f851d95d6dc8fa597f53e289"
+      - "eb17f681929fa459d5b1a3d2adf5fbd1"
+      - "7c7f8bf4f8fa046fbb5707ac72f2d3ba"
+      - "56a2e814f454855d3bec8e85ce7c0bea"
+      - "3d2a5d61d7f9d19ec4d740f891bf959c"
+      - "fc8281e6e1eb91e2d1f8da7ed1bae890"
+      - "c30b0b27895ee683f2dad68dff1b02e0"
+      - "b2b6bd2232132d2f4d937a82a608f0e0"
+      - "68d1655a763bae8d90a5a8dd0b3a43b9"
+      - "4838e867fe0ae1420a8b9206dda4e8e9"
+      - "68a1946687ab7dee9cbfee5541763221"
+      - "4a973db5f2e1211a16d9dd207af529c6"
+      - "b0e21c9af5a0f77b29b1f9b93ff603a4"
+      - "019fc963eb8121cc93570c5aa4fce469"
+      - "cdcc6f5ccbe8a782db1afcc9cb8e1f35"
+      - "38fa7ead6907b718572c0205ccd6359e"
+      - "f4a3834bc1626d299b6ad54de9715ef3"
+
+corrected_genomes:
+  "HG002_ratatosk":
+    correction_short_reads: ["https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/NHGRI_Illumina300X_AJtrio_novoalign_bams/HG002.GRCh38.300x.bam"]
+    source_genome: "HG002"
+    correction_type: "ratatosk"
+
+
+
 
 tests:
   "GCF_000008865.2_ASM886v2":

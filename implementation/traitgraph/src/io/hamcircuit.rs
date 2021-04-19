@@ -1,29 +1,5 @@
-use crate::index::GraphIndex;
 use crate::interface::{DynamicGraph, StaticGraph};
 use std::io::{BufRead, BufReader, Read, Write};
-
-/// Write the graph in the following format, ignoring node and edge data.
-///
-/// ```text
-/// <node count> <edge count>
-/// <from node> <to node>
-/// ```
-///
-/// The second line is repeated for each edge.
-pub fn write_topology<Graph: StaticGraph, Writer: Write>(graph: &Graph, writer: &mut Writer) {
-    writeln!(writer, "{} {}", graph.node_count(), graph.edge_count()).unwrap();
-    for node in graph.node_indices() {
-        for out_neighbor in graph.out_neighbors(node) {
-            writeln!(
-                writer,
-                "{} {}",
-                node.as_usize(),
-                out_neighbor.node_id.as_usize()
-            )
-            .unwrap();
-        }
-    }
-}
 
 /// Write the graph as Hamiltonian circuit problem encoded as ATSP in TSPLIB format (used by concorde).
 pub fn write_hamcircuit_as_tsplib_atsp<Graph: StaticGraph, Writer: Write>(
@@ -256,7 +232,7 @@ pub fn read_hamcircuit_from_tsplib_tsp<Graph: DynamicGraph, Reader: Read>(
 mod tests {
     use crate::implementation::petgraph_impl;
     use crate::interface::{ImmutableGraphContainer, MutableGraphContainer};
-    use crate::io::{read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp};
+    use crate::io::hamcircuit::{read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp};
     use std::io::{BufReader, BufWriter};
 
     #[test]

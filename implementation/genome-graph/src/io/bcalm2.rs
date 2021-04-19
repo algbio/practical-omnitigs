@@ -1,16 +1,18 @@
 use crate::bigraph::interface::dynamic_bigraph::DynamicEdgeCentricBigraph;
 use crate::bigraph::interface::dynamic_bigraph::DynamicNodeCentricBigraph;
+use crate::io::fasta::FastaData;
 use bigraph::interface::{dynamic_bigraph::DynamicBigraph, BidirectedData};
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
+use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bio::io::fasta::Record;
-use compact_genome::{implementation::vector_genome_impl::VectorGenome, interface::Genome};
+use compact_genome::implementation::{DefaultGenome, DefaultSubGenome};
+use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use num_traits::NumCast;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::{Debug, Write};
 use std::hash::Hash;
-use std::iter::FromIterator;
 use std::path::Path;
 
 error_chain! {
@@ -26,7 +28,7 @@ error_chain! {
 
     errors {
         /// A node id that cannot be parsed into `usize`.
-        BCalm2IDError(id: String) {
+        BCalm2IdError(id: String) {
             description("invalid node id")
             display("invalid node id: '{:?}'", id)
         }
@@ -93,7 +95,7 @@ pub struct PlainBCalm2NodeData {
     /// The numeric id of the bcalm2 node.
     pub id: usize,
     /// The sequence of the bcalm2 node.
-    pub sequence: VectorGenome,
+    pub sequence: DefaultGenome,
     /// The length of the sequence of the bcalm2 node.
     pub length: usize,
     /// The total k-mer abundance of the sequence of the bcalm2 node.
@@ -122,6 +124,15 @@ impl BidirectedData for PlainBCalm2NodeData {
     }
 }
 
+impl FastaData for PlainBCalm2NodeData {
+    type Genome = DefaultGenome;
+    type GenomeSubsequence = DefaultSubGenome;
+
+    fn sequence(&self) -> &Self::Genome {
+        &self.sequence
+    }
+}
+
 /*impl PartialEq for PlainBCalm2NodeData {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmd::Ordering> {
         self.sequence.partial_cmp(other.sequence)
@@ -143,9 +154,9 @@ impl TryFrom<bio::io::fasta::Record> for PlainBCalm2NodeData {
         let id = value
             .id()
             .parse()
-            .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IDError(value.id().to_owned())))?;
-        let sequence = VectorGenome::from_iter(value.seq()); // TODO store with bio
-                                                             // TODO check if genome is valid
+            .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IdError(value.id().to_owned())))?;
+        let sequence: DefaultGenome = value.seq().iter().copied().collect(); // TODO store with bio
+                                                                             // TODO check if genome is valid
 
         let mut length = None;
         let mut total_abundance = None;
@@ -467,7 +478,7 @@ where
             write!(printed_node_id, "{}", node_data.id).map_err(Error::from)?;
             let node_description =
                 write_plain_bcalm2_node_data_to_bcalm2(&node_data, out_neighbors)?;
-            let node_sequence = node_data.sequence.into_vec();
+            let node_sequence = node_data.sequence.clone_as_vec();
 
             writer
                 .write(&printed_node_id, Some(&node_description), &node_sequence)
@@ -498,30 +509,34 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     )
 }
 
-fn get_or_create_node<Graph: DynamicBigraph, G: Genome + Hash>(
+fn get_or_create_node<
+    Graph: DynamicBigraph,
+    Genome: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone,
+    GenomeSubsequence: for<'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized,
+>(
     bigraph: &mut Graph,
-    id_map: &mut HashMap<G, <Graph as GraphBase>::NodeIndex>,
-    genome: &G,
+    id_map: &mut HashMap<Genome, <Graph as GraphBase>::NodeIndex>,
+    genome: Genome,
 ) -> <Graph as GraphBase>::NodeIndex
 where
-    for<'a> &'a G: IntoIterator<Item = u8>,
     <Graph as GraphBase>::NodeData: Default,
     <Graph as GraphBase>::EdgeData: Clone,
 {
-    if let Some(node) = id_map.get(genome) {
+    if let Some(node) = id_map.get(&genome) {
         *node
     } else {
         let node = bigraph.add_node(Default::default());
-        id_map.insert(genome.clone(), node);
-
         let reverse_complement = genome.reverse_complement();
-        if &reverse_complement == genome {
+
+        if reverse_complement == genome {
             bigraph.set_mirror_nodes(node, node);
         } else {
             let mirror_node = bigraph.add_node(Default::default());
             id_map.insert(reverse_complement, mirror_node);
             bigraph.set_mirror_nodes(node, mirror_node);
         }
+
+        id_map.insert(genome, node);
 
         node
     }
@@ -548,15 +563,21 @@ where
         let record: PlainBCalm2NodeData = record.map_err(Error::from)?.try_into()?;
         let reverse_complement = record.mirror();
 
-        let pre_plus = record.sequence.prefix(node_kmer_size);
-        let pre_minus = reverse_complement.sequence.prefix(node_kmer_size);
-        let succ_plus = record.sequence.suffix(node_kmer_size);
-        let succ_minus = reverse_complement.sequence.suffix(node_kmer_size);
+        let pre_plus = record.sequence.prefix(node_kmer_size).to_owned();
+        let pre_minus = reverse_complement
+            .sequence
+            .prefix(node_kmer_size)
+            .to_owned();
+        let succ_plus = record.sequence.suffix(node_kmer_size).to_owned();
+        let succ_minus = reverse_complement
+            .sequence
+            .suffix(node_kmer_size)
+            .to_owned();
 
-        let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, &pre_plus);
-        let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, &pre_minus);
-        let succ_plus = get_or_create_node(&mut bigraph, &mut id_map, &succ_plus);
-        let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, &succ_minus);
+        let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);
+        let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, pre_minus);
+        let succ_plus = get_or_create_node(&mut bigraph, &mut id_map, succ_plus);
+        let succ_minus = get_or_create_node(&mut bigraph, &mut id_map, succ_minus);
 
         bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
         bigraph.add_edge(pre_minus, succ_minus, record.mirror().into());
@@ -677,7 +698,7 @@ where
             write!(printed_node_id, "{}", node_data.id).map_err(Error::from)?;
             let node_description =
                 write_plain_bcalm2_node_data_to_bcalm2(&node_data, out_neighbors)?;
-            let node_sequence = node_data.sequence.into_vec();
+            let node_sequence = node_data.sequence.clone_as_vec();
 
             writer
                 .write(&printed_node_id, Some(&node_description), &node_sequence)

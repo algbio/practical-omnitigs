@@ -1,0 +1,29 @@
+use-conda: true
+cluster: >-
+  sbatch
+  --job-name=practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100)
+  --workdir=/proj/sebschmi/git/practical-omnitigs
+  -o "$(cat .logdir)/practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100):%j.log"
+  -p {resources.queue}
+  -c {resources.cpus}
+  -t {resources.time_min}
+  -M all
+  --mem={resources.mem_mb}
+  --mail-type={resources.mail_type}
+  --mail-user=sebastian.schmidt@helsinki.fi
+  --signal=SIGINT@300
+#  --hold
+#  $(./scripts/parse_sbatch_job_id.sh {dependencies})
+cluster-status: "scripts/get_slurm_job_status.py"
+max-status-checks-per-second: 1
+default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
+rerun-incomplete: true
+#immediate-submit: true
+#notemp: true
+printshellcmds: true
+cores: 10000
+local-cores: 8
+latency-wait: 60
+config: "datadir=/wrk/users/sebschmi/data"
+keep-going: true
+scheduler: "greedy" # ILP creates files in bad locations, possibly leading to a lockup of the file system

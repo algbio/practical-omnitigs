@@ -1,19 +1,21 @@
-use crate::interface::Sequence;
+use crate::interface::{Sequence, SequenceMut};
 
-impl<'a, Item: 'a> Sequence<'a, Item> for [Item] {
+impl<'a, Item: 'a> Sequence<'a, Item, [Item]> for [Item] {
     type Iterator = std::slice::Iter<'a, Item>;
-    type IteratorMut = std::slice::IterMut<'a, Item>;
 
     fn iter(&'a self) -> Self::Iterator {
         <[Item]>::iter(self)
     }
 
-    fn iter_mut(&'a mut self) -> Self::IteratorMut {
-        <[Item]>::iter_mut(self)
-    }
-
     fn len(&self) -> usize {
         <[Item]>::len(self)
+    }
+}
+
+impl<'a, Item: 'a> SequenceMut<'a, Item, [Item]> for [Item] {
+    type IteratorMut = std::slice::IterMut<'a, Item>;
+    fn iter_mut(&'a mut self) -> Self::IteratorMut {
+        <[Item]>::iter_mut(self)
     }
 }
 

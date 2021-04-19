@@ -1,3 +1,5 @@
+/// An algorithm to extract the maximal node-centric trivial omnitigs.
+pub mod default_node_centric_trivial_omnitigs;
 /// An algorithm to extract the maximal trivial omnitigs.
 pub mod default_trivial_omnitigs;
 /// An algorithm to extract non-trivial omnitigs from macrotigs using the incremental hydrostructure.
@@ -6,15 +8,21 @@ pub mod incremental_hydrostructure_macrotig_based_non_trivial_omnitigs;
 pub mod univocal_extension_algorithms;
 
 use crate::macrotigs::macrotigs::Macrotigs;
+use crate::omnitigs::default_node_centric_trivial_omnitigs::DefaultTrivialNodeCentricOmnitigAlgorithm;
 use crate::omnitigs::default_trivial_omnitigs::{
-    NonSCCTrivialOmnitigAlgorithm, SCCTrivialOmnitigAlgorithm,
+    NonSccTrivialOmnitigAlgorithm, SccTrivialOmnitigAlgorithm,
 };
 use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnitigs::IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm;
-use bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
+use crate::omnitigs::univocal_extension_algorithms::{
+    NonSccNodeCentricUnivocalExtensionStrategy, SccNodeCentricUnivocalExtensionStrategy,
+};
+use bigraph::interface::static_bigraph::{StaticBigraph, StaticEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
+use std::cmp::Ordering;
+use std::iter::FromIterator;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{GraphBase, StaticGraph};
-use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
+use traitgraph::walks::{EdgeWalk, VecEdgeWalk, VecNodeWalk};
 use traitsequence::interface::Sequence;
 
 /// An omnitig with information about its heart.
@@ -73,7 +81,7 @@ impl<Graph: GraphBase> Omnitig<Graph> {
     }
 
     /// Returns an iterator over the edges in the heart of this omnitig.
-    pub fn iter_heart<'a>(&'a self) -> impl 'a + Iterator<Item = &'a Graph::EdgeIndex> {
+    pub fn iter_heart(&self) -> impl Iterator<Item = &Graph::EdgeIndex> {
         self.omnitig
             .iter()
             .take(self.last_heart_edge + 1)
@@ -91,21 +99,20 @@ impl<Graph: GraphBase> Omnitig<Graph> {
     }
 }
 
-impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for Omnitig<Graph> where Graph::EdgeIndex: 'a {}
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for Omnitig<Graph> where
+    Graph::EdgeIndex: 'a
+{
+}
 
-impl<'a, Graph: GraphBase> Sequence<'a, Graph::EdgeIndex> for Omnitig<Graph>
+impl<'a, Graph: GraphBase> Sequence<'a, Graph::EdgeIndex, [Graph::EdgeIndex]> for Omnitig<Graph>
 where
     Graph::EdgeIndex: 'a,
 {
-    type Iterator = <VecEdgeWalk<Graph> as Sequence<'a, Graph::EdgeIndex>>::Iterator;
-    type IteratorMut = <VecEdgeWalk<Graph> as Sequence<'a, Graph::EdgeIndex>>::IteratorMut;
+    type Iterator =
+        <VecEdgeWalk<Graph> as Sequence<'a, Graph::EdgeIndex, [Graph::EdgeIndex]>>::Iterator;
 
     fn iter(&'a self) -> Self::Iterator {
         self.omnitig.iter()
-    }
-
-    fn iter_mut(&'a mut self) -> Self::IteratorMut {
-        self.omnitig.iter_mut()
     }
 
     fn len(&self) -> usize {
@@ -178,7 +185,7 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
     pub fn compute(graph: &Graph) -> Self {
         let maximal_macrotigs = Macrotigs::compute(graph);
         let maximal_non_trivial_omnitigs = IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm::compute_maximal_non_trivial_omnitigs(graph, &maximal_macrotigs);
-        SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
+        SccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(
             graph,
             maximal_non_trivial_omnitigs,
         )
@@ -186,19 +193,20 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
 
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     pub fn compute_trivial_only(graph: &Graph) -> Self {
-        SCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
+        SccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
     }
 
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     /// This algorithm allows the graph to be not strongly connected, but it is a bit slower, especially for long trivial omnitigs.
     pub fn compute_trivial_only_non_scc(graph: &Graph) -> Self {
-        NonSCCTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
+        NonSccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
     }
 }
 
 impl<Graph: StaticEdgeCentricBigraph> Omnitigs<Graph>
 where
     Graph::EdgeData: BidirectedData + Eq,
+    Graph::NodeData: std::fmt::Debug,
 {
     /// Retains only one direction of each pair of reverse-complemental omnitigs.
     ///
@@ -233,13 +241,22 @@ where
                     .iter()
                     .zip(reverse_complement_candidate.iter().rev())
                 {
-                    // I am not sure if the following assumption is correct.
+                    let complements_complement_edge = graph
+                        .mirror_edge_edge_centric(*reverse_complement_edge)
+                        .expect("Edge has no reverse complement.");
+                    // If our algorithms are sound, then this assumption should be correct.
                     assert_eq!(
                         *edge,
-                        graph
-                            .mirror_edge_edge_centric(*reverse_complement_edge)
-                            .expect("Edge has no reverse complement."),
-                        "Found reverse complement candidate, but it is not a reverse complement."
+                        complements_complement_edge,
+                        "Found reverse complement candidate, but it is not a reverse complement:\nomnitig: {:?}\nnode omnitig: {:?}\nomnitig indegree:  {}\nomnitig outdegree: {}\nrevcomp: {:?}\nnode revcomp: {:?}\nrevcomp indegree:  {}\nrevcomp outdegree: {}",
+                        omnitig,
+                        omnitig.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().iter().map(|&n| graph.node_data(n)).collect::<Vec<_>>(),
+                        graph.in_degree(*omnitig.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().first().unwrap()),
+                        graph.out_degree(*omnitig.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().last().unwrap()),
+                        reverse_complement_candidate,
+                        reverse_complement_candidate.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().iter().map(|&n| graph.node_data(n)).collect::<Vec<_>>(),
+                        graph.in_degree(*reverse_complement_candidate.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().first().unwrap()),
+                        graph.out_degree(*reverse_complement_candidate.clone_as_node_walk::<VecNodeWalk<Graph>>(graph).unwrap().last().unwrap()),
                     );
                 }
             } else {
@@ -271,7 +288,7 @@ impl<Graph: GraphBase> Omnitigs<Graph> {
     }
 
     /// Returns an iterator over the omnitigs in this struct.
-    pub fn iter<'a>(&'a self) -> impl 'a + Iterator<Item = &'a Omnitig<Graph>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Omnitig<Graph>> {
         self.omnitigs.iter()
     }
 
@@ -378,6 +395,136 @@ pub trait TrivialOmnitigAlgorithm<Graph: StaticGraph> {
 pub trait UnivocalExtensionAlgorithm<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>> {
     /// Compute the univocal extension of a walk.
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::EdgeIndex]) -> ResultWalk;
+}
+
+/// A collection of node-centric omnitigs.
+pub trait NodeCentricOmnitigs<
+    Graph: GraphBase,
+    NodeCentricOmnitigsSubsequence: for<'a> Sequence<'a, VecNodeWalk<Graph>, NodeCentricOmnitigsSubsequence> + ?Sized,
+>:
+    From<Vec<VecNodeWalk<Graph>>>
+    + for<'a> Sequence<'a, VecNodeWalk<Graph>, NodeCentricOmnitigsSubsequence>
+{
+    /// Compute the trivial node-centric omnitigs in the given strongly connected graph.
+    fn compute_trivial_node_centric_omnitigs(graph: &Graph) -> Self
+    where
+        Graph: StaticGraph,
+    {
+        DefaultTrivialNodeCentricOmnitigAlgorithm::<SccNodeCentricUnivocalExtensionStrategy>::compute_maximal_trivial_node_centric_omnitigs(graph, Vec::new()).into()
+    }
+
+    /// Compute the trivial node-centric omnitigs in the given graph that may not be strongly connected.
+    fn compute_trivial_node_centric_omnitigs_non_scc(graph: &Graph) -> Self
+    where
+        Graph: StaticGraph,
+    {
+        DefaultTrivialNodeCentricOmnitigAlgorithm::<NonSccNodeCentricUnivocalExtensionStrategy>::compute_maximal_trivial_node_centric_omnitigs(graph, Vec::new()).into()
+    }
+
+    /// Retains only one direction of each pair of reverse-complemental omnitigs.
+    ///
+    /// Note: I am not sure if this method is correct in all cases, but it will panic if it finds a case where it is not correct.
+    ///       For practical genomes it seems to work.
+    fn remove_reverse_complements(&mut self, graph: &Graph)
+    where
+        Graph: StaticBigraph,
+        Self: FromIterator<VecNodeWalk<Graph>>,
+    {
+        // Maps from nodes to omnitigs that start with this node.
+        let mut first_node_map = vec![Vec::new(); graph.node_count()];
+        for (i, omnitig) in self.iter().enumerate() {
+            let first_node = omnitig.iter().next().expect("Omnitig is empty");
+            first_node_map[first_node.as_usize()].push(i);
+        }
+
+        let mut retain_indices = Vec::with_capacity(self.len() / 2);
+        for (i, omnitig) in self.iter().enumerate() {
+            let reverse_complement_first_node = graph
+                .mirror_node(*omnitig.last().expect("Omnitig is empty"))
+                .expect("Node has no mirror");
+
+            let mut reverse_complement_count = 0;
+            let mut self_complemental = false;
+            for &reverse_complement_candidate_index in
+                &first_node_map[reverse_complement_first_node.as_usize()]
+            {
+                let reverse_complement_candidate = &self[reverse_complement_candidate_index];
+                let is_reverse_complemental = omnitig
+                    .iter()
+                    .zip(reverse_complement_candidate.iter().rev())
+                    .all(|(&n1, &n2)| n1 == graph.mirror_node(n2).expect("Node has no mirror"));
+
+                if is_reverse_complemental {
+                    assert_eq!(omnitig.len(), reverse_complement_candidate.len(), "Walks are reverse complemental, but do not have the same length. This means one of them is not maximal.");
+                    assert_eq!(
+                        reverse_complement_count, 0,
+                        "Walk has more than one reverse complement."
+                    );
+                    reverse_complement_count += 1;
+
+                    match reverse_complement_candidate_index.cmp(&i) {
+                        Ordering::Less => retain_indices.push(reverse_complement_candidate_index),
+                        Ordering::Equal => self_complemental = true,
+                        Ordering::Greater => (),
+                    }
+                }
+
+                if self_complemental {
+                    retain_indices.push(reverse_complement_candidate_index);
+                }
+            }
+        }
+
+        retain_indices.sort_unstable();
+        assert!(
+            retain_indices.windows(2).all(|w| w[0] < w[1]),
+            "retain_indices contains duplicate walk"
+        );
+
+        let mut retained_omnitigs = Vec::new();
+        for (i, omnitig) in self.iter().enumerate() {
+            if retained_omnitigs.len() == retain_indices.len() {
+                break;
+            }
+
+            if i == retain_indices[retained_omnitigs.len()] {
+                retained_omnitigs.push(omnitig);
+            }
+        }
+
+        *self = retained_omnitigs.into_iter().cloned().collect();
+    }
+}
+
+impl<Graph: 'static + GraphBase> NodeCentricOmnitigs<Graph, [VecNodeWalk<Graph>]>
+    for Vec<VecNodeWalk<Graph>>
+{
+}
+
+/// A trait abstracting over the concrete algorithm used to compute maximal trivial node-centric omnitigs.
+pub trait TrivialNodeCentricOmnitigAlgorithm<Graph: StaticGraph> {
+    /// The algorithm to compute univocal extensions of node-centric omnitig hearts.
+    type NodeCentricUnivocalExtensionStrategy: NodeCentricUnivocalExtensionAlgorithm<
+        Graph,
+        VecNodeWalk<Graph>,
+    >;
+
+    /// To a sequence of maximal non-trivial node-centric omnitigs add the maximal trivial node-centric omnitigs.
+    /// The function should not compute any trivial node-centric omnitigs that are subwalks of maximal non-trivial node-centric omnitigs.
+    fn compute_maximal_trivial_node_centric_omnitigs(
+        graph: &Graph,
+        omnitigs: Vec<VecNodeWalk<Graph>>,
+    ) -> Vec<VecNodeWalk<Graph>>;
+}
+
+/// The algorithm used to compute univocal extensions of node-centric omnitigs.
+pub trait NodeCentricUnivocalExtensionAlgorithm<
+    Graph: StaticGraph,
+    ResultWalk: From<Vec<Graph::NodeIndex>>,
+>
+{
+    /// Compute the univocal extension of a node-centric walk.
+    fn compute_univocal_extension(graph: &Graph, walk: &[Graph::NodeIndex]) -> ResultWalk;
 }
 
 #[cfg(test)]

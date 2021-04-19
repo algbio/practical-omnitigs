@@ -12,6 +12,28 @@ pub trait StaticBigraph: StaticGraph {
      */
     fn mirror_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex>;
 
+    /// Returns true if the mirror node of this node is itself.
+    /// Panics if the node has no mirror node.
+    fn is_self_mirror_node(&self, node_index: Self::NodeIndex) -> bool {
+        self.mirror_node(node_index).unwrap() == node_index
+    }
+
+    /// Returns a vector of all edges that mirror the given edge, without considering if the edge data mirrors the given edges edge data.
+    fn topological_mirror_edges(&self, edge_index: Self::EdgeIndex) -> Vec<Self::EdgeIndex> {
+        let endpoints = self.edge_endpoints(edge_index);
+        let reverse_from = if let Some(reverse_from) = self.mirror_node(endpoints.to_node) {
+            reverse_from
+        } else {
+            return Vec::new();
+        };
+        let reverse_to = if let Some(reverse_to) = self.mirror_node(endpoints.from_node) {
+            reverse_to
+        } else {
+            return Vec::new();
+        };
+        self.edges_between(reverse_from, reverse_to).collect()
+    }
+
     /**
      * Returns true if each node has exactly one mirror, and this relation is symmetric.
      * This check allows nodes that are their own mirror.
@@ -60,11 +82,56 @@ pub trait StaticBigraph: StaticGraph {
 
         true
     }
+
+    /// Computes the outdegree of the binode, accounting for inversion edges.
+    /// Panics if the given node has no mirror node.
+    /// Returns `None` if the node is a self-mirror, as the outdegree of self-mirrors is not well-defined.
+    fn out_bidegree(&self, node_index: Self::NodeIndex) -> Option<usize> {
+        let mirror_node = self.mirror_node(node_index).unwrap();
+        if mirror_node == node_index {
+            None
+        } else {
+            let mut out_neighbor_count = 0;
+            let mut inversion_count = 0;
+            for out_neighbor in self.out_neighbors(node_index) {
+                if out_neighbor.node_id == mirror_node {
+                    inversion_count += 1;
+                } else {
+                    out_neighbor_count += 1;
+                }
+            }
+
+            let in_degree = self.in_degree(node_index);
+            Some(out_neighbor_count + inversion_count.min(in_degree))
+        }
+    }
+
+    /// Computes the indegree of the binode, accounting for inversion edges.
+    /// Panics if the given node has no mirror node.
+    /// Returns `None` if the node is a self-mirror, as the indegree of self-mirrors is not well-defined.
+    fn in_bidegree(&self, node_index: Self::NodeIndex) -> Option<usize> {
+        let mirror_node = self.mirror_node(node_index).unwrap();
+        self.out_bidegree(mirror_node)
+    }
+
+    /// Computes the degree of inversion of this node.
+    /// That is the number of outgoing edges to the mirror node minus the number of incoming edges from the mirror node.
+    fn inversion_bidegree(&self, node_index: Self::NodeIndex) -> isize {
+        let mirror_node = self.mirror_node(node_index).unwrap();
+        self.out_neighbors(node_index)
+            .filter(|n| n.node_id == mirror_node)
+            .count() as isize
+            - self
+                .in_neighbors(node_index)
+                .filter(|n| n.node_id == mirror_node)
+                .count() as isize
+    }
 }
 
 /**
- * A edge-centric bidirected graph.
+ * A node-centric bidirected graph.
  * That is a graph in which each node has a unique mirror, and this relation is symmetric.
+ * Additionally, the multiplicity of an edge equals the multiplicity of its mirrors.
  */
 pub trait StaticNodeCentricBigraph: StaticBigraph {
     /**
@@ -126,7 +193,7 @@ where
 {
     /**
      * Returns the unique mirror of the given edge id, or `None` if the given edge id has no mirror edge.
-     * If the edge is its own reverse complement, and an mirror edge with a different id exists, then the different id is returned.
+     * If the edge is its own reverse complement, and a mirror edge with a different id exists, then the different id is returned.
      * Otherwise, for an edge that is its own reverse complement, the given id is returned.
      */
     fn mirror_edge_edge_centric(&self, edge_id: Self::EdgeIndex) -> Option<Self::EdgeIndex> {
@@ -177,17 +244,36 @@ where
                     if edge_set.contains(&mirror_complete_edge) {
                         edge_set.remove(&mirror_complete_edge);
                         if &self.edge_data(edge).mirror() != self.edge_data(mirror_edge) {
+                            //println!("Removed edge with wrong mirror data");
                             return false;
                         }
                     } else {
                         edge_set.insert(complete_edge);
                     }
                 } else {
+                    //println!("Edge has no mirror edge");
                     return false;
                 }
             }
         }
 
+        /*println!("Returning true if edge set is empty\n{:?}", edge_set);
+        let edge_vec: Vec<_> = edge_set.iter().copied().collect();
+        for (i, &(from_node_1, to_node_1, edge_1)) in edge_vec.iter().enumerate() {
+            for &(from_node_2, to_node_2, edge_2) in edge_vec.iter().skip(i + 1) {
+                let from_node_2_mirror = self.mirror_node(to_node_2).unwrap();
+                let to_node_2_mirror = self.mirror_node(from_node_2).unwrap();
+                if from_node_2_mirror != from_node_1 || to_node_2_mirror != to_node_1 {
+                    continue;
+                }
+
+                if self.edge_data(edge_1).mirror() == *self.edge_data(edge_2) {
+                    println!("Found unresolved mirror {} and {}", edge_1.as_usize(), edge_2.as_usize());
+                } else {
+                    println!("Mirror candidate is no mirror {} and {}", edge_1.as_usize(), edge_2.as_usize());
+                }
+            }
+        }*/
         edge_set.is_empty()
     }
 }

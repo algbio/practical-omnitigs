@@ -1,15 +1,30 @@
-/// A type behaving like a sequence over the type `Item` with a subsequence type `Subsequence`.
-pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
+use std::fmt::{Debug, Write};
+use std::iter::FromIterator;
+use std::ops::{Index, IndexMut, Range};
+
+/// A type behaving like a sequence over the type `Item`.
+pub trait Sequence<'a, Item: 'a, Subsequence: Sequence<'a, Item, Subsequence> + ?Sized>:
+    Index<usize, Output = Item> + Index<Range<usize>, Output = Subsequence>
+{
     /// The iterator type of the sequence.
-    type Iterator: Iterator<Item = &'a Item>;
-    /// The mutable iterator type of the sequence.
-    type IteratorMut: Iterator<Item = &'a mut Item>;
+    type Iterator: DoubleEndedIterator<Item = &'a Item>;
+
+    /// Returns a prefix with length `len` of this sequence.
+    /// Panics if `len >= self.len()`.
+    fn prefix(&'a self, len: usize) -> &Subsequence {
+        assert!(len < self.len());
+        &self[0..len]
+    }
+
+    /// Returns a suffix with length `len` of this sequence.
+    /// Panics if `len >= self.len()`.
+    fn suffix(&'a self, len: usize) -> &Subsequence {
+        assert!(len < self.len());
+        &self[self.len() - len..self.len()]
+    }
 
     /// Returns an iterator over the sequence.
     fn iter(&'a self) -> Self::Iterator;
-
-    /// Returns a mutable iterator over the sequence.
-    fn iter_mut(&'a mut self) -> Self::IteratorMut;
 
     /// Returns the length of the sequence.
     fn len(&self) -> usize;
@@ -99,6 +114,69 @@ pub trait Sequence<'a, Item: 'a>: std::ops::Index<usize, Output = Item> {
         Item: Eq,
     {
         suffix.forward_merge_iter_assume_mergeable(self)
+    }
+
+    /// Converts the sequence to a string using the debug formatting of the items.
+    ///
+    /// ```rust
+    /// use traitsequence::interface::Sequence;
+    ///
+    /// let sequence = [0, 2, 1];
+    /// assert_eq!(sequence.to_debug_string(), "[0, 2, 1]".to_string());
+    ///
+    /// let sequence = ["a", "c", "b"];
+    /// assert_eq!(sequence.to_debug_string(), "[\"a\", \"c\", \"b\"]".to_string());
+    /// ```
+    fn to_debug_string(&'a self) -> String
+    where
+        Item: Debug,
+    {
+        let mut result = String::new();
+        write!(result, "[").unwrap();
+        let mut once = true;
+        for item in self.iter() {
+            if once {
+                once = false;
+            } else {
+                write!(result, ", ").unwrap();
+            }
+            write!(result, "{:?}", item).unwrap();
+        }
+        write!(result, "]").unwrap();
+        result
+    }
+}
+
+/// A type behaving like a mutable sequence over the type `Item`.
+/// That is, its items can be mutated, but the sequence it self can not.
+/// For a sequence where items can be appended, rearranged etc. see [EditableSequence].
+pub trait SequenceMut<'a, Item: 'a, Subsequence: SequenceMut<'a, Item, Subsequence> + ?Sized>:
+    Sequence<'a, Item, Subsequence>
+    + IndexMut<usize, Output = Item>
+    + IndexMut<Range<usize>, Output = Subsequence>
+{
+    /// The mutable iterator type of the sequence.
+    type IteratorMut: Iterator<Item = &'a mut Item>;
+
+    /// Returns a mutable iterator over the sequence.
+    fn iter_mut(&'a mut self) -> Self::IteratorMut;
+}
+
+/// A type behaving like a sequence over the type `Item` that can be edited.
+/// This sequences items can not necessarily be mutated themselves, but they can be rearranged or new items can be appended etc.
+/// For a sequence where the items themselves can be mutated, see [SequenceMut].
+pub trait EditableSequence<'a, Item: 'a, Subsequence: Sequence<'a, Item, Subsequence> + ?Sized>:
+    Sequence<'a, Item, Subsequence> + Extend<Item> + IntoIterator<Item = Item> + FromIterator<Item>
+{
+    /// Extend this sequence from a sequence of compatible items.
+    fn extend_into<
+        ExtensionItem: Into<Item>,
+        ExtensionSource: IntoIterator<Item = ExtensionItem>,
+    >(
+        &mut self,
+        extension: ExtensionSource,
+    ) {
+        self.extend(extension.into_iter().map(Into::into));
     }
 }
 

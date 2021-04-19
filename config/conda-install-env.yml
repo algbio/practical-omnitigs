@@ -1,0 +1,5 @@
+channels:
+  - conda-forge
+dependencies:
+  - git==2.30.0
+  - openssl==1.1.1i

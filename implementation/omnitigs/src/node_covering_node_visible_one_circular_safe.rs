@@ -16,7 +16,7 @@ fn check_safety<'graph, 'walk, Graph: StaticGraph>(
 where
     Graph::NodeIndex: 'static,
 {
-    let current_node_walk: VecNodeWalk<_> = incremental_hydrostructure
+    let current_node_walk: VecNodeWalk<Graph> = incremental_hydrostructure
         .current_walk()
         .clone_as_node_walk(graph)
         .expect("Walk cannot be represented as node walk.");
@@ -77,7 +77,9 @@ where
     for (i, walk) in safe_walks.iter().enumerate() {
         let mut delete = false;
         for (j, superwalk) in safe_walks.iter().enumerate().filter(|(j, _)| i != *j) {
-            if (walk == superwalk && i < j) || walk.is_proper_subwalk_of(superwalk) {
+            if (walk == superwalk && i < j)
+                || NodeWalk::<Graph, [Graph::NodeIndex]>::is_proper_subwalk_of(walk, superwalk)
+            {
                 delete = true;
                 break;
             }
@@ -100,7 +102,7 @@ where
 /// Computes the maximal subwalks that are safe under the node-covering node-visible 1-circular walk model.
 fn compute_maximal_node_covering_node_visible_one_circular_safe_subwalks<Graph: StaticGraph>(
     graph: &Graph,
-    walk: &VecEdgeWalk<Graph>,
+    walk: &[Graph::EdgeIndex],
 ) -> Vec<VecNodeWalk<Graph>>
 where
     Graph::NodeIndex: 'static,
@@ -116,7 +118,7 @@ where
         if is_strong_bridge(graph, *edge) {
             safe_walks.push(NodeWalk::compute_univocal_extension(
                 &[*edge]
-                    .clone_as_node_walk::<VecNodeWalk<_>>(graph)
+                    .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                     .expect("Walk cannot be represented as node walk."),
                 graph,
             ));
@@ -140,7 +142,7 @@ where
                 let safe_walk = &safe_walk[0..safe_walk.len() - 1];
                 safe_walks.push(NodeWalk::compute_univocal_extension(
                     &safe_walk
-                        .clone_as_node_walk::<VecNodeWalk<_>>(graph)
+                        .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                         .expect("Walk cannot be represented as node walk."),
                     graph,
                 ));
@@ -159,7 +161,7 @@ where
                 {
                     safe_walks.push(NodeWalk::compute_univocal_extension(
                         &[*edge]
-                            .clone_as_node_walk::<VecNodeWalk<_>>(graph)
+                            .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                             .expect("Walk cannot be represented as node walk."),
                         graph,
                     ));
@@ -178,7 +180,7 @@ where
             if !check_safety(graph, &incremental_hydrostructure) && is_strong_bridge(graph, *edge) {
                 safe_walks.push(NodeWalk::compute_univocal_extension(
                     &[*edge]
-                        .clone_as_node_walk::<VecNodeWalk<_>>(graph)
+                        .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                         .expect("Walk cannot be represented as node walk."),
                     graph,
                 ));
@@ -193,7 +195,7 @@ where
             if is_strong_bridge(graph, *edge) {
                 safe_walks.push(NodeWalk::compute_univocal_extension(
                     &[*edge]
-                        .clone_as_node_walk::<VecNodeWalk<_>>(graph)
+                        .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                         .expect("Walk cannot be represented as node walk."),
                     graph,
                 ));
@@ -210,7 +212,7 @@ where
     safe_walks.push(NodeWalk::compute_univocal_extension(
         &incremental_hydrostructure
             .current_walk()
-            .clone_as_node_walk::<VecNodeWalk<_>>(graph)
+            .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
             .expect("Walk cannot be represented as node walk."),
         graph,
     ));
@@ -298,7 +300,7 @@ mod tests {
         assert_eq!(
             maximal_node_centric_omnitigs,
             vec![
-                graph.create_node_walk(&[n18, n19, n20, n7, n0, n1, n2, n3, n11, n15, n16, n17]),
+                Vec::from([n18, n19, n20, n7, n0, n1, n2, n3, n11, n15, n16, n17]),
                 graph.create_node_walk(&[n0, n1, n2, n5, n18]),
                 graph.create_node_walk(&[n0, n1, n2, n6, n18]),
                 graph.create_node_walk(&[n17, n8, n0, n1, n2]),
@@ -339,7 +341,7 @@ mod tests {
             );
         assert_eq!(
             maximal_node_centric_omnitigs,
-            vec![graph.create_node_walk(&[n1, n2, n3, n0]),]
+            vec![Vec::from([n1, n2, n3, n0]),]
         );
     }
 
@@ -367,10 +369,7 @@ mod tests {
                 &graph,
                 &maximal_macrotigs,
             );
-        assert_eq!(
-            maximal_node_centric_omnitigs,
-            vec![graph.create_node_walk(&[n0, n1, n0])]
-        );
+        assert_eq!(maximal_node_centric_omnitigs, vec![Vec::from([n0, n1, n0])]);
     }
 
     #[test]
@@ -405,7 +404,7 @@ mod tests {
         assert_eq!(
             maximal_node_centric_omnitigs,
             vec![
-                graph.create_node_walk(&[n2, n3, n0, n1]),
+                Vec::from([n2, n3, n0, n1]),
                 graph.create_node_walk(&[n0, n1, n2, n3]),
             ],
         );

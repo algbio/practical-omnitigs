@@ -2,7 +2,7 @@
 name = "omnitigs"
 description = "Omnitig-related algorithms"
 categories = ["mathematics", "algorithms", "science"]
-keywords = ["genome", "representation", "compact", "string", "bioinformatics"]
+keywords = ["genome", "assembly", "omnitigs", "bioinformatics"]
 version = "0.2.1-alpha.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"

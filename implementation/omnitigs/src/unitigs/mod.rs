@@ -44,21 +44,19 @@ impl<Graph: GraphBase> NodeUnitig<Graph> {
     }
 }
 
-impl<'a, Graph: GraphBase> NodeWalk<'a, Graph> for NodeUnitig<Graph> where Graph::NodeIndex: 'a {}
+impl<'a, Graph: GraphBase> NodeWalk<'a, Graph, [Graph::NodeIndex]> for NodeUnitig<Graph> where
+    Graph::NodeIndex: 'a
+{
+}
 
-impl<'a, Graph: GraphBase> Sequence<'a, Graph::NodeIndex> for NodeUnitig<Graph>
+impl<'a, Graph: GraphBase> Sequence<'a, Graph::NodeIndex, [Graph::NodeIndex]> for NodeUnitig<Graph>
 where
     Graph::NodeIndex: 'a,
 {
     type Iterator = std::slice::Iter<'a, Graph::NodeIndex>;
-    type IteratorMut = std::slice::IterMut<'a, Graph::NodeIndex>;
 
     fn iter(&'a self) -> Self::Iterator {
         self.walk.iter()
-    }
-
-    fn iter_mut(&'a mut self) -> Self::IteratorMut {
-        self.walk.iter_mut()
     }
 
     fn len(&self) -> usize {
@@ -109,21 +107,19 @@ impl<Graph: GraphBase> EdgeUnitig<Graph> {
     }
 }
 
-impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph> for EdgeUnitig<Graph> where Graph::EdgeIndex: 'a {}
+impl<'a, Graph: GraphBase> EdgeWalk<'a, Graph, [Graph::EdgeIndex]> for EdgeUnitig<Graph> where
+    Graph::EdgeIndex: 'a
+{
+}
 
-impl<'a, Graph: GraphBase> Sequence<'a, Graph::EdgeIndex> for EdgeUnitig<Graph>
+impl<'a, Graph: GraphBase> Sequence<'a, Graph::EdgeIndex, [Graph::EdgeIndex]> for EdgeUnitig<Graph>
 where
     Graph::EdgeIndex: 'a,
 {
     type Iterator = std::slice::Iter<'a, Graph::EdgeIndex>;
-    type IteratorMut = std::slice::IterMut<'a, Graph::EdgeIndex>;
 
     fn iter(&'a self) -> Self::Iterator {
         self.walk.iter()
-    }
-
-    fn iter_mut(&'a mut self) -> Self::IteratorMut {
-        self.walk.iter_mut()
     }
 
     fn len(&self) -> usize {
@@ -200,14 +196,14 @@ impl<Graph: StaticGraph> NodeUnitigs<Graph> {
                 }
 
                 let single_edge_disambiguator = if unitig.len() == 2 { Some(edge) } else { None };
-                unitigs.push(NodeUnitig::new(unitig.into(), single_edge_disambiguator));
+                unitigs.push(NodeUnitig::new(unitig, single_edge_disambiguator));
             }
         }
 
         // Add single nodes
         for node in graph.node_indices() {
             if graph.is_bivalent_node(node) {
-                unitigs.push(NodeUnitig::new(vec![node].into(), None));
+                unitigs.push(NodeUnitig::new(vec![node], None));
             }
         }
 
@@ -255,7 +251,7 @@ impl<Graph: StaticGraph> EdgeUnitigs<Graph> {
                     unitig.push(out_neighbor.edge_id);
                 }
 
-                unitigs.push(EdgeUnitig::new(unitig.into()));
+                unitigs.push(EdgeUnitig::new(unitig));
             }
         }
 
@@ -264,7 +260,7 @@ impl<Graph: StaticGraph> EdgeUnitigs<Graph> {
 
     /// Sorts the unitigs by length descending.
     pub fn sort_by_len_descending(&mut self) {
-        self.unitigs.sort_by(|a, b| b.len().cmp(&a.len()));
+        self.unitigs.sort_by_key(|a| std::cmp::Reverse(a.len()));
     }
 }
 
@@ -325,19 +321,14 @@ where
     }
 }
 
-impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>> for NodeUnitigs<Graph>
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, NodeUnitig<Graph>, [NodeUnitig<Graph>]>
+    for NodeUnitigs<Graph>
 where
     Graph::NodeIndex: 'a,
 {
     type Iterator = std::slice::Iter<'a, NodeUnitig<Graph>>;
-    type IteratorMut = std::slice::IterMut<'a, NodeUnitig<Graph>>;
-
     fn iter(&'a self) -> Self::Iterator {
         self.unitigs.iter()
-    }
-
-    fn iter_mut(&'a mut self) -> Self::IteratorMut {
-        self.unitigs.iter_mut()
     }
 
     fn len(&self) -> usize {
@@ -398,19 +389,15 @@ where
 {
 }
 
-impl<'a, Graph: 'a + GraphBase> Sequence<'a, EdgeUnitig<Graph>> for EdgeUnitigs<Graph>
+impl<'a, Graph: 'a + GraphBase> Sequence<'a, EdgeUnitig<Graph>, [EdgeUnitig<Graph>]>
+    for EdgeUnitigs<Graph>
 where
     Graph::EdgeIndex: 'a,
 {
     type Iterator = std::slice::Iter<'a, EdgeUnitig<Graph>>;
-    type IteratorMut = std::slice::IterMut<'a, EdgeUnitig<Graph>>;
 
     fn iter(&'a self) -> Self::Iterator {
         self.unitigs.iter()
-    }
-
-    fn iter_mut(&'a mut self) -> Self::IteratorMut {
-        self.unitigs.iter_mut()
     }
 
     fn len(&self) -> usize {
