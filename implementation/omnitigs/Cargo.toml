@@ -3,7 +3,7 @@ name = "omnitigs"
 description = "Omnitig-related algorithms"
 categories = ["mathematics", "algorithms", "science"]
 keywords = ["genome", "assembly", "omnitigs", "bioinformatics"]
-version = "0.3.1-alpha.0"
+version = "0.3.1"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
 homepage = "https://github.com/algbio/practical-omnitigs/tree/master/implementation/compact-genome"
@@ -15,9 +15,9 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-traitgraph = {path = "../traitgraph", version = "^0.3.1-alpha.0"}
-bigraph = {path = "../bigraph", version = "^0.3.1-alpha.0"}
-traitsequence = {path = "../traitsequence", version = "^0.3.1-alpha.0"}
+traitgraph = {path = "../traitgraph", version = "^0.3.1"}
+bigraph = {path = "../bigraph", version = "^0.3.1"}
+traitsequence = {path = "../traitsequence", version = "^0.3.1"}
 bitvector = "0.1"
 rand = "0.7"
 log = "0.4"
