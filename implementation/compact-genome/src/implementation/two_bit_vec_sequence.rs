@@ -263,12 +263,7 @@ impl<'a> Iterator for TwoBitVectorSubGenomeIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.slice.len() > 0 {
             let result = &self.slice[0];
-            self.slice = if self.slice.len() == 1 {
-                // Workaround for https://github.com/bitvecto-rs/bitvec/issues/118
-                &self.slice[0..0]
-            } else {
-                &self.slice[1..self.slice.len()]
-            };
+            self.slice = &self.slice[1..self.slice.len()];
             Some(result)
         } else {
             None
@@ -349,6 +344,23 @@ mod tests {
 
         let display_string = genome[1..6].to_owned().reverse_complement()[1..4].as_string();
         let expected_string = "CGA";
+        assert_eq!(display_string, expected_string);
+    }
+
+    #[test]
+    fn test_empty_substring_after_end() {
+        let genome: TwoBitVectorGenome = b"ATTCGGT".iter().copied().collect();
+        let display_string = genome[7..7].as_string();
+        let expected_string = "";
+        assert_eq!(display_string, expected_string);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_empty_substring_after_end2() {
+        let genome: TwoBitVectorGenome = b"ATTCGGT".iter().copied().collect();
+        let display_string = genome[8..8].as_string();
+        let expected_string = "";
         assert_eq!(display_string, expected_string);
     }
 }
