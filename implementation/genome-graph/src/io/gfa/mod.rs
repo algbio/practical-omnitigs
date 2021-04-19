@@ -80,7 +80,8 @@ pub struct GfaReadFileProperties {
     /// The header of the GFA file. Should the GFA file have multiple header lines, it is undefined which line is reported. If the GFA file has no header lines, then this field is None.
     pub header: Option<String>,
 
-    /// Bytes of memory needed to store the sequences. This is as accurate as possible, computed by the [DefaultGenome::size_in_memory] method.
+    /// Bytes of memory needed to store the sequences. This is as accurate as possible, computed by the [compact_genome::implementation::two_bit_vec_sequence::TwoBitVectorGenome] method.
+    /// TODO: The intra doc link might be wrong here, if DefaultGenome ever points to a different type. Sadly, at the moment, methods of type aliases cannot be linked directly.
     pub sequence_size_in_memory: usize,
 }
 

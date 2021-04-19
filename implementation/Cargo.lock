@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.3.1-alpha.0"
+version = "0.3.2-alpha.0"
 dependencies = [
  "bitvector",
  "num-traits",
@@ -284,7 +284,7 @@ dependencies = [
 
 [[package]]
 name = "cli"
-version = "0.3.1-alpha.0"
+version = "0.3.2-alpha.0"
 dependencies = [
  "bio",
  "clap 3.0.0-beta.2",
@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "compact-genome"
-version = "0.3.1-alpha.0"
+version = "0.3.2-alpha.0"
 dependencies = [
  "bitvec",
  "itertools 0.9.0",
@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "0.3.1-alpha.0"
+version = "0.3.2-alpha.0"
 dependencies = [
  "bigraph",
  "bio",
@@ -822,7 +822,7 @@ checksum = "a9a7ab5d64814df0fe4a4b5ead45ed6c5f181ee3ff04ba344313a6c80446c5d4"
 
 [[package]]
 name = "omnitigs"
-version = "0.3.1-alpha.0"
+version = "0.3.2-alpha.0"
 dependencies = [
  "bigraph",
  "bitvector",
@@ -1557,7 +1557,7 @@ dependencies = [
 
 [[package]]
 name = "traitgraph"
-version = "0.3.1-alpha.0"
+version = "0.3.2-alpha.0"
 dependencies = [
  "bitvector",
  "criterion",
@@ -1569,7 +1569,7 @@ dependencies = [
 
 [[package]]
 name = "traitsequence"
-version = "0.3.1-alpha.0"
+version = "0.3.2-alpha.0"
 
 [[package]]
 name = "unicode-segmentation"
