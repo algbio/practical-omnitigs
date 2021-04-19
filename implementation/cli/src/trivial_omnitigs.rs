@@ -193,8 +193,10 @@ pub(crate) fn compute_trivial_omnitigs(
                 bail!("No input file given")
             };
             info!("Reading bigraph from '{}'", input);
-            let (genome_graph, kmer_size): (PetGfaEdgeGraph<BidirectedGfaNodeData<()>, ()>, _) =
-                genome_graph::io::gfa::read_gfa_as_bigraph_from_file(input, true, true)?;
+            let (genome_graph, gfa_file_properties): (
+                PetGfaEdgeGraph<BidirectedGfaNodeData<()>, ()>,
+                _,
+            ) = genome_graph::io::gfa::read_gfa_as_bigraph_from_file(input, true, true)?;
 
             info!(
                 "Graph has {} nodes and {} edges",
@@ -220,7 +222,7 @@ pub(crate) fn compute_trivial_omnitigs(
             );
             genome_graph::io::fasta::write_node_centric_walks_as_fasta_file(
                 &genome_graph,
-                kmer_size,
+                gfa_file_properties.k,
                 maximal_omnitigs.iter(),
                 &subcommand.output,
             )?;

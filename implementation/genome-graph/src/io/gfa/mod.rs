@@ -72,6 +72,18 @@ impl<T> FastaData for BidirectedGfaNodeData<T> {
     }
 }
 
+/// Properties of a GFA file that was read.
+pub struct GfaReadFileProperties {
+    /// The order of the node-centric de Bruijn graph stored in the GFA file. If the GFA file does not contain the respective header field, then this field is usize::max_value().
+    pub k: usize,
+
+    /// The header of the GFA file. Should the GFA file have multiple header lines, it is undefined which line is reported. If the GFA file has no header lines, then this field is None.
+    pub header: Option<String>,
+
+    /// Bytes of memory needed to store the sequences. This is as accurate as possible, computed by the [DefaultGenome::size_in_memory] method.
+    pub sequence_size_in_memory: usize,
+}
+
 /// Read a bigraph in gfa format from a file.
 /// This method also returns the k-mer length given in the gfa file.
 pub fn read_gfa_as_bigraph_from_file<
@@ -83,7 +95,7 @@ pub fn read_gfa_as_bigraph_from_file<
     gfa_file: P,
     ignore_k: bool,
     allow_messy_edges: bool,
-) -> Result<(Graph, usize)> {
+) -> Result<(Graph, GfaReadFileProperties)> {
     read_gfa_as_bigraph(
         BufReader::new(File::open(gfa_file)?),
         ignore_k,
@@ -102,9 +114,11 @@ pub fn read_gfa_as_bigraph<
     gfa: R,
     ignore_k: bool,
     allow_messy_edges: bool,
-) -> Result<(Graph, usize)> {
+) -> Result<(Graph, GfaReadFileProperties)> {
     let mut graph = Graph::default();
     let mut k = usize::max_value();
+    let mut header = None;
+    let mut sequence_size_in_memory = 0;
     let mut node_name_map = HashMap::new();
 
     for line in gfa.lines() {
@@ -112,6 +126,7 @@ pub fn read_gfa_as_bigraph<
 
         if line.starts_with('H') {
             assert!(graph.is_empty());
+            header = Some(line.to_owned());
             for column in line.split('\t') {
                 if let Some(stripped) = column.strip_prefix("KL:Z:") {
                     assert_eq!(k, usize::max_value());
@@ -131,6 +146,7 @@ pub fn read_gfa_as_bigraph<
 
             let sequence = columns.next().unwrap();
             let sequence: DefaultGenome = sequence.bytes().collect();
+            sequence_size_in_memory += sequence.size_in_memory();
             let sequence = Arc::new(sequence);
             assert!(
                 sequence.len() >= k || ignore_k,
@@ -193,7 +209,14 @@ pub fn read_gfa_as_bigraph<
         k = 0;
     }
 
-    Ok((graph, k))
+    Ok((
+        graph,
+        GfaReadFileProperties {
+            k,
+            header,
+            sequence_size_in_memory,
+        },
+    ))
 }
 
 /// Read an edge-centric bigraph in gfa format from a file.
@@ -208,7 +231,7 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
 >(
     gfa_file: P,
     estimate_k: bool,
-) -> Result<(Graph, usize, String)> {
+) -> Result<(Graph, GfaReadFileProperties)> {
     read_gfa_as_edge_centric_bigraph(BufReader::new(File::open(gfa_file)?), estimate_k)
 }
 
@@ -257,12 +280,13 @@ pub fn read_gfa_as_edge_centric_bigraph<
 >(
     gfa: R,
     estimate_k: bool,
-) -> Result<(Graph, usize, String)> {
+) -> Result<(Graph, GfaReadFileProperties)> {
     assert!(!estimate_k, "Estimating k not supported yet");
 
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
     let mut k = usize::max_value();
+    let mut sequence_size_in_memory = 0;
     let mut header = None;
 
     for line in gfa.lines() {
@@ -287,6 +311,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
             let sequence = columns.next().unwrap();
             //println!("sequence {}", sequence);
             let sequence: DefaultGenome = sequence.bytes().collect();
+            sequence_size_in_memory += sequence.size_in_memory();
             let sequence = Arc::new(sequence);
             let edge_data = BidirectedGfaNodeData {
                 sequence: sequence.clone(),
@@ -331,18 +356,27 @@ pub fn read_gfa_as_edge_centric_bigraph<
     assert!(header.is_some(), "GFA file has no header");
     assert!(bigraph.verify_node_pairing());
     assert!(bigraph.verify_edge_mirror_property());
-    Ok((bigraph, k, header.unwrap()))
+    Ok((
+        bigraph,
+        GfaReadFileProperties {
+            k,
+            header,
+            sequence_size_in_memory,
+        },
+    ))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::io::gfa::{read_gfa_as_edge_centric_bigraph, PetGfaEdgeGraph};
+    use crate::io::gfa::{
+        read_gfa_as_edge_centric_bigraph, GfaReadFileProperties, PetGfaEdgeGraph,
+    };
     use std::io::BufReader;
 
     #[test]
     fn test_read_gfa_as_edge_centric_bigraph_simple() {
         let gfa = "H\tKL:Z:3\nS\t1\tACGA\nS\t2\tTCGT";
-        let (_bigraph, k, _gfa_header): (PetGfaEdgeGraph<(), ()>, _, _) =
+        let (_bigraph, GfaReadFileProperties { k, .. }): (PetGfaEdgeGraph<(), ()>, _) =
             read_gfa_as_edge_centric_bigraph(BufReader::new(gfa.as_bytes()), false).unwrap();
         assert_eq!(k, 3);
     }
