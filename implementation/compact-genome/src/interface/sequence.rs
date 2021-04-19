@@ -45,7 +45,7 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
     }
 
     /// Returns an iterator over the reverse complement of this genome.
-    /// Panics if the iterator his an invalid character (see [not valid](is_valid)).
+    /// Panics if the iterator his an invalid character (see [not valid](GenomeSequence::is_valid)).
     fn reverse_complement_iter(&'a self) -> ReverseComplementIterator<Self::Iterator> {
         self.iter()
             .copied()
@@ -60,7 +60,7 @@ pub trait OwnedGenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSu
     for<'s> GenomeSequence<'s, GenomeSubsequence> + FromIterator<u8>
 {
     /// Returns the reverse complement of this genome.
-    /// Panics if this genome is [not valid](is_valid).
+    /// Panics if this genome is [not valid](GenomeSequence::is_valid).
     fn reverse_complement(&'a self) -> Self {
         self.reverse_complement_iter().collect()
     }

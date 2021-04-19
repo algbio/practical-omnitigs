@@ -162,7 +162,7 @@ pub trait StaticNodeCentricBigraph: StaticBigraph {
 
     /**
      * Returns true if the node-centric [mirror property] of edges is fulfilled.
-     * Assumes that the node pairing is correct (See [verify_node_pairing()](NodeBigraphWrapper::verify_node_pairing))
+     * Assumes that the node pairing is correct (See [verify_node_pairing()](StaticBigraph::verify_node_pairing))
      *
      * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
@@ -222,7 +222,7 @@ where
 
     /**
      * Returns true if the edge-centric [mirror property] of edges is fulfilled.
-     * Assumes that the node pairing is correct (See [verify_node_pairing()](NodeBigraphWrapper::verify_node_pairing)) and that no two edges are the same, except for self mirrors.
+     * Assumes that the node pairing is correct (See [verify_node_pairing()](StaticBigraph::verify_node_pairing)) and that no two edges are the same, except for self mirrors.
      *
      * [mirror property]: https://github.com/GATB/bcalm/blob/master/bidirected-graphs-in-bcalm2/bidirected-graphs-in-bcalm2.md
      */
