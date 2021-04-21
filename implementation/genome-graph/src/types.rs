@@ -38,3 +38,13 @@ pub type PetWtdbg2DotGraph =
             usize,
         >,
     >;
+
+/// Represent arbitrary bigraphs with petgraph.
+pub type PetBigraph<NodeData, EdgeData> =
+    crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
+        crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
+            NodeData,
+            EdgeData,
+            usize,
+        >,
+    >;
