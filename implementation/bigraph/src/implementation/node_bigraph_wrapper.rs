@@ -19,13 +19,13 @@ use traitgraph::interface::{
 
 /// Represent arbitrary bigraphs with petgraph.
 pub type PetBigraph<NodeData, EdgeData> =
-crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
-    crate::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
-        NodeData,
-        EdgeData,
-        usize,
-    >,
->;
+    crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
+        crate::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
+            NodeData,
+            EdgeData,
+            usize,
+        >,
+    >;
 
 /// Wrapper for a static graph that adds a mirror node mapping function.
 ///
