@@ -17,6 +17,16 @@ use traitgraph::interface::{
     StaticGraph,
 };
 
+/// Represent arbitrary bigraphs with petgraph.
+pub type PetBigraph<NodeData, EdgeData> =
+crate::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
+    crate::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
+        NodeData,
+        EdgeData,
+        usize,
+    >,
+>;
+
 /// Wrapper for a static graph that adds a mirror node mapping function.
 ///
 /// Bigraphs can be represented with this struct by creating their topology as normal directed graph where each binode is split into its two parts.
