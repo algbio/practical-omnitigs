@@ -111,20 +111,17 @@ pub fn decomposes_into_eulerian_bicycles<
 }
 
 /// Compute a vector of nodes that has indegree != outdegree.
-/// Bidirected self loops (edges from a node to its mirror) are handled by not counting them.
+/// Self-mirror nodes missing a biedge are returned as well (even though they always have indegree == outdegree).
 pub fn find_non_eulerian_binodes<
     EdgeData: BidirectedData + Eq,
     Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
 >(
     graph: &Graph,
 ) -> Vec<Graph::NodeIndex> {
-    let mut result = Vec::new();
-    for node_index in graph.node_indices() {
-        if compute_eulerian_superfluous_out_biedges(graph, node_index) != 0 {
-            result.push(node_index);
-        }
-    }
-    result
+    find_non_eulerian_binodes_with_differences(graph)
+        .iter()
+        .map(|&(n, _)| n)
+        .collect()
 }
 
 /// Computes the number of outgoing edges that need to be added to make the binode Eulerian.
@@ -181,7 +178,7 @@ pub fn compute_eulerian_superfluous_out_biedges<
 }
 
 /// Compute a vector of tuples of nodes and outdegree - indegree that has indegree != outdegree.
-/// Bidirected self loops (edges from a node to its mirror) are handled by not counting them.
+/// Self-mirror nodes missing a biedge are returned with a 0 in the second entry of the tuple.
 pub fn find_non_eulerian_binodes_with_differences<
     EdgeData: BidirectedData + Eq,
     Graph: StaticEdgeCentricBigraph<EdgeData = EdgeData>,
@@ -192,7 +189,11 @@ pub fn find_non_eulerian_binodes_with_differences<
     for node_index in graph.node_indices() {
         let difference = compute_eulerian_superfluous_out_biedges(graph, node_index);
         if difference != 0 {
-            node_indices_and_differences.push((node_index, difference));
+            if graph.is_self_mirror_node(node_index) {
+                node_indices_and_differences.push((node_index, 0));
+            } else {
+                node_indices_and_differences.push((node_index, difference));
+            }
         }
     }
     node_indices_and_differences

@@ -239,7 +239,7 @@ impl<
             }
             assert_eq!(actual_weight, weight);
 
-            // Check if we are still below max_weight
+            // Check if we are still lower than or equal to max_weight
             if weight > max_weight {
                 //println!("Aborting early by max_weight after {}/{} iterations of which {} are unnecessary", iterations, max_iterations, unnecessary_iterations);
                 break;
