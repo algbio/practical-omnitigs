@@ -183,11 +183,7 @@ macro_rules! impl_graph_index {
             for Option<$GraphIndexType<IndexType>>
         {
             fn from(source: $OptionalGraphIndexType<IndexType>) -> Self {
-                if let Some(source) = source.as_usize() {
-                    Some(source.into())
-                } else {
-                    None
-                }
+                source.as_usize().map(|source| source.into())
             }
         }
 
