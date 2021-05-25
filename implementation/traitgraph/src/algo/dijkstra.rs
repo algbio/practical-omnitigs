@@ -211,6 +211,7 @@ impl<
 
     /// Compute the shortest paths from source to all targets, with given maximum weight.
     #[inline(never)]
+    #[allow(clippy::too_many_arguments)]
     pub fn shortest_path_lens(
         &mut self,
         graph: &Graph,
@@ -218,6 +219,7 @@ impl<
         targets: &BitVector,
         target_amount: usize,
         max_weight: usize,
+        forbid_source_target: bool,
         distances: &mut Vec<(Graph::NodeIndex, usize)>,
     ) {
         //println!("Shortest path lens of {}", source.as_usize());
@@ -247,7 +249,9 @@ impl<
             }
 
             // Check if we found a target
-            if targets.contains(node_index.as_usize()) {
+            if targets.contains(node_index.as_usize())
+                && (!forbid_source_target || node_index != source)
+            {
                 distances.push((node_index, weight));
 
                 // Check if we already found all paths
@@ -302,21 +306,21 @@ mod tests {
         let mut distances = Vec::new();
         let mut targets = BitVector::new(3);
         targets.insert(n3.as_usize());
-        dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, &mut distances);
+        dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, false, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
 
-        dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, &mut distances);
+        dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, false, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
 
-        dijkstra.shortest_path_lens(&graph, n2, &targets, 1, 6, &mut distances);
+        dijkstra.shortest_path_lens(&graph, n2, &targets, 1, 6, false, &mut distances);
         assert_eq!(distances, vec![(n3, 2)]);
 
-        dijkstra.shortest_path_lens(&graph, n3, &targets, 1, 6, &mut distances);
+        dijkstra.shortest_path_lens(&graph, n3, &targets, 1, 6, false, &mut distances);
         assert_eq!(distances, vec![(n3, 0)]);
 
         targets.clear();
         targets.insert(n2.as_usize());
-        dijkstra.shortest_path_lens(&graph, n3, &targets, 1, 6, &mut distances);
+        dijkstra.shortest_path_lens(&graph, n3, &targets, 1, 6, false, &mut distances);
         assert_eq!(distances, vec![]);
     }
 
@@ -334,7 +338,7 @@ mod tests {
         let mut distances = Vec::new();
         let mut targets = BitVector::new(3);
         targets.insert(n3.as_usize());
-        dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, &mut distances);
+        dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, false, &mut distances);
         assert_eq!(distances, vec![(n3, 4)]);
     }
 }
