@@ -1,74 +1,112 @@
 use crate::error::Result;
-use crate::io::fasta::FastaData;
+use crate::io::SequenceData;
 use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
-use compact_genome::implementation::{DefaultGenome, DefaultSubGenome};
+use compact_genome::implementation::DefaultGenome;
 use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
+use compact_genome::interface::sequence_store::SequenceStore;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::sync::Arc;
-//use bigraph::traitgraph::index::GraphIndex;
 
 /// Type of graphs read from gfa files.
-pub type PetGfaGraph<NodeData, EdgeData> =
+pub type PetGfaGraph<NodeData, EdgeData, SequenceHandle> =
     crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
         crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
-            BidirectedGfaNodeData<NodeData>,
+            BidirectedGfaNodeData<SequenceHandle, NodeData>,
             EdgeData,
             usize,
         >,
     >;
 
 /// The edge-centric variant of the type of graphs read from gfa files.
-pub type PetGfaEdgeGraph<NodeData, EdgeData> =
+pub type PetGfaEdgeGraph<NodeData, EdgeData, SequenceHandle> =
     crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
         crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
             NodeData,
-            BidirectedGfaNodeData<EdgeData>,
+            BidirectedGfaNodeData<SequenceHandle, EdgeData>,
             usize,
         >,
     >;
 
 /// Node data of a bidirected graph read from GFA
 #[derive(Eq, PartialEq, Debug, Clone, Default)]
-pub struct BidirectedGfaNodeData<T> {
+pub struct BidirectedGfaNodeData<SequenceHandle, Data> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.
-    pub sequence: Arc<DefaultGenome>,
+    pub sequence_handle: SequenceHandle,
     /// True if this node is the forward node of sequence, false if it is the reverse complement node.
     pub forward: bool,
     /// Further data.
-    pub data: T,
+    pub data: Data,
 }
 
-impl<T: BidirectedData> BidirectedData for BidirectedGfaNodeData<T> {
+impl<SequenceHandle: Clone, Data: BidirectedData> BidirectedData
+    for BidirectedGfaNodeData<SequenceHandle, Data>
+{
     fn mirror(&self) -> Self {
         Self {
-            sequence: self.sequence.clone(),
+            sequence_handle: self.sequence_handle.clone(),
             forward: !self.forward,
             data: self.data.mirror(),
         }
     }
 }
 
-impl<T: WeightedEdgeData> WeightedEdgeData for BidirectedGfaNodeData<T> {
+impl<SequenceHandle, Data: WeightedEdgeData> WeightedEdgeData
+    for BidirectedGfaNodeData<SequenceHandle, Data>
+{
     fn weight(&self) -> usize {
         self.data.weight()
     }
 }
 
-impl<T> FastaData for BidirectedGfaNodeData<T> {
-    type Genome = DefaultGenome;
-    type GenomeSubsequence = DefaultSubGenome;
+impl<GenomeSequenceStore: SequenceStore, Data> SequenceData<GenomeSequenceStore>
+    for BidirectedGfaNodeData<GenomeSequenceStore::Handle, Data>
+{
+    fn sequence_handle(&self) -> &GenomeSequenceStore::Handle {
+        &self.sequence_handle
+    }
 
-    fn sequence(&self) -> &Self::Genome {
-        &self.sequence
+    fn sequence_ref<'a>(
+        &self,
+        source_sequence_store: &'a GenomeSequenceStore,
+    ) -> Option<&'a <GenomeSequenceStore as SequenceStore>::SequenceRef> {
+        if self.forward {
+            let handle =
+                <BidirectedGfaNodeData<GenomeSequenceStore::Handle, Data> as SequenceData<
+                    GenomeSequenceStore,
+                >>::sequence_handle(self);
+            Some(source_sequence_store.get(handle))
+        } else {
+            None
+        }
+    }
+
+    fn sequence_owned<
+        ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>,
+        ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+    >(
+        &self,
+        source_sequence_store: &GenomeSequenceStore,
+    ) -> ResultSequence {
+        let handle = <BidirectedGfaNodeData<GenomeSequenceStore::Handle, Data> as SequenceData<
+            GenomeSequenceStore,
+        >>::sequence_handle(self);
+        if self.forward {
+            source_sequence_store.get(handle).convert()
+        } else {
+            source_sequence_store
+                .get(handle)
+                .convert_with_reverse_complement()
+        }
     }
 }
 
@@ -79,26 +117,30 @@ pub struct GfaReadFileProperties {
 
     /// The header of the GFA file. Should the GFA file have multiple header lines, it is undefined which line is reported. If the GFA file has no header lines, then this field is None.
     pub header: Option<String>,
-
-    /// Bytes of memory needed to store the sequences. This is as accurate as possible, computed by the [compact_genome::implementation::two_bit_vec_sequence::TwoBitVectorGenome] method.
-    /// TODO: The intra doc link might be wrong here, if DefaultGenome ever points to a different type. Sadly, at the moment, methods of type aliases cannot be linked directly.
-    pub sequence_size_in_memory: usize,
 }
 
 /// Read a bigraph in gfa format from a file.
 /// This method also returns the k-mer length given in the gfa file.
 pub fn read_gfa_as_bigraph_from_file<
     P: AsRef<Path>,
+    GenomeSequenceStoreHandle: Clone,
+    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
+    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
     NodeData: Default,
     EdgeData: Default,
-    Graph: DynamicBigraph<NodeData = BidirectedGfaNodeData<NodeData>, EdgeData = EdgeData> + Default,
+    Graph: DynamicBigraph<
+            NodeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, NodeData>,
+            EdgeData = EdgeData,
+        > + Default,
 >(
     gfa_file: P,
+    target_sequence_store: &mut GenomeSequenceStore,
     ignore_k: bool,
     allow_messy_edges: bool,
 ) -> Result<(Graph, GfaReadFileProperties)> {
     read_gfa_as_bigraph(
         BufReader::new(File::open(gfa_file)?),
+        target_sequence_store,
         ignore_k,
         allow_messy_edges,
     )
@@ -108,18 +150,24 @@ pub fn read_gfa_as_bigraph_from_file<
 /// This method also returns the k-mer length given in the gfa file.
 pub fn read_gfa_as_bigraph<
     R: BufRead,
+    GenomeSequenceStoreHandle: Clone,
+    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
+    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
     NodeData: Default,
     EdgeData: Default,
-    Graph: DynamicBigraph<NodeData = BidirectedGfaNodeData<NodeData>, EdgeData = EdgeData> + Default,
+    Graph: DynamicBigraph<
+            NodeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, NodeData>,
+            EdgeData = EdgeData,
+        > + Default,
 >(
     gfa: R,
+    target_sequence_store: &mut GenomeSequenceStore,
     ignore_k: bool,
     allow_messy_edges: bool,
 ) -> Result<(Graph, GfaReadFileProperties)> {
     let mut graph = Graph::default();
     let mut k = usize::max_value();
     let mut header = None;
-    let mut sequence_size_in_memory = 0;
     let mut node_name_map = HashMap::new();
 
     for line in gfa.lines() {
@@ -145,10 +193,9 @@ pub fn read_gfa_as_bigraph<
             let mut columns = line.split('\t').skip(1);
             let node_name: &str = columns.next().unwrap();
 
-            let sequence = columns.next().unwrap();
-            let sequence: DefaultGenome = sequence.bytes().collect();
-            sequence_size_in_memory += sequence.size_in_memory();
-            let sequence = Arc::new(sequence);
+            let sequence = columns.next().unwrap().as_bytes();
+            let sequence_handle = target_sequence_store.add(sequence);
+            let sequence = target_sequence_store.get(&sequence_handle);
             assert!(
                 sequence.len() >= k || ignore_k,
                 "Node {} has sequence '{:?}' of length {} (k = {})",
@@ -159,12 +206,12 @@ pub fn read_gfa_as_bigraph<
             );
 
             let n1 = graph.add_node(BidirectedGfaNodeData {
-                sequence: sequence.clone(),
+                sequence_handle: sequence_handle.clone(),
                 forward: true,
                 data: Default::default(),
             });
             let n2 = graph.add_node(BidirectedGfaNodeData {
-                sequence: sequence.clone(),
+                sequence_handle: sequence_handle.clone(),
                 forward: false,
                 data: Default::default(),
             });
@@ -210,30 +257,32 @@ pub fn read_gfa_as_bigraph<
         k = 0;
     }
 
-    Ok((
-        graph,
-        GfaReadFileProperties {
-            k,
-            header,
-            sequence_size_in_memory,
-        },
-    ))
+    Ok((graph, GfaReadFileProperties { k, header }))
 }
 
 /// Read an edge-centric bigraph in gfa format from a file.
 /// This method also returns the k-mer length given in the gfa file as well as the full gfa header.
 pub fn read_gfa_as_edge_centric_bigraph_from_file<
     P: AsRef<Path>,
+    GenomeSequenceStoreHandle: Clone + Eq,
+    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle>,
     NodeData: Default,
     EdgeData: Default + BidirectedData + Eq + Clone,
-    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = BidirectedGfaNodeData<EdgeData>>
-        + Default
+    Graph: DynamicEdgeCentricBigraph<
+            NodeData = NodeData,
+            EdgeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, EdgeData>,
+        > + Default
         + std::fmt::Debug,
 >(
     gfa_file: P,
+    target_sequence_store: &mut GenomeSequenceStore,
     estimate_k: bool,
 ) -> Result<(Graph, GfaReadFileProperties)> {
-    read_gfa_as_edge_centric_bigraph(BufReader::new(File::open(gfa_file)?), estimate_k)
+    read_gfa_as_edge_centric_bigraph(
+        BufReader::new(File::open(gfa_file)?),
+        target_sequence_store,
+        estimate_k,
+    )
 }
 
 fn get_or_create_node<
@@ -254,7 +303,7 @@ where
     } else {
         let node = bigraph.add_node(Default::default());
 
-        let reverse_complement = genome.reverse_complement();
+        let reverse_complement = genome.clone_as_reverse_complement();
         if reverse_complement == genome {
             bigraph.set_mirror_nodes(node, node);
         } else {
@@ -273,13 +322,18 @@ where
 /// This method also returns the k-mer length given in the gfa file as well as the full gfa header.
 pub fn read_gfa_as_edge_centric_bigraph<
     R: BufRead,
+    GenomeSequenceStoreHandle: Clone + Eq,
+    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle>,
     NodeData: Default,
     EdgeData: Default + BidirectedData + Eq + Clone,
-    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = BidirectedGfaNodeData<EdgeData>>
-        + Default
+    Graph: DynamicEdgeCentricBigraph<
+            NodeData = NodeData,
+            EdgeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, EdgeData>,
+        > + Default
         + std::fmt::Debug,
 >(
     gfa: R,
+    target_sequence_store: &mut GenomeSequenceStore,
     estimate_k: bool,
 ) -> Result<(Graph, GfaReadFileProperties)> {
     assert!(!estimate_k, "Estimating k not supported yet");
@@ -287,7 +341,6 @@ pub fn read_gfa_as_edge_centric_bigraph<
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
     let mut k = usize::max_value();
-    let mut sequence_size_in_memory = 0;
     let mut header = None;
 
     for line in gfa.lines() {
@@ -309,13 +362,12 @@ pub fn read_gfa_as_edge_centric_bigraph<
             let node_index: usize = columns.next().unwrap().parse().unwrap();
             assert_eq!((node_index - 1) * 2, bigraph.edge_count());
 
-            let sequence = columns.next().unwrap();
+            let sequence = columns.next().unwrap().as_bytes();
             //println!("sequence {}", sequence);
-            let sequence: DefaultGenome = sequence.bytes().collect();
-            sequence_size_in_memory += sequence.size_in_memory();
+            let sequence_handle = target_sequence_store.add(sequence);
             let sequence = Arc::new(sequence);
             let edge_data = BidirectedGfaNodeData {
-                sequence: sequence.clone(),
+                sequence_handle: sequence_handle.clone(),
                 forward: true,
                 data: Default::default(),
             };
@@ -357,14 +409,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
     assert!(header.is_some(), "GFA file has no header");
     assert!(bigraph.verify_node_pairing());
     assert!(bigraph.verify_edge_mirror_property());
-    Ok((
-        bigraph,
-        GfaReadFileProperties {
-            k,
-            header,
-            sequence_size_in_memory,
-        },
-    ))
+    Ok((bigraph, GfaReadFileProperties { k, header }))
 }
 
 #[cfg(test)]
@@ -372,13 +417,20 @@ mod tests {
     use crate::io::gfa::{
         read_gfa_as_edge_centric_bigraph, GfaReadFileProperties, PetGfaEdgeGraph,
     };
+    use compact_genome::implementation::DefaultSequenceStore;
     use std::io::BufReader;
 
     #[test]
     fn test_read_gfa_as_edge_centric_bigraph_simple() {
         let gfa = "H\tKL:Z:3\nS\t1\tACGA\nS\t2\tTCGT";
-        let (_bigraph, GfaReadFileProperties { k, .. }): (PetGfaEdgeGraph<(), ()>, _) =
-            read_gfa_as_edge_centric_bigraph(BufReader::new(gfa.as_bytes()), false).unwrap();
+        let mut sequence_store = DefaultSequenceStore::default();
+        let (_bigraph, GfaReadFileProperties { k, .. }): (PetGfaEdgeGraph<(), (), _>, _) =
+            read_gfa_as_edge_centric_bigraph(
+                BufReader::new(gfa.as_bytes()),
+                &mut sequence_store,
+                false,
+            )
+            .unwrap();
         assert_eq!(k, 3);
     }
 }

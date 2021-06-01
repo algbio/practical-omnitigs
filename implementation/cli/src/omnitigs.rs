@@ -1,5 +1,6 @@
 use crate::CliOptions;
 use clap::Clap;
+use compact_genome::implementation::DefaultSequenceStore;
 use genome_graph::bigraph::traitgraph::algo::components::{
     decompose_strongly_connected_components, is_strongly_connected,
 };
@@ -166,6 +167,8 @@ pub(crate) fn compute_omnitigs(
         None
     };
 
+    let mut sequence_store = DefaultSequenceStore::default();
+
     match subcommand.file_format.as_str() {
         "bcalm2" => {
             if subcommand.output_as_wtdbg2_node_ids {
@@ -186,9 +189,11 @@ pub(crate) fn compute_omnitigs(
                 "Reading bigraph from '{}' with kmer size {}",
                 input, kmer_size
             );
-            let genome_graph: PetBCalm2EdgeGraph =
+            let genome_graph: PetBCalm2EdgeGraph<_> =
                 genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
-                    &input, kmer_size,
+                    &input,
+                    &mut sequence_store,
+                    kmer_size,
                 )?;
 
             info!("Computing maximal omnitigs");
@@ -204,6 +209,7 @@ pub(crate) fn compute_omnitigs(
             );
             genome_graph::io::fasta::write_walks_as_fasta_file(
                 &genome_graph,
+                &sequence_store,
                 kmer_size,
                 maximal_omnitigs.iter(),
                 &subcommand.output,

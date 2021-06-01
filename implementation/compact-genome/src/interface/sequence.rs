@@ -2,7 +2,7 @@
 
 use itertools::Itertools;
 use std::iter::{Copied, FromIterator, Map, Rev};
-use traitsequence::interface::{EditableSequence, Sequence, SequenceMut};
+use traitsequence::interface::{EditableSequence, OwnedSequence, Sequence, SequenceMut};
 
 /// An iterator over the reverse complement of a genome sequence.
 pub type ReverseComplementIterator<I> =
@@ -34,7 +34,6 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
 
     /// Get a reference to this genome as its subsequence type.
     fn as_genome_subsequence(&self) -> &GenomeSubsequence {
-        println!("as_genome_subsequence()");
         self.index(0..self.len())
     }
 
@@ -53,15 +52,38 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
             .map(ascii_complement as fn(u8) -> Option<u8>)
             .map(Option::unwrap as fn(Option<u8>) -> u8)
     }
+
+    /// Returns an owned copy of the reverse complement of this genome.
+    /// Panics if this genome is [not valid](GenomeSequence::is_valid).
+    fn convert_with_reverse_complement<
+        ReverseComplementSequence: for<'rc> OwnedGenomeSequence<'rc, ReverseComplementSubsequence>,
+        ReverseComplementSubsequence: for<'rc> GenomeSequence<'a, ReverseComplementSubsequence> + ?Sized,
+    >(
+        &'a self,
+    ) -> ReverseComplementSequence {
+        self.reverse_complement_iter().collect()
+    }
+
+    /// Returns an owned copy of this genome.
+    fn convert<
+        ResultSequence: for<'rc> OwnedGenomeSequence<'rc, ResultSubsequence>,
+        ResultSubsequence: for<'rc> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+    >(
+        &'a self,
+    ) -> ResultSequence {
+        self.iter().copied().collect()
+    }
 }
 
 /// A genome sequence that is owned, i.e. not a reference.
 pub trait OwnedGenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequence> + ?Sized>:
-    for<'s> GenomeSequence<'s, GenomeSubsequence> + FromIterator<u8>
+    for<'s> GenomeSequence<'s, GenomeSubsequence>
+    + FromIterator<u8>
+    + for<'s> OwnedSequence<'s, u8, GenomeSubsequence>
 {
     /// Returns the reverse complement of this genome.
     /// Panics if this genome is [not valid](GenomeSequence::is_valid).
-    fn reverse_complement(&'a self) -> Self {
+    fn clone_as_reverse_complement(&'a self) -> Self {
         self.reverse_complement_iter().collect()
     }
 }

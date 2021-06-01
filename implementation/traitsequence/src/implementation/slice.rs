@@ -1,4 +1,4 @@
-use crate::interface::{Sequence, SequenceMut};
+use crate::interface::{CloneableSequence, Sequence, SequenceMut};
 
 impl<'a, Item: 'a> Sequence<'a, Item, [Item]> for [Item] {
     type Iterator = std::slice::Iter<'a, Item>;
@@ -18,6 +18,8 @@ impl<'a, Item: 'a> SequenceMut<'a, Item, [Item]> for [Item] {
         <[Item]>::iter_mut(self)
     }
 }
+
+impl<'a, Item: 'a + Clone> CloneableSequence<'a, Item, [Item]> for [Item] {}
 
 #[cfg(test)]
 mod tests {

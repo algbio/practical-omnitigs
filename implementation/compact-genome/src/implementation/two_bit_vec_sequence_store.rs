@@ -1,32 +1,35 @@
-//! An ASCII vector based sequence store.
+//! A vector sequence store where each character is encoded as two bits.
 
+use crate::implementation::two_bit_vec_sequence::{TwoBitVectorGenome, TwoBitVectorSubGenome};
 use crate::interface::sequence::GenomeSequence;
 use crate::interface::sequence_store::SequenceStore;
+use traitsequence::interface::Sequence;
 
-/// An ASCII vector based sequence store.
+/// A bitvector based sequence store.
 #[derive(Default, Clone, Eq, PartialEq, Debug)]
-pub struct AsciiVectorSequenceStore {
-    sequence: Vec<u8>,
+pub struct TwoBitVectorSequenceStore {
+    sequence: TwoBitVectorGenome,
 }
 
-/// A handle of a sequence in an [AsciiVectorSequenceStore].
-pub struct AsciiVectorSequenceStoreHandle {
+/// A handle of a sequence in an [TwoBitVectorSequenceStore].
+#[derive(Default, Debug, Clone, Eq, PartialEq)]
+pub struct TwoBitVectorSequenceStoreHandle {
     offset: usize,
     len: usize,
 }
 
-impl AsciiVectorSequenceStore {
+impl TwoBitVectorSequenceStore {
     /// Creates a new instance.
     pub fn new() -> Self {
         Self {
-            sequence: Vec::new(),
+            sequence: Default::default(),
         }
     }
 }
 
-impl SequenceStore for AsciiVectorSequenceStore {
-    type Handle = AsciiVectorSequenceStoreHandle;
-    type SequenceRef = [u8];
+impl SequenceStore for TwoBitVectorSequenceStore {
+    type Handle = TwoBitVectorSequenceStoreHandle;
+    type SequenceRef = TwoBitVectorSubGenome;
 
     fn add<
         Sequence: for<'a> GenomeSequence<'a, Subsequence> + ?Sized,
@@ -37,7 +40,7 @@ impl SequenceStore for AsciiVectorSequenceStore {
     ) -> Self::Handle {
         let offset = self.sequence.len();
         let len = s.len();
-        self.sequence.extend(s.iter());
+        self.sequence.extend(s.iter().copied());
         Self::Handle { offset, len }
     }
 

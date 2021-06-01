@@ -162,6 +162,23 @@ pub trait SequenceMut<'a, Item: 'a, Subsequence: SequenceMut<'a, Item, Subsequen
     fn iter_mut(&'a mut self) -> Self::IteratorMut;
 }
 
+/// A type behaving like an owned sequence over the type `Item`.
+/// Currently this only means the sequence is `Sized`.
+pub trait OwnedSequence<'a, Item: 'a, Subsequence: Sequence<'a, Item, Subsequence> + ?Sized>:
+    Sequence<'a, Item, Subsequence> + Sized
+{
+}
+
+/// A type behaving like an cloneable sequence over the type `Item`.
+/// Currently this only means the sequence is `ToOwned`.
+pub trait CloneableSequence<
+    'a,
+    Item: 'a + Clone,
+    Subsequence: CloneableSequence<'a, Item, Subsequence> + ?Sized,
+>: ToOwned
+{
+}
+
 /// A type behaving like a sequence over the type `Item` that can be edited.
 /// This sequences items can not necessarily be mutated themselves, but they can be rearranged or new items can be appended etc.
 /// For a sequence where the items themselves can be mutated, see [SequenceMut].

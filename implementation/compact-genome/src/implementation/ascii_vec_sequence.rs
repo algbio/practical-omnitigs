@@ -15,6 +15,10 @@ impl<'a> OwnedGenomeSequence<'a, [u8]> for Vec<u8> {}
 
 impl<'a> EditableGenomeSequence<'a, [u8]> for Vec<u8> {}
 
+impl<'a> GenomeSequence<'a, [u8]> for [u8] {}
+
+impl<'a> GenomeSequenceMut<'a, [u8]> for [u8] {}
+
 #[cfg(test)]
 mod tests {
     use crate::implementation::ascii_vec_sequence::AsciiVectorGenome;
@@ -24,8 +28,8 @@ mod tests {
     fn test_reverse_complement() {
         let genome: AsciiVectorGenome = b"ATTCGGT".iter().copied().collect();
         let reverse_complement: AsciiVectorGenome = b"ACCGAAT".iter().copied().collect();
-        assert_eq!(genome.reverse_complement(), reverse_complement);
-        assert_eq!(genome, reverse_complement.reverse_complement());
+        assert_eq!(genome.clone_as_reverse_complement(), reverse_complement);
+        assert_eq!(genome, reverse_complement.clone_as_reverse_complement());
     }
 
     #[test]

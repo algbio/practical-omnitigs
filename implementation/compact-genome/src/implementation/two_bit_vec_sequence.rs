@@ -6,7 +6,7 @@ use ref_cast::RefCast;
 use std::borrow::Borrow;
 use std::iter::FromIterator;
 use std::ops::{Index, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
-use traitsequence::interface::{EditableSequence, Sequence};
+use traitsequence::interface::{EditableSequence, OwnedSequence, Sequence};
 
 const ASCII_A: u8 = b'A';
 const ASCII_C: u8 = b'C';
@@ -309,6 +309,8 @@ impl<'a> EditableGenomeSequence<'a, TwoBitVectorSubGenome> for TwoBitVectorGenom
 
 impl<'a> GenomeSequence<'a, TwoBitVectorSubGenome> for TwoBitVectorSubGenome {}
 
+impl<'a> OwnedSequence<'a, u8, TwoBitVectorSubGenome> for TwoBitVectorGenome {}
+
 #[cfg(test)]
 mod tests {
     use crate::implementation::two_bit_vec_sequence::TwoBitVectorGenome;
@@ -318,8 +320,8 @@ mod tests {
     fn test_reverse_complement() {
         let genome: TwoBitVectorGenome = b"ATTCGGT".iter().copied().collect();
         let reverse_complement: TwoBitVectorGenome = b"ACCGAAT".iter().copied().collect();
-        assert_eq!(genome.reverse_complement(), reverse_complement);
-        assert_eq!(genome, reverse_complement.reverse_complement());
+        assert_eq!(genome.clone_as_reverse_complement(), reverse_complement);
+        assert_eq!(genome, reverse_complement.clone_as_reverse_complement());
     }
 
     #[test]
@@ -338,11 +340,12 @@ mod tests {
         let expected_string = "TTC";
         assert_eq!(display_string, expected_string);
 
-        let display_string = genome.reverse_complement()[1..4].as_string();
+        let display_string = genome.clone_as_reverse_complement()[1..4].as_string();
         let expected_string = "CCG";
         assert_eq!(display_string, expected_string);
 
-        let display_string = genome[1..6].to_owned().reverse_complement()[1..4].as_string();
+        let display_string =
+            genome[1..6].to_owned().clone_as_reverse_complement()[1..4].as_string();
         let expected_string = "CGA";
         assert_eq!(display_string, expected_string);
     }

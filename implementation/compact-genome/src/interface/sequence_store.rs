@@ -1,6 +1,6 @@
 //! Traits for genome sequence stores.
 
-use crate::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
+use crate::interface::sequence::GenomeSequence;
 
 /// A store for sequence data, which gives out handles that can be used to retrieve concrete sequences.
 pub trait SequenceStore {
@@ -14,11 +14,11 @@ pub trait SequenceStore {
     /// Adds a sequence to this store and returns a handle for later retrieval.
     /// Handles do not borrow the sequence store, so they can exist while the store is modified.
     fn add<
-        Sequence: for<'a> OwnedGenomeSequence<'a, Subsequence>,
-        Subsequence: for<'a> GenomeSequence<'a, Subsequence>,
+        Sequence: for<'a> GenomeSequence<'a, Subsequence> + ?Sized,
+        Subsequence: for<'a> GenomeSequence<'a, Subsequence> + ?Sized,
     >(
         &mut self,
-        s: Sequence,
+        s: &Sequence,
     ) -> Self::Handle;
 
     /// Returns a reference to a sequence in this store, given the handle.

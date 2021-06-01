@@ -1,21 +1,21 @@
 use crate::io::wtdbg2::{PlainWtdbg2EdgeData, PlainWtdbg2NodeData};
 
 /// A node-centric genome graph with `PlainBCalm2NodeData` as node data represented using the `petgraph` crate.
-pub type PetBCalm2NodeGraph =
+pub type PetBCalm2NodeGraph<GenomeSequenceStoreHandle> =
     crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
         crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
-            crate::io::bcalm2::PlainBCalm2NodeData,
+            crate::io::bcalm2::PlainBCalm2NodeData<GenomeSequenceStoreHandle>,
             (),
             usize,
         >,
     >;
 
 /// An edge-centric genome graph with `PlainBCalm2NodeData` as edge data represented using the `petgraph` crate.
-pub type PetBCalm2EdgeGraph =
+pub type PetBCalm2EdgeGraph<GenomeSequenceStoreHandle> =
     crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
         crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
             (),
-            crate::io::bcalm2::PlainBCalm2NodeData,
+            crate::io::bcalm2::PlainBCalm2NodeData<GenomeSequenceStoreHandle>,
             usize,
         >,
     >;

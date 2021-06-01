@@ -15,6 +15,7 @@ use omnitigs::macrotigs::microtigs::MaximalMicrotigsAlgorithm;
 use omnitigs::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacrotigLinkAlgorithm;
 use omnitigs::macrotigs::macrotigs::MaximalMacrotigsAlgorithm;
 use traitsequence::interface::Sequence;
+use compact_genome::implementation::DefaultSequenceStore;
 
 #[derive(Clap)]
 pub struct VerifyEdgeCentricCommand {
@@ -264,9 +265,11 @@ pub(crate) fn verify_edge_centric(
         "Reading bigraph from '{}' with kmer size {}",
         subcommand.input, subcommand.kmer_size
     );
-    let genome_graph: PetBCalm2EdgeGraph =
+    let mut sequence_store = DefaultSequenceStore::default();
+    let genome_graph: PetBCalm2EdgeGraph<_> =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
             &subcommand.input,
+            &mut sequence_store,
             subcommand.kmer_size,
         )?;
 
@@ -315,6 +318,7 @@ pub(crate) fn verify_edge_centric(
         info!("Writing the unmodified bigraph to {}", output);
         genome_graph::io::bcalm2::write_edge_centric_bigraph_to_bcalm2_to_file(
             &genome_graph,
+            &sequence_store,
             output,
         )?;
     }
@@ -326,9 +330,11 @@ pub(crate) fn verify_node_centric(
     subcommand: &VerifyNodeCentricCommand,
 ) -> crate::Result<()> {
     info!("Reading bigraph from {}", subcommand.input);
-    let genome_graph: PetBCalm2NodeGraph =
+    let mut sequence_store = DefaultSequenceStore::default();
+    let genome_graph: PetBCalm2NodeGraph<_> =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_node_centric_from_file(
             &subcommand.input,
+            &mut sequence_store,
         )?;
 
     info!("");
@@ -401,6 +407,7 @@ pub(crate) fn verify_node_centric(
         info!("Writing the unmodified bigraph to {}", output);
         genome_graph::io::bcalm2::write_node_centric_bigraph_to_bcalm2_to_file(
             &genome_graph,
+            &sequence_store,
             output,
         )?;
     }
