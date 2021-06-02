@@ -26,3 +26,14 @@ pub trait SequenceStore {
     /// On the other hand, handles do not borrow, so they can exist while the store is modified.
     fn get(&self, handle: &Self::Handle) -> &Self::SequenceRef;
 }
+
+/// A handle of a sequence store that can compute the length of the referred sequence without retrieving the sequence.
+pub trait HandleWithLength {
+    /// Returns the length of the sequence referred by this handle without retrieving the sequence.
+    fn len(&self) -> usize;
+
+    /// Returns true if the length of the sequence referred by this handle is zero, without retrieving the sequence.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}

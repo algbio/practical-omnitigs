@@ -1,7 +1,7 @@
 //! An ASCII vector based sequence store.
 
 use crate::interface::sequence::GenomeSequence;
-use crate::interface::sequence_store::SequenceStore;
+use crate::interface::sequence_store::{HandleWithLength, SequenceStore};
 
 /// An ASCII vector based sequence store.
 #[derive(Default, Clone, Eq, PartialEq, Debug)]
@@ -43,5 +43,11 @@ impl SequenceStore for AsciiVectorSequenceStore {
 
     fn get(&self, handle: &Self::Handle) -> &Self::SequenceRef {
         &self.sequence[handle.offset..handle.offset + handle.len]
+    }
+}
+
+impl HandleWithLength for AsciiVectorSequenceStoreHandle {
+    fn len(&self) -> usize {
+        self.len
     }
 }
