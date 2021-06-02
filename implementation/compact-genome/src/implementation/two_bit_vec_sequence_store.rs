@@ -25,6 +25,11 @@ impl TwoBitVectorSequenceStore {
             sequence: Default::default(),
         }
     }
+
+    /// Returns the number of bytes consumed by the characters stored in this sequence store.
+    pub fn size_in_memory(&self) -> usize {
+        (self.sequence.len() - 1) / 4 + 1 // Rounding up integer division
+    }
 }
 
 impl SequenceStore for TwoBitVectorSequenceStore {
