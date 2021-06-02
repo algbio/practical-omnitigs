@@ -126,12 +126,9 @@ pub fn read_gfa_as_bigraph_from_file<
     GenomeSequenceStoreHandle: Clone,
     GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
     GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
-    NodeData: Default,
+    NodeData: From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
     EdgeData: Default,
-    Graph: DynamicBigraph<
-            NodeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, NodeData>,
-            EdgeData = EdgeData,
-        > + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     gfa_file: P,
     target_sequence_store: &mut GenomeSequenceStore,
@@ -153,12 +150,9 @@ pub fn read_gfa_as_bigraph<
     GenomeSequenceStoreHandle: Clone,
     GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
     GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
-    NodeData: Default,
+    NodeData: From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
     EdgeData: Default,
-    Graph: DynamicBigraph<
-            NodeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, NodeData>,
-            EdgeData = EdgeData,
-        > + Default,
+    Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     gfa: R,
     target_sequence_store: &mut GenomeSequenceStore,
@@ -205,16 +199,22 @@ pub fn read_gfa_as_bigraph<
                 k
             );
 
-            let n1 = graph.add_node(BidirectedGfaNodeData {
-                sequence_handle: sequence_handle.clone(),
-                forward: true,
-                data: Default::default(),
-            });
-            let n2 = graph.add_node(BidirectedGfaNodeData {
-                sequence_handle: sequence_handle.clone(),
-                forward: false,
-                data: Default::default(),
-            });
+            let n1 = graph.add_node(
+                BidirectedGfaNodeData {
+                    sequence_handle: sequence_handle.clone(),
+                    forward: true,
+                    data: Default::default(),
+                }
+                .into(),
+            );
+            let n2 = graph.add_node(
+                BidirectedGfaNodeData {
+                    sequence_handle: sequence_handle.clone(),
+                    forward: false,
+                    data: Default::default(),
+                }
+                .into(),
+            );
             graph.set_mirror_nodes(n1, n2);
             node_name_map.insert(node_name.to_owned(), n1);
         } else if line.starts_with('L') {
@@ -267,12 +267,12 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
     GenomeSequenceStoreHandle: Clone + Eq,
     GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle>,
     NodeData: Default,
-    EdgeData: Default + BidirectedData + Eq + Clone,
-    Graph: DynamicEdgeCentricBigraph<
-            NodeData = NodeData,
-            EdgeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, EdgeData>,
-        > + Default
-        + std::fmt::Debug,
+    EdgeData: Default
+        + BidirectedData
+        + Eq
+        + Clone
+        + From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default + std::fmt::Debug,
 >(
     gfa_file: P,
     target_sequence_store: &mut GenomeSequenceStore,
@@ -325,12 +325,12 @@ pub fn read_gfa_as_edge_centric_bigraph<
     GenomeSequenceStoreHandle: Clone + Eq,
     GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle>,
     NodeData: Default,
-    EdgeData: Default + BidirectedData + Eq + Clone,
-    Graph: DynamicEdgeCentricBigraph<
-            NodeData = NodeData,
-            EdgeData = BidirectedGfaNodeData<GenomeSequenceStore::Handle, EdgeData>,
-        > + Default
-        + std::fmt::Debug,
+    EdgeData: Default
+        + BidirectedData
+        + Eq
+        + Clone
+        + From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default + std::fmt::Debug,
 >(
     gfa: R,
     target_sequence_store: &mut GenomeSequenceStore,
@@ -371,6 +371,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
                 forward: true,
                 data: Default::default(),
             };
+            let edge_data: EdgeData = edge_data.into();
             let reverse_edge_data = edge_data.mirror();
 
             assert!(columns.next().is_none());
