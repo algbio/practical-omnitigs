@@ -209,10 +209,15 @@ pub fn write_node_centric_walks_as_fasta_file<
 /// Raw data of a fasta record.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FastaNodeData<SequenceHandle> {
-    id: String,
-    description: Option<String>,
-    sequence_handle: SequenceHandle,
-    forwards: bool,
+    /// The id of the fasta record.
+    pub id: String,
+    /// The optional description of the fasta record.
+    pub description: Option<String>,
+    /// A handle of the sequence of the fasta record.
+    pub sequence_handle: SequenceHandle,
+    /// True if this is the forwards variant of the fasta record, false if it is the backwards variant.
+    /// This is always true for records read from a fasta file, but the mirror nodes of the fasta records have this set to false.
+    pub forwards: bool,
 }
 
 impl<SequenceHandle: Clone> BidirectedData for FastaNodeData<SequenceHandle> {
