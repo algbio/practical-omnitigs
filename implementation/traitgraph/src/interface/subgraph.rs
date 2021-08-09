@@ -186,7 +186,7 @@ impl<
     type Item = Neighbor<<Graph as GraphBase>::NodeIndex, <Graph as GraphBase>::EdgeIndex>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(neighbor) = self.iter.next() {
+        for neighbor in &mut self.iter {
             if self.graph.contains_edge(neighbor.edge_id) {
                 return Some(neighbor);
             }
@@ -211,7 +211,7 @@ impl<
     type Item = <Graph as GraphBase>::EdgeIndex;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(edge) = self.iter.next() {
+        for edge in &mut self.iter {
             if self.graph.contains_edge(edge) {
                 return Some(edge);
             }

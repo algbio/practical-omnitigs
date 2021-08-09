@@ -1103,7 +1103,7 @@ pub fn write_contigs_to_wtdbg2<
             (len, w)
         })
         .collect();
-    walks.sort_by(|(l1, _), (l2, _)| l2.cmp(&l1));
+    walks.sort_by(|(l1, _), (l2, _)| l2.cmp(l1));
 
     let walk_iter = walks.iter().map(|(_, w)| w);
     if let (min, Some(max)) = walk_iter.size_hint() {

@@ -18,7 +18,7 @@ pub trait DotNodeData {
 
 impl DotNodeData for String {
     fn node_name(&self) -> &str {
-        &self
+        self
     }
 }
 

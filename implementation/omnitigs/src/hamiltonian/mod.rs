@@ -406,7 +406,7 @@ where
         let mut walk_indices = vec![first_walk_index];
         let mut insert_into_used_walks = first_walk_index == i;
         while let Some(successor_index) = forward_mergeable_walks
-            .get(&walk_indices.last().unwrap())
+            .get(walk_indices.last().unwrap())
             .copied()
         {
             if insert_into_used_walks {
@@ -418,7 +418,7 @@ where
             } else if successor_index == i {
                 insert_into_used_walks = true;
             }
-            forward_mergeable_walks.remove(&walk_indices.last().unwrap());
+            forward_mergeable_walks.remove(walk_indices.last().unwrap());
             backward_mergeable_walks.remove(&successor_index);
             walk_indices.push(successor_index);
         }

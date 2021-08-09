@@ -112,8 +112,8 @@ impl<
             right_finger < walk.len(),
             "Thr right finger must be inside the walk."
         );
-        let r_plus = compute_incremental_restricted_forward_edge_reachability(graph, &walk);
-        let r_minus = compute_incremental_restricted_backward_edge_reachability(graph, &walk);
+        let r_plus = compute_incremental_restricted_forward_edge_reachability(graph, walk);
+        let r_minus = compute_incremental_restricted_backward_edge_reachability(graph, walk);
         let mut result = Self {
             left_finger,
             right_finger,
@@ -140,8 +140,8 @@ impl<
             walk.len() >= 2,
             "The hydrostructure is defined only for walks of at least two edges."
         );
-        let mut r_plus = compute_incremental_restricted_forward_edge_reachability(graph, &walk);
-        let mut r_minus = compute_incremental_restricted_backward_edge_reachability(graph, &walk);
+        let mut r_plus = compute_incremental_restricted_forward_edge_reachability(graph, walk);
+        let mut r_minus = compute_incremental_restricted_backward_edge_reachability(graph, walk);
         r_plus.set_current_step(1);
         r_minus.set_current_step(walk.len() - 1);
         let mut result = Self {
