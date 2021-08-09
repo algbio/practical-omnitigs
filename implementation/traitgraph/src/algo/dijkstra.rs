@@ -197,6 +197,9 @@ impl<Graph: GraphBase> DijkstraTargetMap<Graph> for Vec<bool> {
 }
 
 /// Data structure for Dijkstra's shortest path algorithm.
+///
+/// This variant of Dijkstra's algorithm supports only computing the length of a shortest path, and not the shortest path itself.
+/// Therefore it does not need an array of back pointers for each node, saving a bit of memory.
 pub struct Dijkstra<Graph: GraphBase, NodeWeights> {
     queue: BinaryHeap<std::cmp::Reverse<(usize, Graph::NodeIndex)>>,
     // back_pointers: Vec<Graph::OptionalNodeIndex>,
