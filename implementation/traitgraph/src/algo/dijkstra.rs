@@ -184,7 +184,19 @@ impl<WeightType: Weight + Copy> NodeWeightArray<WeightType> for EpochNodeWeightA
     }
 }
 
-/// Datastructure for Dijkstra's shortest path algorithm.
+/// A data structure that decides whether a given node index is a target of the current Dijkstra search.
+pub trait DijkstraTargetMap<Graph: GraphBase> {
+    /// Returns true if the given node index is a target of the current Dijkstra search.
+    fn is_target(&self, node_index: Graph::NodeIndex) -> bool;
+}
+
+impl<Graph: GraphBase> DijkstraTargetMap<Graph> for Vec<bool> {
+    fn is_target(&self, node_index: Graph::NodeIndex) -> bool {
+        self[node_index.as_usize()]
+    }
+}
+
+/// Data structure for Dijkstra's shortest path algorithm.
 pub struct Dijkstra<Graph: GraphBase, NodeWeights> {
     queue: BinaryHeap<std::cmp::Reverse<(usize, Graph::NodeIndex)>>,
     // back_pointers: Vec<Graph::OptionalNodeIndex>,
@@ -198,7 +210,7 @@ impl<
         NodeWeights: NodeWeightArray<usize>,
     > Dijkstra<Graph, NodeWeights>
 {
-    /// Create the datastructures for the given graph.
+    /// Create the data structures for the given graph.
     pub fn new(graph: &Graph) -> Self {
         Self {
             queue: BinaryHeap::new(),
@@ -211,7 +223,7 @@ impl<
     /// Compute the shortest paths from source to all targets, with given maximum weight.
     #[inline(never)]
     #[allow(clippy::too_many_arguments)]
-    pub fn shortest_path_lens<TargetMap: std::ops::Index<usize, Output = bool>>(
+    pub fn shortest_path_lens<TargetMap: DijkstraTargetMap<Graph>>(
         &mut self,
         graph: &Graph,
         source: Graph::NodeIndex,
@@ -248,7 +260,7 @@ impl<
             }
 
             // Check if we found a target
-            if targets[node_index.as_usize()] && (!forbid_source_target || node_index != source) {
+            if targets.is_target(node_index) && (!forbid_source_target || node_index != source) {
                 distances.push((node_index, weight));
 
                 // Check if we already found all paths
