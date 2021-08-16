@@ -12,13 +12,10 @@ use compact_genome::interface::sequence::{
     EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence,
 };
 use compact_genome::interface::sequence_store::SequenceStore;
-use dashmap::DashMap;
-use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::collections::HashMap;
 use std::fmt::{Debug, Write};
 use std::hash::Hash;
 use std::path::Path;
-use std::sync::Mutex;
 
 error_chain! {
     foreign_links {
@@ -615,6 +612,7 @@ where
 ////// PARALLEL EDGE CENTRIC IO //////
 //////////////////////////////////////
 
+/*
 /// Read a genome graph in fasta format into an edge-centric representation from a file.
 pub fn read_bigraph_from_fasta_as_edge_centric_from_file_in_parallel<
     P: AsRef<Path> + Debug,
@@ -688,6 +686,8 @@ where
     <Graph as GraphBase>::NodeIndex: Clone + Send + Sync,
     <GenomeSequenceStore as SequenceStore>::Handle: Clone,
 {
+    todo!("This results in broken graphs");
+
     let bigraph = Mutex::new(Graph::default());
     let target_sequence_store = Mutex::new(target_sequence_store);
     let id_map = DashMap::new();
@@ -728,3 +728,4 @@ where
     debug_assert!(bigraph.verify_edge_mirror_property());
     Ok(bigraph)
 }
+*/
