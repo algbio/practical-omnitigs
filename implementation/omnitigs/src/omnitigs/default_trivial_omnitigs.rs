@@ -131,7 +131,7 @@ impl<
             ));
         }
 
-        assert_eq!(used_edges.len(), graph.edge_count());
+        debug_assert_eq!(used_edges.len(), graph.edge_count());
 
         omnitigs
     }
@@ -216,7 +216,7 @@ mod tests {
             );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[
                 e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
@@ -224,7 +224,7 @@ mod tests {
         );
 
         let maximal_non_trivial_omnitigs = IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm::compute_maximal_non_trivial_omnitigs(&graph, &maximal_macrotigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_non_trivial_omnitigs,
             Omnitigs::from(vec![
                 Omnitig::new(
@@ -249,7 +249,7 @@ mod tests {
             &graph,
             maximal_non_trivial_omnitigs,
         );
-        assert_eq!(
+        debug_assert_eq!(
             maximal_omnitigs,
             Omnitigs::from(vec![
                 Omnitig::new(
@@ -290,7 +290,7 @@ mod tests {
         let e2 = graph.add_edge(n2, n0, ());
 
         let trivial_omnitigs = Omnitigs::compute_trivial_only(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             trivial_omnitigs,
             Omnitigs::from(vec![Omnitig::new(
                 graph.create_edge_walk(&[e1, e2, e0, e1, e2]),
@@ -313,7 +313,7 @@ mod tests {
         let e3 = graph.add_edge(n2, n0, ());
 
         let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             trivial_omnitigs,
             Omnitigs::from(vec![Omnitig::new(
                 graph.create_edge_walk(&[e0, e1, e2, e3]),
@@ -336,7 +336,7 @@ mod tests {
         let e3 = graph.add_edge(n2, n0, ());
 
         let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             trivial_omnitigs,
             Omnitigs::from(vec![Omnitig::new(
                 graph.create_edge_walk(&[e1, e2, e3, e0]),
@@ -359,7 +359,7 @@ mod tests {
         let e0 = graph.add_edge(n3, n0, ());
 
         let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             trivial_omnitigs,
             Omnitigs::from(vec![Omnitig::new(
                 graph.create_edge_walk(&[e0, e1, e2, e3]),
@@ -382,7 +382,7 @@ mod tests {
         let e0 = graph.add_edge(n0, n3, ());
 
         let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             trivial_omnitigs,
             Omnitigs::from(vec![Omnitig::new(
                 graph.create_edge_walk(&[e1, e2, e3, e0]),
@@ -402,7 +402,7 @@ mod tests {
         let e1 = graph.add_edge(n1, n2, ());
 
         let trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             trivial_omnitigs,
             Omnitigs::from(vec![Omnitig::new(graph.create_edge_walk(&[e0, e1]), 0, 1)])
         );

@@ -462,7 +462,7 @@ where
         ];
         for edge_pair in self.iter().take(self.len() - 1).zip(self.iter().skip(1)) {
             let node = graph.edge_endpoints(*edge_pair.0).to_node;
-            assert_eq!(
+            debug_assert_eq!(
                 node,
                 graph.edge_endpoints(*edge_pair.1).from_node,
                 "Not a valid edge walk"

@@ -288,7 +288,7 @@ impl<
         while let Some(first) = self.queue.pop_back() {
             let rank_entry = &mut self.rank[first.as_usize()];
             if *rank_entry == Self::explored_rank() {
-                assert_ne!(self.current_rank.into(), Self::explored_rank());
+                debug_assert_ne!(self.current_rank.into(), Self::explored_rank());
                 *rank_entry = self.current_rank.into();
                 self.current_rank = self.current_rank + 1;
 
@@ -558,14 +558,14 @@ mod test {
 
         let mut ordering =
             DfsPostOrderTraversal::<_, ForwardNeighborStrategy, VecDeque<_>>::new(&graph, n0);
-        assert_eq!(
+        debug_assert_eq!(
             graph.out_neighbors(n0).map(|n| n.node_id).next(),
             Some(3.into())
         );
-        assert_eq!(ordering.next(&graph), Some(n3));
-        assert_eq!(ordering.next(&graph), Some(n2));
-        assert_eq!(ordering.next(&graph), Some(n1));
-        assert_eq!(ordering.next(&graph), Some(n0));
-        assert_eq!(ordering.next(&graph), None);
+        debug_assert_eq!(ordering.next(&graph), Some(n3));
+        debug_assert_eq!(ordering.next(&graph), Some(n2));
+        debug_assert_eq!(ordering.next(&graph), Some(n1));
+        debug_assert_eq!(ordering.next(&graph), Some(n0));
+        debug_assert_eq!(ordering.next(&graph), None);
     }
 }

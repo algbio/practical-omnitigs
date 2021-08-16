@@ -160,7 +160,7 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -171,7 +171,7 @@ mod tests {
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -182,7 +182,7 @@ mod tests {
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -194,7 +194,7 @@ mod tests {
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -228,7 +228,7 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -239,7 +239,7 @@ mod tests {
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -250,7 +250,7 @@ mod tests {
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -262,7 +262,7 @@ mod tests {
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -294,7 +294,7 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph),
             UncompactedNodeUnitigs {
                 len_2: 1,
@@ -305,7 +305,7 @@ mod tests {
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -316,7 +316,7 @@ mod tests {
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -328,7 +328,7 @@ mod tests {
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(
+        debug_assert_eq!(
             count_uncompacted_node_unitigs(&graph2),
             UncompactedNodeUnitigs {
                 len_2: 0,
@@ -364,20 +364,20 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         drop(graph); // Against linter errors for last clone.
     }
@@ -404,20 +404,20 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 4);
 
         drop(graph); // Against linter errors for last clone.
     }
@@ -442,20 +442,20 @@ mod tests {
         graph.add_edge(n8, n7, 18);
         graph.add_edge(n6, n0, 19);
         graph.add_edge(n7, n0, 20);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph), 3);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph), 3);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
 
         let mut graph2 = graph.clone();
         graph2.add_edge(n8, n3, 21);
         graph2.add_edge(n0, n8, 22);
-        assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
+        debug_assert_eq!(count_uncompacted_edge_unitigs(&graph2), 3);
 
         drop(graph); // Against linter errors for last clone.
     }

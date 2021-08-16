@@ -139,7 +139,7 @@ mod tests {
             );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[
                 e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
@@ -147,7 +147,7 @@ mod tests {
         );
 
         let maximal_non_trivial_omnitigs = IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm::compute_maximal_non_trivial_omnitigs(&graph, &maximal_macrotigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_non_trivial_omnitigs,
             Omnitigs::from(vec![
                 Omnitig::new(

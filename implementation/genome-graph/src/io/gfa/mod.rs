@@ -172,16 +172,16 @@ pub fn read_gfa_as_bigraph<
             header = Some(line.to_owned());
             for column in line.split('\t') {
                 if let Some(stripped) = column.strip_prefix("KL:Z:") {
-                    assert_eq!(k, usize::max_value());
+                    debug_assert_eq!(k, usize::max_value());
                     k = stripped.parse().unwrap();
                 }
             }
         } else if line.starts_with('S') {
             if !allow_messy_edges {
-                assert_eq!(graph.edge_count(), 0);
+                debug_assert_eq!(graph.edge_count(), 0);
             }
             if !ignore_k {
-                assert_ne!(k, usize::max_value());
+                debug_assert_ne!(k, usize::max_value());
             }
 
             let mut columns = line.split('\t').skip(1);
@@ -219,7 +219,7 @@ pub fn read_gfa_as_bigraph<
             node_name_map.insert(node_name.to_owned(), n1);
         } else if line.starts_with('L') {
             if !ignore_k {
-                assert_ne!(k, usize::max_value());
+                debug_assert_ne!(k, usize::max_value());
             }
 
             let mut columns = line.split('\t').skip(1);
@@ -233,7 +233,7 @@ pub fn read_gfa_as_bigraph<
                 let n2 = (n2.as_usize() + n2_direction).into();
 
                 let has_edge = graph.contains_edge_between(n1, n2);
-                assert_eq!(
+                debug_assert_eq!(
                     has_edge,
                     graph.contains_edge_between(
                         graph.mirror_node(n2).unwrap(),
@@ -351,16 +351,16 @@ pub fn read_gfa_as_edge_centric_bigraph<
             header = Some(line.clone());
             for column in line.split('\t') {
                 if let Some(stripped) = column.strip_prefix("KL:Z:") {
-                    assert_eq!(k, usize::max_value());
+                    debug_assert_eq!(k, usize::max_value());
                     k = stripped.parse().unwrap();
                 }
             }
         } else if line.starts_with('S') {
-            assert_ne!(k, usize::max_value());
+            debug_assert_ne!(k, usize::max_value());
 
             let mut columns = line.split('\t').skip(1);
             let node_index: usize = columns.next().unwrap().parse().unwrap();
-            assert_eq!((node_index - 1) * 2, bigraph.edge_count());
+            debug_assert_eq!((node_index - 1) * 2, bigraph.edge_count());
 
             let sequence = columns.next().unwrap().as_bytes();
             //println!("sequence {}", sequence);
@@ -400,7 +400,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
             bigraph.add_edge(pre_plus, succ_plus, edge_data);
             bigraph.add_edge(pre_minus, succ_minus, reverse_edge_data);
         } else if line.starts_with('L') {
-            assert_ne!(k, usize::max_value());
+            debug_assert_ne!(k, usize::max_value());
 
             // Since we are using a hashtable to find the nodes, we can ignore the edges.
         }
@@ -432,6 +432,6 @@ mod tests {
                 false,
             )
             .unwrap();
-        assert_eq!(k, 3);
+        debug_assert_eq!(k, 3);
     }
 }

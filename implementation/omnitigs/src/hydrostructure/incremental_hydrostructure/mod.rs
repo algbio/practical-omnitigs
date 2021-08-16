@@ -707,7 +707,7 @@ mod tests {
             );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[
                 e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
@@ -740,7 +740,7 @@ mod tests {
 
                     if static_hydrostructure.is_bridge_like() {
                         for node in graph.node_indices() {
-                            assert_eq!(
+                            debug_assert_eq!(
                                 incremental_hydrostructure.is_node_r_plus(node),
                                 static_hydrostructure.is_node_r_plus(node),
                                 "Node {:?} r_plus incremental/static: {}/{}",
@@ -748,7 +748,7 @@ mod tests {
                                 incremental_hydrostructure.is_node_r_plus(node),
                                 static_hydrostructure.is_node_r_plus(node)
                             );
-                            assert_eq!(
+                            debug_assert_eq!(
                                 incremental_hydrostructure.is_node_r_minus(node),
                                 static_hydrostructure.is_node_r_minus(node),
                                 "Node {:?} r_minus incremental/static: {}/{}",
@@ -758,7 +758,7 @@ mod tests {
                             );
                         }
                         for edge in graph.edge_indices() {
-                            assert_eq!(
+                            debug_assert_eq!(
                                 incremental_hydrostructure.is_edge_r_plus(edge),
                                 static_hydrostructure.is_edge_r_plus(edge),
                                 "Edge {:?} r_plus incremental/static: {}/{}",
@@ -766,7 +766,7 @@ mod tests {
                                 incremental_hydrostructure.is_edge_r_plus(edge),
                                 static_hydrostructure.is_edge_r_plus(edge)
                             );
-                            assert_eq!(
+                            debug_assert_eq!(
                                 incremental_hydrostructure.is_edge_r_minus(edge),
                                 static_hydrostructure.is_edge_r_minus(edge),
                                 "Edge {:?} r_minus incremental/static: {}/{}",
@@ -858,7 +858,7 @@ mod tests {
             );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[
                 e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
@@ -886,7 +886,7 @@ mod tests {
                         );
 
                     for node in graph.node_indices() {
-                        assert_eq!(
+                        debug_assert_eq!(
                             incremental_hydrostructure.is_node_r_plus(node),
                             static_hydrostructure.is_node_r_plus(node),
                             "Node {:?} r_plus incremental/static: {}/{}",
@@ -894,7 +894,7 @@ mod tests {
                             incremental_hydrostructure.is_node_r_plus(node),
                             static_hydrostructure.is_node_r_plus(node)
                         );
-                        assert_eq!(
+                        debug_assert_eq!(
                             incremental_hydrostructure.is_node_r_minus(node),
                             static_hydrostructure.is_node_r_minus(node),
                             "Node {:?} r_minus incremental/static: {}/{}",
@@ -904,7 +904,7 @@ mod tests {
                         );
                     }
                     for edge in graph.edge_indices() {
-                        assert_eq!(
+                        debug_assert_eq!(
                             incremental_hydrostructure.is_edge_r_plus(edge),
                             static_hydrostructure.is_edge_r_plus(edge),
                             "Edge {:?} r_plus incremental/static: {}/{}",
@@ -912,7 +912,7 @@ mod tests {
                             incremental_hydrostructure.is_edge_r_plus(edge),
                             static_hydrostructure.is_edge_r_plus(edge)
                         );
-                        assert_eq!(
+                        debug_assert_eq!(
                             incremental_hydrostructure.is_edge_r_minus(edge),
                             static_hydrostructure.is_edge_r_minus(edge),
                             "Edge {:?} r_minus incremental/static: {}/{}",

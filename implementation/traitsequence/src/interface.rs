@@ -122,10 +122,10 @@ pub trait Sequence<'a, Item: 'a, Subsequence: Sequence<'a, Item, Subsequence> + 
     /// use traitsequence::interface::Sequence;
     ///
     /// let sequence = [0, 2, 1];
-    /// assert_eq!(sequence.to_debug_string(), "[0, 2, 1]".to_string());
+    /// debug_assert_eq!(sequence.to_debug_string(), "[0, 2, 1]".to_string());
     ///
     /// let sequence = ["a", "c", "b"];
-    /// assert_eq!(sequence.to_debug_string(), "[\"a\", \"c\", \"b\"]".to_string());
+    /// debug_assert_eq!(sequence.to_debug_string(), "[\"a\", \"c\", \"b\"]".to_string());
     /// ```
     fn to_debug_string(&'a self) -> String
     where
@@ -209,6 +209,6 @@ mod tests {
             .forward_merge_iter_assume_mergeable(&s2)
             .copied()
             .collect();
-        assert_eq!(merged, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]);
+        debug_assert_eq!(merged, vec![0, 1, 2, 3, 4, 5, 6, 7, 8]);
     }
 }

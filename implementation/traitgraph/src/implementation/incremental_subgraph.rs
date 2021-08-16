@@ -108,7 +108,7 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for IncrementalSubgr
     fn add_node(&mut self, node_index: <Self::ParentGraph as GraphBase>::NodeIndex) {
         assert!(node_index.as_usize() < self.present_nodes.capacity());
         if self.present_nodes[node_index.as_usize()] > self.current_step {
-            assert_eq!(
+            debug_assert_eq!(
                 self.present_nodes[node_index.as_usize()],
                 IntegerType::max_value()
             );
@@ -122,7 +122,7 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for IncrementalSubgr
     fn add_edge(&mut self, edge_index: <Self::ParentGraph as GraphBase>::EdgeIndex) {
         assert!(edge_index.as_usize() < self.present_edges.capacity());
         if self.present_edges[edge_index.as_usize()] > self.current_step {
-            assert_eq!(
+            debug_assert_eq!(
                 self.present_edges[edge_index.as_usize()],
                 IntegerType::max_value()
             );

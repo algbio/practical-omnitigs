@@ -23,7 +23,7 @@ impl<Graph: GraphBase> NodeUnitig<Graph> {
     /// Creates a new unitig from the given walk.
     /// Panics if the walk has length two nodes but no single edge is given, or if a single edge is given but the walk has a length other than two nodes.
     pub fn new(walk: VecNodeWalk<Graph>, single_edge: Option<Graph::EdgeIndex>) -> Self {
-        assert_eq!(walk.len() == 2, single_edge.is_some());
+        debug_assert_eq!(walk.len() == 2, single_edge.is_some());
         Self {
             walk,
             single_edge_disambiguator: single_edge,
@@ -274,7 +274,7 @@ where
         let mut first_edge_map = vec![usize::max_value(); graph.edge_count()];
         for (i, unitig) in self.iter().enumerate() {
             let first_edge = unitig.iter().next().expect("Unitig is empty");
-            assert_eq!(
+            debug_assert_eq!(
                 first_edge_map[first_edge.as_usize()],
                 usize::max_value(),
                 "Found two unitigs starting with the same edge."
@@ -294,7 +294,7 @@ where
                 for (edge, reverse_complement_edge) in
                     unitig.iter().zip(reverse_complement_candidate.iter().rev())
                 {
-                    assert_eq!(
+                    debug_assert_eq!(
                         *edge,
                         graph
                             .mirror_edge_edge_centric(*reverse_complement_edge)
@@ -493,60 +493,60 @@ mod test {
 
         let unitigs = NodeUnitigs::compute(&graph);
         let mut unitigs_iter = unitigs.iter();
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(
                 graph.create_node_walk(&[n0, n1, n2, n3]),
                 None
             ))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(
                 graph.create_node_walk(&[n3, n4, n8]),
                 None
             ))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(
                 graph.create_node_walk(&[n3, n5, n8]),
                 None
             ))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(
                 graph.create_node_walk(&[n8, n6]),
                 Some(e7)
             ))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(
                 graph.create_node_walk(&[n8, n6]),
                 Some(e8)
             ))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(
                 graph.create_node_walk(&[n8, n7, n0]),
                 None
             ))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(
                 graph.create_node_walk(&[n6, n0]),
                 Some(e10)
             ))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&NodeUnitig::new(graph.create_node_walk(&[n8]), None))
         );
-        assert_eq!(unitigs_iter.next(), None);
+        debug_assert_eq!(unitigs_iter.next(), None);
     }
 
     #[test]
@@ -576,34 +576,34 @@ mod test {
 
         let unitigs = EdgeUnitigs::compute(&graph);
         let mut unitigs_iter = unitigs.iter();
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&EdgeUnitig::new(graph.create_edge_walk(&[e0, e1, e2])))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&EdgeUnitig::new(graph.create_edge_walk(&[e3, e5])))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&EdgeUnitig::new(graph.create_edge_walk(&[e4, e6])))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&EdgeUnitig::new(graph.create_edge_walk(&[e7])))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&EdgeUnitig::new(graph.create_edge_walk(&[e8])))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&EdgeUnitig::new(graph.create_edge_walk(&[e9, e11])))
         );
-        assert_eq!(
+        debug_assert_eq!(
             unitigs_iter.next(),
             Some(&EdgeUnitig::new(graph.create_edge_walk(&[e10])))
         );
-        assert_eq!(unitigs_iter.next(), None);
+        debug_assert_eq!(unitigs_iter.next(), None);
     }
 }

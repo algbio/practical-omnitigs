@@ -290,7 +290,7 @@ pub fn read_bigraph_from_fasta_as_node_centric<
         }));
         let record_id = record.id;
         let id = bigraph.add_node(record.into());
-        assert_eq!(id, record_id.into());
+        debug_assert_eq!(id, record_id.into());
     }
 
     bigraph.add_mirror_nodes();

@@ -285,7 +285,7 @@ mod tests {
         let e29 = graph.add_edge(n18, n18, ());
 
         let maximal_macrotigs = Macrotigs::compute(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[
                 e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
@@ -297,7 +297,7 @@ mod tests {
                 &graph,
                 &maximal_macrotigs,
             );
-        assert_eq!(
+        debug_assert_eq!(
             maximal_node_centric_omnitigs,
             vec![
                 Vec::from([n18, n19, n20, n7, n0, n1, n2, n3, n11, n15, n16, n17]),
@@ -329,7 +329,7 @@ mod tests {
         let e5 = graph.add_edge(n0, n2, ());
 
         let maximal_macrotigs = Macrotigs::compute(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[e3, e1, e2, e4, e5])])
         );
@@ -339,7 +339,7 @@ mod tests {
                 &graph,
                 &maximal_macrotigs,
             );
-        assert_eq!(
+        debug_assert_eq!(
             maximal_node_centric_omnitigs,
             vec![Vec::from([n1, n2, n3, n0]),]
         );
@@ -356,7 +356,7 @@ mod tests {
         let e2 = graph.add_edge(n0, n0, ());
 
         let maximal_macrotigs = Macrotigs::compute(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![
                 graph.create_edge_walk(&[e1, e2]),
@@ -369,7 +369,7 @@ mod tests {
                 &graph,
                 &maximal_macrotigs,
             );
-        assert_eq!(maximal_node_centric_omnitigs, vec![Vec::from([n0, n1, n0])]);
+        debug_assert_eq!(maximal_node_centric_omnitigs, vec![Vec::from([n0, n1, n0])]);
     }
 
     #[test]
@@ -388,7 +388,7 @@ mod tests {
         let e5 = graph.add_edge(n3, n2, ());
 
         let maximal_macrotigs = Macrotigs::compute(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![
                 graph.create_edge_walk(&[e5, e2, e3, e0, e4]),
@@ -401,7 +401,7 @@ mod tests {
                 &graph,
                 &maximal_macrotigs,
             );
-        assert_eq!(
+        debug_assert_eq!(
             maximal_node_centric_omnitigs,
             vec![
                 Vec::from([n2, n3, n0, n1]),

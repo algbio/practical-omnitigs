@@ -30,6 +30,6 @@ mod tests {
         let array = [0, 1, 2];
         let slice = &array[0..2];
         // Making sure that the fully qualified syntax in the trait implementation works as I think and does not create endless recursion.
-        assert_eq!(2, Sequence::len(slice));
+        debug_assert_eq!(2, Sequence::len(slice));
     }
 }

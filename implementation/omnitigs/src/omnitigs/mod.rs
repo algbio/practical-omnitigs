@@ -218,7 +218,7 @@ where
         for (i, omnitig) in self.iter().enumerate() {
             let first_heart_edge = omnitig.iter_heart().next().expect("Omnitig has no heart");
             // I am not sure if the following assumption is correct.
-            assert_eq!(
+            debug_assert_eq!(
                 first_heart_edge_map[first_heart_edge.as_usize()],
                 usize::max_value(),
                 "Found two omnitigs hearts starting with the same edge."
@@ -245,7 +245,7 @@ where
                         .mirror_edge_edge_centric(*reverse_complement_edge)
                         .expect("Edge has no reverse complement.");
                     // If our algorithms are sound, then this assumption should be correct.
-                    assert_eq!(
+                    debug_assert_eq!(
                         *edge,
                         complements_complement_edge,
                         "Found reverse complement candidate, but it is not a reverse complement:\nomnitig: {:?}\nnode omnitig: {:?}\nomnitig indegree:  {}\nomnitig outdegree: {}\nrevcomp: {:?}\nnode revcomp: {:?}\nrevcomp indegree:  {}\nrevcomp outdegree: {}",
@@ -455,8 +455,8 @@ pub trait NodeCentricOmnitigs<
                     .all(|(&n1, &n2)| n1 == graph.mirror_node(n2).expect("Node has no mirror"));
 
                 if is_reverse_complemental {
-                    assert_eq!(omnitig.len(), reverse_complement_candidate.len(), "Walks are reverse complemental, but do not have the same length. This means one of them is not maximal.");
-                    assert_eq!(
+                    debug_assert_eq!(omnitig.len(), reverse_complement_candidate.len(), "Walks are reverse complemental, but do not have the same length. This means one of them is not maximal.");
+                    debug_assert_eq!(
                         reverse_complement_count, 0,
                         "Walk has more than one reverse complement."
                     );
@@ -591,7 +591,7 @@ mod tests {
         let e29 = graph.add_edge(n18, n18, ());
 
         let maximal_trivial_omnitigs = Omnitigs::compute_trivial_only(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_trivial_omnitigs,
             Omnitigs::from(vec![
                 Omnitig::new(graph.create_edge_walk(&[e0, e1, e4, e20]), 2, 3),

@@ -315,30 +315,30 @@ mod tests {
         let e9 = graph.add_edge(n0, n4, 19);
         let e10 = graph.add_edge(n2, n2, 20);
         let result = decompose_weakly_connected_components(&graph);
-        assert_eq!(result.len(), 1);
+        debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
-        assert_eq!(result.node_count(), graph.node_count());
-        assert_eq!(result.edge_count(), graph.edge_count());
+        debug_assert_eq!(result.node_count(), graph.node_count());
+        debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        assert_eq!(result.node_data(n0), &0);
-        assert_eq!(result.node_data(n1), &4);
-        assert_eq!(result.node_data(n2), &1);
-        assert_eq!(result.node_data(n3), &3);
-        assert_eq!(result.node_data(n4), &2);
+        debug_assert_eq!(result.node_data(n0), &0);
+        debug_assert_eq!(result.node_data(n1), &4);
+        debug_assert_eq!(result.node_data(n2), &1);
+        debug_assert_eq!(result.node_data(n3), &3);
+        debug_assert_eq!(result.node_data(n4), &2);
 
-        assert_eq!(result.edge_data(e0), &145);
-        assert_eq!(result.edge_data(e1), &14);
-        assert_eq!(result.edge_data(e15), &19);
-        assert_eq!(result.edge_data(e2), &15);
-        assert_eq!(result.edge_data(e3), &10);
-        assert_eq!(result.edge_data(e4), &13);
-        assert_eq!(result.edge_data(e45), &18);
-        assert_eq!(result.edge_data(e5), &20);
-        assert_eq!(result.edge_data(e6), &16);
-        assert_eq!(result.edge_data(e7), &12);
-        assert_eq!(result.edge_data(e8), &17);
-        assert_eq!(result.edge_data(e9), &115);
-        assert_eq!(result.edge_data(e10), &11);
+        debug_assert_eq!(result.edge_data(e0), &145);
+        debug_assert_eq!(result.edge_data(e1), &14);
+        debug_assert_eq!(result.edge_data(e15), &19);
+        debug_assert_eq!(result.edge_data(e2), &15);
+        debug_assert_eq!(result.edge_data(e3), &10);
+        debug_assert_eq!(result.edge_data(e4), &13);
+        debug_assert_eq!(result.edge_data(e45), &18);
+        debug_assert_eq!(result.edge_data(e5), &20);
+        debug_assert_eq!(result.edge_data(e6), &16);
+        debug_assert_eq!(result.edge_data(e7), &12);
+        debug_assert_eq!(result.edge_data(e8), &17);
+        debug_assert_eq!(result.edge_data(e9), &115);
+        debug_assert_eq!(result.edge_data(e10), &11);
     }
 
     #[test]
@@ -359,26 +359,26 @@ mod tests {
         let e7 = graph.add_edge(n2, n2, 20);
         let e8 = graph.add_edge(n2, n2, 21);
         let result = decompose_weakly_connected_components(&graph);
-        assert_eq!(result.len(), 1);
+        debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
-        assert_eq!(result.node_count(), graph.node_count());
-        assert_eq!(result.edge_count(), graph.edge_count());
+        debug_assert_eq!(result.node_count(), graph.node_count());
+        debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        assert_eq!(result.node_data(n0), &0);
-        assert_eq!(result.node_data(n1), &1);
-        assert_eq!(result.node_data(n2), &2);
-        assert_eq!(result.node_data(n3), &3);
-        assert_eq!(result.node_data(n4), &4);
+        debug_assert_eq!(result.node_data(n0), &0);
+        debug_assert_eq!(result.node_data(n1), &1);
+        debug_assert_eq!(result.node_data(n2), &2);
+        debug_assert_eq!(result.node_data(n3), &3);
+        debug_assert_eq!(result.node_data(n4), &4);
 
-        assert_eq!(result.edge_data(e0), &15);
-        assert_eq!(result.edge_data(e1), &10);
-        assert_eq!(result.edge_data(e2), &21);
-        assert_eq!(result.edge_data(e3), &20);
-        assert_eq!(result.edge_data(e4), &11);
-        assert_eq!(result.edge_data(e5), &17);
-        assert_eq!(result.edge_data(e6), &12);
-        assert_eq!(result.edge_data(e7), &18);
-        assert_eq!(result.edge_data(e8), &13);
+        debug_assert_eq!(result.edge_data(e0), &15);
+        debug_assert_eq!(result.edge_data(e1), &10);
+        debug_assert_eq!(result.edge_data(e2), &21);
+        debug_assert_eq!(result.edge_data(e3), &20);
+        debug_assert_eq!(result.edge_data(e4), &11);
+        debug_assert_eq!(result.edge_data(e5), &17);
+        debug_assert_eq!(result.edge_data(e6), &12);
+        debug_assert_eq!(result.edge_data(e7), &18);
+        debug_assert_eq!(result.edge_data(e8), &13);
     }
 
     #[test]
@@ -396,36 +396,36 @@ mod tests {
         graph.add_edge(n3, n4, 12);
         graph.add_edge(n4, n5, 13);
         let result = decompose_weakly_connected_components(&graph);
-        assert_eq!(result.len(), 3);
+        debug_assert_eq!(result.len(), 3);
         let first = result[0].clone();
         let second = result[1].clone();
         let third = result[2].clone();
-        assert_eq!(first.node_count(), 1);
-        assert_eq!(first.edge_count(), 1);
-        assert_eq!(second.node_count(), 2);
-        assert_eq!(second.edge_count(), 2);
-        assert_eq!(third.node_count(), 3);
-        assert_eq!(third.edge_count(), 2);
+        debug_assert_eq!(first.node_count(), 1);
+        debug_assert_eq!(first.edge_count(), 1);
+        debug_assert_eq!(second.node_count(), 2);
+        debug_assert_eq!(second.edge_count(), 2);
+        debug_assert_eq!(third.node_count(), 3);
+        debug_assert_eq!(third.edge_count(), 2);
 
-        assert_eq!(first.node_data(0.into()), &0);
-        assert_eq!(second.node_data(0.into()), &1);
-        assert_eq!(second.node_data(1.into()), &2);
-        assert_eq!(third.node_data(0.into()), &3);
-        assert_eq!(third.node_data(1.into()), &4);
-        assert_eq!(third.node_data(2.into()), &5);
+        debug_assert_eq!(first.node_data(0.into()), &0);
+        debug_assert_eq!(second.node_data(0.into()), &1);
+        debug_assert_eq!(second.node_data(1.into()), &2);
+        debug_assert_eq!(third.node_data(0.into()), &3);
+        debug_assert_eq!(third.node_data(1.into()), &4);
+        debug_assert_eq!(third.node_data(2.into()), &5);
 
-        assert_eq!(first.edge_data(0.into()), &10);
-        assert_eq!(second.edge_data(0.into()), &115);
-        assert_eq!(second.edge_data(1.into()), &11);
-        assert_eq!(third.edge_data(0.into()), &12);
-        assert_eq!(third.edge_data(1.into()), &13);
+        debug_assert_eq!(first.edge_data(0.into()), &10);
+        debug_assert_eq!(second.edge_data(0.into()), &115);
+        debug_assert_eq!(second.edge_data(1.into()), &11);
+        debug_assert_eq!(third.edge_data(0.into()), &12);
+        debug_assert_eq!(third.edge_data(1.into()), &13);
     }
 
     #[test]
     fn test_decompose_weakly_connected_components_empty_graph() {
         let graph = petgraph_impl::new::<i32, i32>();
         let result = decompose_weakly_connected_components(&graph);
-        assert_eq!(result.len(), 0);
+        debug_assert_eq!(result.len(), 0);
     }
 
     #[test]
@@ -449,29 +449,29 @@ mod tests {
         let e9 = graph.add_edge(n0, n4, 19);
         let e10 = graph.add_edge(n2, n2, 20);
         let result = decompose_weakly_connected_components(&graph);
-        assert_eq!(result.len(), 1);
+        debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
-        assert_eq!(result.node_count(), graph.node_count());
-        assert_eq!(result.edge_count(), graph.edge_count());
+        debug_assert_eq!(result.node_count(), graph.node_count());
+        debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        assert_eq!(result.node_data(n0), &0);
-        assert_eq!(result.node_data(n1), &4);
-        assert_eq!(result.node_data(n2), &1);
-        assert_eq!(result.node_data(n3), &3);
-        assert_eq!(result.node_data(n4), &2);
+        debug_assert_eq!(result.node_data(n0), &0);
+        debug_assert_eq!(result.node_data(n1), &4);
+        debug_assert_eq!(result.node_data(n2), &1);
+        debug_assert_eq!(result.node_data(n3), &3);
+        debug_assert_eq!(result.node_data(n4), &2);
 
-        assert_eq!(result.edge_data(e0), &19);
-        assert_eq!(result.edge_data(e05), &15);
-        assert_eq!(result.edge_data(e1), &14);
-        assert_eq!(result.edge_data(e2), &105);
-        assert_eq!(result.edge_data(e3), &10);
-        assert_eq!(result.edge_data(e4), &13);
-        assert_eq!(result.edge_data(e5), &18);
-        assert_eq!(result.edge_data(e6), &20);
-        assert_eq!(result.edge_data(e7), &16);
-        assert_eq!(result.edge_data(e8), &12);
-        assert_eq!(result.edge_data(e9), &17);
-        assert_eq!(result.edge_data(e10), &11);
+        debug_assert_eq!(result.edge_data(e0), &19);
+        debug_assert_eq!(result.edge_data(e05), &15);
+        debug_assert_eq!(result.edge_data(e1), &14);
+        debug_assert_eq!(result.edge_data(e2), &105);
+        debug_assert_eq!(result.edge_data(e3), &10);
+        debug_assert_eq!(result.edge_data(e4), &13);
+        debug_assert_eq!(result.edge_data(e5), &18);
+        debug_assert_eq!(result.edge_data(e6), &20);
+        debug_assert_eq!(result.edge_data(e7), &16);
+        debug_assert_eq!(result.edge_data(e8), &12);
+        debug_assert_eq!(result.edge_data(e9), &17);
+        debug_assert_eq!(result.edge_data(e10), &11);
     }
 
     #[test]
@@ -495,29 +495,29 @@ mod tests {
         let e9 = graph.add_edge(n1, n4, 19);
         let e10 = graph.add_edge(n2, n2, 20);
         let result = decompose_weakly_connected_components(&graph);
-        assert_eq!(result.len(), 1);
+        debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
-        assert_eq!(result.node_count(), graph.node_count());
-        assert_eq!(result.edge_count(), graph.edge_count());
+        debug_assert_eq!(result.node_count(), graph.node_count());
+        debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        assert_eq!(result.node_data(n0), &0);
-        assert_eq!(result.node_data(n1), &1);
-        assert_eq!(result.node_data(n2), &4);
-        assert_eq!(result.node_data(n3), &2);
-        assert_eq!(result.node_data(n4), &3);
+        debug_assert_eq!(result.node_data(n0), &0);
+        debug_assert_eq!(result.node_data(n1), &1);
+        debug_assert_eq!(result.node_data(n2), &4);
+        debug_assert_eq!(result.node_data(n3), &2);
+        debug_assert_eq!(result.node_data(n4), &3);
 
-        assert_eq!(result.edge_data(e0), &155);
-        assert_eq!(result.edge_data(e1), &15);
-        assert_eq!(result.edge_data(e2), &14);
-        assert_eq!(result.edge_data(e3), &10);
-        assert_eq!(result.edge_data(e4), &19);
-        assert_eq!(result.edge_data(e5), &20);
-        assert_eq!(result.edge_data(e55), &16);
-        assert_eq!(result.edge_data(e6), &11);
-        assert_eq!(result.edge_data(e7), &17);
-        assert_eq!(result.edge_data(e8), &13);
-        assert_eq!(result.edge_data(e9), &18);
-        assert_eq!(result.edge_data(e10), &12);
+        debug_assert_eq!(result.edge_data(e0), &155);
+        debug_assert_eq!(result.edge_data(e1), &15);
+        debug_assert_eq!(result.edge_data(e2), &14);
+        debug_assert_eq!(result.edge_data(e3), &10);
+        debug_assert_eq!(result.edge_data(e4), &19);
+        debug_assert_eq!(result.edge_data(e5), &20);
+        debug_assert_eq!(result.edge_data(e55), &16);
+        debug_assert_eq!(result.edge_data(e6), &11);
+        debug_assert_eq!(result.edge_data(e7), &17);
+        debug_assert_eq!(result.edge_data(e8), &13);
+        debug_assert_eq!(result.edge_data(e9), &18);
+        debug_assert_eq!(result.edge_data(e10), &12);
     }
 
     #[test]
@@ -657,7 +657,7 @@ mod tests {
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
         assert!(is_strongly_connected(&graph));
-        assert_eq!(decompose_strongly_connected_components(&graph), vec![n0; 5]);
+        debug_assert_eq!(decompose_strongly_connected_components(&graph), vec![n0; 5]);
     }
 
     #[test]
@@ -678,7 +678,7 @@ mod tests {
         graph.add_edge(n4, n3, 1);
         graph.add_edge(n2, n2, 20);
         assert!(!is_strongly_connected(&graph));
-        assert_eq!(
+        debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n0, n2, n2, n2]
         );
@@ -701,7 +701,7 @@ mod tests {
         graph.add_edge(n4, n5, 13);
         graph.add_edge(n5, n3, 13);
         assert!(!is_strongly_connected(&graph));
-        assert_eq!(
+        debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n1, n1, n3, n3, n3]
         );
@@ -711,7 +711,7 @@ mod tests {
     fn test_decompose_sccs_empty_graph() {
         let graph = petgraph_impl::new::<i32, i32>();
         assert!(is_strongly_connected(&graph));
-        assert_eq!(decompose_strongly_connected_components(&graph), vec![]);
+        debug_assert_eq!(decompose_strongly_connected_components(&graph), vec![]);
     }
 
     #[test]
@@ -735,7 +735,7 @@ mod tests {
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
         assert!(!is_strongly_connected(&graph));
-        assert_eq!(
+        debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n1, n1, n1, n1]
         );
@@ -762,7 +762,7 @@ mod tests {
         graph.add_edge(n1, n4, 19);
         graph.add_edge(n2, n2, 20);
         assert!(!is_strongly_connected(&graph));
-        assert_eq!(
+        debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n1, n1, n1, n1]
         );
@@ -795,10 +795,10 @@ mod tests {
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
-        assert_eq!(1, extracted.len());
+        debug_assert_eq!(1, extracted.len());
         assert!(is_strongly_connected(&extracted[0]));
-        assert_eq!(5, extracted[0].node_count());
-        assert_eq!(12, extracted[0].edge_count());
+        debug_assert_eq!(5, extracted[0].node_count());
+        debug_assert_eq!(12, extracted[0].edge_count());
     }
 
     #[test]
@@ -824,7 +824,7 @@ mod tests {
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
-        assert_eq!(2, extracted.len());
+        debug_assert_eq!(2, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
             assert!(
                 is_strongly_connected(&extracted[i]),
@@ -834,10 +834,10 @@ mod tests {
             );
         }
 
-        assert_eq!(2, extracted[0].node_count());
-        assert_eq!(3, extracted[0].edge_count());
-        assert_eq!(3, extracted[1].node_count());
-        assert_eq!(5, extracted[1].edge_count());
+        debug_assert_eq!(2, extracted[0].node_count());
+        debug_assert_eq!(3, extracted[0].edge_count());
+        debug_assert_eq!(3, extracted[1].node_count());
+        debug_assert_eq!(5, extracted[1].edge_count());
     }
 
     #[test]
@@ -861,7 +861,7 @@ mod tests {
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
-        assert_eq!(3, extracted.len());
+        debug_assert_eq!(3, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
             assert!(
                 is_strongly_connected(&extracted[i]),
@@ -871,12 +871,12 @@ mod tests {
             );
         }
 
-        assert_eq!(1, extracted[0].node_count());
-        assert_eq!(1, extracted[0].edge_count());
-        assert_eq!(2, extracted[1].node_count());
-        assert_eq!(2, extracted[1].edge_count());
-        assert_eq!(3, extracted[2].node_count());
-        assert_eq!(4, extracted[2].edge_count());
+        debug_assert_eq!(1, extracted[0].node_count());
+        debug_assert_eq!(1, extracted[0].edge_count());
+        debug_assert_eq!(2, extracted[1].node_count());
+        debug_assert_eq!(2, extracted[1].edge_count());
+        debug_assert_eq!(3, extracted[2].node_count());
+        debug_assert_eq!(4, extracted[2].edge_count());
     }
 
     #[test]
@@ -915,7 +915,7 @@ mod tests {
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
-        assert_eq!(2, extracted.len());
+        debug_assert_eq!(2, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
             assert!(
                 is_strongly_connected(&extracted[i]),
@@ -925,10 +925,10 @@ mod tests {
             );
         }
 
-        assert_eq!(1, extracted[0].node_count());
-        assert_eq!(0, extracted[0].edge_count());
-        assert_eq!(4, extracted[1].node_count());
-        assert_eq!(10, extracted[1].edge_count());
+        debug_assert_eq!(1, extracted[0].node_count());
+        debug_assert_eq!(0, extracted[0].edge_count());
+        debug_assert_eq!(4, extracted[1].node_count());
+        debug_assert_eq!(10, extracted[1].edge_count());
     }
 
     #[test]
@@ -956,7 +956,7 @@ mod tests {
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
-        assert_eq!(2, extracted.len());
+        debug_assert_eq!(2, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
             assert!(
                 is_strongly_connected(&extracted[i]),
@@ -966,9 +966,9 @@ mod tests {
             );
         }
 
-        assert_eq!(1, extracted[0].node_count());
-        assert_eq!(0, extracted[0].edge_count());
-        assert_eq!(4, extracted[1].node_count());
-        assert_eq!(9, extracted[1].edge_count());
+        debug_assert_eq!(1, extracted[0].node_count());
+        debug_assert_eq!(0, extracted[0].edge_count());
+        debug_assert_eq!(4, extracted[1].node_count());
+        debug_assert_eq!(9, extracted[1].edge_count());
     }
 }

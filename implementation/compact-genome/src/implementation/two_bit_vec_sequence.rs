@@ -320,8 +320,8 @@ mod tests {
     fn test_reverse_complement() {
         let genome: TwoBitVectorGenome = b"ATTCGGT".iter().copied().collect();
         let reverse_complement: TwoBitVectorGenome = b"ACCGAAT".iter().copied().collect();
-        assert_eq!(genome.clone_as_reverse_complement(), reverse_complement);
-        assert_eq!(genome, reverse_complement.clone_as_reverse_complement());
+        debug_assert_eq!(genome.clone_as_reverse_complement(), reverse_complement);
+        debug_assert_eq!(genome, reverse_complement.clone_as_reverse_complement());
     }
 
     #[test]
@@ -329,7 +329,7 @@ mod tests {
         let genome: TwoBitVectorGenome = b"ATTCGGT".iter().copied().collect();
         let display_string = genome.as_string();
         let expected_string = "ATTCGGT";
-        assert_eq!(display_string, expected_string);
+        debug_assert_eq!(display_string, expected_string);
     }
 
     #[test]
@@ -338,16 +338,16 @@ mod tests {
 
         let display_string = genome[1..4].as_string();
         let expected_string = "TTC";
-        assert_eq!(display_string, expected_string);
+        debug_assert_eq!(display_string, expected_string);
 
         let display_string = genome.clone_as_reverse_complement()[1..4].as_string();
         let expected_string = "CCG";
-        assert_eq!(display_string, expected_string);
+        debug_assert_eq!(display_string, expected_string);
 
         let display_string =
             genome[1..6].to_owned().clone_as_reverse_complement()[1..4].as_string();
         let expected_string = "CGA";
-        assert_eq!(display_string, expected_string);
+        debug_assert_eq!(display_string, expected_string);
     }
 
     #[test]
@@ -355,7 +355,7 @@ mod tests {
         let genome: TwoBitVectorGenome = b"ATTCGGT".iter().copied().collect();
         let display_string = genome[7..7].as_string();
         let expected_string = "";
-        assert_eq!(display_string, expected_string);
+        debug_assert_eq!(display_string, expected_string);
     }
 
     #[test]
@@ -364,6 +364,6 @@ mod tests {
         let genome: TwoBitVectorGenome = b"ATTCGGT".iter().copied().collect();
         let display_string = genome[8..8].as_string();
         let expected_string = "";
-        assert_eq!(display_string, expected_string);
+        debug_assert_eq!(display_string, expected_string);
     }
 }

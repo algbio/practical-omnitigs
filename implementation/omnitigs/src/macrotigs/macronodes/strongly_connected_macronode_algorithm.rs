@@ -83,17 +83,17 @@ mod tests {
 
         let macronodes = StronglyConnectedMacronodes::compute_macronodes(&graph);
         let mut macronodes_iter = macronodes.iter();
-        assert_eq!(
+        debug_assert_eq!(
             macronodes_iter.next(),
             Some(&graph.create_node_walk(&[n0, n1, n2, n3]))
         );
-        assert_eq!(macronodes_iter.next(), Some(&graph.create_node_walk(&[n6])));
-        assert_eq!(macronodes_iter.next(), Some(&graph.create_node_walk(&[n8])));
-        assert_eq!(
+        debug_assert_eq!(macronodes_iter.next(), Some(&graph.create_node_walk(&[n6])));
+        debug_assert_eq!(macronodes_iter.next(), Some(&graph.create_node_walk(&[n8])));
+        debug_assert_eq!(
             macronodes_iter.next(),
             Some(&graph.create_node_walk(&[n11]))
         );
-        assert_eq!(macronodes_iter.next(), None);
+        debug_assert_eq!(macronodes_iter.next(), None);
     }
 
     #[test]
@@ -102,6 +102,6 @@ mod tests {
 
         let macronodes = StronglyConnectedMacronodes::compute_macronodes(&graph);
         let mut macronodes_iter = macronodes.iter();
-        assert_eq!(macronodes_iter.next(), None);
+        debug_assert_eq!(macronodes_iter.next(), None);
     }
 }

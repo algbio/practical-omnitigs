@@ -28,8 +28,8 @@ mod tests {
     fn test_reverse_complement() {
         let genome: AsciiVectorGenome = b"ATTCGGT".iter().copied().collect();
         let reverse_complement: AsciiVectorGenome = b"ACCGAAT".iter().copied().collect();
-        assert_eq!(genome.clone_as_reverse_complement(), reverse_complement);
-        assert_eq!(genome, reverse_complement.clone_as_reverse_complement());
+        debug_assert_eq!(genome.clone_as_reverse_complement(), reverse_complement);
+        debug_assert_eq!(genome, reverse_complement.clone_as_reverse_complement());
     }
 
     #[test]
@@ -37,6 +37,6 @@ mod tests {
         let genome: AsciiVectorGenome = b"ATTCGGT".iter().copied().collect();
         let display_string = genome.as_string();
         let expected_string = "ATTCGGT";
-        assert_eq!(display_string, expected_string);
+        debug_assert_eq!(display_string, expected_string);
     }
 }

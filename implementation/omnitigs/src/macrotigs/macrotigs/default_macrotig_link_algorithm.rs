@@ -177,7 +177,7 @@ mod tests {
             );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
         );
@@ -247,7 +247,7 @@ mod tests {
             );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[
                 e29, e28, e27, e26, e6, e0, e1, e2, e10, e22, e23, e24, e25
@@ -287,7 +287,7 @@ mod tests {
             );
         let maximal_macrotigs =
             DefaultMacrotigLinkAlgorithm::compute_maximal_macrotigs(&graph, &maximal_microtigs);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![
                 graph.create_edge_walk(&[e5, e7, e9, e0, e2, e4, e6]),
@@ -312,7 +312,7 @@ mod tests {
         let e5 = graph.add_edge(n0, n2, ());
 
         let maximal_macrotigs = Macrotigs::compute(&graph);
-        assert_eq!(
+        debug_assert_eq!(
             maximal_macrotigs,
             Macrotigs::from(vec![graph.create_edge_walk(&[e3, e1, e2, e4, e5])])
         );

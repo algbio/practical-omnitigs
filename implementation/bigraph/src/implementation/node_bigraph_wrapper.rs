@@ -53,8 +53,8 @@ pub type PetBigraph<NodeData, EdgeData> =
 /// graph.add_edge(n1.clone(), n2.clone(), ());
 /// graph.add_edge(n2.clone(), n1.clone(), ());
 /// let bigraph = NodeBigraphWrapper::new(graph);
-/// assert_eq!(Some(n2.clone()), bigraph.mirror_node(n1.clone()));
-/// assert_eq!(Some(n1.clone()), bigraph.mirror_node(n2.clone()));
+/// debug_assert_eq!(Some(n2.clone()), bigraph.mirror_node(n1.clone()));
+/// debug_assert_eq!(Some(n1.clone()), bigraph.mirror_node(n2.clone()));
 /// ```
 #[derive(Debug, Clone)]
 pub struct NodeBigraphWrapper<Topology: GraphBase> {
@@ -93,17 +93,17 @@ where
             let node_data = topology.node_data(node_index);
 
             if let Some(mirror_index) = data_map.get(node_data).cloned() {
-                //assert_ne!(node_index, mirror_index);
+                //debug_assert_ne!(node_index, mirror_index);
                 assert!(!binode_map[node_index.as_usize()].is_valid());
                 assert!(!binode_map[mirror_index.as_usize()].is_valid());
-                assert_eq!(node_data, &topology.node_data(mirror_index).mirror());
+                debug_assert_eq!(node_data, &topology.node_data(mirror_index).mirror());
                 binode_map[node_index.as_usize()] = mirror_index.into();
                 binode_map[mirror_index.as_usize()] = node_index.into();
                 data_map.remove(node_data);
             } else {
                 let mirror_data = node_data.mirror();
-                //assert_ne!(&mirror_data, node_data);
-                assert_eq!(None, data_map.insert(mirror_data, node_index));
+                //debug_assert_ne!(&mirror_data, node_data);
+                debug_assert_eq!(None, data_map.insert(mirror_data, node_index));
             }
         }
 
@@ -318,10 +318,10 @@ mod tests {
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new(graph);
 
-        assert_eq!(Some(n2), bigraph.mirror_node(n1));
-        assert_eq!(Some(n1), bigraph.mirror_node(n2));
-        assert_eq!(Some(n4), bigraph.mirror_node(n3));
-        assert_eq!(Some(n3), bigraph.mirror_node(n4));
+        debug_assert_eq!(Some(n2), bigraph.mirror_node(n1));
+        debug_assert_eq!(Some(n1), bigraph.mirror_node(n2));
+        debug_assert_eq!(Some(n4), bigraph.mirror_node(n3));
+        debug_assert_eq!(Some(n3), bigraph.mirror_node(n4));
     }
 
     #[test]
@@ -453,10 +453,10 @@ mod tests {
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new_unchecked(graph);
 
-        assert_eq!(Some(n2), bigraph.mirror_node(n1));
-        assert_eq!(Some(n1), bigraph.mirror_node(n2));
-        assert_eq!(Some(n4), bigraph.mirror_node(n3));
-        assert_eq!(Some(n3), bigraph.mirror_node(n4));
+        debug_assert_eq!(Some(n2), bigraph.mirror_node(n1));
+        debug_assert_eq!(Some(n1), bigraph.mirror_node(n2));
+        debug_assert_eq!(Some(n4), bigraph.mirror_node(n3));
+        debug_assert_eq!(Some(n3), bigraph.mirror_node(n4));
     }
 
     #[test]
@@ -482,11 +482,11 @@ mod tests {
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new_unchecked(graph);
 
-        assert_eq!(Some(n2), bigraph.mirror_node(n1));
-        assert_eq!(Some(n1), bigraph.mirror_node(n2));
-        assert_eq!(Some(n4), bigraph.mirror_node(n3));
-        assert_eq!(Some(n3), bigraph.mirror_node(n4));
-        assert_eq!(None, bigraph.mirror_node(n5));
+        debug_assert_eq!(Some(n2), bigraph.mirror_node(n1));
+        debug_assert_eq!(Some(n1), bigraph.mirror_node(n2));
+        debug_assert_eq!(Some(n4), bigraph.mirror_node(n3));
+        debug_assert_eq!(Some(n3), bigraph.mirror_node(n4));
+        debug_assert_eq!(None, bigraph.mirror_node(n5));
     }
 
     #[test]
@@ -725,6 +725,6 @@ mod tests {
         assert!(!graph.verify_node_pairing());
         graph.add_mirror_nodes();
         assert!(graph.verify_node_pairing());
-        assert_eq!(graph.node_count(), 8);
+        debug_assert_eq!(graph.node_count(), 8);
     }
 }

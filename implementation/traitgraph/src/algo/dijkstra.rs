@@ -254,7 +254,7 @@ impl<
                 //unnecessary_iterations += 1;
                 continue;
             }
-            assert_eq!(actual_weight, weight);
+            debug_assert_eq!(actual_weight, weight);
 
             // Check if we are still lower than or equal to max_weight
             if weight > max_weight {
@@ -316,20 +316,20 @@ mod tests {
         let mut distances = Vec::new();
         let mut targets = vec![false, false, true];
         dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, false, &mut distances);
-        assert_eq!(distances, vec![(n3, 4)]);
+        debug_assert_eq!(distances, vec![(n3, 4)]);
 
         dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, false, &mut distances);
-        assert_eq!(distances, vec![(n3, 4)]);
+        debug_assert_eq!(distances, vec![(n3, 4)]);
 
         dijkstra.shortest_path_lens(&graph, n2, &targets, 1, 6, false, &mut distances);
-        assert_eq!(distances, vec![(n3, 2)]);
+        debug_assert_eq!(distances, vec![(n3, 2)]);
 
         dijkstra.shortest_path_lens(&graph, n3, &targets, 1, 6, false, &mut distances);
-        assert_eq!(distances, vec![(n3, 0)]);
+        debug_assert_eq!(distances, vec![(n3, 0)]);
 
         targets = vec![false, true, false];
         dijkstra.shortest_path_lens(&graph, n3, &targets, 1, 6, false, &mut distances);
-        assert_eq!(distances, vec![]);
+        debug_assert_eq!(distances, vec![]);
     }
 
     #[test]
@@ -346,6 +346,6 @@ mod tests {
         let mut distances = Vec::new();
         let targets = vec![false, false, true];
         dijkstra.shortest_path_lens(&graph, n1, &targets, 1, 6, false, &mut distances);
-        assert_eq!(distances, vec![(n3, 4)]);
+        debug_assert_eq!(distances, vec![(n3, 4)]);
     }
 }

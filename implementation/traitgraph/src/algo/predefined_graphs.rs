@@ -147,7 +147,7 @@ mod tests {
     fn test_create_binary_tree_2() {
         let mut graph = petgraph_impl::new::<(), ()>();
         create_binary_tree(&mut graph, 2);
-        assert_eq!(graph.node_count(), 7);
-        assert_eq!(graph.edge_count(), 6);
+        debug_assert_eq!(graph.node_count(), 7);
+        debug_assert_eq!(graph.edge_count(), 6);
     }
 }

@@ -68,20 +68,20 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
             } else {
                 None
             };
-            assert_eq!(
+            debug_assert_eq!(
                 mlmo1.is_some(),
                 mrmo1.is_some(),
                 "Found either only a left-micro or only a right-micro omnitig."
             );
             if let (Some(mlmo1), Some(mrmo1)) = (&mlmo1, &mrmo1) {
-                assert_eq!(
+                debug_assert_eq!(
                     mlmo1
                         .get(mlmo1.len() - macronode.len() - 1)
                         .expect("Left-micro omnitig misses macronode."),
                     mrmo1.iter().next().expect("Right-micro omnitig is empty."),
                     "Left-micro and right-micro omnitigs do not match."
                 );
-                assert_eq!(
+                debug_assert_eq!(
                     mlmo1.iter().last().expect("Left-micro omnitig is empty."),
                     mrmo1
                         .get(macronode.len())
@@ -120,20 +120,20 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
                     } else {
                         None
                     };
-                    assert_eq!(
+                    debug_assert_eq!(
                         mlmo2.is_some(),
                         mrmo2.is_some(),
                         "Found either only a left-micro or only a right-micro omnitig."
                     );
                     if let (Some(mlmo2), Some(mrmo2)) = (mlmo2, mrmo2) {
-                        assert_eq!(
+                        debug_assert_eq!(
                             mlmo2
                                 .get(mlmo2.len() - macronode.len() - 1)
                                 .expect("Left-micro omnitig misses macronode."),
                             mrmo2.get(0).expect("Right-micro omnitig is empty."),
                             "Left-micro and right-micro omnitigs do not match: {:?} -> {:?} via {:?}", mlmo2, mrmo2, macronode
                         );
-                        assert_eq!(
+                        debug_assert_eq!(
                             mlmo2.iter().last().expect("Left-micro omnitig is empty."),
                             mrmo2
                                 .get(macronode.len())
@@ -323,7 +323,7 @@ mod tests {
                 &graph,
                 &macronodes,
             );
-        assert_eq!(
+        debug_assert_eq!(
             maximal_microtigs,
             Microtigs::from(vec![graph.create_edge_walk(&[e6, e0, e1, e2, e10])])
         );
@@ -391,7 +391,7 @@ mod tests {
                 &graph,
                 &macronodes,
             );
-        assert_eq!(
+        debug_assert_eq!(
             maximal_microtigs,
             Microtigs::from(vec![
                 graph.create_edge_walk(&[e6, e0, e1, e2, e10, e22, e23, e24]),
@@ -431,7 +431,7 @@ mod tests {
                 &graph,
                 &macronodes,
             );
-        assert_eq!(
+        debug_assert_eq!(
             maximal_microtigs,
             Microtigs::from(vec![
                 graph.create_edge_walk(&[e9, e0, e2, e4]),

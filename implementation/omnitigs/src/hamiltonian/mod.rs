@@ -590,7 +590,7 @@ mod tests {
         }
 
         // This assertion is dependent on the random generator used and might fail if its implementation changes.
-        assert_eq!(
+        debug_assert_eq!(
             result,
             vec![true, true, true, true, true, false, false, true, true, true]
         );
@@ -641,7 +641,7 @@ mod tests {
         println!("node fraction: {:?}", result_node_fraction);
         println!("edge fraction: {:?}", result_edge_fraction);
         // This assertion is dependent on the random generator used and might fail if its implementation changes.
-        assert_eq!(
+        debug_assert_eq!(
             result,
             vec![true, true, true, true, true, true, true, true, true, true]
         );

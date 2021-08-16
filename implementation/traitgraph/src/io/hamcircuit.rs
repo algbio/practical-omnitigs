@@ -95,7 +95,7 @@ pub fn read_hamcircuit_from_tsplib_atsp<Graph: DynamicGraph, Reader: Read>(
 
     let mut line = String::new();
     reader.read_line(&mut line).unwrap();
-    assert_eq!(line.trim(), "EOF");
+    debug_assert_eq!(line.trim(), "EOF");
 }
 
 /// Write the graph as Hamiltonian circuit problem encoded as TSP in TSPLIB format (used by concorde).
@@ -190,7 +190,7 @@ pub fn read_hamcircuit_from_tsplib_tsp<Graph: DynamicGraph, Reader: Read>(
         if line.trim().starts_with("DIMENSION:") {
             let line = line.trim().split(' ').last().unwrap();
             node_count = Some(line.parse::<usize>().unwrap());
-            assert_eq!(node_count.unwrap() % 2, 0, "Node count is odd");
+            debug_assert_eq!(node_count.unwrap() % 2, 0, "Node count is odd");
             node_count = Some(node_count.unwrap() / 2);
         }
 
@@ -225,7 +225,7 @@ pub fn read_hamcircuit_from_tsplib_tsp<Graph: DynamicGraph, Reader: Read>(
 
     let mut line = String::new();
     reader.read_line(&mut line).unwrap();
-    assert_eq!(line.trim(), "EOF");
+    debug_assert_eq!(line.trim(), "EOF");
 }
 
 #[cfg(test)]
@@ -255,12 +255,12 @@ mod tests {
         let buffer = writer.into_inner().unwrap();
         let mut reader = BufReader::new(buffer.as_slice());
         read_hamcircuit_from_tsplib_tsp(&mut result, &mut reader);
-        assert_eq!(graph.node_count(), result.node_count());
-        assert_eq!(graph.edge_count(), result.edge_count());
+        debug_assert_eq!(graph.node_count(), result.node_count());
+        debug_assert_eq!(graph.edge_count(), result.edge_count());
 
         for n1 in graph.node_indices() {
             for n2 in graph.node_indices() {
-                assert_eq!(
+                debug_assert_eq!(
                     graph.contains_edge_between(n1, n2),
                     result.contains_edge_between(n1, n2)
                 );
