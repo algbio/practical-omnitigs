@@ -18,7 +18,7 @@ impl<Graph: StaticGraph> MacrotigBasedNonTrivialOmnitigAlgorithm<Graph>
         let mut omnitigs_per_macrotig = Vec::new();
 
         for macrotig in macrotigs.iter() {
-            assert!(
+            debug_assert!(
                 macrotig.len() >= 2,
                 "Macrotigs have a length of at least two edges."
             );

@@ -309,12 +309,12 @@ mod tests {
         let subgraph: BitVectorSubgraph<_> = compute_restricted_forward_reachability(&graph, e1);
 
         debug_assert_eq!(subgraph.node_count(), 2);
-        assert!(subgraph.contains_node(n0));
-        assert!(subgraph.contains_node(n2));
+        debug_assert!(subgraph.contains_node(n0));
+        debug_assert!(subgraph.contains_node(n2));
 
         debug_assert_eq!(subgraph.edge_count(), 2);
-        assert!(subgraph.contains_edge(e3));
-        assert!(subgraph.contains_edge(e5));
+        debug_assert!(subgraph.contains_edge(e3));
+        debug_assert!(subgraph.contains_edge(e5));
     }
 
     #[test]
@@ -332,11 +332,11 @@ mod tests {
         let subgraph: BitVectorSubgraph<_> = compute_restricted_backward_reachability(&graph, e1);
 
         debug_assert_eq!(subgraph.node_count(), 2);
-        assert!(subgraph.contains_node(n0));
-        assert!(subgraph.contains_node(n2));
+        debug_assert!(subgraph.contains_node(n0));
+        debug_assert!(subgraph.contains_node(n2));
 
         debug_assert_eq!(subgraph.edge_count(), 2);
-        assert!(subgraph.contains_edge(e3));
-        assert!(subgraph.contains_edge(e5));
+        debug_assert!(subgraph.contains_edge(e3));
+        debug_assert!(subgraph.contains_edge(e5));
     }
 }

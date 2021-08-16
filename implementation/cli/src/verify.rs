@@ -108,7 +108,7 @@ where
         if scc_amount == 1 {
             scc_amount_per_wcc_string += "1";
         } else {
-            assert!(scc_amount > 1);
+            debug_assert!(scc_amount > 1);
             scc_amount_per_wcc_string += &format!("{}", scc_amount.to_string().yellow());
         }
     }

@@ -135,7 +135,7 @@ macro_rules! impl_graph_index {
             fn from(source: Option<usize>) -> Self {
                 if let Some(source) = source {
                     let source = <IndexType as NumCast>::from(source).unwrap();
-                    assert!(source != IndexType::max_value());
+                    debug_assert!(source != IndexType::max_value());
                     Self(source)
                 } else {
                     Self(IndexType::max_value())
@@ -146,7 +146,7 @@ macro_rules! impl_graph_index {
         impl<IndexType: PrimInt> From<usize> for $OptionalGraphIndexType<IndexType> {
             fn from(source: usize) -> Self {
                 let source = <IndexType as NumCast>::from(source).unwrap();
-                assert!(source != IndexType::max_value());
+                debug_assert!(source != IndexType::max_value());
                 Self(source)
             }
         }
@@ -154,7 +154,7 @@ macro_rules! impl_graph_index {
         impl<IndexType: PrimInt> From<usize> for $GraphIndexType<IndexType> {
             fn from(source: usize) -> Self {
                 let source = <IndexType as NumCast>::from(source).unwrap();
-                assert!(source != IndexType::max_value());
+                debug_assert!(source != IndexType::max_value());
                 Self(source)
             }
         }

@@ -168,7 +168,7 @@ pub fn read_gfa_as_bigraph<
         let line = line?;
 
         if line.starts_with('H') {
-            assert!(graph.is_empty());
+            debug_assert!(graph.is_empty());
             header = Some(line.to_owned());
             for column in line.split('\t') {
                 if let Some(stripped) = column.strip_prefix("KL:Z:") {
@@ -190,7 +190,7 @@ pub fn read_gfa_as_bigraph<
             let sequence = columns.next().unwrap().as_bytes();
             let sequence_handle = target_sequence_store.add(sequence);
             let sequence = target_sequence_store.get(&sequence_handle);
-            assert!(
+            debug_assert!(
                 sequence.len() >= k || ignore_k,
                 "Node {} has sequence '{:?}' of length {} (k = {})",
                 node_name,
@@ -336,7 +336,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
     target_sequence_store: &mut GenomeSequenceStore,
     estimate_k: bool,
 ) -> Result<(Graph, GfaReadFileProperties)> {
-    assert!(!estimate_k, "Estimating k not supported yet");
+    debug_assert!(!estimate_k, "Estimating k not supported yet");
 
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
@@ -347,7 +347,7 @@ pub fn read_gfa_as_edge_centric_bigraph<
         let line = line?;
 
         if line.starts_with('H') {
-            assert!(bigraph.is_empty());
+            debug_assert!(bigraph.is_empty());
             header = Some(line.clone());
             for column in line.split('\t') {
                 if let Some(stripped) = column.strip_prefix("KL:Z:") {
@@ -374,8 +374,8 @@ pub fn read_gfa_as_edge_centric_bigraph<
             let edge_data: EdgeData = edge_data.into();
             let reverse_edge_data = edge_data.mirror();
 
-            assert!(columns.next().is_none());
-            assert!(
+            debug_assert!(columns.next().is_none());
+            debug_assert!(
                 sequence.len() >= k,
                 "Node {} has sequence '{:?}' of length {} (k = {})",
                 node_index,
@@ -407,9 +407,9 @@ pub fn read_gfa_as_edge_centric_bigraph<
     }
 
     //println!("{:?}", bigraph);
-    assert!(header.is_some(), "GFA file has no header");
-    assert!(bigraph.verify_node_pairing());
-    assert!(bigraph.verify_edge_mirror_property());
+    debug_assert!(header.is_some(), "GFA file has no header");
+    debug_assert!(bigraph.verify_node_pairing());
+    debug_assert!(bigraph.verify_edge_mirror_property());
     Ok((bigraph, GfaReadFileProperties { k, header }))
 }
 

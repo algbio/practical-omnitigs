@@ -60,7 +60,7 @@ fn check_walk_overlap<Graph: StaticGraph>(
         let other_overlap = &other_walk[..=overlap_end];
         let overlap = &walk[overlap_start..];
 
-        assert!(
+        debug_assert!(
             overlap_start != 0 && overlap_end != walk.len() - 1,
             "One walk is a subwalk of the other."
         );
@@ -97,7 +97,7 @@ fn check_walk_overlap<Graph: StaticGraph>(
         let other_overlap = &other_walk[overlap_start..];
         let overlap = &walk[..=overlap_end];
 
-        assert!(
+        debug_assert!(
             overlap_start != 0 && overlap_end != walk.len() - 1,
             "One walk is a subwalk of the other."
         );
@@ -385,7 +385,7 @@ where
                 circular = true;
                 break;
             } else {
-                assert!(
+                debug_assert!(
                     !used_walks.contains(first_walk_index),
                     "While extending a mergeable walk we found a walk that was used already."
                 );
@@ -410,7 +410,7 @@ where
             .copied()
         {
             if insert_into_used_walks {
-                assert!(
+                debug_assert!(
                     !used_walks.contains(successor_index),
                     "While extending a mergeable walk we found a walk that was used already."
                 );
@@ -434,7 +434,7 @@ where
         );
 
         if circular {
-            assert!(
+            debug_assert!(
                 forward_mergeable_walks.is_empty()
                     && backward_mergeable_walks.is_empty()
                     && walk_indices.first() == walk_indices.last()
@@ -477,7 +477,7 @@ where
     // Add merged walks as edges into the result graph.
     for walk in &merged_walks {
         for node in walk.iter() {
-            assert!(
+            debug_assert!(
                 !processed_nodes.contains(node.as_usize()),
                 "A node is part of two separate not mergeable walks."
             );
@@ -544,15 +544,15 @@ mod tests {
             graph.clear();
             create_random_hamiltonian_graph(&mut graph, 20, 1.0, &mut random);
             let reduced = preprocess_hamiltonian_circuit(&graph);
-            assert!(reduced.is_some());
+            debug_assert!(reduced.is_some());
             if let Some(reduced) = reduced {
-                assert!(
+                debug_assert!(
                     reduced.node_count() <= graph.node_count(),
                     "{} <= {}",
                     reduced.node_count(),
                     graph.node_count()
                 );
-                assert!(
+                debug_assert!(
                     reduced.edge_count() <= graph.edge_count(),
                     "{} <= {}",
                     reduced.edge_count(),
@@ -574,13 +574,13 @@ mod tests {
             let reduced = preprocess_hamiltonian_circuit(&graph);
             result.push(reduced.is_some());
             if let Some(reduced) = reduced {
-                assert!(
+                debug_assert!(
                     reduced.node_count() <= graph.node_count(),
                     "{} <= {}",
                     reduced.node_count(),
                     graph.node_count()
                 );
-                assert!(
+                debug_assert!(
                     reduced.edge_count() <= graph.edge_count(),
                     "{} <= {}",
                     reduced.edge_count(),
@@ -614,13 +614,13 @@ mod tests {
             let reduced = preprocess_hamiltonian_circuit(&graph);
             result.push(reduced.is_some());
             if let Some(reduced) = reduced {
-                assert!(
+                debug_assert!(
                     reduced.node_count() <= graph.node_count(),
                     "{} <= {}",
                     reduced.node_count(),
                     graph.node_count()
                 );
-                assert!(
+                debug_assert!(
                     reduced.edge_count() <= graph.edge_count(),
                     "{} <= {}",
                     reduced.edge_count(),

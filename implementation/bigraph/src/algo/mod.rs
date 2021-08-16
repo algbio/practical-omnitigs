@@ -27,7 +27,7 @@ fn mark_edge_and_mirror<
     graph: &Graph,
     edge_index: Graph::EdgeIndex,
 ) {
-    assert!(!bitvector.contains(edge_index.as_usize()));
+    debug_assert!(!bitvector.contains(edge_index.as_usize()));
     bitvector.insert(edge_index.as_usize());
     //println!("Marked edge {}", edge_index.as_usize());
 

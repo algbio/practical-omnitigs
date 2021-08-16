@@ -94,7 +94,7 @@ where
     where
         Graph: StaticGraph,
     {
-        assert!(
+        debug_assert!(
             !self.is_empty(),
             "Cannot compute the univocal extension of an empty walk."
         );
@@ -153,7 +153,7 @@ where
     where
         Graph: StaticGraph,
     {
-        assert!(
+        debug_assert!(
             !self.is_empty(),
             "Cannot compute the univocal extension of an empty walk."
         );
@@ -335,7 +335,7 @@ where
     where
         Graph: StaticGraph,
     {
-        assert!(
+        debug_assert!(
             !self.is_empty(),
             "Cannot compute the univocal extension of an empty walk."
         );
@@ -394,7 +394,7 @@ where
     where
         Graph: StaticGraph,
     {
-        assert!(
+        debug_assert!(
             !self.is_empty(),
             "Cannot compute the univocal extension of an empty walk."
         );

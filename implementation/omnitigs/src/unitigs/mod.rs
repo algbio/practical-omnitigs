@@ -102,7 +102,7 @@ impl<Graph: GraphBase> EdgeUnitig<Graph> {
     /// Creates a new unitig from the given walk.
     /// Panics if the walk is empty.
     pub fn new(walk: VecEdgeWalk<Graph>) -> Self {
-        assert!(!walk.is_empty());
+        debug_assert!(!walk.is_empty());
         Self { walk }
     }
 }

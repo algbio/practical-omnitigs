@@ -35,19 +35,19 @@ impl<'a, Graph: ImmutableGraphContainer> IncrementalSubgraph<'a, Graph> {
 
     /// Set the current incremental step of the graph.
     pub fn set_current_step(&mut self, current_step: IntegerType) {
-        assert!(current_step < self.new_nodes.len() && current_step < self.new_edges.len());
+        debug_assert!(current_step < self.new_nodes.len() && current_step < self.new_edges.len());
         self.current_step = current_step;
     }
 
     /// Return the nodes that are added in the current incremental step.
     pub fn new_nodes(&self) -> &Vec<Graph::NodeIndex> {
-        assert!(self.current_step < self.new_nodes.len());
+        debug_assert!(self.current_step < self.new_nodes.len());
         &self.new_nodes[self.current_step]
     }
 
     /// Return the edges that are added in the current incremental step.
     pub fn new_edges(&self) -> &Vec<Graph::EdgeIndex> {
-        assert!(self.current_step < self.new_edges.len());
+        debug_assert!(self.current_step < self.new_edges.len());
         &self.new_edges[self.current_step]
     }
 }
@@ -94,19 +94,19 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for IncrementalSubgr
     }
 
     fn contains_node(&self, node_index: <Self::ParentGraph as GraphBase>::NodeIndex) -> bool {
-        assert!(node_index.as_usize() < self.present_nodes.capacity());
+        debug_assert!(node_index.as_usize() < self.present_nodes.capacity());
         self.present_nodes[node_index.as_usize()] <= self.current_step
     }
 
     fn contains_edge(&self, edge_index: <Self::ParentGraph as GraphBase>::EdgeIndex) -> bool {
-        assert!(edge_index.as_usize() < self.present_edges.capacity());
+        debug_assert!(edge_index.as_usize() < self.present_edges.capacity());
         self.present_edges[edge_index.as_usize()] <= self.current_step
     }
 
     /// Panics if the node_index is not valid for the graph passed in the constructor.
     /// Panics also if the node was added already.
     fn add_node(&mut self, node_index: <Self::ParentGraph as GraphBase>::NodeIndex) {
-        assert!(node_index.as_usize() < self.present_nodes.capacity());
+        debug_assert!(node_index.as_usize() < self.present_nodes.capacity());
         if self.present_nodes[node_index.as_usize()] > self.current_step {
             debug_assert_eq!(
                 self.present_nodes[node_index.as_usize()],
@@ -120,7 +120,7 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for IncrementalSubgr
     /// Panics if the edge_index is not valid for the graph passed in the constructor.
     /// Panics also if the edge was added already.
     fn add_edge(&mut self, edge_index: <Self::ParentGraph as GraphBase>::EdgeIndex) {
-        assert!(edge_index.as_usize() < self.present_edges.capacity());
+        debug_assert!(edge_index.as_usize() < self.present_edges.capacity());
         if self.present_edges[edge_index.as_usize()] > self.current_step {
             debug_assert_eq!(
                 self.present_edges[edge_index.as_usize()],
@@ -133,7 +133,7 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for IncrementalSubgr
 
     /// Panics if the node_index is not valid for the graph passed in the constructor.
     fn remove_node(&mut self, node_index: <Self::ParentGraph as GraphBase>::NodeIndex) {
-        assert!(node_index.as_usize() < self.present_nodes.capacity());
+        debug_assert!(node_index.as_usize() < self.present_nodes.capacity());
         self.present_nodes[node_index.as_usize()] =
             self.present_nodes[node_index.as_usize()].max(self.current_step + 1);
         unimplemented!("This method is not intended to be called on an incremental subgraph.");
@@ -141,7 +141,7 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for IncrementalSubgr
 
     /// Panics if the edge_index is not valid for the graph passed in the constructor.
     fn remove_edge(&mut self, edge_index: <Self::ParentGraph as GraphBase>::EdgeIndex) {
-        assert!(edge_index.as_usize() < self.present_edges.capacity());
+        debug_assert!(edge_index.as_usize() < self.present_edges.capacity());
         self.present_edges[edge_index.as_usize()] =
             self.present_edges[edge_index.as_usize()].max(self.current_step + 1);
         unimplemented!("This method is not intended to be called on an incremental subgraph.");

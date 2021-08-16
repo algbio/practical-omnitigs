@@ -83,7 +83,7 @@ pub fn create_random_hamiltonian_graph<Graph: DynamicGraph, Random: Rng>(
     );
 
     let target_edge_amount = compute_m_from_n_and_c(node_amount, c);
-    assert!(
+    debug_assert!(
         target_edge_amount >= node_amount && target_edge_amount <= node_amount * (node_amount - 1),
         "node_amount <= target_edge_amount <= node_amount * (node_amount - 1): {} <= {} <= {} (c: {})",
         node_amount,
@@ -123,7 +123,7 @@ pub fn create_random_graph<Graph: DynamicGraph, Random: Rng>(
     }
 
     let target_edge_amount = compute_m_from_n_and_c(node_amount, c);
-    assert!(
+    debug_assert!(
         target_edge_amount >= node_amount && target_edge_amount <= node_amount * (node_amount - 1)
     );
 

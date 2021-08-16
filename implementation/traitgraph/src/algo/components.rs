@@ -540,7 +540,7 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(is_strongly_connected(&graph));
+        debug_assert!(is_strongly_connected(&graph));
     }
 
     #[test]
@@ -560,7 +560,7 @@ mod tests {
         graph.add_edge(n3, n2, 17);
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
     }
 
     #[test]
@@ -579,13 +579,13 @@ mod tests {
         graph.add_edge(n3, n4, 125);
         graph.add_edge(n4, n5, 13);
         graph.add_edge(n5, n3, 13);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
     }
 
     #[test]
     fn test_scc_check_empty_graph() {
         let graph = petgraph_impl::new::<i32, i32>();
-        assert!(is_strongly_connected(&graph));
+        debug_assert!(is_strongly_connected(&graph));
     }
 
     #[test]
@@ -608,7 +608,7 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
     }
 
     #[test]
@@ -631,7 +631,7 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n1, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
     }
 
     /////////////////////////////////////////////////////////
@@ -656,7 +656,7 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(is_strongly_connected(&graph));
+        debug_assert!(is_strongly_connected(&graph));
         debug_assert_eq!(decompose_strongly_connected_components(&graph), vec![n0; 5]);
     }
 
@@ -677,7 +677,7 @@ mod tests {
         graph.add_edge(n3, n2, 17);
         graph.add_edge(n4, n3, 1);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n0, n2, n2, n2]
@@ -700,7 +700,7 @@ mod tests {
         graph.add_edge(n3, n4, 125);
         graph.add_edge(n4, n5, 13);
         graph.add_edge(n5, n3, 13);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n1, n1, n3, n3, n3]
@@ -710,7 +710,7 @@ mod tests {
     #[test]
     fn test_decompose_sccs_empty_graph() {
         let graph = petgraph_impl::new::<i32, i32>();
-        assert!(is_strongly_connected(&graph));
+        debug_assert!(is_strongly_connected(&graph));
         debug_assert_eq!(decompose_strongly_connected_components(&graph), vec![]);
     }
 
@@ -734,7 +734,7 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n1, n1, n1, n1]
@@ -761,7 +761,7 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n1, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         debug_assert_eq!(
             decompose_strongly_connected_components(&graph),
             vec![n0, n1, n1, n1, n1]
@@ -790,13 +790,13 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(is_strongly_connected(&graph));
+        debug_assert!(is_strongly_connected(&graph));
         let extracted = extract_subgraphs_from_node_mapping(
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
         debug_assert_eq!(1, extracted.len());
-        assert!(is_strongly_connected(&extracted[0]));
+        debug_assert!(is_strongly_connected(&extracted[0]));
         debug_assert_eq!(5, extracted[0].node_count());
         debug_assert_eq!(12, extracted[0].edge_count());
     }
@@ -819,14 +819,14 @@ mod tests {
         graph.add_edge(n4, n3, 1);
         graph.add_edge(n0, n3, 18);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         let extracted = extract_subgraphs_from_node_mapping(
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
         debug_assert_eq!(2, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
-            assert!(
+            debug_assert!(
                 is_strongly_connected(&extracted[i]),
                 "Graph {} not strongly connected: {:?}",
                 i,
@@ -856,14 +856,14 @@ mod tests {
         graph.add_edge(n3, n4, 125);
         graph.add_edge(n4, n5, 13);
         graph.add_edge(n5, n3, 13);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         let extracted = extract_subgraphs_from_node_mapping(
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
         debug_assert_eq!(3, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
-            assert!(
+            debug_assert!(
                 is_strongly_connected(&extracted[i]),
                 "Graph {} not strongly connected: {:?}",
                 i,
@@ -882,12 +882,12 @@ mod tests {
     #[test]
     fn test_extract_subgraphs_empty_graph() {
         let graph = petgraph_impl::new::<i32, i32>();
-        assert!(is_strongly_connected(&graph));
+        debug_assert!(is_strongly_connected(&graph));
         let extracted = extract_subgraphs_from_node_mapping(
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
-        assert!(extracted.is_empty());
+        debug_assert!(extracted.is_empty());
     }
 
     #[test]
@@ -910,14 +910,14 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         let extracted = extract_subgraphs_from_node_mapping(
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
         debug_assert_eq!(2, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
-            assert!(
+            debug_assert!(
                 is_strongly_connected(&extracted[i]),
                 "Graph {} not strongly connected: {:?}",
                 i,
@@ -951,14 +951,14 @@ mod tests {
         graph.add_edge(n4, n3, 18);
         graph.add_edge(n1, n4, 19);
         graph.add_edge(n2, n2, 20);
-        assert!(!is_strongly_connected(&graph));
+        debug_assert!(!is_strongly_connected(&graph));
         let extracted = extract_subgraphs_from_node_mapping(
             &graph,
             &decompose_strongly_connected_components(&graph),
         );
         debug_assert_eq!(2, extracted.len());
         for (i, graph) in extracted.iter().enumerate() {
-            assert!(
+            debug_assert!(
                 is_strongly_connected(&extracted[i]),
                 "Graph {} not strongly connected: {:?}",
                 i,

@@ -166,7 +166,7 @@ mod tests {
 
         let mut graph = NodeBigraphWrapper::new_unchecked(graph);
         graph.add_mirror_nodes();
-        assert!(graph.verify_node_pairing());
+        debug_assert!(graph.verify_node_pairing());
         debug_assert_eq!(graph.node_count(), 8);
 
         graph.add_edge(
@@ -174,9 +174,9 @@ mod tests {
             graph.mirror_node(n1).unwrap(),
             (),
         );
-        assert!(!graph.verify_node_mirror_property());
+        debug_assert!(!graph.verify_node_mirror_property());
         graph.add_node_centric_mirror_edges();
-        assert!(graph.verify_node_mirror_property());
+        debug_assert!(graph.verify_node_mirror_property());
         debug_assert_eq!(graph.edge_count(), 11);
     }
 
@@ -211,7 +211,7 @@ mod tests {
 
         let mut graph = NodeBigraphWrapper::new_unchecked(graph);
         graph.add_mirror_nodes();
-        assert!(graph.verify_node_pairing());
+        debug_assert!(graph.verify_node_pairing());
         debug_assert_eq!(graph.node_count(), 8);
 
         graph.add_edge(
@@ -219,9 +219,9 @@ mod tests {
             graph.mirror_node(n1).unwrap(),
             EdgeData(955),
         );
-        assert!(!graph.verify_edge_mirror_property());
+        debug_assert!(!graph.verify_edge_mirror_property());
         graph.add_edge_centric_mirror_edges();
-        assert!(graph.verify_edge_mirror_property());
+        debug_assert!(graph.verify_edge_mirror_property());
         debug_assert_eq!(graph.edge_count(), 12);
     }
 }

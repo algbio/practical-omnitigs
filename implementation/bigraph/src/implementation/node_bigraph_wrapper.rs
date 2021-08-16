@@ -94,8 +94,8 @@ where
 
             if let Some(mirror_index) = data_map.get(node_data).cloned() {
                 //debug_assert_ne!(node_index, mirror_index);
-                assert!(!binode_map[node_index.as_usize()].is_valid());
-                assert!(!binode_map[mirror_index.as_usize()].is_valid());
+                debug_assert!(!binode_map[node_index.as_usize()].is_valid());
+                debug_assert!(!binode_map[mirror_index.as_usize()].is_valid());
                 debug_assert_eq!(node_data, &topology.node_data(mirror_index).mirror());
                 binode_map[node_index.as_usize()] = mirror_index.into();
                 binode_map[mirror_index.as_usize()] = node_index.into();
@@ -108,11 +108,11 @@ where
         }
 
         if checked {
-            assert!(data_map.is_empty());
+            debug_assert!(data_map.is_empty());
         } else {
             for node_index in topology.node_indices() {
                 let node_data = topology.node_data(node_index);
-                assert!(!data_map.contains_key(node_data));
+                debug_assert!(!data_map.contains_key(node_data));
             }
         }
         Self {
@@ -139,8 +139,8 @@ where
 
 impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology> {
     fn set_mirror_nodes(&mut self, a: Self::NodeIndex, b: Self::NodeIndex) {
-        assert!(self.contains_node_index(a));
-        assert!(self.contains_node_index(b));
+        debug_assert!(self.contains_node_index(a));
+        debug_assert!(self.contains_node_index(b));
         self.binode_map[a.as_usize()] = b.into();
         self.binode_map[b.as_usize()] = a.into();
     }
@@ -619,8 +619,8 @@ mod tests {
         graph.add_node(NodeData(3));
         graph.add_edge(n1, n2, ()); // Just to fix the EdgeData type parameter
         let bigraph = NodeBigraphWrapper::new(graph);
-        assert!(bigraph.verify_node_pairing_without_self_mirrors());
-        assert!(bigraph.verify_node_pairing());
+        debug_assert!(bigraph.verify_node_pairing_without_self_mirrors());
+        debug_assert!(bigraph.verify_node_pairing());
     }
 
     #[test]
@@ -646,8 +646,8 @@ mod tests {
         let mut bigraph = NodeBigraphWrapper::new(graph);
         bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(4usize.into());
-        assert!(!bigraph.verify_node_pairing_without_self_mirrors());
-        assert!(bigraph.verify_node_pairing());
+        debug_assert!(!bigraph.verify_node_pairing_without_self_mirrors());
+        debug_assert!(bigraph.verify_node_pairing());
     }
 
     #[test]
@@ -673,8 +673,8 @@ mod tests {
         let mut bigraph = NodeBigraphWrapper::new(graph);
         bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(OptionalGraphIndex::new_none());
-        assert!(!bigraph.verify_node_pairing_without_self_mirrors());
-        assert!(!bigraph.verify_node_pairing());
+        debug_assert!(!bigraph.verify_node_pairing_without_self_mirrors());
+        debug_assert!(!bigraph.verify_node_pairing());
     }
 
     #[test]
@@ -700,8 +700,8 @@ mod tests {
         let mut bigraph = NodeBigraphWrapper::new(graph);
         bigraph.topology.add_node(NodeData(4));
         bigraph.binode_map.push(3usize.into());
-        assert!(!bigraph.verify_node_pairing_without_self_mirrors());
-        assert!(!bigraph.verify_node_pairing());
+        debug_assert!(!bigraph.verify_node_pairing_without_self_mirrors());
+        debug_assert!(!bigraph.verify_node_pairing());
     }
 
     #[test]
@@ -722,9 +722,9 @@ mod tests {
         graph.add_node(NodeData(997));
         graph.add_edge(n0, n1, ());
         let mut graph = NodeBigraphWrapper::new_unchecked(graph);
-        assert!(!graph.verify_node_pairing());
+        debug_assert!(!graph.verify_node_pairing());
         graph.add_mirror_nodes();
-        assert!(graph.verify_node_pairing());
+        debug_assert!(graph.verify_node_pairing());
         debug_assert_eq!(graph.node_count(), 8);
     }
 }

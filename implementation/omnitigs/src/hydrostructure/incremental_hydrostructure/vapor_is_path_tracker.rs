@@ -131,7 +131,7 @@ impl<'a, Graph: StaticGraph> VaporIsPathTracker<'a, Graph> {
 
     /// Add a node to the subgraph.
     pub fn add_node(&mut self, node: <Graph as GraphBase>::NodeIndex) {
-        assert!(!self.subgraph.contains_node(node));
+        debug_assert!(!self.subgraph.contains_node(node));
         self.subgraph.add_node(node);
 
         let out_degree = self.subgraph.out_degree(node);
@@ -163,7 +163,7 @@ impl<'a, Graph: StaticGraph> VaporIsPathTracker<'a, Graph> {
 
     /// Add an edge to the subgraph.
     pub fn add_edge(&mut self, edge: <Graph as GraphBase>::EdgeIndex) {
-        assert!(
+        debug_assert!(
             !DecoratingSubgraph::contains_edge(&self.subgraph, edge),
             "Subgraph already contains edge {:?}",
             edge
@@ -201,7 +201,7 @@ impl<'a, Graph: StaticGraph> VaporIsPathTracker<'a, Graph> {
 
     /// Remove a node from the subgraph.
     pub fn remove_node(&mut self, node: <Graph as GraphBase>::NodeIndex) {
-        assert!(self.subgraph.contains_node(node));
+        debug_assert!(self.subgraph.contains_node(node));
 
         let out_degree = self.subgraph.out_degree(node);
         let in_degree = self.subgraph.in_degree(node);
@@ -233,7 +233,7 @@ impl<'a, Graph: StaticGraph> VaporIsPathTracker<'a, Graph> {
 
     /// Remove an edge from the subgraph.
     pub fn remove_edge(&mut self, edge: <Graph as GraphBase>::EdgeIndex) {
-        assert!(DecoratingSubgraph::contains_edge(&self.subgraph, edge));
+        debug_assert!(DecoratingSubgraph::contains_edge(&self.subgraph, edge));
 
         let endpoints = self.subgraph.edge_endpoints(edge);
         self.subgraph.remove_edge(edge);

@@ -69,7 +69,7 @@ impl<
     ///
     /// Panics if the given walk has less than two edges, since the hydrostructure is defined only for walks of at least two edges.
     pub fn compute(graph: &'graph Graph, walk: &'walk [Graph::EdgeIndex]) -> Self {
-        assert!(
+        debug_assert!(
             walk.len() >= 2,
             "The hydrostructure is defined only for walks of at least two edges."
         );
@@ -100,15 +100,15 @@ impl<
         left_finger: usize,
         right_finger: usize,
     ) -> Self {
-        assert!(
+        debug_assert!(
             walk.len() >= 2,
             "The hydrostructure is defined only for walks of at least two edges."
         );
-        assert!(
+        debug_assert!(
             left_finger < right_finger,
             "Left finger must be smaller than the right finger."
         );
-        assert!(
+        debug_assert!(
             right_finger < walk.len(),
             "Thr right finger must be inside the walk."
         );
@@ -136,7 +136,7 @@ impl<
         graph: &'graph Graph,
         walk: &'walk [Graph::EdgeIndex],
     ) -> Self {
-        assert!(
+        debug_assert!(
             walk.len() >= 2,
             "The hydrostructure is defined only for walks of at least two edges."
         );
@@ -202,7 +202,7 @@ impl<
     /// Set the left and right finger to the specified values.
     /// Panics if the given indices are not valid indices in the underlying walk of this incremental hydrostructure, or if the left finger is not left of the right finger.
     pub fn set_both_fingers(&mut self, left_finger: usize, right_finger: usize) {
-        assert!(
+        debug_assert!(
             left_finger < self.walk.len()
                 && left_finger < right_finger
                 && right_finger < self.walk.len()
@@ -215,7 +215,7 @@ impl<
     /// Set the left finger to the specified value.
     /// Panics if the given index is not a valid index in the underlying walk of this incremental hydrostructure, or if it is not left of the right finger.
     pub fn set_left_finger(&mut self, left_finger: usize) {
-        assert!(left_finger < self.walk.len() && left_finger < self.right_finger);
+        debug_assert!(left_finger < self.walk.len() && left_finger < self.right_finger);
         self.left_finger = left_finger;
         self.reset_fingers();
     }
@@ -232,7 +232,7 @@ impl<
             .remove_incremental_subgraph_step(&self.r_plus, &self.r_minus);
 
         self.left_finger += 1;
-        assert!(self.left_finger < self.walk.len() && self.left_finger < self.right_finger);
+        debug_assert!(self.left_finger < self.walk.len() && self.left_finger < self.right_finger);
         self.r_minus
             .set_current_step(self.walk.len() - 1 - self.left_finger);
 
@@ -256,7 +256,7 @@ impl<
     /// Set the right finger to the specified value.
     /// Panics if the given index is not a valid index in the underlying walk of this incremental hydrostructure, or if it is not right of the left finger.
     pub fn set_right_finger(&mut self, right_finger: usize) {
-        assert!(right_finger < self.walk.len() && self.left_finger < right_finger);
+        debug_assert!(right_finger < self.walk.len() && self.left_finger < right_finger);
         self.right_finger = right_finger;
         self.reset_fingers();
     }
@@ -278,7 +278,7 @@ impl<
         }
 
         self.right_finger += 1;
-        assert!(self.right_finger < self.walk.len());
+        debug_assert!(self.right_finger < self.walk.len());
         self.r_plus.set_current_step(self.right_finger);
 
         if self
@@ -486,11 +486,11 @@ mod tests {
         let walk: Vec<_> = graph.create_edge_walk(&[e0, e1]);
         let incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
-        assert!(incremental_hydrostructure.is_node_river(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_cloud(e1));
-        assert!(incremental_hydrostructure.is_node_river(n2));
+        debug_assert!(incremental_hydrostructure.is_node_river(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e1));
+        debug_assert!(incremental_hydrostructure.is_node_river(n2));
     }
 
     #[test]
@@ -507,40 +507,40 @@ mod tests {
         let walk: Vec<_> = graph.create_edge_walk(&[e0, e1, e2]);
         let mut incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
-        assert!(incremental_hydrostructure.is_node_river(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_vapor(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
-        assert!(incremental_hydrostructure.is_node_river(n3));
+        debug_assert!(incremental_hydrostructure.is_node_river(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_vapor(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_node_river(n3));
 
         incremental_hydrostructure.set_both_fingers(0, 1);
-        assert!(incremental_hydrostructure.is_node_river(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_cloud(e1));
-        assert!(incremental_hydrostructure.is_node_river(n2));
-        assert!(incremental_hydrostructure.is_edge_river(e2));
-        assert!(incremental_hydrostructure.is_node_river(n3));
+        debug_assert!(incremental_hydrostructure.is_node_river(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e1));
+        debug_assert!(incremental_hydrostructure.is_node_river(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_river(e2));
+        debug_assert!(incremental_hydrostructure.is_node_river(n3));
 
         incremental_hydrostructure.increment_right_finger();
-        assert!(incremental_hydrostructure.is_node_river(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_vapor(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
-        assert!(incremental_hydrostructure.is_node_river(n3));
+        debug_assert!(incremental_hydrostructure.is_node_river(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_vapor(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_node_river(n3));
 
         incremental_hydrostructure.increment_left_finger();
-        assert!(incremental_hydrostructure.is_node_river(n0));
-        assert!(incremental_hydrostructure.is_edge_river(e0));
-        assert!(incremental_hydrostructure.is_node_river(n1));
-        assert!(incremental_hydrostructure.is_edge_sea(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
-        assert!(incremental_hydrostructure.is_node_river(n3));
+        debug_assert!(incremental_hydrostructure.is_node_river(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_river(e0));
+        debug_assert!(incremental_hydrostructure.is_node_river(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_node_river(n3));
     }
 
     #[test]
@@ -557,40 +557,40 @@ mod tests {
         let walk: Vec<_> = graph.create_edge_walk(&[e0, e1, e2]);
         let mut incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
-        assert!(incremental_hydrostructure.is_node_vapor(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_edge_vapor(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
-        assert!(incremental_hydrostructure.is_node_cloud(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e3));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_edge_vapor(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_node_cloud(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e3));
 
         incremental_hydrostructure.set_both_fingers(0, 1);
-        assert!(incremental_hydrostructure.is_node_vapor(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_edge_cloud(e1));
-        assert!(incremental_hydrostructure.is_node_cloud(n1));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
-        assert!(incremental_hydrostructure.is_node_cloud(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e3));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e1));
+        debug_assert!(incremental_hydrostructure.is_node_cloud(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_node_cloud(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e3));
 
         incremental_hydrostructure.increment_right_finger();
-        assert!(incremental_hydrostructure.is_node_vapor(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_edge_vapor(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
-        assert!(incremental_hydrostructure.is_node_cloud(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e3));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_edge_vapor(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_node_cloud(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e3));
 
         incremental_hydrostructure.increment_left_finger();
-        assert!(incremental_hydrostructure.is_node_river(n0));
-        assert!(incremental_hydrostructure.is_edge_river(e0));
-        assert!(incremental_hydrostructure.is_edge_sea(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
-        assert!(incremental_hydrostructure.is_node_river(n2));
-        assert!(incremental_hydrostructure.is_edge_river(e3));
+        debug_assert!(incremental_hydrostructure.is_node_river(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_river(e0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_node_river(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_river(e3));
     }
 
     #[test]
@@ -607,40 +607,40 @@ mod tests {
         let walk: Vec<_> = graph.create_edge_walk(&[e0, e1, e2]);
         let mut incremental_hydrostructure =
             BridgeLikeIncrementalHydrostructure::compute(&graph, &walk);
-        assert!(incremental_hydrostructure.is_edge_sea(e3));
-        assert!(incremental_hydrostructure.is_node_sea(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_vapor(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e3));
+        debug_assert!(incremental_hydrostructure.is_node_sea(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_vapor(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
 
         incremental_hydrostructure.set_both_fingers(0, 1);
-        assert!(incremental_hydrostructure.is_edge_river(e3));
-        assert!(incremental_hydrostructure.is_node_river(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_cloud(e1));
-        assert!(incremental_hydrostructure.is_node_river(n2));
-        assert!(incremental_hydrostructure.is_edge_river(e2));
+        debug_assert!(incremental_hydrostructure.is_edge_river(e3));
+        debug_assert!(incremental_hydrostructure.is_node_river(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e1));
+        debug_assert!(incremental_hydrostructure.is_node_river(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_river(e2));
 
         incremental_hydrostructure.increment_right_finger();
-        assert!(incremental_hydrostructure.is_edge_sea(e3));
-        assert!(incremental_hydrostructure.is_node_sea(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_vapor(n1));
-        assert!(incremental_hydrostructure.is_edge_vapor(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e3));
+        debug_assert!(incremental_hydrostructure.is_node_sea(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_vapor(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
 
         incremental_hydrostructure.increment_left_finger();
-        assert!(incremental_hydrostructure.is_edge_sea(e3));
-        assert!(incremental_hydrostructure.is_node_sea(n0));
-        assert!(incremental_hydrostructure.is_edge_sea(e0));
-        assert!(incremental_hydrostructure.is_node_sea(n1));
-        assert!(incremental_hydrostructure.is_edge_sea(e1));
-        assert!(incremental_hydrostructure.is_node_vapor(n2));
-        assert!(incremental_hydrostructure.is_edge_cloud(e2));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e3));
+        debug_assert!(incremental_hydrostructure.is_node_sea(n0));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e0));
+        debug_assert!(incremental_hydrostructure.is_node_sea(n1));
+        debug_assert!(incremental_hydrostructure.is_edge_sea(e1));
+        debug_assert!(incremental_hydrostructure.is_node_vapor(n2));
+        debug_assert!(incremental_hydrostructure.is_edge_cloud(e2));
     }
 
     #[test]

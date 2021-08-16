@@ -54,14 +54,14 @@ impl<Graph: StaticGraph> Omnitig<Graph> {
         let mut omnitig = Self::compute_from_heart(graph, heart_superwalk);
         while !graph.is_join_edge(omnitig[omnitig.first_heart_edge]) {
             omnitig.first_heart_edge += 1;
-            assert!(
+            debug_assert!(
                 omnitig.first_heart_edge < omnitig.last_heart_edge,
                 "First join is not before last split"
             );
         }
         while !graph.is_split_edge(omnitig[omnitig.last_heart_edge]) {
             omnitig.last_heart_edge -= 1;
-            assert!(
+            debug_assert!(
                 omnitig.first_heart_edge < omnitig.last_heart_edge,
                 "First join is not before last split"
             );
@@ -476,7 +476,7 @@ pub trait NodeCentricOmnitigs<
         }
 
         retain_indices.sort_unstable();
-        assert!(
+        debug_assert!(
             retain_indices.windows(2).all(|w| w[0] < w[1]),
             "retain_indices contains duplicate walk"
         );

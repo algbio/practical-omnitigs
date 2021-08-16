@@ -25,7 +25,7 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
         let mut macronodes_without_microtig_amount = 0;
 
         for macronode in macronodes.iter() {
-            assert!(!macronode.is_empty());
+            debug_assert!(!macronode.is_empty());
             let mut has_microtig = false;
             let center_in_node = *macronode.iter().next().unwrap();
             let center_out_node = *macronode.iter().last().unwrap();
@@ -49,12 +49,12 @@ impl<Graph: StaticGraph> MaximalMicrotigsAlgorithm<Graph>
             // From the inverse restricted forward reachability, there are two cases:
             //  * It found exactly one incoming edge into the macronode center. Then that edge is a candidate for a separate central-micro omnitig.
             //  * It found more than one incoming edge into the macronode center. Then the only possible central-micro omnitig ends with out_edge.
-            assert!(inverse_r_plus.contains_node(center_in_node) || center_in_node == center_out_node, "Inverse restricted forward reachability did not find the first node of the macronode center, even though the macronode center has more than one node.");
+            debug_assert!(inverse_r_plus.contains_node(center_in_node) || center_in_node == center_out_node, "Inverse restricted forward reachability did not find the first node of the macronode center, even though the macronode center has more than one node.");
             let in_edge_candidates: Vec<_> = inverse_r_plus
                 .in_neighbors(center_in_node)
                 .map(|n| n.edge_id)
                 .collect();
-            assert!(!in_edge_candidates.is_empty(), "The inverse restricted reachability did not find any incoming edge into the macronode center.");
+            debug_assert!(!in_edge_candidates.is_empty(), "The inverse restricted reachability did not find any incoming edge into the macronode center.");
 
             // Compute maximal microtig based on out_edge.
             let mlmo1 = extend_left_micro_omnitig(graph, out_edge);

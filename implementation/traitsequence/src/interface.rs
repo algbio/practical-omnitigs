@@ -12,14 +12,14 @@ pub trait Sequence<'a, Item: 'a, Subsequence: Sequence<'a, Item, Subsequence> + 
     /// Returns a prefix with length `len` of this sequence.
     /// Panics if `len >= self.len()`.
     fn prefix(&'a self, len: usize) -> &Subsequence {
-        assert!(len < self.len());
+        debug_assert!(len < self.len());
         &self[0..len]
     }
 
     /// Returns a suffix with length `len` of this sequence.
     /// Panics if `len >= self.len()`.
     fn suffix(&'a self, len: usize) -> &Subsequence {
-        assert!(len < self.len());
+        debug_assert!(len < self.len());
         &self[self.len() - len..self.len()]
     }
 

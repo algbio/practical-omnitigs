@@ -40,36 +40,36 @@ impl<'a, Graph: ImmutableGraphContainer> DecoratingSubgraph for BitVectorSubgrap
     }
 
     fn contains_node(&self, node_index: <Self::ParentGraph as GraphBase>::NodeIndex) -> bool {
-        assert!(node_index.as_usize() < self.present_nodes.capacity());
+        debug_assert!(node_index.as_usize() < self.present_nodes.capacity());
         self.present_nodes.contains(node_index.as_usize())
     }
 
     fn contains_edge(&self, edge_index: <Self::ParentGraph as GraphBase>::EdgeIndex) -> bool {
-        assert!(edge_index.as_usize() < self.present_edges.capacity());
+        debug_assert!(edge_index.as_usize() < self.present_edges.capacity());
         self.present_edges.contains(edge_index.as_usize())
     }
 
     /// Panics if the node_index is not valid for the graph passed in the constructor.
     fn add_node(&mut self, node_index: <Self::ParentGraph as GraphBase>::NodeIndex) {
-        assert!(node_index.as_usize() < self.present_nodes.capacity());
+        debug_assert!(node_index.as_usize() < self.present_nodes.capacity());
         self.present_nodes.insert(node_index.as_usize());
     }
 
     /// Panics if the edge_index is not valid for the graph passed in the constructor.
     fn add_edge(&mut self, edge_index: <Self::ParentGraph as GraphBase>::EdgeIndex) {
-        assert!(edge_index.as_usize() < self.present_edges.capacity());
+        debug_assert!(edge_index.as_usize() < self.present_edges.capacity());
         self.present_edges.insert(edge_index.as_usize());
     }
 
     /// Panics if the node_index is not valid for the graph passed in the constructor.
     fn remove_node(&mut self, node_index: <Self::ParentGraph as GraphBase>::NodeIndex) {
-        assert!(node_index.as_usize() < self.present_nodes.capacity());
+        debug_assert!(node_index.as_usize() < self.present_nodes.capacity());
         self.present_nodes.remove(node_index.as_usize());
     }
 
     /// Panics if the edge_index is not valid for the graph passed in the constructor.
     fn remove_edge(&mut self, edge_index: <Self::ParentGraph as GraphBase>::EdgeIndex) {
-        assert!(edge_index.as_usize() < self.present_edges.capacity());
+        debug_assert!(edge_index.as_usize() < self.present_edges.capacity());
         self.present_edges.remove(edge_index.as_usize());
     }
 

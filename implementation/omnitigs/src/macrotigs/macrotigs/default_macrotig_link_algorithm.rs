@@ -18,12 +18,12 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
 
         // Prepare mapping from edges to incoming and outgoing microtigs.
         for (microtig_index, microtig) in microtigs.iter().enumerate() {
-            assert!(!microtig.is_empty(), "Found empty microtig.");
+            debug_assert!(!microtig.is_empty(), "Found empty microtig.");
             let first_edge = microtig.first().unwrap();
             let last_edge = microtig.last().unwrap();
 
-            assert!(outgoing_microtigs[first_edge.as_usize()].is_none());
-            assert!(incoming_microtigs[last_edge.as_usize()].is_none());
+            debug_assert!(outgoing_microtigs[first_edge.as_usize()].is_none());
+            debug_assert!(incoming_microtigs[last_edge.as_usize()].is_none());
             outgoing_microtigs[first_edge.as_usize()] = Some(microtig_index).into();
             incoming_microtigs[last_edge.as_usize()] = Some(microtig_index).into();
         }
@@ -58,7 +58,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                         // Append incoming microtig and make it new current.
                         macrotig.push(incoming_microtig_index);
                         current_microtig = &microtigs[incoming_microtig_index];
-                        assert!(
+                        debug_assert!(
                             !used_microtigs[incoming_microtig_index],
                             "Trying to use a microtig for two maximal macrotigs."
                         );
@@ -92,7 +92,7 @@ impl<Graph: StaticGraph> MaximalMacrotigsAlgorithm<Graph> for DefaultMacrotigLin
                         // Append incoming microtig and make it new current.
                         macrotig.push(outgoing_microtig_index);
                         current_microtig = &microtigs[outgoing_microtig_index];
-                        assert!(
+                        debug_assert!(
                             !used_microtigs[outgoing_microtig_index],
                             "Trying to use a microtig for two maximal macrotigs."
                         );

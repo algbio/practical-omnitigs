@@ -107,7 +107,7 @@ fn compute_maximal_node_covering_node_visible_one_circular_safe_subwalks<Graph: 
 where
     Graph::NodeIndex: 'static,
 {
-    assert!(
+    debug_assert!(
         !walk.is_empty(),
         "Cannot compute safe subwalks of an empty walk."
     );

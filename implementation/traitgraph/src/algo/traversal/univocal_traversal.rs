@@ -124,7 +124,7 @@ impl<'a, Graph: NavigableGraph<'a>, NeighborStrategy: TraversalNeighborStrategy<
                 let next_node = next_node_iter
                     .next()
                     .expect("Edge does not have a node as successor.");
-                assert!(
+                debug_assert!(
                     next_node_iter.next().is_none(),
                     "Edge has more than one node as successor."
                 );
@@ -186,15 +186,15 @@ mod tests {
         let e7 = graph.add_edge(n2, n4, ());
         let e8 = graph.add_edge(n0, n0, ());
 
-        assert!(!is_edge_self_bivalent(&graph, e0));
-        assert!(!is_edge_self_bivalent(&graph, e1));
-        assert!(!is_edge_self_bivalent(&graph, e2));
-        assert!(!is_edge_self_bivalent(&graph, e3));
-        assert!(is_edge_self_bivalent(&graph, e4));
-        assert!(is_edge_self_bivalent(&graph, e5));
-        assert!(is_edge_self_bivalent(&graph, e6));
-        assert!(is_edge_self_bivalent(&graph, e7));
-        assert!(is_edge_self_bivalent(&graph, e8));
+        debug_assert!(!is_edge_self_bivalent(&graph, e0));
+        debug_assert!(!is_edge_self_bivalent(&graph, e1));
+        debug_assert!(!is_edge_self_bivalent(&graph, e2));
+        debug_assert!(!is_edge_self_bivalent(&graph, e3));
+        debug_assert!(is_edge_self_bivalent(&graph, e4));
+        debug_assert!(is_edge_self_bivalent(&graph, e5));
+        debug_assert!(is_edge_self_bivalent(&graph, e6));
+        debug_assert!(is_edge_self_bivalent(&graph, e7));
+        debug_assert!(is_edge_self_bivalent(&graph, e8));
     }
 
     #[test]
@@ -207,8 +207,8 @@ mod tests {
         let e1 = graph.add_edge(n1, n2, ());
         let e2 = graph.add_edge(n2, n0, ());
 
-        assert!(is_edge_self_bivalent(&graph, e0));
-        assert!(is_edge_self_bivalent(&graph, e1));
-        assert!(is_edge_self_bivalent(&graph, e2));
+        debug_assert!(is_edge_self_bivalent(&graph, e0));
+        debug_assert!(is_edge_self_bivalent(&graph, e1));
+        debug_assert!(is_edge_self_bivalent(&graph, e2));
     }
 }

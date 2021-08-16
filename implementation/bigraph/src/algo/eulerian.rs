@@ -45,7 +45,7 @@ pub fn compute_minimum_bidirected_eulerian_cycle_decomposition<
                         break;
                     }
                 }
-                assert!(
+                debug_assert!(
                     has_neighbor || current_node == start_node,
                     "Found no continuation edge at node {}, d- {:?}, d+ {:?}, diff {}, self-mirror {}, #d- {:?}, #d+ {:?}\nbitvector {}",
                     current_node.as_usize(),
@@ -148,7 +148,7 @@ pub fn compute_eulerian_superfluous_out_biedges<
                         .mirror_edge_edge_centric(out_neighbor.edge_id)
                         .unwrap();
                     let inserted = out_inversion_mirrors.insert(mirror_edge);
-                    assert!(inserted);
+                    debug_assert!(inserted);
                 }
             } else {
                 out_neighbor_count += 1;
@@ -163,7 +163,7 @@ pub fn compute_eulerian_superfluous_out_biedges<
                     in_inversion_count += 1;
                     let mirror_edge = graph.mirror_edge_edge_centric(in_neighbor.edge_id).unwrap();
                     let inserted = in_inversion_mirrors.insert(mirror_edge);
-                    assert!(inserted);
+                    debug_assert!(inserted);
                 }
             } else {
                 in_neighbor_count += 1;

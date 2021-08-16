@@ -158,8 +158,8 @@ impl<
 
     /// Resets the traversal to start from the given node without resetting the visited nodes.
     pub fn continue_traversal_from(&mut self, start: Graph::NodeIndex) {
-        assert!(self.queue.is_empty());
-        assert!(self.neighbor_iterator.is_none());
+        debug_assert!(self.queue.is_empty());
+        debug_assert!(self.neighbor_iterator.is_none());
         QueueStrategy::push(&mut self.queue, start);
         self.rank[start.as_usize()] = Some(self.current_rank).into();
         self.current_rank = self.current_rank + 1;
@@ -200,7 +200,7 @@ impl<
         }
 
         if let Some(first) = QueueStrategy::pop(&mut self.queue) {
-            assert!(
+            debug_assert!(
                 !forbidden_subgraph.is_node_forbidden(first),
                 "A node became forbidden after being added to the queue. This is not supported."
             );

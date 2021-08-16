@@ -294,7 +294,7 @@ pub fn read_bigraph_from_fasta_as_node_centric<
     }
 
     bigraph.add_mirror_nodes();
-    assert!(bigraph.verify_node_pairing());
+    debug_assert!(bigraph.verify_node_pairing());
 
     for edge in edges {
         let from_node = if edge.plain_edge.from_side {
@@ -311,7 +311,7 @@ pub fn read_bigraph_from_fasta_as_node_centric<
     }
 
     bigraph.add_node_centric_mirror_edges();
-    assert!(bigraph.verify_node_mirror_property());
+    debug_assert!(bigraph.verify_node_mirror_property());
     Ok(bigraph)
 }
 
@@ -534,8 +534,8 @@ where
         bigraph.add_edge(pre_minus, succ_minus, record.mirror().into());
     }
 
-    assert!(bigraph.verify_node_pairing());
-    assert!(bigraph.verify_edge_mirror_property());
+    debug_assert!(bigraph.verify_node_pairing());
+    debug_assert!(bigraph.verify_edge_mirror_property());
     Ok(bigraph)
 }
 

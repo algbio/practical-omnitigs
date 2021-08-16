@@ -177,7 +177,7 @@ mod tests {
             &graph,
             graph.create_edge_walk(&[e1, e2, e4]),
         );
-        assert!(hydrostructure.is_avertible());
+        debug_assert!(hydrostructure.is_avertible());
     }
 
     #[test]
@@ -203,7 +203,7 @@ mod tests {
             &graph,
             graph.create_edge_walk(&[e1, e2, e3]),
         );
-        assert!(hydrostructure.is_avertible());
+        debug_assert!(hydrostructure.is_avertible());
     }
 
     #[test]
@@ -227,12 +227,12 @@ mod tests {
             &graph,
             graph.create_edge_walk(&[e1, e2, e3]),
         );
-        assert!(hydrostructure.is_bridge_like());
+        debug_assert!(hydrostructure.is_bridge_like());
 
-        assert!(hydrostructure.is_edge_cloud(e3));
-        assert!(hydrostructure.is_edge_sea(e1));
-        assert!(hydrostructure.is_edge_vapor(e2));
-        assert!(hydrostructure.is_edge_river(e5));
+        debug_assert!(hydrostructure.is_edge_cloud(e3));
+        debug_assert!(hydrostructure.is_edge_sea(e1));
+        debug_assert!(hydrostructure.is_edge_vapor(e2));
+        debug_assert!(hydrostructure.is_edge_river(e5));
 
         match hydrostructure {
             StaticHydrostructure::BridgeLike {
@@ -240,37 +240,37 @@ mod tests {
                 r_minus,
                 azb: _,
             } => {
-                assert!(!r_plus.contains_node(n0));
-                assert!(r_plus.contains_node(n1));
-                assert!(r_plus.contains_node(n2));
-                assert!(!r_plus.contains_node(n3));
-                assert!(!r_plus.contains_node(n4));
-                assert!(!r_plus.contains_node(n5));
+                debug_assert!(!r_plus.contains_node(n0));
+                debug_assert!(r_plus.contains_node(n1));
+                debug_assert!(r_plus.contains_node(n2));
+                debug_assert!(!r_plus.contains_node(n3));
+                debug_assert!(!r_plus.contains_node(n4));
+                debug_assert!(!r_plus.contains_node(n5));
 
-                assert!(r_plus.contains_edge(e1));
-                assert!(r_plus.contains_edge(e2));
-                assert!(!r_plus.contains_edge(e3));
-                assert!(!r_plus.contains_edge(e4));
-                assert!(!r_plus.contains_edge(e5));
-                assert!(!r_plus.contains_edge(e6));
-                assert!(!r_plus.contains_edge(e7));
-                assert!(!r_plus.contains_edge(e8));
+                debug_assert!(r_plus.contains_edge(e1));
+                debug_assert!(r_plus.contains_edge(e2));
+                debug_assert!(!r_plus.contains_edge(e3));
+                debug_assert!(!r_plus.contains_edge(e4));
+                debug_assert!(!r_plus.contains_edge(e5));
+                debug_assert!(!r_plus.contains_edge(e6));
+                debug_assert!(!r_plus.contains_edge(e7));
+                debug_assert!(!r_plus.contains_edge(e8));
 
-                assert!(!r_minus.contains_node(n0));
-                assert!(r_minus.contains_node(n1));
-                assert!(r_minus.contains_node(n2));
-                assert!(!r_minus.contains_node(n3));
-                assert!(!r_minus.contains_node(n4));
-                assert!(!r_minus.contains_node(n5));
+                debug_assert!(!r_minus.contains_node(n0));
+                debug_assert!(r_minus.contains_node(n1));
+                debug_assert!(r_minus.contains_node(n2));
+                debug_assert!(!r_minus.contains_node(n3));
+                debug_assert!(!r_minus.contains_node(n4));
+                debug_assert!(!r_minus.contains_node(n5));
 
-                assert!(!r_minus.contains_edge(e1));
-                assert!(r_minus.contains_edge(e2));
-                assert!(r_minus.contains_edge(e3));
-                assert!(!r_minus.contains_edge(e4));
-                assert!(!r_minus.contains_edge(e5));
-                assert!(!r_minus.contains_edge(e6));
-                assert!(!r_minus.contains_edge(e7));
-                assert!(!r_minus.contains_edge(e8));
+                debug_assert!(!r_minus.contains_edge(e1));
+                debug_assert!(r_minus.contains_edge(e2));
+                debug_assert!(r_minus.contains_edge(e3));
+                debug_assert!(!r_minus.contains_edge(e4));
+                debug_assert!(!r_minus.contains_edge(e5));
+                debug_assert!(!r_minus.contains_edge(e6));
+                debug_assert!(!r_minus.contains_edge(e7));
+                debug_assert!(!r_minus.contains_edge(e8));
             }
             _ => panic!("Not bridge like"),
         }
@@ -300,16 +300,16 @@ mod tests {
             &graph,
             graph.create_edge_walk(&[e1, e2, e3]),
         );
-        assert!(hydrostructure.is_bridge_like());
+        debug_assert!(hydrostructure.is_bridge_like());
 
-        assert!(hydrostructure.is_node_cloud(n3));
-        assert!(hydrostructure.is_node_sea(n0));
-        assert!(hydrostructure.is_node_vapor(n2));
-        assert!(hydrostructure.is_node_river(n6));
-        assert!(hydrostructure.is_edge_cloud(e3));
-        assert!(hydrostructure.is_edge_sea(e1));
-        assert!(hydrostructure.is_edge_vapor(e2));
-        assert!(hydrostructure.is_edge_river(e7));
+        debug_assert!(hydrostructure.is_node_cloud(n3));
+        debug_assert!(hydrostructure.is_node_sea(n0));
+        debug_assert!(hydrostructure.is_node_vapor(n2));
+        debug_assert!(hydrostructure.is_node_river(n6));
+        debug_assert!(hydrostructure.is_edge_cloud(e3));
+        debug_assert!(hydrostructure.is_edge_sea(e1));
+        debug_assert!(hydrostructure.is_edge_vapor(e2));
+        debug_assert!(hydrostructure.is_edge_river(e7));
 
         match hydrostructure {
             StaticHydrostructure::BridgeLike {
@@ -317,43 +317,43 @@ mod tests {
                 r_minus,
                 azb: _,
             } => {
-                assert!(r_plus.contains_node(n0));
-                assert!(r_plus.contains_node(n1));
-                assert!(r_plus.contains_node(n2));
-                assert!(!r_plus.contains_node(n3));
-                assert!(r_plus.contains_node(n4));
-                assert!(!r_plus.contains_node(n5));
-                assert!(!r_plus.contains_node(n6));
+                debug_assert!(r_plus.contains_node(n0));
+                debug_assert!(r_plus.contains_node(n1));
+                debug_assert!(r_plus.contains_node(n2));
+                debug_assert!(!r_plus.contains_node(n3));
+                debug_assert!(r_plus.contains_node(n4));
+                debug_assert!(!r_plus.contains_node(n5));
+                debug_assert!(!r_plus.contains_node(n6));
 
-                assert!(r_plus.contains_edge(e1));
-                assert!(r_plus.contains_edge(e2));
-                assert!(!r_plus.contains_edge(e3));
-                assert!(!r_plus.contains_edge(e4));
-                assert!(!r_plus.contains_edge(e5));
-                assert!(r_plus.contains_edge(e6));
-                assert!(!r_plus.contains_edge(e7));
-                assert!(r_plus.contains_edge(e8));
-                assert!(!r_plus.contains_edge(e9));
-                assert!(!r_plus.contains_edge(e10));
+                debug_assert!(r_plus.contains_edge(e1));
+                debug_assert!(r_plus.contains_edge(e2));
+                debug_assert!(!r_plus.contains_edge(e3));
+                debug_assert!(!r_plus.contains_edge(e4));
+                debug_assert!(!r_plus.contains_edge(e5));
+                debug_assert!(r_plus.contains_edge(e6));
+                debug_assert!(!r_plus.contains_edge(e7));
+                debug_assert!(r_plus.contains_edge(e8));
+                debug_assert!(!r_plus.contains_edge(e9));
+                debug_assert!(!r_plus.contains_edge(e10));
 
-                assert!(!r_minus.contains_node(n0));
-                assert!(r_minus.contains_node(n1));
-                assert!(r_minus.contains_node(n2));
-                assert!(r_minus.contains_node(n3));
-                assert!(!r_minus.contains_node(n4));
-                assert!(r_minus.contains_node(n5));
-                assert!(!r_minus.contains_node(n6));
+                debug_assert!(!r_minus.contains_node(n0));
+                debug_assert!(r_minus.contains_node(n1));
+                debug_assert!(r_minus.contains_node(n2));
+                debug_assert!(r_minus.contains_node(n3));
+                debug_assert!(!r_minus.contains_node(n4));
+                debug_assert!(r_minus.contains_node(n5));
+                debug_assert!(!r_minus.contains_node(n6));
 
-                assert!(!r_minus.contains_edge(e1));
-                assert!(r_minus.contains_edge(e2));
-                assert!(r_minus.contains_edge(e3));
-                assert!(!r_minus.contains_edge(e4));
-                assert!(r_minus.contains_edge(e5));
-                assert!(!r_minus.contains_edge(e6));
-                assert!(!r_minus.contains_edge(e7));
-                assert!(!r_minus.contains_edge(e8));
-                assert!(r_minus.contains_edge(e9));
-                assert!(!r_minus.contains_edge(e10));
+                debug_assert!(!r_minus.contains_edge(e1));
+                debug_assert!(r_minus.contains_edge(e2));
+                debug_assert!(r_minus.contains_edge(e3));
+                debug_assert!(!r_minus.contains_edge(e4));
+                debug_assert!(r_minus.contains_edge(e5));
+                debug_assert!(!r_minus.contains_edge(e6));
+                debug_assert!(!r_minus.contains_edge(e7));
+                debug_assert!(!r_minus.contains_edge(e8));
+                debug_assert!(r_minus.contains_edge(e9));
+                debug_assert!(!r_minus.contains_edge(e10));
             }
             _ => panic!("Not bridge like"),
         }
