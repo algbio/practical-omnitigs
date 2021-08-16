@@ -12,10 +12,13 @@ use compact_genome::interface::sequence::{
     EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence,
 };
 use compact_genome::interface::sequence_store::SequenceStore;
+use dashmap::DashMap;
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use std::collections::HashMap;
-use std::fmt::Write;
+use std::fmt::{Debug, Write};
 use std::hash::Hash;
 use std::path::Path;
+use std::sync::Mutex;
 
 error_chain! {
     foreign_links {
@@ -25,6 +28,9 @@ error_chain! {
         ;
         Fmt(std::fmt::Error)
         /// An error encountered while trying to format a structure as string.
+        ;
+        Anyhow(anyhow::Error)
+        /// An error passed through anyhow.
         ;
     }
 
@@ -231,7 +237,7 @@ impl<SequenceHandle: Clone> BidirectedData for FastaNodeData<SequenceHandle> {
 fn parse_fasta_record<GenomeSequenceStore: SequenceStore>(
     record: Record,
     target_sequence_store: &mut GenomeSequenceStore,
-) -> crate::error::Result<FastaNodeData<GenomeSequenceStore::Handle>> {
+) -> Result<FastaNodeData<GenomeSequenceStore::Handle>> {
     let id = record.id().to_owned();
     let description = record.desc().map(ToOwned::to_owned);
     let sequence_handle = target_sequence_store.add(record.seq());
@@ -276,8 +282,8 @@ pub fn read_bigraph_from_fasta_as_node_centric<
     let mut edges = Vec::new();
 
     for record in reader.records() {
-        let record: PlainBCalm2NodeData<GenomeSequenceStore::Handle> =
-            parse_bcalm2_fasta_record(record.map_err(Error::from)?, target_sequence_store)?;
+        let record =
+            parse_fasta_record(record.map_err(Error::from)?, target_sequence_store)?;
         edges.extend(record.edges.iter().map(|e| BiEdge {
             from_node: record.id,
             plain_edge: e.clone(),
@@ -434,7 +440,7 @@ pub fn write_node_centric_bigraph_to_bcalm2<
 
 /// Read a genome graph in fasta format into an edge-centric representation from a file.
 pub fn read_bigraph_from_fasta_as_edge_centric_from_file<
-    P: AsRef<Path>,
+    P: AsRef<Path> + Debug,
     GenomeSequenceStore: SequenceStore,
     NodeData: Default + Clone,
     EdgeData: From<FastaNodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
@@ -489,7 +495,7 @@ where
 
 /// Read a genome graph in fasta format into an edge-centric representation.
 pub fn read_bigraph_from_fasta_as_edge_centric<
-    R: std::io::Read,
+    R: std::io::BufRead,
     GenomeSequenceStore: SequenceStore,
     NodeData: Default + Clone,
     EdgeData: From<FastaNodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
@@ -603,4 +609,122 @@ where
     }
 
     Ok(())
+}
+
+//////////////////////////////////////
+////// PARALLEL EDGE CENTRIC IO //////
+//////////////////////////////////////
+
+/// Read a genome graph in fasta format into an edge-centric representation from a file.
+pub fn read_bigraph_from_fasta_as_edge_centric_from_file_in_parallel<
+    P: AsRef<Path> + Debug,
+    GenomeSequenceStore: SequenceStore + Send,
+    NodeData: Default + Clone,
+    EdgeData: From<FastaNodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Send,
+>(
+    path: P,
+    target_sequence_store: &mut GenomeSequenceStore,
+    kmer_size: usize,
+) -> crate::error::Result<Graph>
+where
+    <Graph as GraphBase>::NodeIndex: Clone + Send + Sync,
+    <GenomeSequenceStore as SequenceStore>::Handle: Clone,
+{
+    read_bigraph_from_fasta_as_edge_centric_in_parallel(
+        bio::io::fasta::Reader::from_file(path).map_err(Error::from)?,
+        target_sequence_store,
+        kmer_size,
+    )
+}
+
+fn get_or_create_node_in_parallel<
+    Graph: DynamicBigraph,
+    Genome: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone,
+    GenomeSubsequence: for<'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized,
+>(
+    bigraph: &Mutex<Graph>,
+    id_map: &DashMap<Genome, <Graph as GraphBase>::NodeIndex>,
+    genome: Genome,
+) -> <Graph as GraphBase>::NodeIndex
+where
+    <Graph as GraphBase>::NodeData: Default,
+    <Graph as GraphBase>::EdgeData: Clone,
+{
+    if let Some(node) = id_map.get(&genome) {
+        *node
+    } else {
+        let bigraph = &mut *bigraph.lock().unwrap();
+        let node = bigraph.add_node(Default::default());
+        let reverse_complement = genome.clone_as_reverse_complement();
+
+        if reverse_complement == genome {
+            bigraph.set_mirror_nodes(node, node);
+        } else {
+            let mirror_node = bigraph.add_node(Default::default());
+            id_map.insert(reverse_complement, mirror_node);
+            bigraph.set_mirror_nodes(node, mirror_node);
+        }
+
+        id_map.insert(genome, node);
+
+        node
+    }
+}
+
+/// Read a genome graph in fasta format into an edge-centric representation.
+pub fn read_bigraph_from_fasta_as_edge_centric_in_parallel<
+    R: std::io::BufRead + Send,
+    GenomeSequenceStore: SequenceStore + Send,
+    NodeData: Default + Clone,
+    EdgeData: From<FastaNodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
+    Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Send,
+>(
+    reader: bio::io::fasta::Reader<R>,
+    target_sequence_store: &mut GenomeSequenceStore,
+    kmer_size: usize,
+) -> crate::error::Result<Graph>
+where
+    <Graph as GraphBase>::NodeIndex: Clone + Send + Sync,
+    <GenomeSequenceStore as SequenceStore>::Handle: Clone,
+{
+    let bigraph = Mutex::new(Graph::default());
+    let target_sequence_store = Mutex::new(target_sequence_store);
+    let id_map = DashMap::new();
+    let node_kmer_size = kmer_size - 1;
+
+    let result: Result<()> = reader
+        .records()
+        .par_bridge()
+        .map(|record| {
+            let mut locked_target_sequence_store = target_sequence_store.lock().unwrap();
+            let record: FastaNodeData<GenomeSequenceStore::Handle> =
+                parse_fasta_record(record?, *locked_target_sequence_store)?;
+            let sequence = locked_target_sequence_store.get(&record.sequence_handle);
+            let prefix = sequence.prefix(node_kmer_size);
+            let suffix = sequence.suffix(node_kmer_size);
+
+            let pre_plus: TwoBitVectorGenome = prefix.convert();
+            let pre_minus: TwoBitVectorGenome = suffix.convert_with_reverse_complement();
+            let succ_plus: TwoBitVectorGenome = suffix.convert();
+            let succ_minus: TwoBitVectorGenome = prefix.convert_with_reverse_complement();
+            drop(locked_target_sequence_store);
+
+            let pre_plus = get_or_create_node_in_parallel(&bigraph, &id_map, pre_plus);
+            let pre_minus = get_or_create_node_in_parallel(&bigraph, &id_map, pre_minus);
+            let succ_plus = get_or_create_node_in_parallel(&bigraph, &id_map, succ_plus);
+            let succ_minus = get_or_create_node_in_parallel(&bigraph, &id_map, succ_minus);
+
+            let bigraph = &mut *bigraph.lock().unwrap();
+            bigraph.add_edge(pre_plus, succ_plus, record.clone().into());
+            bigraph.add_edge(pre_minus, succ_minus, record.mirror().into());
+            Result::<()>::Ok(())
+        })
+        .collect();
+    result?;
+
+    let bigraph = bigraph.into_inner().unwrap();
+    debug_assert!(bigraph.verify_node_pairing());
+    debug_assert!(bigraph.verify_edge_mirror_property());
+    Ok(bigraph)
 }

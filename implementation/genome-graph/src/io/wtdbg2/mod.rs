@@ -9,7 +9,7 @@ use compact_genome::interface::sequence::GenomeSequence;
 use regex::Regex;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::path::Path;
@@ -728,7 +728,7 @@ impl RawWtdbg2Contigs {
 impl Display for RawWtdbg2Contigs {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for contig in &self.contigs {
-            contig.fmt(f)?;
+            Display::fmt(contig, f)?;
         }
         Ok(())
     }
@@ -742,7 +742,7 @@ impl Display for RawWtdbg2Contig {
             self.index, self.nodes, self.len
         )?;
         for edge in &self.edges {
-            edge.fmt(f)?;
+            Display::fmt(edge, f)?;
         }
         Ok(())
     }
@@ -760,7 +760,7 @@ impl Display for RawWtdbg2ContigEdge {
             if self.to_direction { '+' } else { '-' }
         )?;
         for support in &self.supports {
-            support.fmt(f)?;
+            Display::fmt(support, f)?;
         }
         Ok(())
     }
@@ -784,7 +784,7 @@ impl Display for RawWtdbg2ContigEdgeSupport {
 /// This opens the given path as raw reads file in fasta format.
 pub fn convert_walks_to_wtdbg2_contigs_with_file<
     'ws,
-    P: AsRef<Path>,
+    P: AsRef<Path> + Debug,
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
@@ -807,7 +807,7 @@ pub fn convert_walks_to_wtdbg2_contigs_with_file<
 /// This interprets the given reader as raw reads source in fasta format.
 pub fn convert_walks_to_wtdbg2_contigs<
     'ws,
-    R: Read,
+    R: BufRead,
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
     Graph: ImmutableGraphContainer<NodeData = NodeData, EdgeData = EdgeData>,
@@ -1024,7 +1024,7 @@ pub fn read_wtdbg2_contigs<R: Read>(input: R) -> Result<RawWtdbg2Contigs> {
 /// Write a list of contigs in wtdbg's .ctg.lay format to a file.
 pub fn write_contigs_to_wtdbg2_to_file<
     'ws,
-    P1: AsRef<Path>,
+    P1: AsRef<Path> + Debug,
     P2: AsRef<Path>,
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,
@@ -1049,7 +1049,7 @@ pub fn write_contigs_to_wtdbg2_to_file<
 /// Write a list of contigs in wtdbg's .ctg.lay format.
 pub fn write_contigs_to_wtdbg2<
     'ws,
-    R: Read,
+    R: BufRead,
     W: Write,
     NodeData: Wtdbg2NodeData,
     EdgeData: Wtdbg2EdgeData,

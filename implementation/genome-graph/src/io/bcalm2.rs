@@ -24,6 +24,9 @@ error_chain! {
         Fmt(std::fmt::Error)
         /// An error encountered while trying to format a structure as string.
         ;
+        Anyhow(anyhow::Error)
+        /// Any error passed through anyhow.
+        ;
     }
 
     errors {
@@ -326,7 +329,7 @@ impl<'a, GenomeSequenceStoreHandle: Clone> From<&'a PlainBCalm2NodeData<GenomeSe
 
 /// Read a genome graph in bcalm2 fasta format into a node-centric representation from a file.
 pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
-    P: AsRef<Path>,
+    P: AsRef<Path> + Debug,
     GenomeSequenceStore: SequenceStore,
     NodeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + BidirectedData,
     EdgeData: Default + Clone,
@@ -343,7 +346,7 @@ pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
 
 /// Read a genome graph in bcalm2 fasta format into a node-centric representation.
 pub fn read_bigraph_from_bcalm2_as_node_centric<
-    R: std::io::Read,
+    R: std::io::BufRead,
     GenomeSequenceStore: SequenceStore,
     NodeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + BidirectedData,
     EdgeData: Default + Clone,
@@ -543,7 +546,7 @@ where
 
 /// Read a genome graph in bcalm2 fasta format into an edge-centric representation from a file.
 pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
-    P: AsRef<Path>,
+    P: AsRef<Path> + Debug,
     GenomeSequenceStore: SequenceStore,
     NodeData: Default + Clone,
     EdgeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
@@ -598,7 +601,7 @@ where
 
 /// Read a genome graph in bcalm2 fasta format into an edge-centric representation.
 pub fn read_bigraph_from_bcalm2_as_edge_centric<
-    R: std::io::Read,
+    R: std::io::BufRead,
     GenomeSequenceStore: SequenceStore,
     NodeData: Default + Clone,
     EdgeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,

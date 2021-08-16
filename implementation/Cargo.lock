@@ -27,6 +27,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28ae2b3dec75a406790005a200b1bd89785afc02517a00ca99ecfe093ee9e6cf"
+
+[[package]]
 name = "approx"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -34,6 +40,12 @@ checksum = "f0e60b75072ecd4168020818c0107f2857bb6c4e64252d8d3983f6263b40a5c3"
 dependencies = [
  "num-traits",
 ]
+
+[[package]]
+name = "array-macro"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06e97b4e522f9e55523001238ac59d13a8603af57f69980de5d8de4bbbe8ada6"
 
 [[package]]
 name = "atty"
@@ -118,6 +130,46 @@ dependencies = [
  "statrs",
  "strum 0.18.0",
  "strum_macros 0.18.0",
+ "vec_map",
+]
+
+[[package]]
+name = "bio"
+version = "0.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cd1fa26bbc8822577da82a89c3c362fce337fdca5c1f41f14b4ca6b72065c37"
+dependencies = [
+ "anyhow",
+ "approx",
+ "bio-types",
+ "bit-set",
+ "bv",
+ "bytecount",
+ "csv",
+ "custom_derive",
+ "enum-map",
+ "fnv",
+ "fxhash",
+ "getset",
+ "itertools 0.9.0",
+ "itertools-num",
+ "lazy_static",
+ "multimap",
+ "ndarray",
+ "newtype_derive",
+ "num-integer",
+ "num-traits",
+ "ordered-float",
+ "petgraph 0.5.1",
+ "rand 0.7.3",
+ "regex",
+ "serde",
+ "serde_derive",
+ "statrs",
+ "strum 0.18.0",
+ "strum_macros 0.20.1",
+ "thiserror",
+ "triple_accel",
  "vec_map",
 ]
 
@@ -288,7 +340,7 @@ dependencies = [
 name = "cli"
 version = "0.3.2-alpha.0"
 dependencies = [
- "bio",
+ "bio 0.31.0",
  "clap 3.0.0-beta.2",
  "colored",
  "compact-genome",
@@ -443,6 +495,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef8ae57c4978a2acd8b869ce6b9ca1dfe817bff704c220209fdef2c0b75a01b9"
 
 [[package]]
+name = "dashmap"
+version = "4.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e77a43b28d0668df09411cb0bc9a8c2adc40f9a048afe863e05fd43251e8e39c"
+dependencies = [
+ "cfg-if",
+ "num_cpus",
+]
+
+[[package]]
 name = "derive-new"
 version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -464,6 +526,27 @@ name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
+name = "enum-map"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4187999839f4ae8be35cf185d1381aa8dc32d2f5951349cc37ae49ebc4781855"
+dependencies = [
+ "array-macro",
+ "enum-map-derive",
+]
+
+[[package]]
+name = "enum-map-derive"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5c450cf304c9e18d45db562025a14fb1ca0f5c769b6f609309f81d4c31de455"
+dependencies = [
+ "proc-macro2 1.0.26",
+ "quote 1.0.9",
+ "syn 1.0.69",
+]
 
 [[package]]
 name = "error-chain"
@@ -524,12 +607,15 @@ dependencies = [
 name = "genome-graph"
 version = "0.3.2-alpha.0"
 dependencies = [
+ "anyhow",
  "bigraph",
- "bio",
+ "bio 0.37.0",
  "compact-genome",
+ "dashmap",
  "error-chain",
  "log",
  "num-traits",
+ "rayon",
  "regex",
 ]
 
@@ -1572,6 +1658,12 @@ dependencies = [
 [[package]]
 name = "traitsequence"
 version = "0.3.2-alpha.0"
+
+[[package]]
+name = "triple_accel"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "622b09ce2fe2df4618636fb92176d205662f59803f39e70d1c333393082de96c"
 
 [[package]]
 name = "unicode-segmentation"

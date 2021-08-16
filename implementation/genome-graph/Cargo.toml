@@ -18,7 +18,10 @@ license = "BSD-2-Clause"
 bigraph = {path = "../bigraph", version = "^0.3.2-alpha.0"}
 compact-genome = {path = "../compact-genome", version = "^0.3.2-alpha.0"}
 num-traits = "0.2"
-bio = "0.31"
+bio = "0.37"
 error-chain = "0.12"
 log = "0.4"
 regex = "1.4"
+dashmap = "4"
+anyhow = "1"
+rayon = "1"

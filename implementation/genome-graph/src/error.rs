@@ -4,6 +4,9 @@ error_chain! {
         Io(std::io::Error)
         /// An IO error.
         ;
+        Anyhow(anyhow::Error)
+        /// Any error passed through anyhow.
+        ;
     }
 
     links {
