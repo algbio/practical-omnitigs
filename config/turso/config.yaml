@@ -24,6 +24,6 @@ printshellcmds: true
 cores: 10000
 local-cores: 8
 latency-wait: 60
-config: "datadir=/wrk/users/sebschmi/data"
+config: "datadir=/wrk/users/sebschmi/practical-omnitigs"
 keep-going: true
 scheduler: "greedy" # ILP creates files in bad locations, possibly leading to a lockup of the file system
