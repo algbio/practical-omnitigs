@@ -1,7 +1,7 @@
 [package]
 name = "genome-graph"
 description = "Representation of genome graphs"
-version = "0.3.2-alpha.0"
+version = "0.4.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2018"
 categories = ["data-structures", "science"]
@@ -15,8 +15,8 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bigraph = {path = "../bigraph", version = "^0.3.2-alpha.0"}
-compact-genome = {path = "../compact-genome", version = "^0.3.2-alpha.0"}
+bigraph = {path = "../bigraph", version = "^0.4.0"}
+compact-genome = {path = "../compact-genome", version = "^0.4.0"}
 num-traits = "0.2"
 bio = "0.37"
 error-chain = "0.12"
