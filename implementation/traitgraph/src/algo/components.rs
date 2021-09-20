@@ -1,6 +1,5 @@
 use super::traversal::{
-    AllowedNodesForbiddenSubgraph, PostOrderForwardDfs, PreOrderBackwardBfs, PreOrderForwardBfs,
-    PreOrderUndirectedBfs,
+    PostOrderForwardDfs, PreOrderBackwardBfs, PreOrderForwardBfs, PreOrderUndirectedBfs,
 };
 use crate::algo::traversal::ForbiddenEdge;
 use crate::index::GraphIndex;
@@ -181,14 +180,13 @@ pub fn decompose_strongly_connected_components<Graph: StaticGraph>(
 ) -> Vec<Graph::NodeIndex> {
     let mut result: Vec<_> = graph.node_indices().collect();
     let mut nodes = LinkedList::new();
-    // TODO this is not optimal. The dfs recreates a vector of all nodes all the time.
-    // Instead of doing that, the dfs could reuse the order vector.
-    // Then, an offset would need to be used for the subgraph indices.
     let mut visited = vec![false; graph.node_count()];
+    // 0 will be overridden with the first reset.
+    let mut dfs = PostOrderForwardDfs::new_without_start(graph);
 
     for node in graph.node_indices() {
         if !visited[node.as_usize()] {
-            let mut dfs = PostOrderForwardDfs::new(graph, node);
+            dfs.continue_traversal_from(node);
 
             while let Some(node) = dfs.next(graph) {
                 visited[node.as_usize()] = true;
@@ -199,14 +197,13 @@ pub fn decompose_strongly_connected_components<Graph: StaticGraph>(
 
     //println!("nodes: {:?}", nodes);
 
+    let mut bfs = PreOrderBackwardBfs::new_without_start(graph);
     for root_node in nodes {
         if visited[root_node.as_usize()] {
             //println!("Reverse processing {:?}", root_node);
-            let mut bfs = PreOrderBackwardBfs::new(graph, root_node);
+            bfs.continue_traversal_from(root_node);
 
-            while let Some(node) =
-                bfs.next_with_forbidden_subgraph(&AllowedNodesForbiddenSubgraph::new(&visited))
-            {
+            for node in &mut bfs {
                 let node = if let NodeOrEdge::Node(node) = node {
                     node
                 } else {

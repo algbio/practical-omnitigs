@@ -273,6 +273,20 @@ impl<
         }
     }
 
+    /// Creates a new traversal that operates on the given graph.
+    /// There is no starting node given, and to start the search, one of the `reset` methods needs to be used.
+    pub fn new_without_start(graph: &Graph) -> Self {
+        let queue = Queue::default();
+        let rank = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
+        Self {
+            queue,
+            rank,
+            current_rank: 0.into(),
+            graph: Default::default(),
+            neighbor_strategy: Default::default(),
+        }
+    }
+
     /// Resets the traversal to start from the given node.
     pub fn reset(&mut self, start: Graph::NodeIndex) {
         self.queue.clear();
@@ -281,6 +295,12 @@ impl<
             *rank = Graph::OptionalNodeIndex::new_none();
         }
         self.current_rank = 0.into();
+    }
+
+    /// Resets the traversal to start from the given node without resetting the visited nodes.
+    pub fn continue_traversal_from(&mut self, start: Graph::NodeIndex) {
+        assert!(self.queue.is_empty());
+        self.queue.push_back(start);
     }
 
     /// Computes and returns the next node in depth-first search postorder.
