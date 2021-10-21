@@ -120,6 +120,16 @@ where
             binode_map,
         }
     }
+
+    /// Converts the given topology into a bigraph without any mapping.
+    /// This leaves the resulting type in a potentially illegal state.
+    pub fn new_unmapped(topology: Topology) -> Self {
+        let node_count = topology.node_count();
+        Self {
+            topology,
+            binode_map: vec![<Self as GraphBase>::OptionalNodeIndex::new_none(); node_count],
+        }
+    }
 }
 
 impl<Topology: StaticGraph> StaticBigraphFromDigraph for NodeBigraphWrapper<Topology>
@@ -134,14 +144,6 @@ where
 
     fn new_unchecked(topology: Self::Topology) -> Self {
         Self::new_internal(topology, false)
-    }
-
-    fn new_unmapped(topology: Self::Topology) -> Self {
-        let node_count = topology.node_count();
-        Self {
-            topology,
-            binode_map: vec![<Self as GraphBase>::OptionalNodeIndex::new_none(); node_count],
-        }
     }
 }
 

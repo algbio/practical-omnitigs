@@ -299,10 +299,6 @@ pub trait StaticBigraphFromDigraph: StaticBigraph {
      * If a node maps to another node, but the other node does not map back, then this method panics.
      */
     fn new_unchecked(topology: Self::Topology) -> Self;
-
-    /// Converts the given topology into a bigraph without any mapping.
-    /// This leaves the resulting type in a potentially illegal state.
-    fn new_unmapped(topology: Self::Topology) -> Self;
 }
 
 #[cfg(test)]
