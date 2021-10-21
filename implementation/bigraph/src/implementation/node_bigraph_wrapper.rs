@@ -72,6 +72,18 @@ impl<'a, Topology: GraphBase> GraphBase for NodeBigraphWrapper<Topology> {
     type EdgeIndex = Topology::EdgeIndex;
 }
 
+impl<Topology: GraphBase + ImmutableGraphContainer> NodeBigraphWrapper<Topology> {
+    /// Converts the given topology into a bigraph without any mapping.
+    /// This leaves the resulting type in a potentially illegal state.
+    pub fn new_unmapped(topology: Topology) -> Self {
+        let node_count = topology.node_count();
+        Self {
+            topology,
+            binode_map: vec![<Self as GraphBase>::OptionalNodeIndex::new_none(); node_count],
+        }
+    }
+}
+
 impl<Topology: StaticGraph> StaticBigraph for NodeBigraphWrapper<Topology> {
     fn mirror_node(&self, node_id: Self::NodeIndex) -> Option<Self::NodeIndex> {
         self.binode_map[node_id.as_usize()].into()
@@ -118,16 +130,6 @@ where
         Self {
             topology,
             binode_map,
-        }
-    }
-
-    /// Converts the given topology into a bigraph without any mapping.
-    /// This leaves the resulting type in a potentially illegal state.
-    pub fn new_unmapped(topology: Topology) -> Self {
-        let node_count = topology.node_count();
-        Self {
-            topology,
-            binode_map: vec![<Self as GraphBase>::OptionalNodeIndex::new_none(); node_count],
         }
     }
 }
