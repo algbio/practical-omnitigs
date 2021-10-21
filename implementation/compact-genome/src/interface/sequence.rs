@@ -1,6 +1,7 @@
 //! Traits for genome sequences.
 
 use itertools::Itertools;
+use std::cmp::Ordering;
 use std::iter::{Copied, FromIterator, Map, Rev};
 use traitsequence::interface::{EditableSequence, OwnedSequence, Sequence, SequenceMut};
 
@@ -72,6 +73,21 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
         &'a self,
     ) -> ResultSequence {
         self.iter().copied().collect()
+    }
+
+    /// Returns true if the genome is canonical.
+    /// A canonical genome is lexicographically smaller or equal to its reverse complement.
+    fn is_canonical(&'a self) -> bool {
+        for (forward_character, reverse_character) in
+            self.iter().copied().zip(self.reverse_complement_iter())
+        {
+            match forward_character.cmp(&reverse_character) {
+                Ordering::Less => return true,
+                Ordering::Equal => return true,
+                _ => {}
+            }
+        }
+        true
     }
 }
 

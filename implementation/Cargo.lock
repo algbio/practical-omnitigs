@@ -160,7 +160,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "ordered-float",
- "petgraph 0.4.13",
+ "petgraph 0.5.1",
  "rand 0.7.3",
  "regex",
  "serde",
