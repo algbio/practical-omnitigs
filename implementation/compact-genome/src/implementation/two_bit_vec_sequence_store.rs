@@ -2,7 +2,7 @@
 
 use crate::implementation::two_bit_vec_sequence::{TwoBitVectorGenome, TwoBitVectorSubGenome};
 use crate::interface::sequence::GenomeSequence;
-use crate::interface::sequence_store::{HandleWithLength, SequenceStore};
+use crate::interface::sequence_store::{HandleWithLength, HandleWithSubsequence, SequenceStore};
 use traitsequence::interface::Sequence;
 
 /// A bitvector based sequence store.
@@ -12,7 +12,7 @@ pub struct TwoBitVectorSequenceStore {
 }
 
 /// A handle of a sequence in an [TwoBitVectorSequenceStore].
-#[derive(Default, Debug, Clone, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct TwoBitVectorSequenceStoreHandle {
     offset: usize,
     len: usize,
@@ -57,5 +57,16 @@ impl SequenceStore for TwoBitVectorSequenceStore {
 impl HandleWithLength for TwoBitVectorSequenceStoreHandle {
     fn len(&self) -> usize {
         self.len
+    }
+}
+
+impl HandleWithSubsequence<core::ops::Range<usize>> for TwoBitVectorSequenceStoreHandle {
+    fn subsequence_handle(&self, range: core::ops::Range<usize>) -> Self {
+        let result = Self {
+            offset: self.offset + range.start,
+            len: range.end - range.start,
+        };
+        debug_assert!(self.offset + self.len >= result.offset + result.len);
+        result
     }
 }

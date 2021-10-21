@@ -1,7 +1,7 @@
 //! An ASCII vector based sequence store.
 
 use crate::interface::sequence::GenomeSequence;
-use crate::interface::sequence_store::{HandleWithLength, SequenceStore};
+use crate::interface::sequence_store::{HandleWithLength, HandleWithSubsequence, SequenceStore};
 
 /// An ASCII vector based sequence store.
 #[derive(Default, Clone, Eq, PartialEq, Debug)]
@@ -10,6 +10,7 @@ pub struct AsciiVectorSequenceStore {
 }
 
 /// A handle of a sequence in an [AsciiVectorSequenceStore].
+#[derive(Default, Clone, Copy, Debug, Eq, PartialEq)]
 pub struct AsciiVectorSequenceStoreHandle {
     offset: usize,
     len: usize,
@@ -49,5 +50,16 @@ impl SequenceStore for AsciiVectorSequenceStore {
 impl HandleWithLength for AsciiVectorSequenceStoreHandle {
     fn len(&self) -> usize {
         self.len
+    }
+}
+
+impl HandleWithSubsequence<core::ops::Range<usize>> for AsciiVectorSequenceStoreHandle {
+    fn subsequence_handle(&self, range: core::ops::Range<usize>) -> Self {
+        let result = Self {
+            offset: self.offset + range.start,
+            len: range.end - range.start,
+        };
+        debug_assert!(self.offset + self.len >= result.offset + result.len);
+        result
     }
 }

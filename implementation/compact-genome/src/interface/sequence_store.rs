@@ -37,3 +37,11 @@ pub trait HandleWithLength {
         self.len() == 0
     }
 }
+
+/// A handle that allows the creation of handles referring arbitrary subsequences of this handle.
+pub trait HandleWithSubsequence<RangeType> {
+    /// Returns a new handle that refers the subsequence of this handle as indicated by the range.
+    /// This method may panic if the range does not define a subsequence of the sequence referred by this handle.
+    /// However, since the handle might not know anything about the sequence it refers, it might also silently ignore such errors.
+    fn subsequence_handle(&self, range: RangeType) -> Self;
+}

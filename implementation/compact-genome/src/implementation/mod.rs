@@ -1,8 +1,8 @@
 pub mod ascii_vec_sequence;
 pub mod two_bit_vec_sequence;
 
+pub mod ascii_vec_sequence_store;
 pub mod two_bit_vec_sequence_store;
-pub mod vec_sequence_store;
 
 /// The default genome type that achieves a good balance between speed and size.
 pub type DefaultGenome = two_bit_vec_sequence::TwoBitVectorGenome;
