@@ -86,7 +86,7 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "bitvector",
  "num-traits",
@@ -160,7 +160,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "ordered-float",
- "petgraph 0.5.1",
+ "petgraph 0.4.13",
  "rand 0.7.3",
  "regex",
  "serde",
