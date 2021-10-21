@@ -89,6 +89,12 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
         }
         true
     }
+
+    /// Returns true if the genome is self-complemental.
+    /// A self-complemental genome is equivalent to its reverse complement.
+    fn is_self_complemental(&'a self) -> bool {
+        self.iter().copied().eq(self.reverse_complement_iter())
+    }
 }
 
 /// A genome sequence that is owned, i.e. not a reference.
