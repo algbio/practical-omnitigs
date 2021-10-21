@@ -135,6 +135,14 @@ where
     fn new_unchecked(topology: Self::Topology) -> Self {
         Self::new_internal(topology, false)
     }
+
+    fn new_unmapped(topology: Self::Topology) -> Self {
+        let node_count = topology.node_count();
+        Self {
+            topology,
+            binode_map: vec![<Self as GraphBase>::OptionalNodeIndex::new_none(); node_count],
+        }
+    }
 }
 
 impl<Topology: DynamicGraph> DynamicBigraph for NodeBigraphWrapper<Topology> {
