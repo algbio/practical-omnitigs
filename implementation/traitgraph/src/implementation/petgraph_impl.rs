@@ -13,8 +13,14 @@ use std::iter::Map;
 pub use petgraph;
 
 /// Create a new graph implemented using the `petgraph::graph::Graph` type.
-pub fn new<NodeData: 'static + Clone + Debug, EdgeData: 'static + Clone + Debug>(
-) -> impl DynamicGraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Clone + Debug {
+pub fn new<
+    'node_data: 'result,
+    'result,
+    NodeData: 'node_data + Clone + Debug,
+    EdgeData: 'static + Clone + Debug,
+>(
+) -> impl 'result + DynamicGraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Clone + Debug
+{
     DiGraph::<NodeData, EdgeData, usize>::default()
 }
 
