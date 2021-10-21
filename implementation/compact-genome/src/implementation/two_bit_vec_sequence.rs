@@ -25,14 +25,14 @@ const ASCII_T: u8 = b'T';
 #[derive(Default, Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TwoBitVectorGenome {
     /// Stores the sequence as two-bit characters.
-    bits: BitVec,
+    pub(crate) bits: BitVec,
 }
 
 /// The subsequence of a genome sequence stored as vector of two-bit characters.
 #[derive(RefCast, Debug, Eq, PartialEq, Hash)]
 #[repr(transparent)]
 pub struct TwoBitVectorSubGenome {
-    bits: BitSlice,
+    pub(crate) bits: BitSlice,
 }
 
 /// An iterator over a [TwoBitVectorGenome].

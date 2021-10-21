@@ -2,7 +2,9 @@
 
 use crate::implementation::two_bit_vec_sequence::{TwoBitVectorGenome, TwoBitVectorSubGenome};
 use crate::interface::sequence::GenomeSequence;
-use crate::interface::sequence_store::{HandleWithLength, HandleWithSubsequence, SequenceStore};
+use crate::interface::sequence_store::{
+    HandleWithLength, HandleWithSubsequence, InverseMappingSequenceStore, SequenceStore,
+};
 use traitsequence::interface::Sequence;
 
 /// A bitvector based sequence store.
@@ -51,6 +53,15 @@ impl SequenceStore for TwoBitVectorSequenceStore {
 
     fn get(&self, handle: &Self::Handle) -> &Self::SequenceRef {
         &self.sequence[handle.offset..handle.offset + handle.len]
+    }
+}
+
+impl InverseMappingSequenceStore for TwoBitVectorSequenceStore {
+    fn map_sequence_ref_to_handle(&self, sequence_ref: &Self::SequenceRef) -> Self::Handle {
+        Self::Handle {
+            offset: sequence_ref.bits.offset_from(&self.sequence.bits[..]) as usize / 2,
+            len: sequence_ref.len(),
+        }
     }
 }
 

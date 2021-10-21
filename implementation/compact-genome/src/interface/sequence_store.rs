@@ -27,6 +27,12 @@ pub trait SequenceStore {
     fn get(&self, handle: &Self::Handle) -> &Self::SequenceRef;
 }
 
+/// A sequence store that is able to map from references to sequences back to handles.
+pub trait InverseMappingSequenceStore: SequenceStore {
+    /// Returns a handle that refers the given sequence reference.
+    fn map_sequence_ref_to_handle(&self, sequence_ref: &Self::SequenceRef) -> Self::Handle;
+}
+
 /// A handle of a sequence store that can compute the length of the referred sequence without retrieving the sequence.
 pub trait HandleWithLength {
     /// Returns the length of the sequence referred by this handle without retrieving the sequence.
