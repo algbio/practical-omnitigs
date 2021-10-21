@@ -29,6 +29,16 @@ pub trait GraphBase {
     type NodeIndex: GraphIndex<Self::OptionalNodeIndex>;
     /// The index type used for edges.
     type EdgeIndex: GraphIndex<Self::OptionalEdgeIndex>;
+
+    /// Returns the none value of the optional node index type used by the trait.
+    fn new_none_optional_node_index(&self) -> Self::OptionalNodeIndex {
+        Self::OptionalNodeIndex::new_none()
+    }
+
+    /// Returns the none value of the optional edge index type used by the trait.
+    fn new_none_optional_edge_index(&self) -> Self::OptionalEdgeIndex {
+        Self::OptionalEdgeIndex::new_none()
+    }
 }
 
 /// A container that contains a set of nodes and edges.
