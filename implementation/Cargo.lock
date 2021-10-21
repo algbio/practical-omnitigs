@@ -86,7 +86,7 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.4.2"
+version = "0.4.3"
 dependencies = [
  "bitvector",
  "num-traits",
