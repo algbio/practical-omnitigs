@@ -63,6 +63,12 @@ pub trait OptionalGraphIndex<MirrorGraphIndex: GraphIndex<Self>>:
     fn new_none() -> Self {
         <Self as From<Option<usize>>>::from(None)
     }
+
+    /// Returns the graph index stored in this optional graph index.
+    /// Panics if this optional graph index is `None`.
+    fn unwrap(self) -> MirrorGraphIndex {
+        self.as_usize().unwrap().into()
+    }
 }
 
 /// A valid graph index.
