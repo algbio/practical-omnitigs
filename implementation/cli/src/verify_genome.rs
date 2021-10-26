@@ -1,10 +1,10 @@
 use crate::CliOptions;
-use clap::Clap;
+use clap::Parser;
 use compact_genome::implementation::DefaultGenome;
 use compact_genome::interface::sequence::GenomeSequence;
 use traitsequence::interface::Sequence;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct VerifyGenomeCommand {
     #[clap(short, long, about = "The input file in fasta format")]
     pub input: String,

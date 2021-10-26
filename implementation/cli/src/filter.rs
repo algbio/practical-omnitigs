@@ -1,8 +1,8 @@
 use crate::CliOptions;
-use clap::Clap;
+use clap::Parser;
 use std::io::Write;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct FilterCommand {
     #[clap(short, long, about = "The input file in fasta format")]
     pub input: String,

@@ -1,5 +1,5 @@
 use crate::CliOptions;
-use clap::Clap;
+use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
 use genome_graph::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
 use genome_graph::bigraph::traitgraph::algo::components::{
@@ -14,7 +14,7 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use traitsequence::interface::Sequence;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct ComputeUnitigsCommand {
     #[clap(
         short,

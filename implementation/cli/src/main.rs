@@ -6,7 +6,7 @@ extern crate log;
 #[macro_use]
 extern crate scan_fmt;
 
-use clap::Clap;
+use clap::Parser;
 use error_chain::{ChainedError, ExitCode};
 use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
@@ -37,14 +37,14 @@ error_chain! {
     }
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap(name = "Practical Omnitigs", version = env!("CARGO_PKG_VERSION"), author = "Sebastian Schmidt <sebastian.schmidt@helsinki.fi>")]
 struct CliOptions {
     #[clap(subcommand)]
     pub subcommand: Command,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 enum Command {
     #[clap(
         about = "Prints statistics about the input graph, and saves it back to disc for verification purposes if --output is given."

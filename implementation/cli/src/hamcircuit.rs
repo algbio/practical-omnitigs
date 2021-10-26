@@ -1,5 +1,5 @@
 use crate::CliOptions;
-use clap::Clap;
+use clap::Parser;
 use genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected;
 use genome_graph::bigraph::traitgraph::algo::predefined_graphs::{
     compute_m_from_n_and_c, create_random_graph,
@@ -19,7 +19,7 @@ use std::io::{BufReader, BufWriter, Write};
 use std::time::Instant;
 use traitsequence::interface::Sequence;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct HamCircuitCommand {
     #[clap(short, long, about = "The input file in tsplib format")]
     pub input: String,

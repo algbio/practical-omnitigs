@@ -1,8 +1,8 @@
 use crate::CliOptions;
 use bio::io::fasta::Record;
-use clap::Clap;
+use clap::Parser;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct CirculariseGenomeCommand {
     #[clap(short, long, about = "The input file in fasta format")]
     pub input: String,

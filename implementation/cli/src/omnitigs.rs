@@ -1,5 +1,5 @@
 use crate::CliOptions;
-use clap::Clap;
+use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
 use genome_graph::bigraph::traitgraph::algo::components::{
     decompose_strongly_connected_components, is_strongly_connected,
@@ -11,7 +11,7 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use traitsequence::interface::Sequence;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct ComputeOmnitigsCommand {
     #[clap(
         short,

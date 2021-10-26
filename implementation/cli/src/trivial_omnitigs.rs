@@ -1,5 +1,5 @@
 use crate::CliOptions;
-use clap::Clap;
+use clap::Parser;
 use compact_genome::implementation::{DefaultSequenceStore, DefaultSequenceStoreHandle};
 use genome_graph::io::gfa::{BidirectedGfaNodeData, PetGfaEdgeGraph};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
@@ -10,7 +10,7 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use traitsequence::interface::Sequence;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct ComputeTrivialOmnitigsCommand {
     #[clap(
         short,

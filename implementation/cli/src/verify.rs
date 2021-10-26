@@ -1,5 +1,5 @@
 use crate::CliOptions;
-use clap::Clap;
+use clap::Parser;
 use colored::*;
 use genome_graph::bigraph::traitgraph::algo::components::{
     decompose_strongly_connected_components, decompose_weakly_connected_components,
@@ -17,7 +17,7 @@ use omnitigs::macrotigs::macrotigs::MaximalMacrotigsAlgorithm;
 use traitsequence::interface::Sequence;
 use compact_genome::implementation::DefaultSequenceStore;
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct VerifyEdgeCentricCommand {
     #[clap(short, long, about = "The input file in bcalm2 format")]
     pub input: String,
@@ -44,7 +44,7 @@ pub struct VerifyEdgeCentricCommand {
     pub latex: Option<String>,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct VerifyNodeCentricCommand {
     #[clap(short, long, about = "The input file in bcalm2 format")]
     pub input: String,
