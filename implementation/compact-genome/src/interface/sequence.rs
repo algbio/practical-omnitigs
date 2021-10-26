@@ -83,7 +83,7 @@ pub trait GenomeSequence<'a, GenomeSubsequence: GenomeSequence<'a, GenomeSubsequ
         {
             match forward_character.cmp(&reverse_character) {
                 Ordering::Less => return true,
-                Ordering::Equal => return true,
+                Ordering::Greater => return false,
                 _ => {}
             }
         }
