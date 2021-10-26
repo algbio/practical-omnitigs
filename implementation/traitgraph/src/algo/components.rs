@@ -701,7 +701,10 @@ mod tests {
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
         debug_assert_node_data(result, &mut [0, 1, 2, 3, 4]);
-        debug_assert_edge_data(result, &mut [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 155]);
+        debug_assert_edge_data(
+            result,
+            &mut [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 155],
+        );
     }
 
     #[test]

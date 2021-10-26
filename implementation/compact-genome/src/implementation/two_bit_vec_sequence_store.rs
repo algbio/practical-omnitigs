@@ -58,8 +58,12 @@ impl SequenceStore for TwoBitVectorSequenceStore {
 
 impl InverseMappingSequenceStore for TwoBitVectorSequenceStore {
     fn map_sequence_ref_to_handle(&self, sequence_ref: &Self::SequenceRef) -> Self::Handle {
+        let raw_offset = self.sequence.bits.offset_from(&sequence_ref.bits[..]);
+        debug_assert!(raw_offset >= 0);
+        let offset = raw_offset as usize / 2;
+
         Self::Handle {
-            offset: sequence_ref.bits.offset_from(&self.sequence.bits[..]) as usize / 2,
+            offset,
             len: sequence_ref.len(),
         }
     }
@@ -79,5 +83,31 @@ impl HandleWithSubsequence<core::ops::Range<usize>> for TwoBitVectorSequenceStor
         };
         debug_assert!(self.offset + self.len >= result.offset + result.len);
         result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::implementation::two_bit_vec_sequence_store::TwoBitVectorSequenceStore;
+    use crate::interface::sequence::GenomeSequence;
+    use crate::interface::sequence_store::{InverseMappingSequenceStore, SequenceStore};
+
+    #[test]
+    fn test_inverse_mapping() {
+        let mut sequence_store = TwoBitVectorSequenceStore::new();
+        let handle1 = sequence_store.add(&b"ACGTTG"[..]);
+        let handle2 = sequence_store.add(&b"CGACTG"[..]);
+        let reference1 = sequence_store.get(&handle1);
+        let reference2 = sequence_store.get(&handle2);
+        debug_assert_eq!(&reference1.convert::<Vec<_>, _>(), b"ACGTTG");
+        debug_assert_eq!(&reference2.convert::<Vec<_>, _>(), b"CGACTG");
+        debug_assert_eq!(
+            sequence_store.map_sequence_ref_to_handle(reference1),
+            handle1
+        );
+        debug_assert_eq!(
+            sequence_store.map_sequence_ref_to_handle(reference2),
+            handle2
+        );
     }
 }
