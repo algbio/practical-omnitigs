@@ -292,7 +292,40 @@ mod tests {
         extract_subgraphs_from_node_mapping, is_strongly_connected,
     };
     use crate::implementation::petgraph_impl;
-    use crate::interface::{ImmutableGraphContainer, MutableGraphContainer};
+    use crate::interface::{GraphBase, ImmutableGraphContainer, MutableGraphContainer};
+    use std::fmt::Debug;
+
+    fn debug_assert_node_data<Graph: ImmutableGraphContainer>(
+        graph: &Graph,
+        required_node_data: &mut [<Graph as GraphBase>::NodeData],
+    ) where
+        <Graph as GraphBase>::NodeData: Ord + Clone + Debug,
+    {
+        let mut node_data: Vec<_> = graph
+            .node_indices()
+            .map(|i| graph.node_data(i))
+            .cloned()
+            .collect();
+        node_data.sort();
+        required_node_data.sort();
+        debug_assert_eq!(&node_data[..], required_node_data);
+    }
+
+    fn debug_assert_edge_data<Graph: ImmutableGraphContainer>(
+        graph: &Graph,
+        required_edge_data: &mut [Graph::EdgeData],
+    ) where
+        Graph::EdgeData: Ord + Clone + Debug,
+    {
+        let mut edge_data: Vec<_> = graph
+            .edge_indices()
+            .map(|i| graph.edge_data(i))
+            .cloned()
+            .collect();
+        edge_data.sort();
+        required_edge_data.sort();
+        debug_assert_eq!(&edge_data[..], required_edge_data);
+    }
 
     #[test]
     fn test_decompose_weakly_connected_components_scc() {
@@ -657,7 +690,18 @@ mod tests {
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
         debug_assert!(is_strongly_connected(&graph));
-        debug_assert_eq!(decompose_strongly_connected_components(&graph), vec![n0; 5]);
+
+        let node_map = decompose_strongly_connected_components(&graph);
+        debug_assert_eq!(node_map, vec![n0; 5]);
+
+        let result = extract_subgraphs_from_node_mapping(&graph, &node_map);
+        debug_assert_eq!(result.len(), 1);
+        let result = result.first().unwrap();
+        debug_assert_eq!(result.node_count(), graph.node_count());
+        debug_assert_eq!(result.edge_count(), graph.edge_count());
+
+        debug_assert_node_data(result, &mut [0, 1, 2, 3, 4]);
+        debug_assert_edge_data(result, &mut [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 155]);
     }
 
     #[test]
@@ -678,10 +722,23 @@ mod tests {
         graph.add_edge(n4, n3, 1);
         graph.add_edge(n2, n2, 20);
         debug_assert!(!is_strongly_connected(&graph));
-        debug_assert_eq!(
-            decompose_strongly_connected_components(&graph),
-            vec![n0, n0, n2, n2, n2]
-        );
+
+        let node_map = decompose_strongly_connected_components(&graph);
+        debug_assert_eq!(node_map, vec![n0, n0, n2, n2, n2]);
+
+        let result = extract_subgraphs_from_node_mapping(&graph, &node_map);
+        debug_assert_eq!(result.len(), 2);
+        let first = &result[0];
+        let second = &result[1];
+        debug_assert_eq!(first.node_count(), 2);
+        debug_assert_eq!(first.edge_count(), 3);
+        debug_assert_eq!(second.node_count(), 3);
+        debug_assert_eq!(second.edge_count(), 5);
+
+        debug_assert_node_data(first, &mut [0, 1]);
+        debug_assert_edge_data(first, &mut [10, 15, 155]);
+        debug_assert_node_data(second, &mut [2, 3, 4]);
+        debug_assert_edge_data(second, &mut [1, 12, 13, 17, 20]);
     }
 
     #[test]
@@ -701,17 +758,37 @@ mod tests {
         graph.add_edge(n4, n5, 13);
         graph.add_edge(n5, n3, 13);
         debug_assert!(!is_strongly_connected(&graph));
-        debug_assert_eq!(
-            decompose_strongly_connected_components(&graph),
-            vec![n0, n1, n1, n3, n3, n3]
-        );
+
+        let node_map = decompose_strongly_connected_components(&graph);
+        debug_assert_eq!(node_map, vec![n0, n1, n1, n3, n3, n3]);
+
+        let result = extract_subgraphs_from_node_mapping(&graph, &node_map);
+        debug_assert_eq!(result.len(), 3);
+        let first = &result[0];
+        let second = &result[1];
+        let third = &result[2];
+        debug_assert_eq!(first.node_count(), 1);
+        debug_assert_eq!(first.edge_count(), 1);
+        debug_assert_eq!(second.node_count(), 2);
+        debug_assert_eq!(second.edge_count(), 2);
+        debug_assert_eq!(third.node_count(), 3);
+        debug_assert_eq!(third.edge_count(), 4);
+
+        debug_assert_node_data(first, &mut [0]);
+        debug_assert_edge_data(first, &mut [10]);
+        debug_assert_node_data(second, &mut [1, 2]);
+        debug_assert_edge_data(second, &mut [11, 13]);
+        debug_assert_node_data(third, &mut [3, 4, 5]);
+        debug_assert_edge_data(third, &mut [12, 125, 13, 13]);
     }
 
     #[test]
     fn test_decompose_sccs_empty_graph() {
         let graph = petgraph_impl::new::<i32, i32>();
         debug_assert!(is_strongly_connected(&graph));
-        debug_assert_eq!(decompose_strongly_connected_components(&graph), vec![]);
+        let node_map = decompose_strongly_connected_components(&graph);
+        debug_assert_eq!(node_map, vec![]);
+        debug_assert!(extract_subgraphs_from_node_mapping(&graph, &node_map).is_empty());
     }
 
     #[test]
@@ -735,10 +812,23 @@ mod tests {
         graph.add_edge(n0, n4, 19);
         graph.add_edge(n2, n2, 20);
         debug_assert!(!is_strongly_connected(&graph));
-        debug_assert_eq!(
-            decompose_strongly_connected_components(&graph),
-            vec![n0, n1, n1, n1, n1]
-        );
+
+        let node_map = decompose_strongly_connected_components(&graph);
+        debug_assert_eq!(node_map, vec![n0, n1, n1, n1, n1]);
+
+        let result = extract_subgraphs_from_node_mapping(&graph, &node_map);
+        debug_assert_eq!(result.len(), 2);
+        let first = &result[0];
+        let second = &result[1];
+        debug_assert_eq!(first.node_count(), 1);
+        debug_assert_eq!(first.edge_count(), 0);
+        debug_assert_eq!(second.node_count(), 4);
+        debug_assert_eq!(second.edge_count(), 10);
+
+        debug_assert_node_data(first, &mut [0]);
+        debug_assert_edge_data(first, &mut []);
+        debug_assert_node_data(second, &mut [1, 2, 3, 4]);
+        debug_assert_edge_data(second, &mut [11, 12, 13, 14, 15, 155, 16, 17, 18, 20]);
     }
 
     #[test]
@@ -762,10 +852,23 @@ mod tests {
         graph.add_edge(n1, n4, 19);
         graph.add_edge(n2, n2, 20);
         debug_assert!(!is_strongly_connected(&graph));
-        debug_assert_eq!(
-            decompose_strongly_connected_components(&graph),
-            vec![n0, n1, n1, n1, n1]
-        );
+
+        let node_map = decompose_strongly_connected_components(&graph);
+        debug_assert_eq!(node_map, vec![n0, n1, n1, n1, n1]);
+
+        let result = extract_subgraphs_from_node_mapping(&graph, &node_map);
+        debug_assert_eq!(result.len(), 2);
+        let first = &result[0];
+        let second = &result[1];
+        debug_assert_eq!(first.node_count(), 1);
+        debug_assert_eq!(first.edge_count(), 0);
+        debug_assert_eq!(second.node_count(), 4);
+        debug_assert_eq!(second.edge_count(), 9);
+
+        debug_assert_node_data(first, &mut [0]);
+        debug_assert_edge_data(first, &mut []);
+        debug_assert_node_data(second, &mut [1, 2, 3, 4]);
+        debug_assert_edge_data(second, &mut [10, 11, 12, 13, 16, 17, 18, 19, 20]);
     }
 
     /////////////////////////////////////////////////////////
