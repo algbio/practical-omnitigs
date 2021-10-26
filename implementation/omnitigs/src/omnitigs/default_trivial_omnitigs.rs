@@ -88,7 +88,7 @@ impl<
         graph: &Graph,
         mut omnitigs: Omnitigs<Graph>,
     ) -> Omnitigs<Graph> {
-        info!("Marking used edges");
+        debug!("Marking used edges");
         let mut used_edges = BitVector::new(graph.edge_count());
         for omnitig in omnitigs.iter() {
             for edge in omnitig.iter() {
@@ -96,7 +96,7 @@ impl<
             }
         }
 
-        info!("Extend {} unused edges", graph.edge_count());
+        debug!("Extend {} unused edges", graph.edge_count());
         for edge in graph.edge_indices() {
             if used_edges.contains(edge.as_usize())
                 || !is_edge_in_maximal_trivial_omnitig_heart(graph, edge)
