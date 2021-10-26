@@ -1,3 +1,5 @@
+use compact_genome::implementation::ascii_vec_sequence_store::{AsciiVectorSequenceStore, AsciiVectorSequenceStoreHandle};
+use compact_genome::implementation::two_bit_vec_sequence_store::{TwoBitVectorSequenceStore, TwoBitVectorSequenceStoreHandle};
 use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use compact_genome::interface::sequence_store::SequenceStore;
 
@@ -30,4 +32,32 @@ pub trait SequenceData<GenomeSequenceStore: SequenceStore> {
         &self,
         source_sequence_store: &GenomeSequenceStore,
     ) -> ResultSequence;
+}
+
+impl SequenceData<TwoBitVectorSequenceStore> for TwoBitVectorSequenceStoreHandle {
+    fn sequence_handle(&self) -> &<TwoBitVectorSequenceStore as SequenceStore>::Handle {
+        &self
+    }
+
+    fn sequence_ref<'a>(&self, source_sequence_store: &'a TwoBitVectorSequenceStore) -> Option<&'a <TwoBitVectorSequenceStore as SequenceStore>::SequenceRef> {
+        Some(source_sequence_store.get(self))
+    }
+
+    fn sequence_owned<ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>, ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized>(&self, source_sequence_store: &TwoBitVectorSequenceStore) -> ResultSequence {
+        source_sequence_store.get(self).convert()
+    }
+}
+
+impl SequenceData<AsciiVectorSequenceStore> for AsciiVectorSequenceStoreHandle {
+    fn sequence_handle(&self) -> &<AsciiVectorSequenceStore as SequenceStore>::Handle {
+        &self
+    }
+
+    fn sequence_ref<'a>(&self, source_sequence_store: &'a AsciiVectorSequenceStore) -> Option<&'a <AsciiVectorSequenceStore as SequenceStore>::SequenceRef> {
+        Some(source_sequence_store.get(self))
+    }
+
+    fn sequence_owned<ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>, ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized>(&self, source_sequence_store: &AsciiVectorSequenceStore) -> ResultSequence {
+        source_sequence_store.get(self).convert()
+    }
 }
