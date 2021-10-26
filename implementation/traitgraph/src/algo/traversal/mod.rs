@@ -157,12 +157,15 @@ impl<
     }
 
     /// Resets the traversal to start from the given node without resetting the visited nodes.
-    pub fn continue_traversal_from(&mut self, start: Graph::NodeIndex) {
+    /// Returns the rank of the starting node.
+    pub fn continue_traversal_from(&mut self, start: Graph::NodeIndex) -> Graph::NodeIndex {
         debug_assert!(self.queue.is_empty());
         debug_assert!(self.neighbor_iterator.is_none());
         QueueStrategy::push(&mut self.queue, start);
         self.rank[start.as_usize()] = Some(self.current_rank).into();
+        let result = self.current_rank;
         self.current_rank = self.current_rank + 1;
+        result
     }
 
     /// Advances the traversal, ignoring all nodes and edges forbidden by `forbidden_subgraph`.

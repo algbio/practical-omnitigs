@@ -26,6 +26,7 @@ where
     // Instead of doing that, the bfs could reuse the order vector.
     // Then, an offset would need to be used for the subgraph indices.
     let mut visited = vec![false; graph.node_count()];
+    let mut bfs = PreOrderUndirectedBfs::new_without_start(graph);
 
     while !nodes.is_empty() {
         let start = nodes.pop_front().unwrap();
@@ -33,7 +34,7 @@ where
             continue;
         }
 
-        let mut bfs = PreOrderUndirectedBfs::new(graph, start);
+        let rank_offset = bfs.continue_traversal_from(start).as_usize();
         let mut subgraph = Graph::default();
 
         while let Some(node) = bfs.next() {
@@ -44,8 +45,7 @@ where
             };
             visited[node.as_usize()] = true;
             //println!("add_node: {:?}", node);
-            subgraph.add_node(graph.node_data(node).clone());
-            let subnode = bfs.rank_of(node).unwrap();
+            let subnode = subgraph.add_node(graph.node_data(node).clone());
 
             for out_neighbor in graph.out_neighbors(node) {
                 let neighbor_id = out_neighbor.node_id;
@@ -57,6 +57,7 @@ where
                 );
                 let edge_id = out_neighbor.edge_id;
                 if let Some(subneighbor) = bfs.rank_of(neighbor_id) {
+                    let subneighbor = (subneighbor.as_usize() - rank_offset).into();
                     if subgraph.contains_node_index(subneighbor) {
                         let edge_data = graph.edge_data(edge_id).clone();
                         //println!("f: ({:?}, {:?}) becomes ({:?}, {:?})", node, neighbor_id, subnode, subneighbor);
@@ -81,6 +82,7 @@ where
                 let edge_id = in_neighbor.edge_id;
 
                 if let Some(subneighbor) = bfs.rank_of(neighbor_id) {
+                    let subneighbor = (subneighbor.as_usize() - rank_offset).into();
                     if subgraph.contains_node_index(subneighbor) {
                         let edge_data = graph.edge_data(edge_id).clone();
                         //println!("r: ({:?}, {:?}) becomes ({:?}, {:?})", neighbor_id, node, subneighbor, subnode);
