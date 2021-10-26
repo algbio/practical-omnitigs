@@ -146,7 +146,7 @@ dependencies = [
  "fnv",
  "fxhash",
  "getset",
- "itertools 0.9.0",
+ "itertools 0.10.1",
  "itertools-num",
  "lazy_static",
  "multimap",
@@ -155,14 +155,14 @@ dependencies = [
  "num-integer",
  "num-traits",
  "ordered-float",
- "petgraph 0.4.13",
+ "petgraph 0.5.1",
  "rand 0.8.4",
  "regex",
  "serde",
  "serde_derive",
  "statrs",
  "strum 0.18.0",
- "strum_macros 0.20.1",
+ "strum_macros 0.18.0",
  "thiserror",
  "triple_accel",
  "vec_map",
@@ -593,7 +593,7 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "0.4.8"
+version = "0.4.9"
 dependencies = [
  "anyhow",
  "bigraph",
