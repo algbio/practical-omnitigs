@@ -229,24 +229,32 @@ where
     Graph::NodeData: Clone,
     Graph::EdgeData: Clone,
 {
-    let mut result = Vec::new();
-    let mut extracted_nodes = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
+    // invert node mapping in linear time
+    let mut root_node_map = vec![usize::MAX; graph.node_count()];
+    let mut subgraph_node_indices = Vec::new();
+    for (node_index, root_node) in node_mapping.iter().enumerate() {
+        let node_index = Graph::NodeIndex::from(node_index);
+        let subgraph_index = root_node_map[root_node.as_usize()];
+        if subgraph_index == usize::MAX {
+            root_node_map[root_node.as_usize()] = subgraph_node_indices.len();
+            subgraph_node_indices.push(vec![node_index]);
+        } else {
+            subgraph_node_indices[subgraph_index].push(node_index);
+        }
+    }
+
+    // extract subgraphs
     let mut id_map = Vec::new();
+    let mut extracted_nodes = vec![Graph::OptionalNodeIndex::new_none(); graph.node_count()];
 
-    for node in graph.node_indices() {
-        if !extracted_nodes[node.as_usize()].is_valid() {
-            //println!("Processing {:?}", node);
-
-            let root_node = node_mapping[node.as_usize()];
+    subgraph_node_indices
+        .iter()
+        .map(|subgraph_node_indices| {
             let mut subgraph = Graph::default();
             id_map.clear();
+            let root_node = node_mapping[subgraph_node_indices.first().unwrap().as_usize()];
 
-            for node in graph
-                .node_indices()
-                .skip(node.as_usize())
-                .filter(|n| node_mapping[n.as_usize()] == root_node)
-            {
-                //println!("Adding node {:?}", node);
+            for &node in subgraph_node_indices {
                 let subgraph_node = subgraph.add_node(graph.node_data(node).clone());
                 extracted_nodes[node.as_usize()] = subgraph_node.into();
                 id_map.push(node);
@@ -267,11 +275,9 @@ where
                 }
             }
 
-            result.push(subgraph);
-        }
-    }
-
-    result
+            subgraph
+        })
+        .collect()
 }
 
 /// Returns true if the given graph is a cycle.
