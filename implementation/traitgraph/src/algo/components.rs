@@ -20,16 +20,12 @@ where
     Graph::EdgeData: Clone,
 {
     let mut result = Vec::new();
-    // Using a vector might be faster here. We anyways only pop from one side.
-    let mut nodes: LinkedList<_> = graph.node_indices().collect();
-    // TODO this is not optimal. The bfs recreates a vector of all nodes all the time.
-    // Instead of doing that, the bfs could reuse the order vector.
-    // Then, an offset would need to be used for the subgraph indices.
+    let mut nodes: Vec<_> = graph.node_indices().collect();
     let mut visited = vec![false; graph.node_count()];
     let mut bfs = PreOrderUndirectedBfs::new_without_start(graph);
 
     while !nodes.is_empty() {
-        let start = nodes.pop_front().unwrap();
+        let start = nodes.pop().unwrap();
         if visited[start.as_usize()] {
             continue;
         }
@@ -319,25 +315,13 @@ mod tests {
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        debug_assert_eq!(result.node_data(n0), &0);
-        debug_assert_eq!(result.node_data(n1), &4);
-        debug_assert_eq!(result.node_data(n2), &1);
-        debug_assert_eq!(result.node_data(n3), &3);
-        debug_assert_eq!(result.node_data(n4), &2);
+        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
+        node_data.sort();
+        debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        debug_assert_eq!(result.edge_data(e0), &145);
-        debug_assert_eq!(result.edge_data(e1), &14);
-        debug_assert_eq!(result.edge_data(e15), &19);
-        debug_assert_eq!(result.edge_data(e2), &15);
-        debug_assert_eq!(result.edge_data(e3), &10);
-        debug_assert_eq!(result.edge_data(e4), &13);
-        debug_assert_eq!(result.edge_data(e45), &18);
-        debug_assert_eq!(result.edge_data(e5), &20);
-        debug_assert_eq!(result.edge_data(e6), &16);
-        debug_assert_eq!(result.edge_data(e7), &12);
-        debug_assert_eq!(result.edge_data(e8), &17);
-        debug_assert_eq!(result.edge_data(e9), &115);
-        debug_assert_eq!(result.edge_data(e10), &11);
+        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
+        edge_data.sort();
+        debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 115, 145]);
     }
 
     #[test]
@@ -363,21 +347,13 @@ mod tests {
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        debug_assert_eq!(result.node_data(n0), &0);
-        debug_assert_eq!(result.node_data(n1), &1);
-        debug_assert_eq!(result.node_data(n2), &2);
-        debug_assert_eq!(result.node_data(n3), &3);
-        debug_assert_eq!(result.node_data(n4), &4);
+        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
+        node_data.sort();
+        debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        debug_assert_eq!(result.edge_data(e0), &15);
-        debug_assert_eq!(result.edge_data(e1), &10);
-        debug_assert_eq!(result.edge_data(e2), &21);
-        debug_assert_eq!(result.edge_data(e3), &20);
-        debug_assert_eq!(result.edge_data(e4), &11);
-        debug_assert_eq!(result.edge_data(e5), &17);
-        debug_assert_eq!(result.edge_data(e6), &12);
-        debug_assert_eq!(result.edge_data(e7), &18);
-        debug_assert_eq!(result.edge_data(e8), &13);
+        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
+        edge_data.sort();
+        debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 15, 17, 18, 20, 21]);
     }
 
     #[test]
@@ -396,9 +372,9 @@ mod tests {
         graph.add_edge(n4, n5, 13);
         let result = decompose_weakly_connected_components(&graph);
         debug_assert_eq!(result.len(), 3);
-        let first = result[0].clone();
+        let first = result[2].clone();
         let second = result[1].clone();
-        let third = result[2].clone();
+        let third = result[0].clone();
         debug_assert_eq!(first.node_count(), 1);
         debug_assert_eq!(first.edge_count(), 1);
         debug_assert_eq!(second.node_count(), 2);
@@ -407,17 +383,17 @@ mod tests {
         debug_assert_eq!(third.edge_count(), 2);
 
         debug_assert_eq!(first.node_data(0.into()), &0);
-        debug_assert_eq!(second.node_data(0.into()), &1);
-        debug_assert_eq!(second.node_data(1.into()), &2);
-        debug_assert_eq!(third.node_data(0.into()), &3);
+        debug_assert_eq!(second.node_data(1.into()), &1);
+        debug_assert_eq!(second.node_data(0.into()), &2);
+        debug_assert_eq!(third.node_data(2.into()), &3);
         debug_assert_eq!(third.node_data(1.into()), &4);
-        debug_assert_eq!(third.node_data(2.into()), &5);
+        debug_assert_eq!(third.node_data(0.into()), &5);
 
         debug_assert_eq!(first.edge_data(0.into()), &10);
         debug_assert_eq!(second.edge_data(0.into()), &115);
         debug_assert_eq!(second.edge_data(1.into()), &11);
-        debug_assert_eq!(third.edge_data(0.into()), &12);
-        debug_assert_eq!(third.edge_data(1.into()), &13);
+        debug_assert_eq!(third.edge_data(1.into()), &12);
+        debug_assert_eq!(third.edge_data(0.into()), &13);
     }
 
     #[test]
@@ -453,24 +429,13 @@ mod tests {
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        debug_assert_eq!(result.node_data(n0), &0);
-        debug_assert_eq!(result.node_data(n1), &4);
-        debug_assert_eq!(result.node_data(n2), &1);
-        debug_assert_eq!(result.node_data(n3), &3);
-        debug_assert_eq!(result.node_data(n4), &2);
+        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
+        node_data.sort();
+        debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        debug_assert_eq!(result.edge_data(e0), &19);
-        debug_assert_eq!(result.edge_data(e05), &15);
-        debug_assert_eq!(result.edge_data(e1), &14);
-        debug_assert_eq!(result.edge_data(e2), &105);
-        debug_assert_eq!(result.edge_data(e3), &10);
-        debug_assert_eq!(result.edge_data(e4), &13);
-        debug_assert_eq!(result.edge_data(e5), &18);
-        debug_assert_eq!(result.edge_data(e6), &20);
-        debug_assert_eq!(result.edge_data(e7), &16);
-        debug_assert_eq!(result.edge_data(e8), &12);
-        debug_assert_eq!(result.edge_data(e9), &17);
-        debug_assert_eq!(result.edge_data(e10), &11);
+        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
+        edge_data.sort();
+        debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 105]);
     }
 
     #[test]
@@ -499,24 +464,13 @@ mod tests {
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        debug_assert_eq!(result.node_data(n0), &0);
-        debug_assert_eq!(result.node_data(n1), &1);
-        debug_assert_eq!(result.node_data(n2), &4);
-        debug_assert_eq!(result.node_data(n3), &2);
-        debug_assert_eq!(result.node_data(n4), &3);
+        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
+        node_data.sort();
+        debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        debug_assert_eq!(result.edge_data(e0), &155);
-        debug_assert_eq!(result.edge_data(e1), &15);
-        debug_assert_eq!(result.edge_data(e2), &14);
-        debug_assert_eq!(result.edge_data(e3), &10);
-        debug_assert_eq!(result.edge_data(e4), &19);
-        debug_assert_eq!(result.edge_data(e5), &20);
-        debug_assert_eq!(result.edge_data(e55), &16);
-        debug_assert_eq!(result.edge_data(e6), &11);
-        debug_assert_eq!(result.edge_data(e7), &17);
-        debug_assert_eq!(result.edge_data(e8), &13);
-        debug_assert_eq!(result.edge_data(e9), &18);
-        debug_assert_eq!(result.edge_data(e10), &12);
+        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
+        edge_data.sort();
+        debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 155]);
     }
 
     #[test]
