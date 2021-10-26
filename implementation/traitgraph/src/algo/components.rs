@@ -296,32 +296,43 @@ mod tests {
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
         let n4 = graph.add_node(4);
-        let e0 = graph.add_edge(n0, n1, 10);
-        let e1 = graph.add_edge(n1, n2, 11);
-        let e15 = graph.add_edge(n1, n2, 115);
-        let e2 = graph.add_edge(n2, n3, 12);
-        let e3 = graph.add_edge(n3, n4, 13);
-        let e4 = graph.add_edge(n4, n0, 14);
-        let e45 = graph.add_edge(n4, n0, 145);
-        let e5 = graph.add_edge(n1, n0, 15);
-        let e6 = graph.add_edge(n2, n1, 16);
-        let e7 = graph.add_edge(n3, n2, 17);
-        let e8 = graph.add_edge(n4, n3, 18);
-        let e9 = graph.add_edge(n0, n4, 19);
-        let e10 = graph.add_edge(n2, n2, 20);
+        let _e0 = graph.add_edge(n0, n1, 10);
+        let _e1 = graph.add_edge(n1, n2, 11);
+        let _e15 = graph.add_edge(n1, n2, 115);
+        let _e2 = graph.add_edge(n2, n3, 12);
+        let _e3 = graph.add_edge(n3, n4, 13);
+        let _e4 = graph.add_edge(n4, n0, 14);
+        let _e45 = graph.add_edge(n4, n0, 145);
+        let _e5 = graph.add_edge(n1, n0, 15);
+        let _e6 = graph.add_edge(n2, n1, 16);
+        let _e7 = graph.add_edge(n3, n2, 17);
+        let _e8 = graph.add_edge(n4, n3, 18);
+        let _e9 = graph.add_edge(n0, n4, 19);
+        let _e10 = graph.add_edge(n2, n2, 20);
         let result = decompose_weakly_connected_components(&graph);
         debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
-        node_data.sort();
+        let mut node_data: Vec<_> = graph
+            .node_indices()
+            .map(|i| result.node_data(i))
+            .copied()
+            .collect();
+        node_data.sort_unstable();
         debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
-        edge_data.sort();
-        debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 115, 145]);
+        let mut edge_data: Vec<_> = graph
+            .edge_indices()
+            .map(|i| result.edge_data(i))
+            .copied()
+            .collect();
+        edge_data.sort_unstable();
+        debug_assert_eq!(
+            edge_data,
+            vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 115, 145]
+        );
     }
 
     #[test]
@@ -332,27 +343,35 @@ mod tests {
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
         let n4 = graph.add_node(4);
-        let e0 = graph.add_edge(n0, n1, 10);
-        let e1 = graph.add_edge(n1, n2, 11);
-        let e2 = graph.add_edge(n2, n3, 12);
-        let e3 = graph.add_edge(n3, n4, 13);
-        let e4 = graph.add_edge(n1, n0, 15);
-        let e5 = graph.add_edge(n3, n2, 17);
-        let e6 = graph.add_edge(n4, n3, 18);
-        let e7 = graph.add_edge(n2, n2, 20);
-        let e8 = graph.add_edge(n2, n2, 21);
+        let _e0 = graph.add_edge(n0, n1, 10);
+        let _e1 = graph.add_edge(n1, n2, 11);
+        let _e2 = graph.add_edge(n2, n3, 12);
+        let _e3 = graph.add_edge(n3, n4, 13);
+        let _e4 = graph.add_edge(n1, n0, 15);
+        let _e5 = graph.add_edge(n3, n2, 17);
+        let _e6 = graph.add_edge(n4, n3, 18);
+        let _e7 = graph.add_edge(n2, n2, 20);
+        let _e8 = graph.add_edge(n2, n2, 21);
         let result = decompose_weakly_connected_components(&graph);
         debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
-        node_data.sort();
+        let mut node_data: Vec<_> = graph
+            .node_indices()
+            .map(|i| result.node_data(i))
+            .copied()
+            .collect();
+        node_data.sort_unstable();
         debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
-        edge_data.sort();
+        let mut edge_data: Vec<_> = graph
+            .edge_indices()
+            .map(|i| result.edge_data(i))
+            .copied()
+            .collect();
+        edge_data.sort_unstable();
         debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 15, 17, 18, 20, 21]);
     }
 
@@ -411,31 +430,42 @@ mod tests {
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
         let n4 = graph.add_node(4);
-        let e0 = graph.add_edge(n0, n1, 10);
-        let e05 = graph.add_edge(n0, n1, 105);
-        let e1 = graph.add_edge(n1, n2, 11);
-        let e2 = graph.add_edge(n2, n3, 12);
-        let e3 = graph.add_edge(n3, n4, 13);
-        let e4 = graph.add_edge(n4, n1, 14);
-        let e5 = graph.add_edge(n1, n4, 15);
-        let e6 = graph.add_edge(n2, n1, 16);
-        let e7 = graph.add_edge(n3, n2, 17);
-        let e8 = graph.add_edge(n4, n3, 18);
-        let e9 = graph.add_edge(n0, n4, 19);
-        let e10 = graph.add_edge(n2, n2, 20);
+        let _e0 = graph.add_edge(n0, n1, 10);
+        let _e05 = graph.add_edge(n0, n1, 105);
+        let _e1 = graph.add_edge(n1, n2, 11);
+        let _e2 = graph.add_edge(n2, n3, 12);
+        let _e3 = graph.add_edge(n3, n4, 13);
+        let _e4 = graph.add_edge(n4, n1, 14);
+        let _e5 = graph.add_edge(n1, n4, 15);
+        let _e6 = graph.add_edge(n2, n1, 16);
+        let _e7 = graph.add_edge(n3, n2, 17);
+        let _e8 = graph.add_edge(n4, n3, 18);
+        let _e9 = graph.add_edge(n0, n4, 19);
+        let _e10 = graph.add_edge(n2, n2, 20);
         let result = decompose_weakly_connected_components(&graph);
         debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
-        node_data.sort();
+        let mut node_data: Vec<_> = graph
+            .node_indices()
+            .map(|i| result.node_data(i))
+            .copied()
+            .collect();
+        node_data.sort_unstable();
         debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
-        edge_data.sort();
-        debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 105]);
+        let mut edge_data: Vec<_> = graph
+            .edge_indices()
+            .map(|i| result.edge_data(i))
+            .copied()
+            .collect();
+        edge_data.sort_unstable();
+        debug_assert_eq!(
+            edge_data,
+            vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 105]
+        );
     }
 
     #[test]
@@ -446,31 +476,42 @@ mod tests {
         let n2 = graph.add_node(2);
         let n3 = graph.add_node(3);
         let n4 = graph.add_node(4);
-        let e0 = graph.add_edge(n4, n1, 10);
-        let e1 = graph.add_edge(n1, n2, 11);
-        let e2 = graph.add_edge(n2, n3, 12);
-        let e3 = graph.add_edge(n3, n4, 13);
-        let e4 = graph.add_edge(n4, n0, 14);
-        let e5 = graph.add_edge(n1, n0, 15);
-        let e55 = graph.add_edge(n1, n0, 155);
-        let e6 = graph.add_edge(n2, n1, 16);
-        let e7 = graph.add_edge(n3, n2, 17);
-        let e8 = graph.add_edge(n4, n3, 18);
-        let e9 = graph.add_edge(n1, n4, 19);
-        let e10 = graph.add_edge(n2, n2, 20);
+        let _e0 = graph.add_edge(n4, n1, 10);
+        let _e1 = graph.add_edge(n1, n2, 11);
+        let _e2 = graph.add_edge(n2, n3, 12);
+        let _e3 = graph.add_edge(n3, n4, 13);
+        let _e4 = graph.add_edge(n4, n0, 14);
+        let _e5 = graph.add_edge(n1, n0, 15);
+        let _e55 = graph.add_edge(n1, n0, 155);
+        let _e6 = graph.add_edge(n2, n1, 16);
+        let _e7 = graph.add_edge(n3, n2, 17);
+        let _e8 = graph.add_edge(n4, n3, 18);
+        let _e9 = graph.add_edge(n1, n4, 19);
+        let _e10 = graph.add_edge(n2, n2, 20);
         let result = decompose_weakly_connected_components(&graph);
         debug_assert_eq!(result.len(), 1);
         let result = result.first().unwrap();
         debug_assert_eq!(result.node_count(), graph.node_count());
         debug_assert_eq!(result.edge_count(), graph.edge_count());
 
-        let mut node_data: Vec<_> = graph.node_indices().map(|i| result.node_data(i)).copied().collect();
-        node_data.sort();
+        let mut node_data: Vec<_> = graph
+            .node_indices()
+            .map(|i| result.node_data(i))
+            .copied()
+            .collect();
+        node_data.sort_unstable();
         debug_assert_eq!(node_data, vec![0, 1, 2, 3, 4]);
 
-        let mut edge_data: Vec<_> = graph.edge_indices().map(|i| result.edge_data(i)).copied().collect();
-        edge_data.sort();
-        debug_assert_eq!(edge_data, vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 155]);
+        let mut edge_data: Vec<_> = graph
+            .edge_indices()
+            .map(|i| result.edge_data(i))
+            .copied()
+            .collect();
+        edge_data.sort_unstable();
+        debug_assert_eq!(
+            edge_data,
+            vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 155]
+        );
     }
 
     #[test]
