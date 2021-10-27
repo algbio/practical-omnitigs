@@ -146,7 +146,7 @@ dependencies = [
  "fnv",
  "fxhash",
  "getset",
- "itertools 0.9.0",
+ "itertools 0.10.1",
  "itertools-num",
  "lazy_static",
  "multimap",
@@ -377,7 +377,7 @@ dependencies = [
 
 [[package]]
 name = "compact-genome"
-version = "0.4.9"
+version = "0.4.10"
 dependencies = [
  "bitvec",
  "itertools 0.9.0",
