@@ -5,6 +5,8 @@ use std::cmp::Ordering;
 use std::iter::{Copied, FromIterator, Map, Rev};
 use traitsequence::interface::{EditableSequence, OwnedSequence, Sequence, SequenceMut};
 
+pub mod neighbor_iterators;
+
 /// An iterator over the reverse complement of a genome sequence.
 pub type ReverseComplementIterator<I> =
     Map<Map<Rev<Copied<I>>, fn(u8) -> Option<u8>>, fn(Option<u8>) -> u8>;

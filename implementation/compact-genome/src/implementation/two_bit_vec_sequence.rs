@@ -1,17 +1,13 @@
 //! A representation of a genome as `Vec<usize>` where each character is encoded as two bits.
 
 use crate::interface::sequence::{EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence};
+use crate::{ASCII_A, ASCII_C, ASCII_G, ASCII_T};
 use bitvec::prelude::*;
 use ref_cast::RefCast;
 use std::borrow::Borrow;
 use std::iter::FromIterator;
 use std::ops::{Index, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 use traitsequence::interface::{EditableSequence, OwnedSequence, Sequence};
-
-const ASCII_A: u8 = b'A';
-const ASCII_C: u8 = b'C';
-const ASCII_G: u8 = b'G';
-const ASCII_T: u8 = b'T';
 
 /// A genome sequence stored as vector of two-bit characters.
 ///
