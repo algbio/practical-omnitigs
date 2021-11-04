@@ -369,6 +369,15 @@ where
 
 impl<Graph: GraphBase> Eq for Omnitigs<Graph> where Graph::EdgeIndex: Eq {}
 
+impl<Graph: GraphBase> IntoIterator for Omnitigs<Graph> {
+    type Item = Omnitig<Graph>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.omnitigs.into_iter()
+    }
+}
+
 /// A trait abstracting over the concrete algorithm used to compute maximal non-trivial omnitigs based on macrotigs.
 pub trait MacrotigBasedNonTrivialOmnitigAlgorithm<Graph: StaticGraph> {
     /// Compute the maximal non-trivial omnitigs of the given the maximal macrotigs.

@@ -365,7 +365,7 @@ where
 
 impl<Graph: GraphBase> IntoIterator for NodeUnitigs<Graph> {
     type Item = NodeUnitig<Graph>;
-    type IntoIter = std::vec::IntoIter<NodeUnitig<Graph>>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.unitigs.into_iter()
