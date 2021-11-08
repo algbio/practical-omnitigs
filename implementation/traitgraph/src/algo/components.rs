@@ -168,6 +168,15 @@ pub fn is_strong_bridge<Graph: StaticGraph>(graph: &Graph, edge: Graph::EdgeInde
     false
 }
 
+/// Compute the strong bridges of the graph with a naive O(m^2) algorithm.
+/// Note that this function assumes that the graph is strongly connected, and returns all edges otherwise.
+pub fn naively_compute_strong_bridges<Graph: StaticGraph>(graph: &Graph) -> Vec<Graph::EdgeIndex> {
+    graph
+        .edge_indices()
+        .filter(|&edge_index| is_strong_bridge(graph, edge_index))
+        .collect()
+}
+
 /// Returns the strongly connected components of a graph.
 ///
 /// If the graph is empty, no SCCs are returned.
@@ -289,7 +298,7 @@ pub fn is_cycle<Graph: StaticGraph>(graph: &Graph) -> bool {
 mod tests {
     use crate::algo::components::{
         decompose_strongly_connected_components, decompose_weakly_connected_components,
-        extract_subgraphs_from_node_mapping, is_strongly_connected,
+        extract_subgraphs_from_node_mapping, is_strongly_connected, naively_compute_strong_bridges,
     };
     use crate::implementation::petgraph_impl;
     use crate::interface::{GraphBase, ImmutableGraphContainer, MutableGraphContainer};
@@ -1076,5 +1085,48 @@ mod tests {
         debug_assert_eq!(0, extracted[0].edge_count());
         debug_assert_eq!(4, extracted[1].node_count());
         debug_assert_eq!(9, extracted[1].edge_count());
+    }
+
+    /////////////////////////////////////////////////////////
+
+    #[test]
+    fn test_compute_strong_bridges() {
+        #![allow(clippy::many_single_char_names)]
+        let mut graph = petgraph_impl::new::<_, ()>();
+        let a = graph.add_node("a");
+        let b = graph.add_node("b");
+        let c = graph.add_node("c");
+        let d = graph.add_node("d");
+        let e = graph.add_node("e");
+        let f = graph.add_node("f");
+        let g = graph.add_node("g");
+        let h = graph.add_node("h");
+        let i = graph.add_node("i");
+        let j = graph.add_node("j");
+        let k = graph.add_node("k");
+        let l = graph.add_node("l");
+
+        let _e0 = graph.add_edge(a, b, ());
+        let e1 = graph.add_edge(a, f, ());
+        let e2 = graph.add_edge(b, c, ());
+        let _e3 = graph.add_edge(c, b, ());
+        let _e4 = graph.add_edge(c, d, ());
+        let _e5 = graph.add_edge(c, e, ());
+        let e6 = graph.add_edge(d, a, ());
+        let _e7 = graph.add_edge(e, b, ());
+        let _e8 = graph.add_edge(e, d, ());
+        let _e9 = graph.add_edge(f, g, ());
+        let e10 = graph.add_edge(f, h, ());
+        let e11 = graph.add_edge(g, i, ());
+        let e12 = graph.add_edge(g, j, ());
+        let e13 = graph.add_edge(h, g, ());
+        let e14 = graph.add_edge(i, f, ());
+        let e15 = graph.add_edge(j, k, ());
+        let e16 = graph.add_edge(j, l, ());
+        let e17 = graph.add_edge(k, g, ());
+        let e18 = graph.add_edge(l, e, ());
+
+        let expected = vec![e1, e2, e6, e10, e11, e12, e13, e14, e15, e16, e17, e18];
+        debug_assert_eq!(expected, naively_compute_strong_bridges(&graph));
     }
 }
