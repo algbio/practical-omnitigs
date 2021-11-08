@@ -191,6 +191,12 @@ impl<Graph: StaticGraph> Omnitigs<Graph> {
         )
     }
 
+    /// Computes the maximal non-trivial omnitigs of the graph.
+    pub fn compute_non_trivial_only(graph: &Graph) -> Self {
+        let maximal_macrotigs = Macrotigs::compute(graph);
+        IncrementalHydrostructureMacrotigBasedNonTrivialOmnitigAlgorithm::compute_maximal_non_trivial_omnitigs(graph, &maximal_macrotigs)
+    }
+
     /// Computes the maximal trivial omnitigs of the given graph, including those that are subwalks of maximal non-trivial omnitigs.
     pub fn compute_trivial_only(graph: &Graph) -> Self {
         SccTrivialOmnitigAlgorithm::compute_maximal_trivial_omnitigs(graph, Omnitigs::default())
