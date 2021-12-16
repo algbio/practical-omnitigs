@@ -18,9 +18,18 @@ pub fn new<
     'result,
     NodeData: 'node_data + Clone + Debug,
     EdgeData: 'static + Clone + Debug,
->(
-) -> impl 'result + DynamicGraph<NodeData = NodeData, EdgeData = EdgeData> + Default + Clone + Debug
-{
+>() -> impl 'result
+       + DynamicGraph<
+    NodeData = NodeData,
+    EdgeData = EdgeData,
+    NodeIndex = crate::index::NodeIndex<usize>,
+    OptionalNodeIndex = crate::index::OptionalNodeIndex<usize>,
+    EdgeIndex = crate::index::EdgeIndex<usize>,
+    OptionalEdgeIndex = crate::index::OptionalEdgeIndex<usize>,
+>
+       + Default
+       + Clone
+       + Debug {
     DiGraph::<NodeData, EdgeData, usize>::default()
 }
 

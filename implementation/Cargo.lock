@@ -316,17 +316,33 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.0.0-rc.5"
+version = "3.0.0-beta.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d358d5dcd274692e60df775bd452f66341a49ab90cc6cc1084c4350a3f914d9"
+checksum = "feff3878564edb93745d58cf63e17b63f24142506e7a20c87a5521ed7bfb1d63"
 dependencies = [
  "atty",
  "bitflags",
+ "clap_derive",
  "indexmap",
+ "lazy_static",
  "os_str_bytes",
  "strsim",
  "termcolor",
  "textwrap 0.14.2",
+ "unicase",
+]
+
+[[package]]
+name = "clap_derive"
+version = "3.0.0-beta.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b15c6b4f786ffb6192ffe65a36855bc1fc2444bcd0945ae16748dcd6ed7d0d3"
+dependencies = [
+ "heck",
+ "proc-macro-error",
+ "proc-macro2 1.0.34",
+ "quote 1.0.10",
+ "syn 1.0.82",
 ]
 
 [[package]]
@@ -334,7 +350,7 @@ name = "cli"
 version = "0.4.0"
 dependencies = [
  "bio 0.31.0",
- "clap 3.0.0-rc.5",
+ "clap 3.0.0-beta.5",
  "colored",
  "compact-genome",
  "error-chain",
@@ -1061,9 +1077,9 @@ checksum = "a86ed3f5f244b372d6b1a00b72ef7f8876d0bc6a78a4c9985c53614041512063"
 
 [[package]]
 name = "os_str_bytes"
-version = "6.0.0"
+version = "4.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e22443d1643a904602595ba1cd8f7d896afe56d26712531c5ff73a15b2fbf64"
+checksum = "addaa943333a514159c80c97ff4a93306530d965d27e139188283cd13e06a799"
 dependencies = [
  "memchr",
 ]
@@ -1793,6 +1809,9 @@ name = "textwrap"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80"
+dependencies = [
+ "unicode-width",
+]
 
 [[package]]
 name = "thiserror"
@@ -1861,6 +1880,15 @@ name = "typenum"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b63708a265f51345575b27fe43f9500ad611579e764c79edbc2037b1121959ec"
+
+[[package]]
+name = "unicase"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50f37be617794602aabbeee0be4f259dc1778fabe05e2d67ee8f79326d5cb4f6"
+dependencies = [
+ "version_check",
+]
 
 [[package]]
 name = "unicode-segmentation"
