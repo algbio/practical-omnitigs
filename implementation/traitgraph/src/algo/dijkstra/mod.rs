@@ -1,34 +1,35 @@
-use crate::index::GraphIndex;
+use crate::index::{GraphIndex, NodeIndex};
 use crate::interface::{GraphBase, StaticGraph};
 use std::collections::BinaryHeap;
+use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::ops::Add;
+
+mod dijkstra_weight_implementations;
 
 /// A Dijkstra implementation with a set of common optimisations.
-pub type DefaultDijkstra<Graph> = Dijkstra<Graph, EpochNodeWeightArray<usize>>;
+pub type DefaultDijkstra<Graph, WeightType> =
+    Dijkstra<Graph, WeightType, EpochNodeWeightArray<WeightType>>;
 //pub type DefaultDijkstra<'a, Graph> = Dijkstra<'a, Graph, Vec<usize>>;
 
 /// A weight-type usable in Dijkstra's algorithm.
-pub trait Weight {
+pub trait DijkstraWeight: Ord + Add<Output = Self> + Sized + Clone {
     /// The infinity value of this type.
     fn infinity() -> Self;
-}
 
-impl Weight for usize {
-    #[inline]
-    fn infinity() -> Self {
-        Self::MAX
-    }
+    /// The zero value of this type.
+    fn zero() -> Self;
 }
 
 /// Edge data that has a weight usable for shortest path computation.
-pub trait WeightedEdgeData {
+pub trait DijkstraWeightedEdgeData<WeightType: DijkstraWeight> {
     /// The weight of the edge.
-    fn weight(&self) -> usize;
+    fn weight(&self) -> WeightType;
 }
 
-impl WeightedEdgeData for usize {
+impl<WeightType: DijkstraWeight + Copy> DijkstraWeightedEdgeData<WeightType> for WeightType {
     #[inline]
-    fn weight(&self) -> usize {
+    fn weight(&self) -> WeightType {
         *self
     }
 }
@@ -51,7 +52,7 @@ pub trait NodeWeightArray<WeightType> {
     fn clear(&mut self);
 }
 
-impl<WeightType: Weight + Copy> NodeWeightArray<WeightType> for Vec<WeightType> {
+impl<WeightType: DijkstraWeight + Copy> NodeWeightArray<WeightType> for Vec<WeightType> {
     fn new(size: usize) -> Self {
         vec![WeightType::infinity(); size]
     }
@@ -141,7 +142,7 @@ pub struct EpochNodeWeightArray<WeightType> {
     epochs: EpochArray,
 }
 
-impl<WeightType: Weight> EpochNodeWeightArray<WeightType> {
+impl<WeightType: DijkstraWeight> EpochNodeWeightArray<WeightType> {
     #[inline]
     fn make_current(&mut self, node_index: usize) {
         if !self.epochs.get_and_update(node_index) {
@@ -150,7 +151,9 @@ impl<WeightType: Weight> EpochNodeWeightArray<WeightType> {
     }
 }
 
-impl<WeightType: Weight + Copy> NodeWeightArray<WeightType> for EpochNodeWeightArray<WeightType> {
+impl<WeightType: DijkstraWeight + Copy> NodeWeightArray<WeightType>
+    for EpochNodeWeightArray<WeightType>
+{
     fn new(len: usize) -> Self {
         Self {
             weights: vec![WeightType::infinity(); len],
@@ -200,18 +203,23 @@ impl<Graph: GraphBase> DijkstraTargetMap<Graph> for Vec<bool> {
 ///
 /// This variant of Dijkstra's algorithm supports only computing the length of a shortest path, and not the shortest path itself.
 /// Therefore it does not need an array of back pointers for each node, saving a bit of memory.
-pub struct Dijkstra<Graph: GraphBase, NodeWeights> {
-    queue: BinaryHeap<std::cmp::Reverse<(usize, Graph::NodeIndex)>>,
+pub struct Dijkstra<
+    Graph: GraphBase,
+    WeightType: DijkstraWeight,
+    NodeWeights: NodeWeightArray<WeightType>,
+> {
+    queue: BinaryHeap<std::cmp::Reverse<(WeightType, Graph::NodeIndex)>>,
     // back_pointers: Vec<Graph::OptionalNodeIndex>,
     node_weights: NodeWeights,
     graph: PhantomData<Graph>,
 }
 
 impl<
-        EdgeData: WeightedEdgeData,
+        WeightType: DijkstraWeight + Eq + Debug,
+        EdgeData: DijkstraWeightedEdgeData<WeightType>,
         Graph: StaticGraph<EdgeData = EdgeData>,
-        NodeWeights: NodeWeightArray<usize>,
-    > Dijkstra<Graph, NodeWeights>
+        NodeWeights: NodeWeightArray<WeightType>,
+    > Dijkstra<Graph, WeightType, NodeWeights>
 {
     /// Create the data structures for the given graph.
     pub fn new(graph: &Graph) -> Self {
@@ -232,14 +240,15 @@ impl<
         source: Graph::NodeIndex,
         targets: &TargetMap,
         target_amount: usize,
-        max_weight: usize,
+        max_weight: WeightType,
         forbid_source_target: bool,
-        distances: &mut Vec<(Graph::NodeIndex, usize)>,
+        distances: &mut Vec<(Graph::NodeIndex, WeightType)>,
     ) {
         //println!("Shortest path lens of {}", source.as_usize());
-        self.queue.push(std::cmp::Reverse((0, source)));
+        self.queue
+            .push(std::cmp::Reverse((WeightType::zero(), source)));
         //self.back_pointers[source.as_usize()] = source.into();
-        self.node_weights.set(source.as_usize(), 0);
+        self.node_weights.set(source.as_usize(), WeightType::zero());
         distances.clear();
 
         //let mut iterations = 0;
@@ -264,7 +273,7 @@ impl<
 
             // Check if we found a target
             if targets.is_target(node_index) && (!forbid_source_target || node_index != source) {
-                distances.push((node_index, weight));
+                distances.push((node_index, weight.clone()));
 
                 // Check if we already found all paths
                 if distances.len() == target_amount {
@@ -275,10 +284,11 @@ impl<
 
             // Relax neighbors
             for out_neighbor in graph.out_neighbors(node_index) {
-                let new_neighbor_weight = weight + graph.edge_data(out_neighbor.edge_id).weight();
+                let new_neighbor_weight =
+                    weight.clone() + graph.edge_data(out_neighbor.edge_id).weight();
                 let neighbor_weight = self.node_weights.get_mut(out_neighbor.node_id.as_usize());
                 if new_neighbor_weight < *neighbor_weight {
-                    *neighbor_weight = new_neighbor_weight;
+                    *neighbor_weight = new_neighbor_weight.clone();
                     self.queue.push(std::cmp::Reverse((
                         new_neighbor_weight,
                         out_neighbor.node_id,

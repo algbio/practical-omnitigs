@@ -2,7 +2,7 @@ use crate::error::Result;
 use crate::io::SequenceData;
 use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
-use bigraph::traitgraph::algo::dijkstra::WeightedEdgeData;
+use bigraph::traitgraph::algo::dijkstra::DijkstraWeightedEdgeData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
@@ -60,7 +60,7 @@ impl<SequenceHandle: Clone, Data: BidirectedData> BidirectedData
     }
 }
 
-impl<SequenceHandle, Data: WeightedEdgeData> WeightedEdgeData
+impl<SequenceHandle, Data: DijkstraWeightedEdgeData<usize>> DijkstraWeightedEdgeData<usize>
     for BidirectedGfaNodeData<SequenceHandle, Data>
 {
     fn weight(&self) -> usize {
