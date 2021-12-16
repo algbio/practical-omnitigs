@@ -155,7 +155,7 @@ dependencies = [
  "fnv",
  "fxhash",
  "getset 0.1.2",
- "itertools 0.10.3",
+ "itertools 0.9.0",
  "itertools-num",
  "lazy_static",
  "multimap 0.8.3",
@@ -164,7 +164,7 @@ dependencies = [
  "num-integer",
  "num-traits",
  "ordered-float",
- "petgraph 0.5.1",
+ "petgraph 0.4.13",
  "rand 0.8.4",
  "regex",
  "serde",
@@ -1855,7 +1855,7 @@ dependencies = [
 
 [[package]]
 name = "traitgraph"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "bitvector",
  "criterion",
