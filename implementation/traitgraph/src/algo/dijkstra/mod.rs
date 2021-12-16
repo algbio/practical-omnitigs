@@ -199,6 +199,14 @@ impl<Graph: GraphBase> DijkstraTargetMap<Graph> for Vec<bool> {
     }
 }
 
+impl<IndexType: Sized + Eq, Graph: GraphBase<NodeIndex = NodeIndex<IndexType>>>
+    DijkstraTargetMap<Graph> for NodeIndex<IndexType>
+{
+    fn is_target(&self, node_index: Graph::NodeIndex) -> bool {
+        *self == node_index
+    }
+}
+
 /// Data structure for Dijkstra's shortest path algorithm.
 ///
 /// This variant of Dijkstra's algorithm supports only computing the length of a shortest path, and not the shortest path itself.
