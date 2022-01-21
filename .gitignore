@@ -1,3 +1,4 @@
 /.snakemake/
 /logs/*
 .logdir
+__pycache__
