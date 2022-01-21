@@ -81,20 +81,6 @@ for report_name, report_definition in reports.items():
 #print("Exiting for debugging")
 #sys.exit(0)
 
-tests = config["tests"]
-
-for experiment, config in itertools.chain(tests.items()):
-    if not "url" in config:
-        url = "https://ftp.ncbi.nlm.nih.gov/genomes/all/"
-        url += experiment.split("_")[0] + "/"
-        number = experiment.split("_")[1].split(".")[0]
-        url += number[0:3] + "/"
-        url += number[3:6] + "/"
-        url += number[6:9] + "/"
-        url += experiment + "/"
-        url += experiment + "_genomic.fna.gz"
-        config["url"] = url
-
 # Collect all rust sources
 rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob('**/Cargo.toml'), pathlib.Path('implementation').glob('**/*.rs'))))
 
@@ -106,6 +92,245 @@ print("Finished config preprocessing", flush = True)
 #########################
 ###### Directories ######
 #########################
+
+
+DOWNLOAD_DIR = os.path.join(DATADIR, "downloads")
+GENOME_DIR = os.path.join(DATADIR, "genomes")
+
+GENOME_SUBDIR = "g{genome}"
+GENOME_REFERENCE_SUBDIR = "reference-h{homopolymer_compression}"
+GENOME_READS_SUBDIR = "reads-r{read_downsampling_factor}"
+SPECIFIC_GENOME_DIR = os.path.join(GENOME_DIR, GENOME_SUBDIR)
+GENOME_REFERENCE = os.path.join(SPECIFIC_GENOME_DIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
+GENOME_READS = os.path.join(SPECIFIC_GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
+
+#================================================
+#=== DOWNLOADS ==================================
+#================================================
+
+def escape_dirname(raw):
+    try:
+        assert type(raw) is str, "type of raw dirname is not str"
+        assert "¤" not in raw, "raw dirname contains ¤"
+        assert raw != "None", "raw dirname is textual None"
+
+        escaped = raw.replace("/", "¤a").replace("?", "¤b").replace("=", "¤c").replace("&", "¤d")
+
+        result = ""
+        while len(escaped) > 200:
+            result += escaped[:200]
+            escaped = escaped[200:]
+            if len(escaped) > 0:
+                result += "/"
+        result += escaped
+
+        assert result is not None, "escaped dirname is None"
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def unescape_dirname(escaped):
+    try:
+        assert type(escaped) is str
+        assert escaped != "None", "escaped is textual None"
+
+        raw = escaped.replace("/", "").replace("¤a", "/").replace("¤b", "?").replace("¤c", "=").replace("¤d", "&")
+        assert raw is not None
+        return raw
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def checksum_url(url):
+    try:
+        assert type(url) is str
+        assert url != "None", "url is textual None"
+
+        if "hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/" in url:
+            return "http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/md5sum.txt"
+
+        url = urlparse(url)
+        dirname = os.path.dirname(url.path)
+        url = url._replace(path = os.path.join(dirname, "md5checksums.txt"))
+        url = url.geturl()
+        assert url is not None
+        return url
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+# download files
+
+localrules: download_fa_file
+rule download_fa_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+            checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
+    wildcard_constraints:
+            url = "http.*\./?(f/?a|f/?n/?a|f/?a/?s/?t/?a)"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+        wget --progress=dot:mega -O '{output.checksum_file}' '{params.checksum_url}'
+
+        CHECKSUM=$(md5sum '{output.file}' | cut -f1 -d' ' | sed 's/[\]//g')
+        cat '{output.checksum_file}' | grep "$CHECKSUM"
+    """
+
+#use rule download_fa_file as download_fa_gz_file with:
+#    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
+#    wildcard_constraints:
+#            url = ".*\./?(f/?a|f/?n/?a|f/?a/?s/?t/?a)/?\./?g/?z"
+
+localrules: download_fa_gz_file
+rule download_fa_gz_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
+            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+            checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
+    wildcard_constraints:
+            url = "http.*\./?((f/?a)|(f/?n/?a)|(f/?a/?s/?t/?a))/?\./?g/?z"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+        wget --progress=dot:mega -O '{output.checksum_file}' '{params.checksum_url}'
+
+        CHECKSUM=$(md5sum '{output.file}' | cut -f1 -d' ' | sed 's/[\]//g')
+        echo $CHECKSUM
+        cat '{output.checksum_file}' | grep "$CHECKSUM"
+    """
+
+localrules: download_fastq_gz_file
+rule download_fastq_gz_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq.gz"),
+            #checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+            #checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
+    wildcard_constraints:
+            url = "http.*\./?((f/?q)|(f/?n/?q)|(f/?a/?s/?t/?q))/?\./?g/?z"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+    """
+
+localrules: download_sra_file
+rule download_sra_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+    wildcard_constraints:
+            url = "http.*(((S|D)/?R/?R)|((S|D)/?R/?A))[0-9/\.]+"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+    """
+
+# convert files
+
+rule convert_fastq_download:
+    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq"),
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+    conda:  "config/conda-convert-reads-env.yml"
+    shell:  """
+        bioawk -c fastx '{{ print ">" $name "\\n" $seq }}' '{input.file}' > '{output.file}'
+    """
+
+rule convert_sra_download:
+    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+    conda:  "config/conda-convert-reads-env.yml"
+    shell:  "fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'"
+
+rule extract_download:
+    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}.gz"),
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}"),
+    params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
+    wildcard_constraints:
+            file = "[^/]*(?<!\.gz)",
+    conda:  "config/conda-extract-env.yml"
+    shell:  "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
+
+def get_genome_url(wildcards):
+    try:
+        genome = str(wildcards.genome)
+        assert genome in genomes, f"Genome not found: {genome}"
+
+        result = genomes[genome]["reference"]
+
+        if result is None:
+            raise Exception("Did not find genome url")
+        else:
+            assert result != "None", "result is textual None."
+            return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_genome_reads_urls(wildcards):
+    try:
+        genome = str(wildcards.genome)
+        assert genome in genomes, f"Genome not found: {genome}"
+
+        result = genomes[genome]["reads"]
+        
+        assert result != "None", "result is textual None."
+        if result is None:
+            raise Exception("Did not find genome url")
+        
+        if type(result) is str:
+            result = [result]
+
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+# general linking rules
+
+localrules: download_reference_genome
+rule download_reference_genome:
+    input:  file = lambda wildcards: os.path.join(DOWNLOAD_DIR, "file", escape_dirname(get_genome_url(wildcards)), "file.fa"),
+    output: file = GENOME_REFERENCE,
+    wildcard_constraints:
+            homopolymer_compression = "none",
+    shell: "ln -sr -T '{input.file}' '{output.file}'"
+
+localrules: download_genome_reads
+rule download_genome_reads:
+    input:  files = lambda wildcards: [os.path.join(DOWNLOAD_DIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
+    output: file = GENOME_READS,
+    wildcard_constraints:
+            read_downsampling_factor = "none",
+    params: input_files = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+    shell: "cat {params.input_files} > '{output.file}'"
+
+# TODO CONTINUE FROM HERE
+
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
+##################################################################################################################################################################################
 
 GENOME_DIR = os.path.join(DATADIR, "genomes", "{genome}")
 GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads/reads.fa"
@@ -1269,222 +1494,222 @@ Error profile            = external-software/sim-it/error_profile_PB_Sequel_CCS_
 ###### Long Read Input Preparation ######
 #########################################
 
-def url_file_format(url):
-    parts = url.split('.')
-    if parts[-1] == "gz":
-        return parts[-2]
-    else:
-        return parts[-1]
+# def url_file_format(url):
+#     parts = url.split('.')
+#     if parts[-1] == "gz":
+#         return parts[-2]
+#     else:
+#         return parts[-1]
 
-def read_url_file_format(genome):
-    try:
-        format = url_file_format(genomes[genome]["urls"][0])
+# def read_url_file_format(genome):
+#     try:
+#         format = url_file_format(genomes[genome]["urls"][0])
 
-        if format == "fasta":
-            return "fa"
-        elif genomes[genome].get("format", None) == "sra":
-            return "sra"
-        else:
-            return format
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+#         if format == "fasta":
+#             return "fa"
+#         elif genomes[genome].get("format", None) == "sra":
+#             return "sra"
+#         else:
+#             return format
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
-ruleorder: download_raw_source_reads > download_packed_source_reads > convert_source_reads > extract
+# ruleorder: download_raw_source_reads > download_packed_source_reads > convert_source_reads > extract
 
-localrules: download_raw_source_reads
-rule download_raw_source_reads:
-    output: file = DATADIR + "downloads/{genome}/reads-{index}/reads.{format}",
-            completed = touch(DATADIR + "downloads/{genome}/reads-{index}/reads.{format}.completed"),
-    params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
-            url_format = lambda wildcards: read_url_file_format(wildcards.genome),
-    wildcard_constraints:
-        format = "(fa|bam|sra)",
-        index = "\d+",
-        genome = "((?!downloads).)*",
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p "$(dirname '{output.file}')"
+# localrules: download_raw_source_reads
+# rule download_raw_source_reads:
+#     output: file = DATADIR + "downloads/{genome}/reads-{index}/reads.{format}",
+#             completed = touch(DATADIR + "downloads/{genome}/reads-{index}/reads.{format}.completed"),
+#     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
+#             url_format = lambda wildcards: read_url_file_format(wildcards.genome),
+#     wildcard_constraints:
+#         format = "(fa|bam|sra)",
+#         index = "\d+",
+#         genome = "((?!downloads).)*",
+#     conda: "config/conda-download-env.yml"
+#     threads: 1
+#     shell: """
+#         mkdir -p "$(dirname '{output.file}')"
 
-        if [ '{params.url_format}' != '{wildcards.format}' ]; then
-            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
-            exit 1
-        fi
+#         if [ '{params.url_format}' != '{wildcards.format}' ]; then
+#             echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
+#             exit 1
+#         fi
 
-        wget --progress=dot:mega -O '{output.file}' '{params.url}'
-        """
+#         wget --progress=dot:mega -O '{output.file}' '{params.url}'
+#         """
 
-localrules: download_packed_source_reads
-rule download_packed_source_reads:
-    output: file = DATADIR + "downloads/{genome}/packed-reads-{index}/reads.{format}.gz",
-            completed = touch(DATADIR + "downloads/{genome}/packed-reads-{index}/reads.{format}.gz.completed"),
-    params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
-            url_format = lambda wildcards: read_url_file_format(wildcards.genome),
-            checksum = lambda wildcards: genomes[wildcards.genome]["checksums"][int(wildcards.index)] if "checksums" in genomes[wildcards.genome] else "",
-    wildcard_constraints:
-        format = "(fa|bam|sra)",
-        index = "\d+",
-        genome = "((?!downloads).)*",
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p "$(dirname '{output.file}')"
+# localrules: download_packed_source_reads
+# rule download_packed_source_reads:
+#     output: file = DATADIR + "downloads/{genome}/packed-reads-{index}/reads.{format}.gz",
+#             completed = touch(DATADIR + "downloads/{genome}/packed-reads-{index}/reads.{format}.gz.completed"),
+#     params: url = lambda wildcards: genomes[wildcards.genome]["urls"][int(wildcards.index)],
+#             url_format = lambda wildcards: read_url_file_format(wildcards.genome),
+#             checksum = lambda wildcards: genomes[wildcards.genome]["checksums"][int(wildcards.index)] if "checksums" in genomes[wildcards.genome] else "",
+#     wildcard_constraints:
+#         format = "(fa|bam|sra)",
+#         index = "\d+",
+#         genome = "((?!downloads).)*",
+#     conda: "config/conda-download-env.yml"
+#     threads: 1
+#     shell: """
+#         mkdir -p "$(dirname '{output.file}')"
 
-        if [ '{params.url_format}' != '{wildcards.format}' ]; then
-            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
-            exit 1
-        fi
+#         if [ '{params.url_format}' != '{wildcards.format}' ]; then
+#             echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
+#             exit 1
+#         fi
 
-        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+#         wget --progress=dot:mega -O '{output.file}' '{params.url}'
 
-        if [ ! -z "{params.checksum}" ]; then
-            md5sum -c <<< "{params.checksum} {output.file}"
-        else
-            echo "Assuming file '{output.file}' was downloaded correctly since no checksum was provided."
-        fi
-        """
+#         if [ ! -z "{params.checksum}" ]; then
+#             md5sum -c <<< "{params.checksum} {output.file}"
+#         else
+#             echo "Assuming file '{output.file}' was downloaded correctly since no checksum was provided."
+#         fi
+#         """
 
-def read_raw_input_file_name(wildcards):
-    try:
-        genome_name = wildcards.genome
-        genome_properties = genomes[genome_name]
+# def read_raw_input_file_name(wildcards):
+#     try:
+#         genome_name = wildcards.genome
+#         genome_properties = genomes[genome_name]
 
-        if genome_properties["urls"][0].split('.')[-1] == "gz":
-            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reads-" + wildcards.index + "/reads." + read_url_file_format(wildcards.genome)
-        else:
-            input_file_name = DATADIR + "downloads/" + genome_name + "/reads-" + wildcards.index + "/reads." + read_url_file_format(wildcards.genome)
-        return input_file_name
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+#         if genome_properties["urls"][0].split('.')[-1] == "gz":
+#             input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reads-" + wildcards.index + "/reads." + read_url_file_format(wildcards.genome)
+#         else:
+#             input_file_name = DATADIR + "downloads/" + genome_name + "/reads-" + wildcards.index + "/reads." + read_url_file_format(wildcards.genome)
+#         return input_file_name
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
-rule convert_source_reads:
-    input: file = read_raw_input_file_name,
-    output: file = DATADIR + "downloads/{genome}/reads-{index}/reads.converted.fa",
-            completed = touch(DATADIR + "downloads/{genome}/reads-{index}/reads.converted.fa.completed"),
-    params: file_format = lambda wildcards: read_url_file_format(wildcards.genome)
-    wildcard_constraints:
-        index = "\d+",
-        genome = "((?!downloads).)*",
-    conda: "config/conda-convert-reads-env.yml"
-    threads: 1
-    shell: """
-        if [ '{params.file_format}' == 'bam' ]; then
-            samtools fasta '{input.file}' > '{output.file}'
-        elif [ '{params.file_format}' == 'sra' ]; then
-            fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
-        else
-            ln -sr -T '{input.file}' '{output.file}'
-        fi
-        """
+# rule convert_source_reads:
+#     input: file = read_raw_input_file_name,
+#     output: file = DATADIR + "downloads/{genome}/reads-{index}/reads.converted.fa",
+#             completed = touch(DATADIR + "downloads/{genome}/reads-{index}/reads.converted.fa.completed"),
+#     params: file_format = lambda wildcards: read_url_file_format(wildcards.genome)
+#     wildcard_constraints:
+#         index = "\d+",
+#         genome = "((?!downloads).)*",
+#     conda: "config/conda-convert-reads-env.yml"
+#     threads: 1
+#     shell: """
+#         if [ '{params.file_format}' == 'bam' ]; then
+#             samtools fasta '{input.file}' > '{output.file}'
+#         elif [ '{params.file_format}' == 'sra' ]; then
+#             fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
+#         else
+#             ln -sr -T '{input.file}' '{output.file}'
+#         fi
+#         """
 
-rule combine_reads:
-    input: files = lambda wildcards: expand(DATADIR + "downloads/{{genome}}/reads-{index}/reads.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
-    output: reads = DATADIR + "downloads/{genome}/reads/raw_reads.fa",
-            completed = touch(DATADIR + "downloads/{genome}/reads/raw_reads.fa.completed"),
-    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
-    wildcard_constraints:
-        genome = "((?!downloads).)*",
-    threads: 1
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
-    shell: "cat {params.input_list} > '{output.reads}'"
+# rule combine_reads:
+#     input: files = lambda wildcards: expand(DATADIR + "downloads/{{genome}}/reads-{index}/reads.converted.fa", index=range(len(genomes[wildcards.genome]["urls"])))
+#     output: reads = DATADIR + "downloads/{genome}/reads/raw_reads.fa",
+#             completed = touch(DATADIR + "downloads/{genome}/reads/raw_reads.fa.completed"),
+#     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+#     wildcard_constraints:
+#         genome = "((?!downloads).)*",
+#     threads: 1
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
+#     shell: "cat {params.input_list} > '{output.reads}'"
 
-rule uniquify_ids:
-    input:  reads = DATADIR + "downloads/{genome}/reads/raw_reads.fa",
-            script = "scripts/uniquify_fasta_ids.py",
-    output: reads = DATADIR + "downloads/{genome}/reads/raw_reads.uniquified.fa",
-            log = DATADIR + "downloads/{genome}/uniquify.log",
-            completed = touch(DATADIR + "downloads/{genome}/reads/reads.uniquified.fa.completed"),
-    wildcard_constraints:
-        genome = "((?!downloads).)*",
-    conda: "config/conda-uniquify-env.yml"
-    threads: 1
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
-    shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
+# rule uniquify_ids:
+#     input:  reads = DATADIR + "downloads/{genome}/reads/raw_reads.fa",
+#             script = "scripts/uniquify_fasta_ids.py",
+#     output: reads = DATADIR + "downloads/{genome}/reads/raw_reads.uniquified.fa",
+#             log = DATADIR + "downloads/{genome}/uniquify.log",
+#             completed = touch(DATADIR + "downloads/{genome}/reads/reads.uniquified.fa.completed"),
+#     wildcard_constraints:
+#         genome = "((?!downloads).)*",
+#     conda: "config/conda-uniquify-env.yml"
+#     threads: 1
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
+#     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
 
-def read_input_file_name(wildcards):
-    try:
-        genome_name = wildcards.genome
-        if genome_name in genomes:
-            return DATADIR + "downloads/" + genome_name + "/reads/raw_reads.uniquified.fa"
-        elif genome_name in corrected_genomes:
-            return DATADIR + "corrected_reads/" + genome_name + "/corrected_reads.fa"
-        else:
-            sys.exit("genome name not found: " + genome_name)
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+# def read_input_file_name(wildcards):
+#     try:
+#         genome_name = wildcards.genome
+#         if genome_name in genomes:
+#             return DATADIR + "downloads/" + genome_name + "/reads/raw_reads.uniquified.fa"
+#         elif genome_name in corrected_genomes:
+#             return DATADIR + "corrected_reads/" + genome_name + "/corrected_reads.fa"
+#         else:
+#             sys.exit("genome name not found: " + genome_name)
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
-localrules: link_reads
-rule link_reads:
-    input: file = read_input_file_name,
-    #input: file = DATADIR + "corrected_reads/{genome}/corrected_reads.fa"
-    output: file = GENOME_READS_FORMAT,
-    wildcard_constraints:
-        genome = "((?!downloads).)*",
-    threads: 1
-    shell: "ln -sr -T '{input.file}' '{output.file}'"
+# localrules: link_reads
+# rule link_reads:
+#     input: file = read_input_file_name,
+#     #input: file = DATADIR + "corrected_reads/{genome}/corrected_reads.fa"
+#     output: file = GENOME_READS_FORMAT,
+#     wildcard_constraints:
+#         genome = "((?!downloads).)*",
+#     threads: 1
+#     shell: "ln -sr -T '{input.file}' '{output.file}'"
 
-localrules: download_reference_raw
-rule download_reference_raw:
-    output: reference = DATADIR + "downloads/{genome}/reference/raw_reference.fa",
-            completed = touch(DATADIR + "downloads/{genome}/reference/raw_reference.fa.completed"),
-    params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
-    wildcard_constraints:
-        genome = "((?!downloads).)*",
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p "$(dirname '{output.reference}')"
-        wget --progress=dot:mega -O '{output.reference}' '{params.url}'
-        """
+# localrules: download_reference_raw
+# rule download_reference_raw:
+#     output: reference = DATADIR + "downloads/{genome}/reference/raw_reference.fa",
+#             completed = touch(DATADIR + "downloads/{genome}/reference/raw_reference.fa.completed"),
+#     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
+#     wildcard_constraints:
+#         genome = "((?!downloads).)*",
+#     conda: "config/conda-download-env.yml"
+#     threads: 1
+#     shell: """
+#         mkdir -p "$(dirname '{output.reference}')"
+#         wget --progress=dot:mega -O '{output.reference}' '{params.url}'
+#         """
 
-localrules: download_reference_gzip
-rule download_reference_gzip:
-    output: reference = DATADIR + "downloads/{genome}/packed-reference/raw_reference.fa.gz",
-            completed = touch(DATADIR + "downloads/{genome}/packed-reference/raw_reference.fa.gz.completed"),
-    params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
-    wildcard_constraints:
-        genome = "((?!downloads).)*",
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p "$(dirname '{output.reference}')"
-        wget --progress=dot:mega -O '{output.reference}' '{params.url}'
-        """
+# localrules: download_reference_gzip
+# rule download_reference_gzip:
+#     output: reference = DATADIR + "downloads/{genome}/packed-reference/raw_reference.fa.gz",
+#             completed = touch(DATADIR + "downloads/{genome}/packed-reference/raw_reference.fa.gz.completed"),
+#     params: url = lambda wildcards, output: genomes[wildcards.genome]["reference"]
+#     wildcard_constraints:
+#         genome = "((?!downloads).)*",
+#     conda: "config/conda-download-env.yml"
+#     threads: 1
+#     shell: """
+#         mkdir -p "$(dirname '{output.reference}')"
+#         wget --progress=dot:mega -O '{output.reference}' '{params.url}'
+#         """
 
-def reference_input_file_name(wildcards):
-    try:
-        genome_name = wildcards.genome
-        if corrected_genomes is not None and genome_name in corrected_genomes:
-            genome_name = corrected_genomes[genome_name]["source_genome"]
-        reference = genomes[genome_name]["reference"]
+# def reference_input_file_name(wildcards):
+#     try:
+#         genome_name = wildcards.genome
+#         if corrected_genomes is not None and genome_name in corrected_genomes:
+#             genome_name = corrected_genomes[genome_name]["source_genome"]
+#         reference = genomes[genome_name]["reference"]
 
-        if reference.split('.')[-1] == "gz":
-            input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reference/raw_reference.fa"
-        else:
-            input_file_name = DATADIR + "downloads/" + genome_name + "/reference/raw_reference.fa"
-        return input_file_name
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+#         if reference.split('.')[-1] == "gz":
+#             input_file_name = DATADIR + "downloads/" + genome_name + "/packed-reference/raw_reference.fa"
+#         else:
+#             input_file_name = DATADIR + "downloads/" + genome_name + "/reference/raw_reference.fa"
+#         return input_file_name
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
-localrules: link_reference
-rule link_reference:
-    input: file = reference_input_file_name,
-    output: file = GENOME_REFERENCE_FORMAT,
-    wildcard_constraints:
-        genome = "((?!downloads).)*",
-    threads: 1
-    shell: """
-        mkdir -p "$(dirname '{output.file}')"
-        ln -sr -T '{input.file}' '{output.file}'
-        """
+# localrules: link_reference
+# rule link_reference:
+#     input: file = reference_input_file_name,
+#     output: file = GENOME_REFERENCE_FORMAT,
+#     wildcard_constraints:
+#         genome = "((?!downloads).)*",
+#     threads: 1
+#     shell: """
+#         mkdir -p "$(dirname '{output.file}')"
+#         ln -sr -T '{input.file}' '{output.file}'
+#        """
 
 #############################
 ###### Corrected Reads ######
@@ -1639,18 +1864,18 @@ rule filter_genome:
     threads: 1
     shell: DATADIR + "target/release/cli filter --input '{input.file}' --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
-rule extract:
-    input: DATADIR + "{dir}/{file}.gz"
-    output: DATADIR + "{dir}/{file}"
-    params: working_directory = DATADIR + "{dir}"
-    wildcard_constraints:
-        file=".*(?<!\.gz)"
-        #file=r"^.*([^\.]..|.[^g].|..[^z])$"
-    conda: "config/conda-extract-env.yml"
-    threads: 1
-    resources:
-        time_min = 1440,
-    shell: "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
+# rule extract:
+#     input: DATADIR + "{dir}/{file}.gz"
+#     output: DATADIR + "{dir}/{file}"
+#     params: working_directory = DATADIR + "{dir}"
+#     wildcard_constraints:
+#         file=".*(?<!\.gz)"
+#         #file=r"^.*([^\.]..|.[^g].|..[^z])$"
+#     conda: "config/conda-extract-env.yml"
+#     threads: 1
+#     resources:
+#         time_min = 1440,
+#     shell: "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
 
 #rule extract_dot:
 #    input: DATADIR + "{dir}/wtdbg2.3.dot.gz"

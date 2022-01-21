@@ -2,3 +2,4 @@
 /logs/*
 .logdir
 __pycache__
+/data

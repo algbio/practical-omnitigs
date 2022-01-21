@@ -1,21 +1,5 @@
 use_conda: true
 
-experiments:
-  bcalm2:
-    "GCF_000008865.2_ASM886v2":
-      k: [31, 51]
-      bcalm2_abundance_min: [1]
-      circularised: [true]
-      filter_retain: "NC_002695.2"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-
-    "GCF_000008025.1_ASM802v1":
-      k: [51]
-      bcalm2_abundance_min: [1]
-      circularised: [true]
-      filter_retain: "NC_002978.6"
-      algorithm: ["unitigs", "omnitigs", "trivialomnitigs"]
-
 column_templates:
   default_columns: &default_columns
     - shortname: "YV sfa"
@@ -998,41 +982,41 @@ aggregated_reports:
 
 genomes:
   "E.coli":
-    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11317948/SRR11317948.1"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11317948/SRR11317948.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
     genome_length: 5594605
 
   "C.elegans":
-    urls: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
+    reads: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
     reference: "http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/polished_assembly.fasta.gz"
     genome_length: 100000000
 
   "A.thaliana":
-    urls: ["https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam", "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam"]
+    reads: ["https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam", "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/SequenceData/3_C01_customer/m54113_160914_092411.subreads.bam"]
     reference: "https://downloads.pacbcloud.com/public/SequelData/ArabidopsisDemoData/Assembly/Arabidopsis_assembly.fasta"
     genome_length: 125000000
 
   "D.melanogaster_A4":
-    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-7/SRR5439404/SRR5439404.1"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-7/SRR5439404/SRR5439404.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/300/595/GCA_002300595.1_Dmel_A4_1.0/GCA_002300595.1_Dmel_A4_1.0_genomic.fna.gz"
     genome_length: 144000000
 
   "D.melanogaster_ISO1":
-    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-13/SRR6702603/SRR6702603.2"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-13/SRR6702603/SRR6702603.2"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
     genome_length: 144000000
 
   "D.melanogaster_A4xISO1_HiFi24kb":
-    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-17/SRR1023860/SRR10238607.1"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-17/SRR1023860/SRR10238607.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
     genome_length: 143726002
 
   "Minghui63":  
-    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1018837/SRR10188372.1"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1018837/SRR10188372.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/623/365/GCA_001623365.2_MH63RS2/GCA_001623365.2_MH63RS2_genomic.fna.gz"
     genome_length: 387000000
@@ -1044,7 +1028,7 @@ genomes:
     genome_length: 3100000000
     assembly_time_factor: 4
     assembly_mem_factor: 4
-    urls: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
     format: "sra"
 
   "HG002":
@@ -1052,7 +1036,7 @@ genomes:
     genome_length: 3100000000
     assembly_time_factor: 4
     assembly_mem_factor: 4
-    urls:
+    reads:
       - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140612_020550_42156.subreads.fasta.gz"
       - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140612_082500_42156.subreads.fasta.gz"
       - "ftp://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/PacBio_MtSinai_NIST/PacBio_fasta/m140614_092436_42156.subreads.fasta.gz"
@@ -1644,15 +1628,3 @@ corrected_genomes:
     correction_short_reads: ["https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/NHGRI_Illumina300X_AJtrio_novoalign_bams/HG002.GRCh38.300x.bam"]
     source_genome: "HG002"
     correction_type: "ratatosk"
-
-
-
-
-tests:
-  "GCF_000008865.2_ASM886v2":
-    k: [51]
-    bcalm2_abundance_min: [1]
-    circularised: [true]
-    filter_retain: "NC_002695.2"
-    preprocessing: "bcalm2"
-    algorithm: ["unitigs"]

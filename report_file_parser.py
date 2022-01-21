@@ -3,12 +3,29 @@ import itertools
 import json
 import traceback
 
+# Safe formatting
+
 class SafeDict(dict):
     def __missing__(self, key):
         return '{' + key + '}'
 
 def safe_format(str, **kwargs):
     return str.format_map(SafeDict(kwargs))
+
+def safe_expand(str, **kwargs):
+    items = []
+    for key, values in kwargs.items():
+        if type(values) is str or type(values) is not list:
+            values = [values]
+        items.append([(key, value) for value in values])
+
+    for combination in itertools.product(*items):
+        yield safe_format(str, **dict(combination))
+
+def wildcard_format(str, wildcards):
+    return str.format(**dict(wildcards.items()))
+
+# Report file parsing
 
 class Arguments(dict):
     @staticmethod
