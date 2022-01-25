@@ -354,18 +354,33 @@ column_templates:
           fragment_injections:
             "wtdbg2-inject-fragment-trivial-omnitigs": 10
 
+  hifi_overview_columns: &hifi_overview_columns
+    - shortname: "w2"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "-x": "ccs"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          cli_arguments:
+            "--pacbio-hifi": True
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+
 reports:
 
   "D.melanogaster_HiFi":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
-    columns: *hifi_columns
+    columns: *hifi_overview_columns
 
   "D.melanogaster_HiFi_hoco":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
       homopolymer_compression: True
-    columns: *hifi_columns
+    columns: *hifi_overview_columns
 
   # "sim_hifi":
   #   argument_matrix:

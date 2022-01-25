@@ -3,27 +3,30 @@ cluster: >-
   sbatch
   --job-name=practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100)
   --workdir=/proj/sebschmi/git/practical-omnitigs
-  -o "$(cat .logdir)/practical-omnitigs:{rule}:$(sed "s\/\_\g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100):%j.log"
+  -o "$(cat .logdir)/practical-omnitigs:{rule}:$(sed "s:[\\/ ¤]:_:g" <<< '{wildcards}' | sed "s/ /_/g" | head -c 100):%j.log"
   -p {resources.queue}
   -c {resources.cpus}
   -t {resources.time_min}
-  -M all
+  -M {resources.cluster}
   --mem={resources.mem_mb}
   --mail-type={resources.mail_type}
   --mail-user=sebastian.schmidt@helsinki.fi
   --signal=SIGINT@300
+  {resources.options}
 #  --hold
 #  $(./scripts/parse_sbatch_job_id.sh {dependencies})
 cluster-status: "scripts/get_slurm_job_status.py"
-max-status-checks-per-second: 1
-default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL]
+max-status-checks-per-second: 10
+default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL, cluster=ukko2, options=""]
 rerun-incomplete: true
 #immediate-submit: true
 #notemp: true
 printshellcmds: true
+jobs: 100
 cores: 10000
 local-cores: 8
 latency-wait: 60
-config: "datadir=/wrk/users/sebschmi/practical-omnitigs"
+config: "datadir=/wrk/users/sebschmi/practical-omnitigs/data"
 keep-going: true
 scheduler: "greedy" # ILP creates files in bad locations, possibly leading to a lockup of the file system
+shadow-prefix: "/wrk/users/sebschmi/practical-omnitigs"
