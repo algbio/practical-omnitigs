@@ -1193,7 +1193,7 @@ rule wtdbg2:
             ctg_dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.dot.gz"),
             #clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
             #kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
-            #ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
+            ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
             frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
     log:    log = WTDBG2_LOG,
     params: #args = get_wtdbg2_args_from_wildcards,
