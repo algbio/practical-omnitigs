@@ -28,9 +28,9 @@ if [ $# -eq 0 ]; then
 fi
 
 source $HOME/.bashrc
-cd /proj/sebschmi/git/practial-omnitigs
+cd /proj/sebschmi/git/practical-omnitigs
 
-source activate practial-omnitigs
+source activate practical-omnitigs
 
 # Remove erroneous outputs from previous run
 echo "Removing erroneous outputs from previous run"
