@@ -356,30 +356,39 @@ column_templates:
 
   hifi_overview_columns: &hifi_overview_columns
     - shortname: "w2"
-      select_assembler:
+      select_assembler: 
         wtdbg2:
-          cli_arguments:
-            "-x": "ccs"
+          wtdbg2_mode: "ccs"
     - shortname: "flye"
       select_assembler:
         flye:
-          cli_arguments:
-            "--pacbio-hifi": True
+          flye_mode: "pacbio-hifi"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
 
 reports:
 
-  "D.melanogaster_HiFi":
+  # "D.melanogaster_HiFi":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_A4xISO1_HiFi24kb"
+  #   columns: *hifi_overview_columns
+
+  # "D.melanogaster_HiFi_hoco":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_A4xISO1_HiFi24kb"
+  #     homopolymer_compression: "yes"
+  #   columns: *hifi_overview_columns
+
+  "E.coli_HiFi":
     argument_matrix:
-      genome: "D.melanogaster_A4xISO1_HiFi24kb"
+      genome: "E.coli_hifi"
     columns: *hifi_overview_columns
 
-  "D.melanogaster_HiFi_hoco":
+  "E.coli_HiFi_hoco":
     argument_matrix:
-      genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      homopolymer_compression: True
+      genome: "E.coli_hifi"
+      homopolymer_compression: "yes"
     columns: *hifi_overview_columns
 
   # "sim_hifi":
@@ -998,6 +1007,12 @@ aggregated_reports:
 genomes:
   "E.coli":
     reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11317948/SRR11317948.1"]
+    format: "sra"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
+    genome_length: 5594605
+
+  "E.coli_hifi":
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11434954/SRR11434954.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
     genome_length: 5594605

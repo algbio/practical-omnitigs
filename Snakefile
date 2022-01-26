@@ -1,15 +1,16 @@
-###############################
-###### Preprocess Config ######
-###############################
-
-print("Preprocessing config", flush = True)
-
 import itertools
 import sys
 import re
 import json
 import traceback
 import pathlib
+from urllib.parse import urlparse
+
+###############################
+###### Preprocess Config ######
+###############################
+
+print("Preprocessing config", flush = True)
 
 configfile: "config/default.yml"
 
@@ -66,6 +67,10 @@ for report_name, report_definition in reports.items():
     #     print(entry)
 
     for arguments in argument_matrix:
+        arguments.setdefault("read_downsampling_factor", "none")
+        arguments.setdefault("homopolymer_compression", "none")
+        arguments.setdefault("uniquify_ids", "no")
+
         columns = []
         for column_definition in report_definition["columns"]:
             columns.append(Column(arguments, Arguments.from_dict(column_definition)))
@@ -93,16 +98,65 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
-
 DOWNLOAD_DIR = os.path.join(DATADIR, "downloads")
 GENOME_DIR = os.path.join(DATADIR, "genomes")
+ASSEMBLY_DIR = os.path.join(DATADIR, "assembly")
+EVALUATION_DIR = os.path.join(DATADIR, "evaluation")
 
 GENOME_SUBDIR = "g{genome}"
-GENOME_REFERENCE_SUBDIR = "reference-h{homopolymer_compression}"
-GENOME_READS_SUBDIR = "reads-r{read_downsampling_factor}"
-SPECIFIC_GENOME_DIR = os.path.join(GENOME_DIR, GENOME_SUBDIR)
-GENOME_REFERENCE = os.path.join(SPECIFIC_GENOME_DIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
-GENOME_READS = os.path.join(SPECIFIC_GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
+GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_SUBDIR, "reference-h{homopolymer_compression}")
+GENOME_READS_SUBDIR = os.path.join(GENOME_SUBDIR, "reads-r{read_downsampling_factor}-h{homopolymer_compression}-u{uniquify_ids}")
+GENOME_REFERENCE = os.path.join(GENOME_DIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
+GENOME_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
+UNIQUIFY_IDS_LOG = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
+
+ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, "a{assembler}-{assembler_arguments}-")
+ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR, "contigs.fa")
+ASSEMBLER_ARGUMENT_STRINGS = {}
+
+WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}"
+ASSEMBLER_ARGUMENT_STRINGS["wtdbg2"] = WTDBG2_ARGUMENT_STRING
+WTDBG2_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "wtdbg2", assembler_arguments = WTDBG2_ARGUMENT_STRING)
+WTDBG2_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, WTDBG2_SUBDIR)
+WTDBG2_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "wtdbg2")
+WTDBG2_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.log")
+WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
+
+FLYE_ARGUMENT_STRING = "m{flye_mode}"
+ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
+FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
+FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, FLYE_SUBDIR)
+FLYE_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "flye")
+FLYE_LOG = os.path.join(ASSEMBLY_DIR, FLYE_SUBDIR, "flye.log")
+
+HIFIASM_ARGUMENT_STRING = "none"
+ASSEMBLER_ARGUMENT_STRINGS["hifiasm"] = HIFIASM_ARGUMENT_STRING
+HIFIASM_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "hifiasm", assembler_arguments = HIFIASM_ARGUMENT_STRING)
+HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, HIFIASM_SUBDIR)
+HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
+HIFIASM_LOG = os.path.join(ASSEMBLY_DIR, HIFIASM_SUBDIR, "hifiasm.log")
+
+QUAST_DIR = os.path.join(EVALUATION_DIR, "quast")
+QUAST_SUBDIR = ASSEMBLY_SUBDIR
+QUAST_OUTPUT_DIR = os.path.join(QUAST_DIR, QUAST_SUBDIR)
+
+REPORT_SUBDIR = os.path.join(REPORTDIR, "{report_name}", "{report_file_name}")
+REPORT_TEX = os.path.join(REPORT_SUBDIR, "report.tex")
+REPORT_COMBINED_EAXMAX_PLOT = os.path.join(REPORT_SUBDIR, "combined_eaxmax_plot.pdf")
+REPORT_NAME_FILE = os.path.join(REPORT_SUBDIR, "name.txt")
+REPORT_HASHDIR = os.path.join(REPORT_SUBDIR, "hashdir")
+REPORT_PDF = os.path.join(REPORT_SUBDIR, "report.pdf")
+
+AGGREGATED_REPORT_SUBDIR = os.path.join(REPORTDIR, "{aggregated_report_name}")
+AGGREGATED_REPORT_PDF = os.path.join(AGGREGATED_REPORT_SUBDIR, "aggregated_report.pdf")
+
+UNIQUIFY_IDS_SCRIPT = "scripts/uniquify_fasta_ids.py"
+CONVERT_VALIDATION_OUTPUTS_TO_LATEX_SCRIPT = "scripts/convert_validation_outputs_to_latex.py"
+CREATE_AGGREGATED_WTDBG2_REPORT_SCRIPT = "scripts/create_aggregated_wtdbg2_report.py"
+CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
+HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
+
+QUAST_BINARY = "external-software/quast/quast.py"
 
 #================================================
 #=== DOWNLOADS ==================================
@@ -298,8 +352,23 @@ rule download_genome_reads:
     output: file = GENOME_READS,
     wildcard_constraints:
             read_downsampling_factor = "none",
+            homopolymer_compression = "none",
+            uniquify_ids = "no",
     params: input_files = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
     shell: "cat {params.input_files} > '{output.file}'"
+
+rule uniquify_ids:
+    input:  reads = safe_format(GENOME_READS, uniquify_ids = "no"),
+            script = UNIQUIFY_IDS_SCRIPT,
+    output: reads = GENOME_READS,
+    log:    log = UNIQUIFY_IDS_LOG,
+    wildcard_constraints:
+            read_downsampling_factor = "none",
+            homopolymer_compression = "none",
+            uniquify_ids = "yes",
+    conda: "config/conda-uniquify-env.yml"
+    threads: 1
+    shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{log.log}'"
 
 # TODO CONTINUE FROM HERE
 
@@ -346,11 +415,6 @@ ALGORITHM_PREFIX_FORMAT = DATADIR + "algorithms/{arguments}/"
 WTDBG2_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "wtdbg2/"
 HIFIASM_PREFIX_FORMAT = os.path.join(ALGORITHM_PREFIX_FORMAT, "hifiasm")
 
-QUAST_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "quast/"
-
-REPORT_PREFIX_FORMAT = REPORTDIR + "{report_name}/s/{report_file_name}/"
-AGGREGATED_REPORT_PREFIX_FORMAT = REPORTDIR + "{aggregated_report_name}/"
-
 #################################
 ###### Global report rules ######
 #################################
@@ -364,11 +428,11 @@ def get_all_report_files():
         result = []
         for report_name, report_definition in reports.items():
             for report_file_name in report_definition["report_files"].keys():
-                result.append(REPORT_PREFIX_FORMAT.format(report_name = report_name, report_file_name = report_file_name) + "report.pdf")
+                result.append(REPORT_PDF.format(report_name = report_name, report_file_name = report_file_name))
 
 
         for aggregated_report_name in aggregated_reports.keys():
-            result.append(AGGREGATED_REPORT_PREFIX_FORMAT.format(aggregated_report_name = aggregated_report_name) + "aggregated-report.pdf")
+            result.append(AGGREGATED_REPORT_PDF.format(aggregated_report_name = aggregated_report_name))
         return result
     except Exception:
         traceback.print_exc()
@@ -380,78 +444,56 @@ rule report_all:
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
-localrules: report_all_hifiasm_trivial_omnitigs
-rule report_all_hifiasm_trivial_omnitigs:
-    input:  [f for f in get_all_report_files() if "hifiasm_trivial_omnitigs" in f],
-    threads: 1
-    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+# localrules: report_all_hifiasm_trivial_omnitigs
+# rule report_all_hifiasm_trivial_omnitigs:
+#     input:  [f for f in get_all_report_files() if "hifiasm_trivial_omnitigs" in f],
+#     threads: 1
+#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
-def get_all_wtdbg2_investigation_report_files(wildcards):
-    try:
-        result = set()
-        for report_name, report_definition in reports.items():
-            for report_file_name, report_file in report_definition["report_files"].items():
-                for column in report_file.columns:
-                    arguments = column.arguments
+# def get_all_wtdbg2_investigation_report_files(wildcards):
+#     try:
+#         result = set()
+#         for report_name, report_definition in reports.items():
+#             for report_file_name, report_file in report_definition["report_files"].items():
+#                 for column in report_file.columns:
+#                     arguments = column.arguments
 
-                    if arguments.assembler_name() == "wtdbg2":
-                        result.add(os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log").format(arguments = arguments))
+#                     if arguments.assembler_name() == "wtdbg2":
+#                         result.add(os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log").format(arguments = arguments))
 
-        return [f for f in result if "HG002" not in f and '"read_simulator":{"perfect"' in f]
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+#         return [f for f in result if "HG002" not in f and '"read_simulator":{"perfect"' in f]
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
-localrules: report_all_wtdbg2_investigations
-rule report_all_wtdbg2_investigations:
-    input:  get_all_wtdbg2_investigation_report_files
-    threads: 1
-    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+# localrules: report_all_wtdbg2_investigations
+# rule report_all_wtdbg2_investigations:
+#     input:  get_all_wtdbg2_investigation_report_files
+#     threads: 1
+#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
-localrules: report_some_wtdbg2_investigations
-rule report_some_wtdbg2_investigations:
-    input:  [os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"{genome}","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log").replace("{genome}", genome) for genome in ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]]
-    threads: 1
-    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+# localrules: report_some_wtdbg2_investigations
+# rule report_some_wtdbg2_investigations:
+#     input:  [os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"{genome}","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log").replace("{genome}", genome) for genome in ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]]
+#     threads: 1
+#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
 
-localrules: E_coli_wtdbg2_investigation_rs
-rule E_coli_wtdbg2_investigation_rs:
-    input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
-    threads: 1
-    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+# localrules: E_coli_wtdbg2_investigation_rs
+# rule E_coli_wtdbg2_investigation_rs:
+#     input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
+#     threads: 1
+#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
-localrules: E_coli_wtdbg2_investigation_ccs
-rule E_coli_wtdbg2_investigation_ccs:
-    input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"ccs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
-    threads: 1
-    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+# localrules: E_coli_wtdbg2_investigation_ccs
+# rule E_coli_wtdbg2_investigation_ccs:
+#     input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"ccs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
+#     threads: 1
+#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
 ###############################
 ###### Report Generation ######
 ###############################
-
-localrules: create_single_bcalm2_report_tex
-rule create_single_bcalm2_report_tex:
-    input:  genome_name = DATADIR + "{dir}/name.txt",
-            unitigs = DATADIR + "{dir}/{file}.unitigs.tex",
-            unitigs_contigvalidator = DATADIR + "{dir}/{file}.unitigs.contigvalidator",
-            unitigs_quast = DATADIR + "{dir}/{file}.unitigs.quast",
-            omnitigs = DATADIR + "{dir}/{file}.omnitigs.tex",
-            omnitigs_contigvalidator = DATADIR + "{dir}/{file}.omnitigs.contigvalidator",
-            omnitigs_quast = DATADIR + "{dir}/{file}.omnitigs.quast",
-            trivialomnitigs = DATADIR + "{dir}/{file}.trivialomnitigs.tex",
-            trivialomnitigs_contigvalidator = DATADIR + "{dir}/{file}.trivialomnitigs.contigvalidator",
-            trivialomnitigs_quast = DATADIR + "{dir}/{file}.trivialomnitigs.quast",
-            graphstatistics = DATADIR + "{dir}/{file}.bcalm2.graphstatistics",
-            bcalm2_bandage = DATADIR + "{dir}/{file}.bcalm2.bandage.png",
-            script = "scripts/convert_validation_outputs_to_latex.py",
-    output: DATADIR + "{dir}/{file}.report.tex",
-    params: prefix = DATADIR + "{dir}/{file}",
-            datadir = DATADIR,
-    conda: "config/conda-latex-gen-env.yml"
-    threads: 1
-    shell: "python3 scripts/convert_validation_outputs_to_latex.py '{params.datadir}' '{input.genome_name}' '{input.graphstatistics}' '{input.bcalm2_bandage}' 'none' '{output}' uni '{params.prefix}.unitigs' 'Y-to-V' '{params.prefix}.trivialomnitigs' omni '{params.prefix}.omnitigs'"
 
 ### Create single report ###
 
@@ -473,7 +515,15 @@ def get_report_file_quasts(report_name, report_file_name):
         report_file = get_report_file(report_name, report_file_name)
         quasts = []
         for column in report_file.columns:
-            quasts.append(QUAST_PREFIX_FORMAT.format(arguments = column.arguments))
+            #print(QUAST_OUTPUT_DIR)
+            #print(column.arguments, flush=True)
+            assembler = column.arguments.assembler_name()
+            assembler_argument_string = ASSEMBLER_ARGUMENT_STRINGS[assembler]
+            #print(assembler_argument_string, flush = True)
+            #print(column.arguments.assembler_arguments(), flush = True)
+            assembler_arguments = assembler_argument_string.format(**column.arguments.assembler_arguments())
+            #print(assembler_arguments, flush = True)
+            quasts.append(safe_format(QUAST_OUTPUT_DIR, assembler = assembler, assembler_arguments = assembler_arguments).format(**column.arguments))
         return quasts
     except Exception:
         traceback.print_exc()
@@ -552,13 +602,13 @@ def get_single_report_script_column_arguments_from_wildcards(wildcards):
 localrules: create_single_report_tex
 rule create_single_report_tex:
     input:  quasts = get_report_file_quasts_from_wildcards,
-            combined_eaxmax_plot = REPORT_PREFIX_FORMAT + "combined_eaxmax_plot.pdf",
-            script = "scripts/convert_validation_outputs_to_latex.py",
-    output: report = REPORT_PREFIX_FORMAT + "report.tex",
+            combined_eaxmax_plot = REPORT_COMBINED_EAXMAX_PLOT,
+            script = CONVERT_VALIDATION_OUTPUTS_TO_LATEX_SCRIPT,
+    output: report = REPORT_TEX,
     params: genome_name = lambda wildcards: ", ".join(get_report_genome_names_from_wildcards(wildcards)),
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
-            name_file = REPORT_PREFIX_FORMAT + "name.txt",
-            hashdir = REPORTDIR + "hashdir",
+            name_file = REPORT_NAME_FILE,
+            hashdir = REPORT_HASHDIR,
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
@@ -619,7 +669,7 @@ localrules: create_aggregated_report_tex
 rule create_aggregated_report_tex:
     input: source_reports = get_aggregated_report_file_source_report_paths_from_wildcards,
            script = "scripts/create_aggregated_wtdbg2_report.py",
-    output: file = AGGREGATED_REPORT_PREFIX_FORMAT + "aggregated-report.tex"
+    output: file = AGGREGATED_REPORT_PDF,
     params: source_reports_arg = lambda wildcards: "' '".join(get_aggregated_report_file_source_report_paths_from_wildcards(wildcards)),
             source_report_names_arg = lambda wildcards: "' '".join([report_name + "/" + report_file_name for report_name, report_file_name in iterate_aggregated_report_file_source_reports_short_names(wildcards.aggregated_report_name)]),
     conda: "config/conda-latex-gen-env.yml"
@@ -630,9 +680,9 @@ rule create_aggregated_report_tex:
 
 localrules: create_combined_eaxmax_graph
 rule create_combined_eaxmax_graph:
-    input:  quast_csvs = lambda wildcards: [q + "aligned_stats/EAxmax_plot.csv" for q in get_report_file_quasts_from_wildcards(wildcards)],
-            script = "scripts/create_combined_eaxmax_plot.py",
-    output: REPORT_PREFIX_FORMAT + "combined_eaxmax_plot.pdf",
+    input:  quast_csvs = lambda wildcards: [os.path.join(q, "aligned_stats", "EAxmax_plot.csv") for q in get_report_file_quasts_from_wildcards(wildcards)],
+            script = CREATE_COMBINED_EAXMAX_PLOT_SCRIPT,
+    output: REPORT_COMBINED_EAXMAX_PLOT,
     params: input_quast_csvs = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quast_csvs)])
     conda:  "config/conda-seaborn-env.yml"
     threads: 1
@@ -659,29 +709,29 @@ rule latex:
         tectonic '{input}'
         """
 
-def get_genome_reads_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
+# def get_genome_reads_from_wildcards(wildcards):
+#     try:
+#         arguments = Arguments.from_str(wildcards.arguments)
 
-        if arguments.read_simulator_name() is None or arguments.read_simulator_name() == "none":
-            return GENOME_READS_FORMAT.format(genome = arguments["genome"])
-        else:
-            return GENOME_SIMULATED_READS_FASTA_FORMAT.format(genome = arguments["genome"], read_simulator_name = arguments.read_simulator_name(), read_simulator_arguments = arguments.read_simulator_arguments())
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+#         if arguments.read_simulator_name() is None or arguments.read_simulator_name() == "none":
+#             return GENOME_READS_FORMAT.format(genome = arguments["genome"])
+#         else:
+#             return GENOME_SIMULATED_READS_FASTA_FORMAT.format(genome = arguments["genome"], read_simulator_name = arguments.read_simulator_name(), read_simulator_arguments = arguments.read_simulator_arguments())
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
-def get_genome_reference_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        return GENOME_REFERENCE_FORMAT.format(genome = arguments["genome"])
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+# def get_genome_reference_from_wildcards(wildcards):
+#     try:
+#         arguments = Arguments.from_str(wildcards.arguments)
+#         return GENOME_REFERENCE_FORMAT.format(genome = arguments["genome"])
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
 rule find_wtdbg2_node_errors:
     input:  nodes = os.path.join(WTDBG2_PREFIX_FORMAT, "wtdbg2.1.nodes"),
-            reference = get_genome_reference_from_wildcards,
+            reference = GENOME_REFERENCE,
             script = "scripts/find_wtdbg2_node_errors.py",
     output: deviation_histogram = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "deviation_histogram.pdf"),
     log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log"),
@@ -740,7 +790,7 @@ rule compute_injectable_contigs_wtdbg2:
     input:  nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.nodes",
             reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
             dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
-            raw_reads = get_genome_reads_from_wildcards,
+            raw_reads = GENOME_READS,
             binary = PROGRAMDIR + "target/release/cli",
     output: file = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.log",
@@ -959,7 +1009,7 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 
 
 rule run_contigbreaker:
     input:  contigs = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa",
-            reads = get_genome_reads_from_wildcards,
+            reads = GENOME_READS,
             script = "tools/contigbreaker/contigbreaker.py"
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
@@ -988,21 +1038,6 @@ rule run_gfa_trivial_omnitigs:
 ####################
 ###### wtdbg2 ######
 ####################
-
-localrules: install_wtdbg2
-rule install_wtdbg2:
-    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-    mkdir -p external-software
-    cd external-software
-
-    git clone https://github.com/sebschmi/wtdbg2.git
-    cd wtdbg2
-    git checkout c8403f562f3b999bb514ba3e9020007bcf01391c
-    make
-    """
 
 def get_wtdbg2_args_from_wildcards(wildcards):
     try:
@@ -1144,150 +1179,90 @@ def get_wtdbg2_cached_kbm_from_wildcards(wildcards):
         sys.exit("Catched exception")
 
 rule wtdbg2:
-    input:  reads = get_genome_reads_from_wildcards,
-            contigs = get_wtdbg2_injectable_contigs_from_wildcards,
-            fragment_contigs = get_wtdbg2_injectable_fragment_contigs_from_wildcards,
-            cached_nodes = get_wtdbg2_cached_nodes_from_wildcards,
-            cached_clips = get_wtdbg2_cached_clips_from_wildcards,
-            cached_kbm = get_wtdbg2_cached_kbm_from_wildcards,
+    input:  reads = GENOME_READS,
+            #contigs = get_wtdbg2_injectable_contigs_from_wildcards,
+            #fragment_contigs = get_wtdbg2_injectable_fragment_contigs_from_wildcards,
+            #cached_nodes = get_wtdbg2_cached_nodes_from_wildcards,
+            #cached_clips = get_wtdbg2_cached_clips_from_wildcards,
+            #cached_kbm = get_wtdbg2_cached_kbm_from_wildcards,
             binary = "external-software/wtdbg2/wtdbg2",
-    output: original_nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.1.nodes",
-            nodes = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.nodes",
-            reads = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.reads",
-            dot = WTDBG2_PREFIX_FORMAT + "wtdbg2.3.dot.gz",
-            ctg_dot = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.dot.gz",
-            clips = WTDBG2_PREFIX_FORMAT + "wtdbg2.clps",
-            kbm = WTDBG2_PREFIX_FORMAT + "wtdbg2.kbm",
-            ctg_lay = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay.gz",
-            frg_dot = [WTDBG2_PREFIX_FORMAT + "wtdbg2.{}.frg.dot.gz".format(i) for i in range(1, 11)],
-            log = WTDBG2_PREFIX_FORMAT + "wtdbg2.log",
-    params: args = get_wtdbg2_args_from_wildcards,
-            cache_args = lambda wildcards, input, output: "--load-nodes '{cached_nodes}' --load-clips '{cached_clips}' --load-kbm '{cached_kbm}'".format(cached_nodes = input.cached_nodes, cached_clips = input.cached_clips, cached_kbm = input.cached_kbm) if is_wtdbg2_using_cache_from_wildcards(wildcards) else "--dump-kbm '{kbm}'".format(kbm = output.kbm),
-            inject_unitigs_args = lambda wildcards, input: "--inject-unitigs '{contigs}'".format(contigs = input.contigs) if is_wtdbg2_injecting_contigs_from_wildcards(wildcards) else "",
-            inject_fragment_unitigs_args = lambda wildcards, input: "--inject-fragment-unitigs '{contigs}'".format(contigs = input.fragment_contigs) if is_wtdbg2_injecting_fragment_contigs_from_wildcards(wildcards) else "",
+    output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
+            nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
+            reads = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.reads"),
+            dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.dot.gz"),
+            ctg_dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.dot.gz"),
+            clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
+            kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
+            ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
+            frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
+    log:    log = WTDBG2_LOG,
+    params: #args = get_wtdbg2_args_from_wildcards,
+            #cache_args = lambda wildcards, input, output: "--load-nodes '{cached_nodes}' --load-clips '{cached_clips}' --load-kbm '{cached_kbm}'".format(cached_nodes = input.cached_nodes, cached_clips = input.cached_clips, cached_kbm = input.cached_kbm) if is_wtdbg2_using_cache_from_wildcards(wildcards) else "--dump-kbm '{kbm}'".format(kbm = output.kbm),
+            #inject_unitigs_args = lambda wildcards, input: "--inject-unitigs '{contigs}'".format(contigs = input.contigs) if is_wtdbg2_injecting_contigs_from_wildcards(wildcards) else "",
+            #inject_fragment_unitigs_args = lambda wildcards, input: "--inject-fragment-unitigs '{contigs}'".format(contigs = input.fragment_contigs) if is_wtdbg2_injecting_fragment_contigs_from_wildcards(wildcards) else "",
             genome_len_arg = get_genome_len_from_wildcards,
-            output_prefix = WTDBG2_PREFIX_FORMAT + "wtdbg2",
-            frg_dot_escaped = lambda wildcards, output: ["'" + file + "'" for file in output.frg_dot],
+            output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
+            #frg_dot_escaped = lambda wildcards, output: ["'" + file + "'" for file in output.frg_dot],
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100000),
     shell: """
-        '{input.binary}' -g {params.genome_len_arg} {params.args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' {params.cache_args} {params.inject_unitigs_args} {params.inject_fragment_unitigs_args} 2>&1 | tee '{output.log}'
-
-        if [ ! -z '{input.cached_kbm}' ]; then
-            ln -sr '{input.cached_kbm}' '{output.kbm}'
-        fi
-
-        if [ ! -z '{input.cached_clips}' ]; then
-            ln -sr '{input.cached_clips}' '{output.clips}'
-        fi
-
-        for file in {params.frg_dot_escaped}; do
-            touch "$file"
-        done
+        '{input.binary}' -x {wildcards.wtdbg2_mode} -g {params.genome_len_arg} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' 2>&1 | tee '{log.log}'
     """
+    #'{input.binary}' -x {wildcards.wtdbg2_mode} -g {params.genome_len_arg} {params.args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' {params.cache_args} {params.inject_unitigs_args} {params.inject_fragment_unitigs_args} 2>&1 | tee '{log.log}'
+    #if [ ! -z '{input.cached_kbm}' ]; then
+    #    ln -sr '{input.cached_kbm}' '{output.kbm}'
+    #fi
+    #
+    #if [ ! -z '{input.cached_clips}' ]; then
+    #    ln -sr '{input.cached_clips}' '{output.clips}'
+    #fi
+    #
+    #for file in {params.frg_dot_escaped}; do
+    #    touch "$file"
+    #done
+
+rule wtdbg2_extract_ctg_lay:
+    input:  file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
+    output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
+    params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
+    conda:  "config/conda-extract-env.yml"
+    shell:  "cd '{params.working_directory}'; gunzip -k {input.file}"
 
 rule wtdbg2_consensus:
-    input: reads = get_genome_reads_from_wildcards,
-           contigs = WTDBG2_PREFIX_FORMAT + "wtdbg2.ctg.lay",
+    input: reads = GENOME_READS,
+           contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
            binary = "external-software/wtdbg2/wtpoa-cns",
-    output: consensus = WTDBG2_PREFIX_FORMAT + "wtdbg2.raw.fa",
-            completed = touch(WTDBG2_PREFIX_FORMAT + "wtdbg2.raw.fa.completed"),
+    output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
+    log:    log = WTDBG2_CONSENSUS_LOG,
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
-    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}'"
+    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' | tee '{log.log}'"
+
+localrules: link_wtdbg2_contigs
+rule link_wtdbg2_contigs:
+    input:  contigs = os.path.join(WTDBG2_OUTPUT_DIR_PACKED, "wtdbg2.raw.fa"),
+    output: contigs = ASSEMBLED_CONTIGS,
+    wildcard_constraints:
+            assembler = "wtdbg2",
+    shell:  "ln -sr -T '{input.contigs}' '{output.contigs}'"
 
 ##################
 ###### Flye ######
 ##################
 
-localrules: install_flye
-rule install_flye:
-    output: script = "external-software/Flye/bin/flye",
-            directory = directory("external-software/Flye"),
-    conda:  "config/conda-install-flye-env.yml"
-    shell:  """
-        mkdir -p external-software
-        cd external-software
-
-        rm -rf Flye
-        git clone https://github.com/sebschmi/Flye
-        cd Flye
-        git checkout 7413f5c39b6c8e9ab9caa564e15e7edd4e727cfd
-
-        make
-        """
-
-def get_flye_other_args_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        cli_arguments = assembler_arguments.get("cli_arguments", None)
-        if cli_arguments is None:
-            raise Exception("Assembler arguments have no cli arguments: {}".format(assembler_arguments))
-        if type(cli_arguments) is not Arguments:
-            raise Exception("CLI arguments have type '{}' rather than 'Arguments'.".format(type(cli_arguments)))
-
-        cli_arguments.pop("--pacbio-raw", None)
-        cli_arguments.pop("--pacbio-corr", None)
-        cli_arguments.pop("--pacbio-hifi", None)
-        cli_arguments.pop("--nano-raw", None)
-        cli_arguments.pop("--nano-corr", None)
-
-        return cli_arguments.to_argument_string()
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_flye_input_arg_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have not assembler arguments: {}".format(arguments))
-        cli_arguments = assembler_arguments.get("cli_arguments", None)
-        if cli_arguments is None:
-            raise Exception("Assembler arguments have no cli arguments: {}".format(assembler_arguments))
-
-        input_args = []
-        if "--pacbio-raw" in cli_arguments:
-            input_args.append("--pacbio-raw")
-        if "--pacbio-corr" in cli_arguments:
-            input_args.append("--pacbio-corr")
-        if "--pacbio-hifi" in cli_arguments:
-            input_args.append("--pacbio-hifi")
-        if "--nano-raw" in cli_arguments:
-            input_args.append("--nano-raw")
-        if "--nano-corr" in cli_arguments:
-            input_args.append("--nano-corr")
-        
-        if len(input_args) == 0:
-            raise Exception("No flye input args given")
-        elif len(input_args) == 1:
-            return input_args[0]
-        elif len(input_args) > 1:
-            raise Exception("More than one flye input arg given: {}".format(input_args))
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
 rule flye:
-    input:  reads = get_genome_reads_from_wildcards,
+    input:  reads = GENOME_READS,
             script = "external-software/Flye/bin/flye"
-    output: contigs = ALGORITHM_PREFIX_FORMAT + "flye/assembly.fasta",
-            directory = directory(ALGORITHM_PREFIX_FORMAT + "flye"),
-    params: flye_args = get_flye_other_args_from_wildcards,
-            flye_input_argument = get_flye_input_arg_from_wildcards,
-            genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
-            output_directory = ALGORITHM_PREFIX_FORMAT + "flye",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "flye/.completed"),
+    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
+            directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
+    params: genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
+            output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
@@ -1295,18 +1270,26 @@ rule flye:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
                mail_type = "END",
-    shell: "'{input.script}' {params.genome_len_arg} {params.flye_args} -t {threads} -o '{params.output_directory}' {params.flye_input_argument} '{input.reads}'"
+    shell: "'{input.script}' {params.genome_len_arg} -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}'"
+
+localrules: link_flye_contigs
+rule link_flye_contigs:
+    input:  contigs = os.path.join(FLYE_OUTPUT_DIR_PACKED, "flye", "assembly.fasta"),
+    output: contigs = ASSEMBLED_CONTIGS,
+    wildcard_constraints:
+            assembler = "flye",
+    shell:  "ln -sr -T '{input.contigs}' '{output.contigs}'"
 
 #####################
 ###### Hifiasm ######
 #####################
 
 rule hifiasm:
-    input:  reads = get_genome_reads_from_wildcards,
-    output: contigs = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.p_ctg.gfa"),
-            unitigs = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.r_utg.gfa"),
-            directory = directory(os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm")),
-    params: output_prefix = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly"),
+    input:  reads = GENOME_READS,
+    output: contigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
+            unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.r_utg.gfa"),
+            directory = directory(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm")),
+    params: output_prefix = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly"),
     conda:  "config/conda-hifiasm-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
@@ -1317,8 +1300,10 @@ rule hifiasm:
 
 localrules: hifiasm_gfa_to_fa
 rule hifiasm_gfa_to_fa:
-    input:  gfa = os.path.join(HIFIASM_PREFIX_FORMAT, "hifiasm", "assembly.p_ctg.gfa"),
-    output: fa = os.path.join(HIFIASM_PREFIX_FORMAT, "assembly.p_ctg.fa"),
+    input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR_PACKED, "hifiasm", "assembly.p_ctg.gfa"),
+    output: fa = ASSEMBLED_CONTIGS,
+    wildcard_constraints:
+            assembler = "hifiasm",
     run:
             with open(input.gfa, 'r') as input_file, open(output.fa, 'w') as output_file:
                 for line in input_file:
@@ -1409,22 +1394,6 @@ rule fastq_to_fasta:
     input:  fastq = os.path.join(DATADIR, "{path}.fq"),
     output: fasta = os.path.join(DATADIR, "{path}.fa"),
     shell:  "awk '(NR-1)%4<2' '{input.fastq}' > '{output.fasta}'"
-
-rule install_sim_it:
-    output: "external-software/sim-it/sim-it.pl"
-    conda:  "config/conda-download-env.yml"
-    shell:  """
-        mkdir -p external-software
-        cd external-software
-
-        wget -O sim-it.tar.gz https://github.com/ndierckx/Sim-it/archive/refs/tags/Sim-it1.2.tar.gz
-
-        rm -rf Sim-it-Sim-it1.2
-        rm -rf sim-it
-        tar -xf sim-it.tar.gz
-        mv Sim-it-Sim-it1.2/ sim-it/
-        mv sim-it/Sim-it1.2.pl sim-it/sim-it.pl
-    """
 
 rule simulate_hifi_reads_sim_it:
     input:  reference = GENOME_REFERENCE_FORMAT,
@@ -1617,21 +1586,6 @@ Error profile            = external-software/sim-it/error_profile_PB_Sequel_CCS_
 #         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
 #     shell: "cat {params.input_list} > '{output.reads}'"
 
-# rule uniquify_ids:
-#     input:  reads = DATADIR + "downloads/{genome}/reads/raw_reads.fa",
-#             script = "scripts/uniquify_fasta_ids.py",
-#     output: reads = DATADIR + "downloads/{genome}/reads/raw_reads.uniquified.fa",
-#             log = DATADIR + "downloads/{genome}/uniquify.log",
-#             completed = touch(DATADIR + "downloads/{genome}/reads/reads.uniquified.fa.completed"),
-#     wildcard_constraints:
-#         genome = "((?!downloads).)*",
-#     conda: "config/conda-uniquify-env.yml"
-#     threads: 1
-#     resources:
-#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60),
-#     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{output.log}'"
-
 # def read_input_file_name(wildcards):
 #     try:
 #         genome_name = wildcards.genome
@@ -1791,26 +1745,6 @@ rule combine_correction_short_reads:
         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
     shell: "cat {params.input_list} > '{output.reads}'"
 
-localrules: install_ratatosk
-rule install_ratatosk:
-    output: binary = "external-software/Ratatosk/build/src/Ratatosk",
-    conda: "config/conda-install-ratatosk-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p external-software
-        cd external-software
-
-        rm -r Ratatosk
-        git clone --recursive https://github.com/GuillaumeHolley/Ratatosk.git
-        cd Ratatosk
-        git checkout --recurse-submodules 74ca617afb20a7c24d73d20f2dcdf223db303496
-
-        mkdir build
-        cd build
-        cmake ..
-        make
-        """
-
 rule ratatosk:
     input:  correction_short_reads = CORRECTION_SHORT_READS_FORMAT,
             long_reads = lambda wildcards: GENOME_READS_FORMAT.format(genome = corrected_genomes[wildcards.corrected_genome]["source_genome"]),
@@ -1838,6 +1772,28 @@ rule select_read_corrector:
     threads: 1
     shell: "ln -sr '{input.corrected_reads_from_read_corrector}' '{output.corrected_reads}'"
 
+#####################################
+###### Homopolymer compression ######
+#####################################
+
+rule homopolymer_compress_reads:
+    input:  reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
+            script = HOMOPOLYMER_COMPRESS_FASTA_SCRIPT,
+    output: reads = GENOME_READS,
+    wildcard_constraints:
+            homopolymer_compression = "yes",
+    conda:  "config/conda-biopython-env.yml"
+    shell:  "'{input.script}' '{input.reads}' '{output.reads}'"
+
+rule homopolymer_compress_reference:
+    input:  reference = safe_format(GENOME_REFERENCE, homopolymer_compression = "none"),
+            script = HOMOPOLYMER_COMPRESS_FASTA_SCRIPT,
+    output: reference = GENOME_REFERENCE,
+    wildcard_constraints:
+            homopolymer_compression = "yes",
+    conda:  "config/conda-biopython-env.yml"
+    shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
+
 ######################################
 ###### Input Genome Preparation ######
 ######################################
@@ -1864,53 +1820,9 @@ rule filter_genome:
     threads: 1
     shell: DATADIR + "target/release/cli filter --input '{input.file}' --output '{output.file}' --extract-name '{output.genome_name}' {params.retain} 2>&1 | tee '{output.log}'"
 
-# rule extract:
-#     input: DATADIR + "{dir}/{file}.gz"
-#     output: DATADIR + "{dir}/{file}"
-#     params: working_directory = DATADIR + "{dir}"
-#     wildcard_constraints:
-#         file=".*(?<!\.gz)"
-#         #file=r"^.*([^\.]..|.[^g].|..[^z])$"
-#     conda: "config/conda-extract-env.yml"
-#     threads: 1
-#     resources:
-#         time_min = 1440,
-#     shell: "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
-
-#rule extract_dot:
-#    input: DATADIR + "{dir}/wtdbg2.3.dot.gz"
-#    output: DATADIR + "{dir}/wtdbg2.3.dot"
-#    conda: "config/conda-extract-env.yml"
-#    shell: "cd 'data/{wildcards.dir}'; gunzip -k wtdbg2.3.dot.gz"
-
-rule download_experiment_file:
-    output: DATADIR + "{dir}/raw.fna.gz"
-    params: url = lambda wildcards, output: experiments_bcalm2[wildcards.dir]["url"]
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p "$(dirname '{output}')"
-        cd 'data/{wildcards.dir}'
-        wget --progress=dot:mega -O raw.fna.gz {params.url}
-    """
-
 ###################
 ###### QUAST ######
 ###################
-
-localrules: install_quast
-rule install_quast:
-    output: script = "external-software/quast/quast.py",
-            script_directory = directory("external-software/quast/"),
-    threads: 1
-    shell: """
-    mkdir -p external-software
-    cd external-software
-
-    git clone https://github.com/sebschmi/quast
-    cd quast
-    git checkout 1f2ba4cf40f963f89fbabc9d48e13ebd5c65a77d
-    """
 
 rule run_quast_bcalm2:
     input: reads = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
@@ -1923,12 +1835,11 @@ rule run_quast_bcalm2:
     shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
 
 rule run_quast:
-    input:  contigs = ALGORITHM_PREFIX_FORMAT + "assembly.fa",
-            reference = get_genome_reference_from_wildcards,
-            script = "external-software/quast/quast.py",
-    output: directory = directory(QUAST_PREFIX_FORMAT),
-            eaxmax_csv = QUAST_PREFIX_FORMAT + "aligned_stats/EAxmax_plot.csv",
-            completed = touch(QUAST_PREFIX_FORMAT + ".completed"),
+    input:  contigs = ASSEMBLED_CONTIGS,
+            reference = GENOME_REFERENCE,
+            script = QUAST_BINARY,
+    output: directory = directory(QUAST_OUTPUT_DIR),
+            eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     conda: "config/conda-quast-env.yml"
     threads: 4
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
@@ -1968,34 +1879,6 @@ rule test_rust:
 ###### ContigValidator ######
 #############################
 
-rule install_sdsl:
-    output: dir = "external-software/sdsl-lite"
-    conda: "config/conda-contigvalidator-env.yml"
-    threads: 1
-    shell:
-        """
-        cd external-software
-        git clone https://github.com/simongog/sdsl-lite.git
-        cd sdsl-lite
-        git checkout v2.1.1
-        HOME=`pwd` ./install.sh
-        """
-
-rule install_contig_validator:
-    input: sdsl = "external-software/sdsl-lite"
-    output: dir = directory("external-software/ContigValidator")
-    conda: "config/conda-contigvalidator-env.yml"
-    threads: 1
-    shell: 
-        """
-        cd external-software
-        git clone --recursive https://github.com/mayankpahadia1993/ContigValidator.git
-        cd ContigValidator/src
-        echo 'count_kmers: count_kmers_kmc' >> Makefile
-        sed -i 's\\count_kmers: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\count_kmers_kmc: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\g' Makefile
-        LIBRARY_PATH="../../sdsl-lite/lib" CPATH="../../sdsl-lite/include" make
-        """
-
 rule run_contig_validator:
     input: cv = "external-software/ContigValidator",
         reads = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
@@ -2027,18 +1910,6 @@ rule run_contig_validator:
 ###### Bandage ######
 #####################
 
-rule download_bcalm2_gfa_converter:
-    output: "external-software/scripts/convertToGFA.py"
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell:
-        """
-        mkdir -p external-software/scripts
-        cd external-software/scripts
-        wget https://raw.githubusercontent.com/GATB/bcalm/v2.2.3/scripts/convertToGFA.py
-        chmod u+x convertToGFA.py
-        """
-
 rule convert_bcalm2_output_to_gfa:
     input: fa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
         converter = "external-software/scripts/convertToGFA.py"
@@ -2052,6 +1923,135 @@ rule bandage:
     conda: "config/conda-bandage-env.yml"
     threads: 1
     shell: "Bandage image {input} {output} --width 1000 --height 1000"
+
+###########################
+###### Installations ######
+###########################
+
+localrules: download_bcalm2_gfa_converter
+rule download_bcalm2_gfa_converter:
+    output: "external-software/scripts/convertToGFA.py"
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell:
+        """
+        mkdir -p external-software/scripts
+        cd external-software/scripts
+        wget https://raw.githubusercontent.com/GATB/bcalm/v2.2.3/scripts/convertToGFA.py
+        chmod u+x convertToGFA.py
+        """
+
+localrules: install_contig_validator
+rule install_contig_validator:
+    input: sdsl = "external-software/sdsl-lite"
+    output: dir = directory("external-software/ContigValidator")
+    conda: "config/conda-contigvalidator-env.yml"
+    threads: 1
+    shell: 
+        """
+        cd external-software
+        git clone --recursive https://github.com/mayankpahadia1993/ContigValidator.git
+        cd ContigValidator/src
+        echo 'count_kmers: count_kmers_kmc' >> Makefile
+        sed -i 's\\count_kmers: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\count_kmers_kmc: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\g' Makefile
+        LIBRARY_PATH="../../sdsl-lite/lib" CPATH="../../sdsl-lite/include" make
+        """
+
+localrules: install_quast
+rule install_quast:
+    output: script = "external-software/quast/quast.py",
+            script_directory = directory("external-software/quast/"),
+    threads: 1
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    git clone https://github.com/sebschmi/quast
+    cd quast
+    git checkout 1f2ba4cf40f963f89fbabc9d48e13ebd5c65a77d
+    """
+
+localrules: install_sdsl
+rule install_sdsl:
+    output: dir = "external-software/sdsl-lite"
+    conda: "config/conda-contigvalidator-env.yml"
+    threads: 1
+    shell:
+        """
+        cd external-software
+        git clone https://github.com/simongog/sdsl-lite.git
+        cd sdsl-lite
+        git checkout v2.1.1
+        HOME=`pwd` ./install.sh
+        """
+
+localrules: install_ratatosk
+rule install_ratatosk:
+    output: binary = "external-software/Ratatosk/build/src/Ratatosk",
+    conda: "config/conda-install-ratatosk-env.yml"
+    threads: 1
+    shell: """
+        mkdir -p external-software
+        cd external-software
+
+        rm -r Ratatosk
+        git clone --recursive https://github.com/GuillaumeHolley/Ratatosk.git
+        cd Ratatosk
+        git checkout --recurse-submodules 74ca617afb20a7c24d73d20f2dcdf223db303496
+
+        mkdir build
+        cd build
+        cmake ..
+        make
+        """
+
+localrules: install_wtdbg2
+rule install_wtdbg2:
+    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
+    conda: "config/conda-download-env.yml"
+    threads: 1
+    shell: """
+    mkdir -p external-software
+    cd external-software
+
+    git clone https://github.com/sebschmi/wtdbg2.git
+    cd wtdbg2
+    git checkout c8403f562f3b999bb514ba3e9020007bcf01391c
+    make
+    """
+
+rule install_sim_it:
+    output: "external-software/sim-it/sim-it.pl"
+    conda:  "config/conda-download-env.yml"
+    shell:  """
+        mkdir -p external-software
+        cd external-software
+
+        wget -O sim-it.tar.gz https://github.com/ndierckx/Sim-it/archive/refs/tags/Sim-it1.2.tar.gz
+
+        rm -rf Sim-it-Sim-it1.2
+        rm -rf sim-it
+        tar -xf sim-it.tar.gz
+        mv Sim-it-Sim-it1.2/ sim-it/
+        mv sim-it/Sim-it1.2.pl sim-it/sim-it.pl
+    """
+
+localrules: install_flye
+rule install_flye:
+    output: script = "external-software/Flye/bin/flye",
+            directory = directory("external-software/Flye"),
+    conda:  "config/conda-install-flye-env.yml"
+    shell:  """
+        mkdir -p external-software
+        cd external-software
+
+        rm -rf Flye
+        git clone https://github.com/sebschmi/Flye
+        cd Flye
+        git checkout 7413f5c39b6c8e9ab9caa564e15e7edd4e727cfd
+
+        make
+        """
 
 ###################################
 ###### Download requirements ######
