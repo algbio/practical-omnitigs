@@ -13,7 +13,7 @@ factor = float(sys.argv[3])
 with open(input_file, 'r') as infile:
     count = len(SeqIO.parse(infile, "fasta"))
 
-indices = [i for i in 0:count]
+indices = list(range(count))
 random.Random(3252457).shuffle(indices)
 indices = set(indices[0:int(count * factor)])
 
