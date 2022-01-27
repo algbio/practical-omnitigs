@@ -155,6 +155,7 @@ CONVERT_VALIDATION_OUTPUTS_TO_LATEX_SCRIPT = "scripts/convert_validation_outputs
 CREATE_AGGREGATED_WTDBG2_REPORT_SCRIPT = "scripts/create_aggregated_wtdbg2_report.py"
 CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
+DOWNSAMPLE_FASTA_READS = "scripts/downsample_fasta_reads.py"
 
 QUAST_BINARY = "external-software/quast/quast.py"
 
@@ -369,8 +370,6 @@ rule uniquify_ids:
     conda: "config/conda-uniquify-env.yml"
     threads: 1
     shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{log.log}'"
-
-# TODO CONTINUE FROM HERE
 
 ##################################################################################################################################################################################
 ##################################################################################################################################################################################
@@ -1782,6 +1781,7 @@ rule homopolymer_compress_reads:
     output: reads = GENOME_READS,
     wildcard_constraints:
             homopolymer_compression = "yes",
+            uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
     shell:  "'{input.script}' '{input.reads}' '{output.reads}'"
 
@@ -1791,8 +1791,24 @@ rule homopolymer_compress_reference:
     output: reference = GENOME_REFERENCE,
     wildcard_constraints:
             homopolymer_compression = "yes",
+            uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
     shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
+
+###############################
+###### Read downsampling ######
+###############################
+
+rule downsample_reads:
+    input:  reads = safe_format(GENOME_READS, read_downsampling_factor = "none"),
+            script = DOWNSAMPLE_FASTA_READS,
+    output: reads = GENOME_READS,
+    wildcard_constraints:
+            read_downsampling_factor = "0.[0-9]+",
+            homopolymer_compression = "none",
+            uniquify_ids = "no",
+    conda:  "config/conda-biopython-env.yml"
+    shell:  "'{input.script}' '{input.reads}' '{output.reads}' {wildcards.read_downsampling_factor}"
 
 ######################################
 ###### Input Genome Preparation ######
