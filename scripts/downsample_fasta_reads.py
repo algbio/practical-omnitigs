@@ -11,7 +11,9 @@ factor = float(sys.argv[3])
 
 # count reads
 with open(input_file, 'r') as infile:
-    count = len(SeqIO.parse(infile, "fasta"))
+    count = 0
+    for record in SeqIO.parse(infile, "fasta"):
+        count += 1
 
 indices = list(range(count))
 random.Random(3252457).shuffle(indices)
