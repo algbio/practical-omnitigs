@@ -146,7 +146,7 @@ CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
 DOWNSAMPLE_FASTA_READS = "scripts/downsample_fasta_reads.py"
 
-EXTERNAL_SOFTWARE_SCRIPT_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "scripts")
+EXTERNAL_SOFTWARE_SCRIPTS_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "scripts")
 RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "rust_target")
 IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.log")
 RUST_BINARY = os.path.join(RUST_DIR, "release", "cli")
@@ -157,7 +157,7 @@ FLYE_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Flye", "bin", "flye")
 SIM_IT_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "sim-it", "sim-it.pl")
 RATATOSK_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Ratatosk", "build", "src", "Ratatosk")
 CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "ContigValidator")
-CONVERT_TO_GFA_BINARY = os.path.join(EXTERNAL_SOFTWARE_SCRIPT_DIR, "convertToGFA.py")
+CONVERT_TO_GFA_BINARY = os.path.join(EXTERNAL_SOFTWARE_SCRIPTS_DIR, "convertToGFA.py")
 SDSL_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "sdsl-lite")
 
 # TODO remove
@@ -1885,11 +1885,12 @@ localrules: download_bcalm2_gfa_converter
 rule download_bcalm2_gfa_converter:
     output: CONVERT_TO_GFA_BINARY,
     conda: "config/conda-download-env.yml"
+    params: external_software_scripts_dir = EXTERNAL_SOFTWARE_SCRIPTS_DIR,
     threads: 1
     shell:
         """
-        mkdir -p external-software/scripts
-        cd external-software/scripts
+        mkdir -p '{params.external_software_scripts_dir}'
+        cd '{params.external_software_scripts_dir}'
         wget https://raw.githubusercontent.com/GATB/bcalm/v2.2.3/scripts/convertToGFA.py
         chmod u+x convertToGFA.py
         """
@@ -1897,12 +1898,14 @@ rule download_bcalm2_gfa_converter:
 localrules: install_contig_validator
 rule install_contig_validator:
     input:  sdsl = SDSL_DIR,
-    output: dir = directory(CONTIG_VALIDATOR_DIR)
+    output: dir = directory(CONTIG_VALIDATOR_DIR),
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda: "config/conda-contigvalidator-env.yml"
     threads: 1
     shell: 
         """
-        cd external-software
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
         git clone --recursive https://github.com/mayankpahadia1993/ContigValidator.git
         cd ContigValidator/src
         echo 'count_kmers: count_kmers_kmc' >> Makefile
@@ -1913,10 +1916,11 @@ rule install_contig_validator:
 localrules: install_quast
 rule install_quast:
     output: script = QUAST_BINARY,
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     threads: 1
     shell: """
-    mkdir -p external-software
-    cd external-software
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
 
     git clone https://github.com/sebschmi/quast
     cd quast
@@ -1926,11 +1930,13 @@ rule install_quast:
 localrules: install_sdsl
 rule install_sdsl:
     output: dir = SDSL_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda: "config/conda-contigvalidator-env.yml"
     threads: 1
     shell:
         """
-        cd external-software
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
         git clone https://github.com/simongog/sdsl-lite.git
         cd sdsl-lite
         git checkout v2.1.1
@@ -1940,11 +1946,12 @@ rule install_sdsl:
 localrules: install_ratatosk
 rule install_ratatosk:
     output: binary = RATATOSK_BINARY,
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda: "config/conda-install-ratatosk-env.yml"
     threads: 1
     shell: """
-        mkdir -p external-software
-        cd external-software
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
 
         rm -r Ratatosk
         git clone --recursive https://github.com/GuillaumeHolley/Ratatosk.git
@@ -1964,11 +1971,12 @@ rule install_wtdbg2:
             wtdbg2 = WTDBG2_BINARY,
             wtdbg_cns = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2/wtdbg-cns"),
             wtpoa_cns = WTDBG2_CONSENSUS_BINARY,
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
-    mkdir -p external-software
-    cd external-software
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
 
     git clone https://github.com/sebschmi/wtdbg2.git
     cd wtdbg2
@@ -1978,10 +1986,11 @@ rule install_wtdbg2:
 
 rule install_sim_it:
     output: SIM_IT_BINARY,
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda:  "config/conda-download-env.yml"
     shell:  """
-        mkdir -p external-software
-        cd external-software
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
 
         wget -O sim-it.tar.gz https://github.com/ndierckx/Sim-it/archive/refs/tags/Sim-it1.2.tar.gz
 
@@ -1995,10 +2004,11 @@ rule install_sim_it:
 localrules: install_flye
 rule install_flye:
     output: script = FLYE_BINARY,
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda:  "config/conda-install-flye-env.yml"
     shell:  """
-        mkdir -p external-software
-        cd external-software
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
 
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
