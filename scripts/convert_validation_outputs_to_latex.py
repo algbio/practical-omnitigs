@@ -17,12 +17,12 @@ output_file_name = sys.argv[6]
 
 experiments = []
 
-for i in range(7, len(sys.argv), 2):
-	if i + 1 >= len(sys.argv):
-		print("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
-		exit(1)
+for i in range(7, len(sys.argv), 4):
+	if i + 3 >= len(sys.argv):
+		exit("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
 
-	experiments.append((sys.argv[i], sys.argv[i + 1]))
+	# shortname, omnitig algo file, QUAST dir, ContigValidator file
+	experiments.append((sys.argv[i], sys.argv[i + 1], sys.argv[i + 2], sys.argv[i + 3]))
 
 def append_latex_table_second_column(table, appendix):
 	if len(table) == 0:
@@ -98,28 +98,28 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 ### Process algorithm files ###
 ###############################
 
-def read_algorithm_file(prefix):
-	try:
-		algorithm_file = open(os.path.join(prefix, "compute_injectable_contigs.tex"))
-		algorithm_lines = algorithm_file.readlines()
-		return algorithm_lines
-	except:
-		print("Did not find algorithm file for '" + prefix + "'")
-		return []
+# def read_algorithm_file(prefix):
+# 	try:
+# 		algorithm_file = open(os.path.join(prefix, "compute_injectable_contigs.tex"))
+# 		algorithm_lines = algorithm_file.readlines()
+# 		return algorithm_lines
+# 	except:
+# 		print("Did not find algorithm file for '" + prefix + "'")
+# 		return []
 
-headline = "Parameter"
-algorithm_table = []
-for label, prefix in experiments:
-	headline += " & " + label
-	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
-	algorithm_table = append_latex_table_second_column(algorithm_table, table)
+# headline = "Parameter"
+# algorithm_table = []
+# for label, prefix in experiments:
+# 	headline += " & " + label
+# 	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
+# 	algorithm_table = append_latex_table_second_column(algorithm_table, table)
 
-algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
+# algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
 
 
-##########################
+###########################
 ### Process QUAST files ###
-##########################
+###########################
 
 def read_quast_file(filename):
 	try:
@@ -136,49 +136,49 @@ def read_quast_file(filename):
 
 headline = "Parameter"
 quast_table = []
-for (label, prefix) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix + "quast/report.tex")
+	table = read_quast_file(os.path.join(quast_directory, "quast", "report.tex"))
 	quast_table = append_latex_table_second_column(quast_table, table)
 
 quast_table = [headline + "\\\\ \\hline"] + quast_table
 
 headline = "Parameter"
 quast_misassemblies_table = []
-for (label, prefix) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix + "quast/contigs_reports/misassemblies_report.tex")
+	table = read_quast_file(os.path.join(quast_directory, "quast", "contigs_reports", "misassemblies_report.tex"))
 	quast_misassemblies_table = append_latex_table_second_column(quast_misassemblies_table, table)
 
 quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_table
 
 
-####################################
+#####################################
 ### Process ContigValidator files ###
-####################################
+#####################################
 
-def read_contig_validator_file(prefix):
-	try:
-		contig_validator_file = open(prefix + ".contigvalidator", 'r')
-		contig_validator_lines = contig_validator_file.readlines()
-		contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
-		contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
-		contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
-		contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
-		contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
-		return contig_validator_lines
-	except:
-		print("Did not find contig validator file for '" + prefix + "'")
-		return []
+# def read_contig_validator_file(prefix):
+# 	try:
+# 		contig_validator_file = open(prefix + ".contigvalidator", 'r')
+# 		contig_validator_lines = contig_validator_file.readlines()
+# 		contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
+# 		contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
+# 		contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
+# 		contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
+# 		contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
+# 		return contig_validator_lines
+# 	except:
+# 		print("Did not find contig validator file for '" + prefix + "'")
+# 		return []
 
-headline = "Parameter"
-contig_validator_table = []
-for (label, prefix) in experiments:
-	headline += " & " + label
-	table = read_contig_validator_file(prefix)
-	contig_validator_table = append_latex_table_second_column(contig_validator_table, table)
+# headline = "Parameter"
+# contig_validator_table = []
+# for (label, prefix) in experiments:
+# 	headline += " & " + label
+# 	table = read_contig_validator_file(prefix)
+# 	contig_validator_table = append_latex_table_second_column(contig_validator_table, table)
 
-contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
+# contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
 
 ##########################################
 ### Process CLI graph statistics files ###

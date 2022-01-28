@@ -70,6 +70,8 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("read_downsampling_factor", "none")
         arguments.setdefault("homopolymer_compression", "none")
         arguments.setdefault("uniquify_ids", "no")
+        arguments.setdefault("assembler", None)
+        arguments.setdefault("assembler_arguments", None)
 
         columns = []
         for column_definition in report_definition["columns"]:
@@ -103,9 +105,9 @@ GENOME_DIR = os.path.join(DATADIR, "genomes")
 ASSEMBLY_DIR = os.path.join(DATADIR, "assembly")
 EVALUATION_DIR = os.path.join(DATADIR, "evaluation")
 
-GENOME_SUBDIR = "g{genome}"
-GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_SUBDIR, "reference-h{homopolymer_compression}")
-GENOME_READS_SUBDIR = os.path.join(GENOME_SUBDIR, "reads-r{read_downsampling_factor}-h{homopolymer_compression}-u{uniquify_ids}")
+GENOME_SUBDIR = "g{genome}-h{homopolymer_compression}"
+GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_SUBDIR, "reference")
+GENOME_READS_SUBDIR = os.path.join(GENOME_SUBDIR, "reads-r{read_downsampling_factor}-u{uniquify_ids}")
 GENOME_REFERENCE = os.path.join(GENOME_DIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
 GENOME_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
@@ -426,8 +428,10 @@ def get_all_report_files():
     try:
         result = []
         for report_name, report_definition in reports.items():
-            for report_file_name in report_definition["report_files"].keys():
-                result.append(REPORT_PDF.format(report_name = report_name, report_file_name = report_file_name))
+            for report_file_name, report_file_definition in report_definition["report_files"].items():
+                report_file_arguments = report_file_definition.arguments
+                #print(f"report_file_arguments: {report_file_arguments}", flush = True)
+                result.append(REPORT_PDF.format(report_name = report_name, report_file_name = str(report_file_arguments)))
 
 
         for aggregated_report_name in aggregated_reports.keys():
@@ -585,7 +589,7 @@ def get_single_report_script_column_arguments(report_name, report_file_name):
                 result += " "
 
             arguments = column.arguments
-            result += "'" + column.shortname + "' '" + ALGORITHM_PREFIX_FORMAT.format(arguments = arguments) + "'"
+            result += "'" + column.shortname + "' '" + safe_format(QUAST_OUTPUT_DIR, **arguments) + "'"
         return result
     except Exception:
         traceback.print_exc()
