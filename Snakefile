@@ -99,7 +99,8 @@ GENOME_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
 
 ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, "a{assembler}-{assembler_arguments}-")
-ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR, "contigs.fa")
+ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR)
+ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
 ASSEMBLER_ARGUMENT_STRINGS = {}
 
 WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}"
@@ -159,218 +160,6 @@ CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "ContigValidator")
 CONVERT_TO_GFA_BINARY = os.path.join(EXTERNAL_SOFTWARE_SCRIPT_DIR, "convertToGFA.py")
 SDSL_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "sdsl-lite")
 
-#================================================
-#=== DOWNLOADS ==================================
-#================================================
-
-def escape_dirname(raw):
-    try:
-        assert type(raw) is str, "type of raw dirname is not str"
-        assert "¤" not in raw, "raw dirname contains ¤"
-        assert raw != "None", "raw dirname is textual None"
-
-        escaped = raw.replace("/", "¤a").replace("?", "¤b").replace("=", "¤c").replace("&", "¤d")
-
-        result = ""
-        while len(escaped) > 200:
-            result += escaped[:200]
-            escaped = escaped[200:]
-            if len(escaped) > 0:
-                result += "/"
-        result += escaped
-
-        assert result is not None, "escaped dirname is None"
-        return result
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def unescape_dirname(escaped):
-    try:
-        assert type(escaped) is str
-        assert escaped != "None", "escaped is textual None"
-
-        raw = escaped.replace("/", "").replace("¤a", "/").replace("¤b", "?").replace("¤c", "=").replace("¤d", "&")
-        assert raw is not None
-        return raw
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def checksum_url(url):
-    try:
-        assert type(url) is str
-        assert url != "None", "url is textual None"
-
-        if "hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/" in url:
-            return "http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/md5sum.txt"
-
-        url = urlparse(url)
-        dirname = os.path.dirname(url.path)
-        url = url._replace(path = os.path.join(dirname, "md5checksums.txt"))
-        url = url.geturl()
-        assert url is not None
-        return url
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-# download files
-
-localrules: download_fa_file
-rule download_fa_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
-            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
-    params: url = lambda wildcards: unescape_dirname(wildcards.url),
-            checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
-    wildcard_constraints:
-            url = "http.*\./?(f/?a|f/?n/?a|f/?a/?s/?t/?a)"
-    shell:  """
-        wget --progress=dot:mega -O '{output.file}' '{params.url}'
-        wget --progress=dot:mega -O '{output.checksum_file}' '{params.checksum_url}'
-
-        CHECKSUM=$(md5sum '{output.file}' | cut -f1 -d' ' | sed 's/[\]//g')
-        cat '{output.checksum_file}' | grep "$CHECKSUM"
-    """
-
-#use rule download_fa_file as download_fa_gz_file with:
-#    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
-#    wildcard_constraints:
-#            url = ".*\./?(f/?a|f/?n/?a|f/?a/?s/?t/?a)/?\./?g/?z"
-
-localrules: download_fa_gz_file
-rule download_fa_gz_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
-            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
-    params: url = lambda wildcards: unescape_dirname(wildcards.url),
-            checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
-    wildcard_constraints:
-            url = "http.*\./?((f/?a)|(f/?n/?a)|(f/?a/?s/?t/?a))/?\./?g/?z"
-    shell:  """
-        wget --progress=dot:mega -O '{output.file}' '{params.url}'
-        wget --progress=dot:mega -O '{output.checksum_file}' '{params.checksum_url}'
-
-        CHECKSUM=$(md5sum '{output.file}' | cut -f1 -d' ' | sed 's/[\]//g')
-        echo $CHECKSUM
-        cat '{output.checksum_file}' | grep "$CHECKSUM"
-    """
-
-localrules: download_fastq_gz_file
-rule download_fastq_gz_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq.gz"),
-            #checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
-    params: url = lambda wildcards: unescape_dirname(wildcards.url),
-            #checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
-    wildcard_constraints:
-            url = "http.*\./?((f/?q)|(f/?n/?q)|(f/?a/?s/?t/?q))/?\./?g/?z"
-    shell:  """
-        wget --progress=dot:mega -O '{output.file}' '{params.url}'
-    """
-
-localrules: download_sra_file
-rule download_sra_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
-    params: url = lambda wildcards: unescape_dirname(wildcards.url),
-    wildcard_constraints:
-            url = "http.*(((S|D)/?R/?R)|((S|D)/?R/?A))[0-9/\.]+"
-    shell:  """
-        wget --progress=dot:mega -O '{output.file}' '{params.url}'
-    """
-
-# convert files
-
-rule convert_fastq_download:
-    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq"),
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
-    conda:  "config/conda-convert-reads-env.yml"
-    shell:  """
-        bioawk -c fastx '{{ print ">" $name "\\n" $seq }}' '{input.file}' > '{output.file}'
-    """
-
-rule convert_sra_download:
-    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
-    conda:  "config/conda-convert-reads-env.yml"
-    shell:  "fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'"
-
-rule extract_download:
-    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}.gz"),
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}"),
-    params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
-    wildcard_constraints:
-            file = "[^/]*(?<!\.gz)",
-    conda:  "config/conda-extract-env.yml"
-    shell:  "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
-
-def get_genome_url(wildcards):
-    try:
-        genome = str(wildcards.genome)
-        assert genome in genomes, f"Genome not found: {genome}"
-
-        result = genomes[genome]["reference"]
-
-        if result is None:
-            raise Exception("Did not find genome url")
-        else:
-            assert result != "None", "result is textual None."
-            return result
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_genome_reads_urls(wildcards):
-    try:
-        genome = str(wildcards.genome)
-        assert genome in genomes, f"Genome not found: {genome}"
-
-        result = genomes[genome]["reads"]
-        
-        assert result != "None", "result is textual None."
-        if result is None:
-            raise Exception("Did not find genome url")
-        
-        if type(result) is str:
-            result = [result]
-
-        return result
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-# general linking rules
-
-localrules: download_reference_genome
-rule download_reference_genome:
-    input:  file = lambda wildcards: os.path.join(DOWNLOAD_DIR, "file", escape_dirname(get_genome_url(wildcards)), "file.fa"),
-    output: file = GENOME_REFERENCE,
-    wildcard_constraints:
-            homopolymer_compression = "none",
-    shell: "ln -sr -T '{input.file}' '{output.file}'"
-
-localrules: download_genome_reads
-rule download_genome_reads:
-    input:  files = lambda wildcards: [os.path.join(DOWNLOAD_DIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
-    output: file = GENOME_READS,
-    wildcard_constraints:
-            read_downsampling_factor = "none",
-            homopolymer_compression = "none",
-            uniquify_ids = "no",
-    params: input_files = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
-    shell: "cat {params.input_files} > '{output.file}'"
-
-rule uniquify_ids:
-    input:  reads = safe_format(GENOME_READS, uniquify_ids = "no"),
-            script = UNIQUIFY_IDS_SCRIPT,
-    output: reads = GENOME_READS,
-    log:    log = UNIQUIFY_IDS_LOG,
-    wildcard_constraints:
-            read_downsampling_factor = "none",
-            homopolymer_compression = "none",
-            uniquify_ids = "yes",
-    conda: "config/conda-uniquify-env.yml"
-    threads: 1
-    shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{log.log}'"
-
 ##################################################################################################################################################################################
 ##################################################################################################################################################################################
 ##################################################################################################################################################################################
@@ -400,19 +189,7 @@ rule uniquify_ids:
 ##################################################################################################################################################################################
 ##################################################################################################################################################################################
 
-GENOME_DIR = os.path.join(DATADIR, "genomes", "{genome}")
-GENOME_READS_FORMAT = DATADIR + "genomes/{genome}/reads/reads.fa"
-GENOME_SIMULATED_READS_PREFIX_FORMAT = DATADIR + "genomes/{genome}/simulated_reads/{read_simulator_name}/s/{read_simulator_arguments}/reads"
-GENOME_SIMULATED_READS_FASTA_FORMAT = GENOME_SIMULATED_READS_PREFIX_FORMAT + ".fa"
-GENOME_SIMULATED_READS_FASTQ_FORMAT = GENOME_SIMULATED_READS_PREFIX_FORMAT + ".fq"
-GENOME_HOMOPOLYMER_COMPRESSED_READS_FORMAT = os.path.join(GENOME_DIR, "hoco_reads", "reads.fa")
-CORRECTION_SHORT_READS_FORMAT = DATADIR + "corrected_reads/{corrected_genome}/reads/correction_short_reads.fa"
-GENOME_REFERENCE_FORMAT = DATADIR + "genomes/{genome}/reference/reference.fa"
-GENOME_HOMOPOLYMER_COMPRESSED_REFERENCE_FORMAT = os.path.join(GENOME_DIR, "hoco_reference", "reference.fa")
-
-ALGORITHM_PREFIX_FORMAT = DATADIR + "algorithms/{arguments}/"
-WTDBG2_PREFIX_FORMAT = ALGORITHM_PREFIX_FORMAT + "wtdbg2/"
-HIFIASM_PREFIX_FORMAT = os.path.join(ALGORITHM_PREFIX_FORMAT, "hifiasm")
+ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
 
 #################################
 ###### Global report rules ######
@@ -734,16 +511,16 @@ rule latex:
 #         traceback.print_exc()
 #         sys.exit("Catched exception")
 
-rule find_wtdbg2_node_errors:
-    input:  nodes = os.path.join(WTDBG2_PREFIX_FORMAT, "wtdbg2.1.nodes"),
-            reference = GENOME_REFERENCE,
-            script = "scripts/find_wtdbg2_node_errors.py",
-    output: deviation_histogram = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "deviation_histogram.pdf"),
-    log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log"),
-    params: output_prefix = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors") + "/",
-    conda:  "config/conda-wtdbg2-node-errors-env.yml"
-    threads: 1
-    shell:  "PYTHONUNBUFFERED=1 '{input.script}' '{input.nodes}' '{input.reference}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
+# rule find_wtdbg2_node_errors:
+#     input:  nodes = os.path.join(WTDBG2_OUTPUT_DIR_PACKED, "wtdbg2.1.nodes"),
+#             reference = GENOME_REFERENCE,
+#             script = "scripts/find_wtdbg2_node_errors.py",
+#     output: deviation_histogram = os.path.join(ASSEMBLY_OUTPUT_DIR, "wtdbg2_node_errors", "deviation_histogram.pdf"),
+#     log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log"),
+#     params: output_prefix = os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors") + "/",
+#     conda:  "config/conda-wtdbg2-node-errors-env.yml"
+#     threads: 1
+#     shell:  "PYTHONUNBUFFERED=1 '{input.script}' '{input.nodes}' '{input.reference}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
 
 ########################
 ###### Algorithms ######
@@ -1323,145 +1100,145 @@ rule hifiasm_gfa_to_fa:
 ###### Read Simulation ######
 #############################
 
-def get_read_simulator_args_from_wildcards(wildcards):
-    try:
-        read_simulator_arguments = Arguments.from_str(wildcards.read_simulator_arguments)
-        cli_arguments = read_simulator_arguments.get("cli_arguments", None)
-        if cli_arguments is None:
-            return ""
+# def get_read_simulator_args_from_wildcards(wildcards):
+#     try:
+#         read_simulator_arguments = Arguments.from_str(wildcards.read_simulator_arguments)
+#         cli_arguments = read_simulator_arguments.get("cli_arguments", None)
+#         if cli_arguments is None:
+#             return ""
 
-        return cli_arguments.to_argument_string()
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
+#         return cli_arguments.to_argument_string()
+#     except Exception:
+#         traceback.print_exc()
+#         sys.exit("Catched exception")
 
-rule simulate_perfect_reads:
-    input:  reference = GENOME_REFERENCE_FORMAT,
-            script = "scripts/simulate_perfect_reads.py",
-    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "perfect"),
-    log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "perfect") + ".log",
-    params: cli_arguments = get_read_simulator_args_from_wildcards,
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
-        mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 1000),
-    conda:  "config/conda-simulate-perfect-reads-env.yml",
-    shell:  "'{input.script}' {params.cli_arguments} --reference '{input.reference}' --output '{output.simulated_reads}'"
+# rule simulate_perfect_reads:
+#     input:  reference = GENOME_REFERENCE,
+#             script = "scripts/simulate_perfect_reads.py",
+#     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "perfect"),
+#     log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "perfect") + ".log",
+#     params: cli_arguments = get_read_simulator_args_from_wildcards,
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+#         mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 1000),
+#     conda:  "config/conda-simulate-perfect-reads-env.yml",
+#     shell:  "'{input.script}' {params.cli_arguments} --reference '{input.reference}' --output '{output.simulated_reads}'"
 
-rule simulate_hifi_reads_bbmap:
-    input:  reference = GENOME_REFERENCE_FORMAT,
-    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "bbmap_hifi"),
-    log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "bbmap_hifi") + ".log",
-    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
-            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
-        mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
-    conda:  "config/conda-bbmap-env.yml"
-    shell:  """
-        REFERENCE=$(realpath -s '{input.reference}')
-        OUTPUT=$(realpath -s '{output.simulated_reads}')
-        LOG=$(realpath -s '{log.log}')
+# rule simulate_hifi_reads_bbmap:
+#     input:  reference = GENOME_REFERENCE,
+#     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "bbmap_hifi"),
+#     log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "bbmap_hifi") + ".log",
+#     params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
+#             mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+#         mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
+#     conda:  "config/conda-bbmap-env.yml"
+#     shell:  """
+#         REFERENCE=$(realpath -s '{input.reference}')
+#         OUTPUT=$(realpath -s '{output.simulated_reads}')
+#         LOG=$(realpath -s '{log.log}')
 
-        cd '{params.working_directory}'
-        randomreads.sh build=1 \
-        -Xmx{params.mem_mb}m \
-        ow=t seed=1 \
-        ref="$REFERENCE" \
-        simplenames=t \
-        pacbio=t pbmin=0.001 pbmax=0.01 \
-        coverage=30 paired=f \
-        gaussianlength=t \
-        minlength=9000 midlength=10000 maxlength=12000 \
-        out="$OUTPUT" 2>&1 | tee "$LOG"
-        """
+#         cd '{params.working_directory}'
+#         randomreads.sh build=1 \
+#         -Xmx{params.mem_mb}m \
+#         ow=t seed=1 \
+#         ref="$REFERENCE" \
+#         simplenames=t \
+#         pacbio=t pbmin=0.001 pbmax=0.01 \
+#         coverage=30 paired=f \
+#         gaussianlength=t \
+#         minlength=9000 midlength=10000 maxlength=12000 \
+#         out="$OUTPUT" 2>&1 | tee "$LOG"
+#         """
 
-rule simulate_ccs_reads_simlord:
-    input:  reference = GENOME_REFERENCE_FORMAT,
-    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord"),
-    log:    log = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord") + ".log",
-    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
-            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
-            cli_arguments = get_read_simulator_args_from_wildcards,
-            output_prefix = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "simlord"),
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
-        mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
-    conda:  "config/conda-simlord-env.yml"
-    shell:  """
-        simlord --read-reference '{input.reference}' --no-sam {params.cli_arguments} '{params.output_prefix}'
-        mv '{params.output_prefix}.fastq' '{output.simulated_reads}'
-    """
+# rule simulate_ccs_reads_simlord:
+#     input:  reference = GENOME_REFERENCE,
+#     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord"),
+#     log:    log = safe_format(GENOME_SIMULATED_READS_FASTQ_FORMAT, read_simulator_name = "simlord") + ".log",
+#     params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
+#             mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+#             cli_arguments = get_read_simulator_args_from_wildcards,
+#             output_prefix = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "simlord"),
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+#         mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
+#     conda:  "config/conda-simlord-env.yml"
+#     shell:  """
+#         simlord --read-reference '{input.reference}' --no-sam {params.cli_arguments} '{params.output_prefix}'
+#         mv '{params.output_prefix}.fastq' '{output.simulated_reads}'
+#     """
 
-rule fastq_to_fasta:
-    input:  fastq = os.path.join(DATADIR, "{path}.fq"),
-    output: fasta = os.path.join(DATADIR, "{path}.fa"),
-    shell:  "awk '(NR-1)%4<2' '{input.fastq}' > '{output.fasta}'"
+# rule fastq_to_fasta:
+#     input:  fastq = os.path.join(DATADIR, "{path}.fq"),
+#     output: fasta = os.path.join(DATADIR, "{path}.fa"),
+#     shell:  "awk '(NR-1)%4<2' '{input.fastq}' > '{output.fasta}'"
 
-rule simulate_hifi_reads_sim_it:
-    input:  reference = GENOME_REFERENCE_FORMAT,
-            script = SIM_IT_BINARY,
-    output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi"),
-    log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi") + ".log",
-    params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
-            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
-            cli_arguments = get_read_simulator_args_from_wildcards,
-            output_prefix = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "sim-it_hifi"),
-            config_file = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "sim-it_hifi") + ".config",
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
-        mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
-    conda:  "config/conda-perl-env.yml"
-    shell:  """
-        echo "Project:
------------------------------
-Project name             = Test
-Reference sequence       = {input.reference}
-Replace ambiguous nts(N) = 
-
-
-Structural variation:
------------------------------
-VCF input                = 
-Foreign sequences        =
-
-Deletions                = 0
-Length (bp)              = 30-150000
-
-Insertions               = 0
-Length (bp)              = 30-100000
-
-Tandem duplications      = 0
-Length (bp)              = 50-10000
-Copies                   = 1-20
-
-Inversions               = 0
-Length (bp)              = 150-1300000
-
-Complex substitutions    = 0
-Length (bp)              = 30-100000
-
-Inverted duplications    = 0
-Length (bp)              = 150-350000
-
-Heterozygosity           = 60%
+# rule simulate_hifi_reads_sim_it:
+#     input:  reference = GENOME_REFERENCE,
+#             script = SIM_IT_BINARY,
+#     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi"),
+#     log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi") + ".log",
+#     params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
+#             mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+#             cli_arguments = get_read_simulator_args_from_wildcards,
+#             output_prefix = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "sim-it_hifi"),
+#             config_file = safe_format(GENOME_SIMULATED_READS_PREFIX_FORMAT, read_simulator_name = "sim-it_hifi") + ".config",
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+#         mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 4000),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 4000),
+#     conda:  "config/conda-perl-env.yml"
+#     shell:  """
+#         echo "Project:
+# -----------------------------
+# Project name             = Test
+# Reference sequence       = {input.reference}
+# Replace ambiguous nts(N) = 
 
 
-Long Read simulation:
------------------------------
-Coverage                 = 15
-Median length            = 10000
-Length range             = 7000-13000
-Accuracy                 = 99%
-Error profile            = external-software/sim-it/error_profile_PB_Sequel_CCS_hifi.txt" > '{params.config_file}'
+# Structural variation:
+# -----------------------------
+# VCF input                = 
+# Foreign sequences        =
 
-        mkdir -p '{params.output_prefix}'
-        perl '{input.script}' -c '{params.config_file}' -o '{params.output_prefix}' 2>&1 | tee '{log.log}'
-        ln -sr -T '{params.output_prefix}/Nanopore_Test.fasta' '{output.simulated_reads}'
-    """
+# Deletions                = 0
+# Length (bp)              = 30-150000
+
+# Insertions               = 0
+# Length (bp)              = 30-100000
+
+# Tandem duplications      = 0
+# Length (bp)              = 50-10000
+# Copies                   = 1-20
+
+# Inversions               = 0
+# Length (bp)              = 150-1300000
+
+# Complex substitutions    = 0
+# Length (bp)              = 30-100000
+
+# Inverted duplications    = 0
+# Length (bp)              = 150-350000
+
+# Heterozygosity           = 60%
+
+
+# Long Read simulation:
+# -----------------------------
+# Coverage                 = 15
+# Median length            = 10000
+# Length range             = 7000-13000
+# Accuracy                 = 99%
+# Error profile            = external-software/sim-it/error_profile_PB_Sequel_CCS_hifi.txt" > '{params.config_file}'
+
+#         mkdir -p '{params.output_prefix}'
+#         perl '{input.script}' -c '{params.config_file}' -o '{params.output_prefix}' 2>&1 | tee '{log.log}'
+#         ln -sr -T '{params.output_prefix}/Nanopore_Test.fasta' '{output.simulated_reads}'
+#     """
 
 
 #########################################
@@ -1674,108 +1451,108 @@ Error profile            = external-software/sim-it/error_profile_PB_Sequel_CCS_
 ###### Corrected Reads ######
 #############################
 
-def correction_read_url_file_format(corrected_genome):
-    format = url_file_format(corrected_genomes[corrected_genome]["correction_short_reads"][0])
+# def correction_read_url_file_format(corrected_genome):
+#     format = url_file_format(corrected_genomes[corrected_genome]["correction_short_reads"][0])
 
-    if format == "fasta":
-        return "fa"
-    elif corrected_genomes[corrected_genome].get("format", None) == "sra":
-        return "sra"
-    else:
-        return format
+#     if format == "fasta":
+#         return "fa"
+#     elif corrected_genomes[corrected_genome].get("format", None) == "sra":
+#         return "sra"
+#     else:
+#         return format
 
-localrules: download_correction_short_reads
-rule download_correction_short_reads:
-    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.{format}",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.{format}.completed"),
-    params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
-            url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
-            checksum = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads_checksum"] if "correction_short_reads_checksum" in corrected_genomes[wildcards.corrected_genome] else "",
-    wildcard_constraints:
-        format = "(fa|bam|sra)",
-        index = "\d+",
-        corrected_genome = "((?!corrected_reads).)*",
-    conda: "config/conda-download-env.yml"
-    threads: 1
-    shell: """
-        mkdir -p "$(dirname '{output.file}')"
+# localrules: download_correction_short_reads
+# rule download_correction_short_reads:
+#     output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.{format}",
+#             completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.{format}.completed"),
+#     params: url = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads"][int(wildcards.index)],
+#             url_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
+#             checksum = lambda wildcards: corrected_genomes[wildcards.corrected_genome]["correction_short_reads_checksum"] if "correction_short_reads_checksum" in corrected_genomes[wildcards.corrected_genome] else "",
+#     wildcard_constraints:
+#         format = "(fa|bam|sra)",
+#         index = "\d+",
+#         corrected_genome = "((?!corrected_reads).)*",
+#     conda: "config/conda-download-env.yml"
+#     threads: 1
+#     shell: """
+#         mkdir -p "$(dirname '{output.file}')"
 
-        if [ '{params.url_format}' != '{wildcards.format}' ]; then
-            echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
-            exit 1
-        fi
+#         if [ '{params.url_format}' != '{wildcards.format}' ]; then
+#             echo "Error: url format '{params.url_format}' does not match format '{wildcards.format}' given by rule wildcard!"
+#             exit 1
+#         fi
 
-        if [ -z "{params.checksum}" ]; then
-            wget --progress=dot:mega -O '{output.file}' '{params.url}'
-        else
-            wget --progress=dot:mega -O '{output.file}' '{params.url}'
-            echo "Checksum given, but not supported yet"
-            exit 1
-        fi
-        """
+#         if [ -z "{params.checksum}" ]; then
+#             wget --progress=dot:mega -O '{output.file}' '{params.url}'
+#         else
+#             wget --progress=dot:mega -O '{output.file}' '{params.url}'
+#             echo "Checksum given, but not supported yet"
+#             exit 1
+#         fi
+#         """
 
-rule convert_correction_short_reads:
-    input: file = lambda wildcards: DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads." + correction_read_url_file_format(wildcards.corrected_genome),
-    output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.converted.fa",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.converted.fa.completed"),
-    params: file_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
-    wildcard_constraints:
-        index = "\d+",
-        genome = "((?!corrected_reads).)*",
-    conda: "config/conda-convert-reads-env.yml"
-    threads: 1
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
-    shell: """
-        if [ '{params.file_format}' == 'bam' ]; then
-            samtools fasta '{input.file}' > '{output.file}'
-        elif [ '{params.file_format}' == 'sra' ]; then
-            fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
-        else
-            ln -sr -T '{input.file}' '{output.file}'
-        fi
-        """
+# rule convert_correction_short_reads:
+#     input: file = lambda wildcards: DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads." + correction_read_url_file_format(wildcards.corrected_genome),
+#     output: file = DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.converted.fa",
+#             completed = touch(DATADIR + "corrected_reads/{corrected_genome}/reads-{index}/reads.converted.fa.completed"),
+#     params: file_format = lambda wildcards: correction_read_url_file_format(wildcards.corrected_genome),
+#     wildcard_constraints:
+#         index = "\d+",
+#         genome = "((?!corrected_reads).)*",
+#     conda: "config/conda-convert-reads-env.yml"
+#     threads: 1
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
+#     shell: """
+#         if [ '{params.file_format}' == 'bam' ]; then
+#             samtools fasta '{input.file}' > '{output.file}'
+#         elif [ '{params.file_format}' == 'sra' ]; then
+#             fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
+#         else
+#             ln -sr -T '{input.file}' '{output.file}'
+#         fi
+#         """
 
-rule combine_correction_short_reads:
-    input: files = lambda wildcards: expand(DATADIR + "corrected_reads/{{corrected_genome}}/reads-{index}/reads.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
-    output: reads = CORRECTION_SHORT_READS_FORMAT,
-            completed = touch(CORRECTION_SHORT_READS_FORMAT + ".completed"),
-    params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'",
-    wildcard_constraints:
-        genome = "((?!corrected_reads).)*",
-    threads: 1
-    resources:
-        time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-        queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
-    shell: "cat {params.input_list} > '{output.reads}'"
+# rule combine_correction_short_reads:
+#     input: files = lambda wildcards: expand(DATADIR + "corrected_reads/{{corrected_genome}}/reads-{index}/reads.converted.fa", index=range(len(corrected_genomes[wildcards.corrected_genome]["correction_short_reads"]))),
+#     output: reads = CORRECTION_SHORT_READS_FORMAT,
+#             completed = touch(CORRECTION_SHORT_READS_FORMAT + ".completed"),
+#     params: input_list = lambda wildcards, input: "'" + "' '".join(input.files) + "'",
+#     wildcard_constraints:
+#         genome = "((?!corrected_reads).)*",
+#     threads: 1
+#     resources:
+#         time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+#         queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
+#     shell: "cat {params.input_list} > '{output.reads}'"
 
-rule ratatosk:
-    input:  correction_short_reads = CORRECTION_SHORT_READS_FORMAT,
-            long_reads = lambda wildcards: GENOME_READS_FORMAT.format(genome = corrected_genomes[wildcards.corrected_genome]["source_genome"]),
-            binary = RATATOSK_BINARY,
-    output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
-            completed = touch(DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa.completed"),
-    wildcard_constraints:
-        corrected_genome = "((?!/ratatosk).)*",
-    threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 80000),
-               cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 2520),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 2520, 80000),
-               mail_type = "END",
-    shell: """
-        {input.binary} -v -c {threads} -s {input.correction_short_reads} -l {input.long_reads} -o {output.corrected_long_reads}
-        """
+# rule ratatosk:
+#     input:  correction_short_reads = CORRECTION_SHORT_READS_FORMAT,
+#             long_reads = lambda wildcards: GENOME_READS_FORMAT.format(genome = corrected_genomes[wildcards.corrected_genome]["source_genome"]),
+#             binary = RATATOSK_BINARY,
+#     output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
+#             completed = touch(DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa.completed"),
+#     wildcard_constraints:
+#         corrected_genome = "((?!/ratatosk).)*",
+#     threads: MAX_THREADS
+#     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 80000),
+#                cpus = MAX_THREADS,
+#                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 2520),
+#                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 2520, 80000),
+#                mail_type = "END",
+#     shell: """
+#         {input.binary} -v -c {threads} -s {input.correction_short_reads} -l {input.long_reads} -o {output.corrected_long_reads}
+#         """
 
-localrules: select_read_corrector
-rule select_read_corrector:
-    input:  corrected_reads_from_read_corrector = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
-    output: corrected_reads = DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa",
-    wildcard_constraints:
-        corrected_genome = "((?!/ratatosk).)*",
-    threads: 1
-    shell: "ln -sr '{input.corrected_reads_from_read_corrector}' '{output.corrected_reads}'"
+# localrules: select_read_corrector
+# rule select_read_corrector:
+#     input:  corrected_reads_from_read_corrector = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
+#     output: corrected_reads = DATADIR + "corrected_reads/{corrected_genome}/corrected_reads.fa",
+#     wildcard_constraints:
+#         corrected_genome = "((?!/ratatosk).)*",
+#     threads: 1
+#     shell: "ln -sr '{input.corrected_reads_from_read_corrector}' '{output.corrected_reads}'"
 
 #####################################
 ###### Homopolymer compression ######
@@ -1937,6 +1714,218 @@ rule bandage:
     threads: 1
     shell: "Bandage image {input} {output} --width 1000 --height 1000"
 
+#================================================
+#=== DOWNLOADS ==================================
+#================================================
+
+def escape_dirname(raw):
+    try:
+        assert type(raw) is str, "type of raw dirname is not str"
+        assert "¤" not in raw, "raw dirname contains ¤"
+        assert raw != "None", "raw dirname is textual None"
+
+        escaped = raw.replace("/", "¤a").replace("?", "¤b").replace("=", "¤c").replace("&", "¤d")
+
+        result = ""
+        while len(escaped) > 200:
+            result += escaped[:200]
+            escaped = escaped[200:]
+            if len(escaped) > 0:
+                result += "/"
+        result += escaped
+
+        assert result is not None, "escaped dirname is None"
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def unescape_dirname(escaped):
+    try:
+        assert type(escaped) is str
+        assert escaped != "None", "escaped is textual None"
+
+        raw = escaped.replace("/", "").replace("¤a", "/").replace("¤b", "?").replace("¤c", "=").replace("¤d", "&")
+        assert raw is not None
+        return raw
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def checksum_url(url):
+    try:
+        assert type(url) is str
+        assert url != "None", "url is textual None"
+
+        if "hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/" in url:
+            return "http://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/md5sum.txt"
+
+        url = urlparse(url)
+        dirname = os.path.dirname(url.path)
+        url = url._replace(path = os.path.join(dirname, "md5checksums.txt"))
+        url = url.geturl()
+        assert url is not None
+        return url
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+# download files
+
+localrules: download_fa_file
+rule download_fa_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+            checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
+    wildcard_constraints:
+            url = "http.*\./?(f/?a|f/?n/?a|f/?a/?s/?t/?a)"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+        wget --progress=dot:mega -O '{output.checksum_file}' '{params.checksum_url}'
+
+        CHECKSUM=$(md5sum '{output.file}' | cut -f1 -d' ' | sed 's/[\]//g')
+        cat '{output.checksum_file}' | grep "$CHECKSUM"
+    """
+
+#use rule download_fa_file as download_fa_gz_file with:
+#    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
+#    wildcard_constraints:
+#            url = ".*\./?(f/?a|f/?n/?a|f/?a/?s/?t/?a)/?\./?g/?z"
+
+localrules: download_fa_gz_file
+rule download_fa_gz_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
+            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+            checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
+    wildcard_constraints:
+            url = "http.*\./?((f/?a)|(f/?n/?a)|(f/?a/?s/?t/?a))/?\./?g/?z"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+        wget --progress=dot:mega -O '{output.checksum_file}' '{params.checksum_url}'
+
+        CHECKSUM=$(md5sum '{output.file}' | cut -f1 -d' ' | sed 's/[\]//g')
+        echo $CHECKSUM
+        cat '{output.checksum_file}' | grep "$CHECKSUM"
+    """
+
+localrules: download_fastq_gz_file
+rule download_fastq_gz_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq.gz"),
+            #checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+            #checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
+    wildcard_constraints:
+            url = "http.*\./?((f/?q)|(f/?n/?q)|(f/?a/?s/?t/?q))/?\./?g/?z"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+    """
+
+localrules: download_sra_file
+rule download_sra_file:
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
+    params: url = lambda wildcards: unescape_dirname(wildcards.url),
+    wildcard_constraints:
+            url = "http.*(((S|D)/?R/?R)|((S|D)/?R/?A))[0-9/\.]+"
+    shell:  """
+        wget --progress=dot:mega -O '{output.file}' '{params.url}'
+    """
+
+# convert files
+
+rule convert_fastq_download:
+    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq"),
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+    conda:  "config/conda-convert-reads-env.yml"
+    shell:  """
+        bioawk -c fastx '{{ print ">" $name "\\n" $seq }}' '{input.file}' > '{output.file}'
+    """
+
+rule convert_sra_download:
+    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+    conda:  "config/conda-convert-reads-env.yml"
+    shell:  "fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'"
+
+rule extract_download:
+    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}.gz"),
+    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}"),
+    params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
+    wildcard_constraints:
+            file = "[^/]*(?<!\.gz)",
+    conda:  "config/conda-extract-env.yml"
+    shell:  "cd '{params.working_directory}'; gunzip -k {wildcards.file}.gz"
+
+def get_genome_url(wildcards):
+    try:
+        genome = str(wildcards.genome)
+        assert genome in genomes, f"Genome not found: {genome}"
+
+        result = genomes[genome]["reference"]
+
+        if result is None:
+            raise Exception("Did not find genome url")
+        else:
+            assert result != "None", "result is textual None."
+            return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def get_genome_reads_urls(wildcards):
+    try:
+        genome = str(wildcards.genome)
+        assert genome in genomes, f"Genome not found: {genome}"
+
+        result = genomes[genome]["reads"]
+        
+        assert result != "None", "result is textual None."
+        if result is None:
+            raise Exception("Did not find genome url")
+        
+        if type(result) is str:
+            result = [result]
+
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+# general linking rules
+
+localrules: download_reference_genome
+rule download_reference_genome:
+    input:  file = lambda wildcards: os.path.join(DOWNLOAD_DIR, "file", escape_dirname(get_genome_url(wildcards)), "file.fa"),
+    output: file = GENOME_REFERENCE,
+    wildcard_constraints:
+            homopolymer_compression = "none",
+    shell: "ln -sr -T '{input.file}' '{output.file}'"
+
+localrules: download_genome_reads
+rule download_genome_reads:
+    input:  files = lambda wildcards: [os.path.join(DOWNLOAD_DIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
+    output: file = GENOME_READS,
+    wildcard_constraints:
+            read_downsampling_factor = "none",
+            homopolymer_compression = "none",
+            uniquify_ids = "no",
+    params: input_files = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
+    shell: "cat {params.input_files} > '{output.file}'"
+
+rule uniquify_ids:
+    input:  reads = safe_format(GENOME_READS, uniquify_ids = "no"),
+            script = UNIQUIFY_IDS_SCRIPT,
+    output: reads = GENOME_READS,
+    log:    log = UNIQUIFY_IDS_LOG,
+    wildcard_constraints:
+            read_downsampling_factor = "none",
+            homopolymer_compression = "none",
+            uniquify_ids = "yes",
+    conda: "config/conda-uniquify-env.yml"
+    threads: 1
+    shell: "python3 '{input.script}' '{input.reads}' '{output.reads}' 2>&1 | tee '{log.log}'"
+
 ###########################
 ###### Installations ######
 ###########################
@@ -2074,9 +2063,9 @@ rule install_flye:
 
 localrules: download_and_prepare
 rule download_and_prepare:
-    input:  reads = expand(GENOME_READS_FORMAT, genome = genomes.keys()),
-            correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
-            references = expand(GENOME_REFERENCE_FORMAT, genome = genomes.keys()),
+    input:  reads = expand(GENOME_READS, genome = genomes.keys(), homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no"),
+            # correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
+            references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none"),
             quast = QUAST_BINARY,
             wtdbg2 = WTDBG2_BINARY,
             rust = RUST_BINARY,
