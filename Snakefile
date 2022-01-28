@@ -961,7 +961,7 @@ rule wtdbg2_extract_ctg_lay:
     output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
     params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
     conda:  "config/conda-extract-env.yml"
-    shell:  "cd '{params.working_directory}'; gunzip -k {input.file}"
+    shell:  "cd '{params.working_directory}'; gunzip -k wtdbg2.ctg.lay.gz"
 
 rule wtdbg2_consensus:
     input: reads = GENOME_READS,
