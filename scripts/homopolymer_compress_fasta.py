@@ -15,7 +15,7 @@ def generate():
                     compressed_sequence.append(character)
                     last_character = character
 
-            record.seq = Seq(str(compressed_sequence))
+            record.seq = Seq("".join(compressed_sequence))
             yield record
 
 with open(sys.argv[2], 'w') as outfile:
