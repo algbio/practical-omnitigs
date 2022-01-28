@@ -19,7 +19,6 @@ if 'use_conda' in config and config['use_conda']:
     workflow.use_conda = True
 
 workflow.global_resources["contigvalidator"] = 1
-workflow.global_resources["concorde"] = 1
 
 DATADIR = "data"
 if "datadir" in config:
@@ -1518,10 +1517,10 @@ rule homopolymer_compress_reads:
             homopolymer_compression = "yes",
             uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
-               cpus = MAX_THREADS,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1000),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     shell:  "'{input.script}' '{input.reads}' '{output.reads}'"
 
 rule homopolymer_compress_reference:
@@ -1531,10 +1530,10 @@ rule homopolymer_compress_reference:
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
-               cpus = MAX_THREADS,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1000),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
 
 ###############################
@@ -1590,10 +1589,10 @@ rule run_quast:
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     conda: "config/conda-quast-env.yml"
     threads: 4
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50_000),
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
     shell: "{input.script} -t {threads} --no-html --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 
