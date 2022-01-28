@@ -1046,6 +1046,8 @@ genomes:
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
     genome_length: 143726002
+    assembly_time_factor: 2
+    assembly_mem_factor: 1
 
   "Minghui63":  
     reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1018837/SRR10188372.1"]

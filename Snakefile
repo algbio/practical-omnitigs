@@ -994,6 +994,7 @@ rule flye:
             script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
+    log:    log = FLYE_LOG,
     params: genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
             output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     #conda: "config/conda-flye-env.yml"
@@ -1003,7 +1004,7 @@ rule flye:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
                mail_type = "END",
-    shell: "'{input.script}' {params.genome_len_arg} -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}'"
+    shell: "'{input.script}' {params.genome_len_arg} -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'"
 
 localrules: link_flye_contigs
 rule link_flye_contigs:
@@ -1517,6 +1518,10 @@ rule homopolymer_compress_reads:
             homopolymer_compression = "yes",
             uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1000),
     shell:  "'{input.script}' '{input.reads}' '{output.reads}'"
 
 rule homopolymer_compress_reference:
@@ -1526,6 +1531,10 @@ rule homopolymer_compress_reference:
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1000),
     shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
 
 ###############################
