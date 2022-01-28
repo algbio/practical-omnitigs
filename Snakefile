@@ -145,10 +145,19 @@ CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
 DOWNSAMPLE_FASTA_READS = "scripts/downsample_fasta_reads.py"
 
+EXTERNAL_SOFTWARE_SCRIPT_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "scripts")
 RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "rust_target")
 IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.log")
-RUST_BINARY = os.path.jojn(RUST_DIR, "release", "cli")
+RUST_BINARY = os.path.join(RUST_DIR, "release", "cli")
 QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "quast", "quast.py")
+WTDBG2_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2", "wtdbg2")
+WTDBG2_CONSENSUS_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2", "wtpoa-cns")
+FLYE_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Flye", "bin", "flye")
+SIM_IT_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "sim-it", "sim-it.pl")
+RATATOSK_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Ratatosk", "build", "src", "Ratatosk")
+CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "ContigValidator")
+CONVERT_TO_GFA_BINARY = os.path.join(EXTERNAL_SOFTWARE_SCRIPT_DIR, "convertToGFA.py")
+SDSL_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "sdsl-lite")
 
 #================================================
 #=== DOWNLOADS ==================================
@@ -1177,7 +1186,7 @@ rule wtdbg2:
             #cached_nodes = get_wtdbg2_cached_nodes_from_wildcards,
             #cached_clips = get_wtdbg2_cached_clips_from_wildcards,
             #cached_kbm = get_wtdbg2_cached_kbm_from_wildcards,
-            binary = "external-software/wtdbg2/wtdbg2",
+            binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
             reads = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.reads"),
@@ -1226,7 +1235,7 @@ rule wtdbg2_extract_ctg_lay:
 rule wtdbg2_consensus:
     input: reads = GENOME_READS,
            contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
-           binary = "external-software/wtdbg2/wtpoa-cns",
+           binary = WTDBG2_CONSENSUS_BINARY,
     output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
     log:    log = WTDBG2_CONSENSUS_LOG,
     threads: MAX_THREADS
@@ -1250,7 +1259,7 @@ rule link_wtdbg2_contigs:
 
 rule flye:
     input:  reads = GENOME_READS,
-            script = "external-software/Flye/bin/flye"
+            script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
     params: genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
@@ -1389,7 +1398,7 @@ rule fastq_to_fasta:
 
 rule simulate_hifi_reads_sim_it:
     input:  reference = GENOME_REFERENCE_FORMAT,
-            script = "external-software/sim-it/sim-it.pl",
+            script = SIM_IT_BINARY,
     output: simulated_reads = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi"),
     log:    log = safe_format(GENOME_SIMULATED_READS_FASTA_FORMAT, read_simulator_name = "sim-it_hifi") + ".log",
     params: working_directory = lambda wildcards, output: os.path.dirname(output.simulated_reads),
@@ -1740,7 +1749,7 @@ rule combine_correction_short_reads:
 rule ratatosk:
     input:  correction_short_reads = CORRECTION_SHORT_READS_FORMAT,
             long_reads = lambda wildcards: GENOME_READS_FORMAT.format(genome = corrected_genomes[wildcards.corrected_genome]["source_genome"]),
-            binary = "external-software/Ratatosk/build/src/Ratatosk",
+            binary = RATATOSK_BINARY,
     output: corrected_long_reads = DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa",
             completed = touch(DATADIR + "corrected_reads/{corrected_genome}/ratatosk/corrected_reads.fa.completed"),
     wildcard_constraints:
@@ -1832,16 +1841,6 @@ rule filter_genome:
 ###### QUAST ######
 ###################
 
-rule run_quast_bcalm2:
-    input: reads = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
-        reference = DATADIR + "{dir}/{file}.fna",
-        script = "external-software/quast/quast.py",
-        script_directory = "external-software/quast/"
-    output: report = directory(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.quast")
-    conda: "config/conda-quast-env.yml"
-    threads: 1
-    shell: "{input.script} -t {threads} -o {output.report} -r {input.reference} {input.reads}"
-
 rule run_quast:
     input:  contigs = ASSEMBLED_CONTIGS,
             reference = GENOME_REFERENCE,
@@ -1890,9 +1889,9 @@ rule test_rust:
 #############################
 
 rule run_contig_validator:
-    input: cv = "external-software/ContigValidator",
-        reads = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
-        reference = DATADIR + "{dir}/{file}.fna"
+    input:  contig_validator_dir = CONTIG_VALIDATOR_DIR,
+            reads = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa",
+            reference = DATADIR + "{dir}/{file}.fna"
     output: result = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.contigvalidator",
         exact_alignments = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.exact"),
         bwa_bam = temp(DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.{algorithm}.fa.bwa.bam"),
@@ -1911,7 +1910,7 @@ rule run_contig_validator:
       contigvalidator = 1
     shell:
         """
-        cd external-software/ContigValidator
+        cd '{input.contig_validator_dir}'
         # The abundance-min here has nothing to do with the abundance_min from bcalm2
         bash run.sh -suffixsave 0 -abundance-min 1 -kmer-size {wildcards.k} -r '../../{input.reference}' -a '../../{output.result}' -i '../../{input.reads}'
         """
@@ -1921,11 +1920,11 @@ rule run_contig_validator:
 #####################
 
 rule convert_bcalm2_output_to_gfa:
-    input: fa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
-        converter = "external-software/scripts/convertToGFA.py"
+    input:  fa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
+            converter = CONVERT_TO_GFA_BINARY,
     output: gfa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.gfa"
     threads: 1
-    shell: "external-software/scripts/convertToGFA.py {input.fa} {output.gfa} {wildcards.k}"
+    shell:  "'{input.converter}' {input.fa} {output.gfa} {wildcards.k}"
 
 rule bandage:
     input: "{file}.gfa"
@@ -1940,7 +1939,7 @@ rule bandage:
 
 localrules: download_bcalm2_gfa_converter
 rule download_bcalm2_gfa_converter:
-    output: "external-software/scripts/convertToGFA.py"
+    output: CONVERT_TO_GFA_BINARY,
     conda: "config/conda-download-env.yml"
     threads: 1
     shell:
@@ -1953,8 +1952,8 @@ rule download_bcalm2_gfa_converter:
 
 localrules: install_contig_validator
 rule install_contig_validator:
-    input: sdsl = "external-software/sdsl-lite"
-    output: dir = directory("external-software/ContigValidator")
+    input:  sdsl = SDSL_DIR,
+    output: dir = directory(CONTIG_VALIDATOR_DIR)
     conda: "config/conda-contigvalidator-env.yml"
     threads: 1
     shell: 
@@ -1969,8 +1968,7 @@ rule install_contig_validator:
 
 localrules: install_quast
 rule install_quast:
-    output: script = "external-software/quast/quast.py",
-            script_directory = directory("external-software/quast/"),
+    output: script = QUAST_BINARY,
     threads: 1
     shell: """
     mkdir -p external-software
@@ -1983,7 +1981,7 @@ rule install_quast:
 
 localrules: install_sdsl
 rule install_sdsl:
-    output: dir = "external-software/sdsl-lite"
+    output: dir = SDSL_DIR,
     conda: "config/conda-contigvalidator-env.yml"
     threads: 1
     shell:
@@ -1997,7 +1995,7 @@ rule install_sdsl:
 
 localrules: install_ratatosk
 rule install_ratatosk:
-    output: binary = "external-software/Ratatosk/build/src/Ratatosk",
+    output: binary = RATATOSK_BINARY,
     conda: "config/conda-install-ratatosk-env.yml"
     threads: 1
     shell: """
@@ -2017,7 +2015,11 @@ rule install_ratatosk:
 
 localrules: install_wtdbg2
 rule install_wtdbg2:
-    output: kbm2 = "external-software/wtdbg2/kbm2", pgzf = "external-software/wtdbg2/pgzf", wtdbg2 = "external-software/wtdbg2/wtdbg2", wtdbg_cns = "external-software/wtdbg2/wtdbg-cns", wtpoa_cns = "external-software/wtdbg2/wtpoa-cns"
+    output: kbm2 = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2/kbm2"),
+            pgzf = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2/pgzf"),
+            wtdbg2 = WTDBG2_BINARY,
+            wtdbg_cns = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2/wtdbg-cns"),
+            wtpoa_cns = WTDBG2_CONSENSUS_BINARY,
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
@@ -2031,7 +2033,7 @@ rule install_wtdbg2:
     """
 
 rule install_sim_it:
-    output: "external-software/sim-it/sim-it.pl"
+    output: SIM_IT_BINARY,
     conda:  "config/conda-download-env.yml"
     shell:  """
         mkdir -p external-software
@@ -2048,8 +2050,7 @@ rule install_sim_it:
 
 localrules: install_flye
 rule install_flye:
-    output: script = "external-software/Flye/bin/flye",
-            directory = directory("external-software/Flye"),
+    output: script = FLYE_BINARY,
     conda:  "config/conda-install-flye-env.yml"
     shell:  """
         mkdir -p external-software
@@ -2072,10 +2073,10 @@ rule download_and_prepare:
     input:  reads = expand(GENOME_READS_FORMAT, genome = genomes.keys()),
             correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
             references = expand(GENOME_REFERENCE_FORMAT, genome = genomes.keys()),
-            quast = "external-software/quast/quast.py",
-            wtdbg2 = "external-software/wtdbg2/wtdbg2",
+            quast = QUAST_BINARY,
+            wtdbg2 = WTDBG2_BINARY,
             rust = RUST_BINARY,
-            ratatosk = "external-software/Ratatosk/build/src/Ratatosk",
+            ratatosk = RATATOSK_BINARY,
 
 #rule prepare_wtdbg2:
 
