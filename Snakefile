@@ -97,7 +97,7 @@ GENOME_REFERENCE = os.path.join(GENOME_DIR, GENOME_REFERENCE_SUBDIR, "reference.
 GENOME_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
 
-ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, "a{assembler}-{assembler_arguments}-")
+ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, "a{assembler}--{assembler_arguments}-")
 ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR)
 ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
 ASSEMBLER_ARGUMENT_STRINGS = {}
@@ -746,10 +746,10 @@ rule run_contigbreaker:
     output: broken_contigs = ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "contigbreaker/broken_contigs.fa.completed"),
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60_000),
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                cpus = MAX_THREADS,
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 60_000),
     conda: "tools/contigbreaker/environment.yml"
     shell: "'{input.script}' --threads {threads} --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
 
@@ -973,7 +973,7 @@ rule wtdbg2_consensus:
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8000),
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' | tee '{log.log}'"
 
 localrules: link_wtdbg2_contigs
