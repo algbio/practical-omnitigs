@@ -107,14 +107,14 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 # 		print("Did not find algorithm file for '" + prefix + "'")
 # 		return []
 
-# headline = "Parameter"
-# algorithm_table = []
-# for label, prefix in experiments:
+headline = "Parameter"
+algorithm_table = []
+# for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
 # 	headline += " & " + label
 # 	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
 # 	algorithm_table = append_latex_table_second_column(algorithm_table, table)
 
-# algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
+algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
 
 
 ###########################
@@ -138,7 +138,7 @@ headline = "Parameter"
 quast_table = []
 for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
 	headline += " & " + label
-	table = read_quast_file(os.path.join(quast_directory, "quast", "report.tex"))
+	table = read_quast_file(os.path.join(quast_directory, "report.tex"))
 	quast_table = append_latex_table_second_column(quast_table, table)
 
 quast_table = [headline + "\\\\ \\hline"] + quast_table
@@ -147,7 +147,7 @@ headline = "Parameter"
 quast_misassemblies_table = []
 for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
 	headline += " & " + label
-	table = read_quast_file(os.path.join(quast_directory, "quast", "contigs_reports", "misassemblies_report.tex"))
+	table = read_quast_file(os.path.join(quast_directory, "contigs_reports", "misassemblies_report.tex"))
 	quast_misassemblies_table = append_latex_table_second_column(quast_misassemblies_table, table)
 
 quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_table
@@ -171,14 +171,14 @@ quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_ta
 # 		print("Did not find contig validator file for '" + prefix + "'")
 # 		return []
 
-# headline = "Parameter"
-# contig_validator_table = []
-# for (label, prefix) in experiments:
+headline = "Parameter"
+contig_validator_table = []
+# for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
 # 	headline += " & " + label
 # 	table = read_contig_validator_file(prefix)
 # 	contig_validator_table = append_latex_table_second_column(contig_validator_table, table)
 
-# contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
+contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
 
 ##########################################
 ### Process CLI graph statistics files ###
@@ -303,16 +303,16 @@ if combined_eaxmax_plot_name != 'none':
     write_image(output_file, "EAxmax", combined_eaxmax_plot_name, 1000, 1000)
 
 output_file.write("\\newpage")
-for label, prefix in experiments:
-	plot_file_path = prefix + "quast/aligned_stats/EAxmax_plot.pdf"
+for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+	plot_file_path = os.path.join(quast_directory, "aligned_stats", "EAxmax_plot.pdf")
 	if path.isfile(plot_file_path):
 		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST EAxmax graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
 
-for label, prefix in experiments:
-	plot_file_path = prefix + "quast/aligned_stats/NGAx_plot.pdf"
+for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+	plot_file_path = os.path.join(quast_directory, "aligned_stats", "NGAx_plot.pdf")
 	if path.isfile(plot_file_path):
 		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)

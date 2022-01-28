@@ -132,7 +132,7 @@ REPORT_SUBDIR = os.path.join(REPORT_DIR, "{report_name}", "{report_file_name}")
 REPORT_TEX = os.path.join(REPORT_SUBDIR, "report.tex")
 REPORT_COMBINED_EAXMAX_PLOT = os.path.join(REPORT_SUBDIR, "combined_eaxmax_plot.pdf")
 REPORT_NAME_FILE = os.path.join(REPORT_SUBDIR, "name.txt")
-REPORT_HASHDIR = os.path.join(REPORT_SUBDIR, "hashdir")
+REPORT_HASHDIR = os.path.join(REPORT_DIR, "hashdir")
 REPORT_PDF = os.path.join(REPORT_SUBDIR, "report.pdf")
 
 AGGREGATED_REPORT_SUBDIR = os.path.join(REPORT_DIR, "{aggregated_report_name}")
@@ -586,8 +586,11 @@ def get_single_report_script_column_arguments(report_name, report_file_name):
             else:
                 result += " "
 
-            arguments = column.arguments
-            result += "'" + column.shortname + "' '' '" + safe_format(QUAST_OUTPUT_DIR, **arguments) + "' ''"
+            assembler = column.arguments.assembler_name()
+            assembler_argument_string = ASSEMBLER_ARGUMENT_STRINGS[assembler]
+            assembler_arguments = assembler_argument_string.format(**column.arguments.assembler_arguments())
+            quast_output_dir = safe_format(QUAST_OUTPUT_DIR, assembler = assembler, assembler_arguments = assembler_arguments).format(**column.arguments)
+            result += f"'{column.shortname}' '' '{quast_output_dir}' ''"
         return result
     except Exception:
         traceback.print_exc()
@@ -613,6 +616,7 @@ rule create_single_report_tex:
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
+        mkdir -p '{params.hashdir}'
         echo '{wildcards.report_name} {params.genome_name} {wildcards.report_file_name}' > '{params.name_file}'
         python3 '{input.script}' '{params.hashdir}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
         """
