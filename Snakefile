@@ -160,35 +160,7 @@ CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "ContigValidator")
 CONVERT_TO_GFA_BINARY = os.path.join(EXTERNAL_SOFTWARE_SCRIPT_DIR, "convertToGFA.py")
 SDSL_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "sdsl-lite")
 
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-##################################################################################################################################################################################
-
+# TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
 
 #################################
@@ -222,52 +194,31 @@ rule report_all:
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
-# localrules: report_all_hifiasm_trivial_omnitigs
-# rule report_all_hifiasm_trivial_omnitigs:
-#     input:  [f for f in get_all_report_files() if "hifiasm_trivial_omnitigs" in f],
-#     threads: 1
-#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+def get_test_report_files():
+    try:
+        result = []
+        for report_name, report_definition in reports.items():
+            if report_name != "E.coli_HiFi_hoco":
+                continue
 
-# def get_all_wtdbg2_investigation_report_files(wildcards):
-#     try:
-#         result = set()
-#         for report_name, report_definition in reports.items():
-#             for report_file_name, report_file in report_definition["report_files"].items():
-#                 for column in report_file.columns:
-#                     arguments = column.arguments
-
-#                     if arguments.assembler_name() == "wtdbg2":
-#                         result.add(os.path.join(ALGORITHM_PREFIX_FORMAT, "wtdbg2_node_errors", "wtdbg2_node_errors.log").format(arguments = arguments))
-
-#         return [f for f in result if "HG002" not in f and '"read_simulator":{"perfect"' in f]
-#     except Exception:
-#         traceback.print_exc()
-#         sys.exit("Catched exception")
-
-# localrules: report_all_wtdbg2_investigations
-# rule report_all_wtdbg2_investigations:
-#     input:  get_all_wtdbg2_investigation_report_files
-#     threads: 1
-#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
-
-# localrules: report_some_wtdbg2_investigations
-# rule report_some_wtdbg2_investigations:
-#     input:  [os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"{genome}","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log").replace("{genome}", genome) for genome in ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]]
-#     threads: 1
-#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+            for report_file_name, report_file_definition in report_definition["report_files"].items():
+                report_file_arguments = report_file_definition.arguments
+                #print(f"report_file_arguments: {report_file_arguments}", flush = True)
+                result.append(REPORT_PDF.format(report_name = report_name, report_file_name = str(report_file_arguments)))
 
 
-# localrules: E_coli_wtdbg2_investigation_rs
-# rule E_coli_wtdbg2_investigation_rs:
-#     input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"rs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
-#     threads: 1
-#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+        for aggregated_report_name in aggregated_reports.keys():
+            result.append(AGGREGATED_REPORT_PDF.format(aggregated_report_name = aggregated_report_name))
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
-# localrules: E_coli_wtdbg2_investigation_ccs
-# rule E_coli_wtdbg2_investigation_ccs:
-#     input:  os.path.join(safe_format(ALGORITHM_PREFIX_FORMAT, arguments = '{"genome":"E.coli","assembler":{"wtdbg2":{"cli_arguments":{"-x":"ccs"}}},"read_simulator":{"perfect":{"cli_arguments":{"--read-length-interval":"15000 25000","--coverage":20,"--distribution":"cut"}}}}'), "wtdbg2_node_errors", "wtdbg2_node_errors.log")
-#     threads: 1
-#     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+localrules: report_test
+rule report_test:
+    input:  get_test_report_files(),
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
 ###############################
 ###### Report Generation ######
