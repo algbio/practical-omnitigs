@@ -21,27 +21,11 @@ if 'use_conda' in config and config['use_conda']:
 workflow.global_resources["contigvalidator"] = 1
 workflow.global_resources["concorde"] = 1
 
-DATADIR = "data/"
+DATADIR = "data"
 if "datadir" in config:
     DATADIR = config["datadir"]
-if DATADIR[-1] != "/":
-    DATADIR += "/"
-
-PROGRAMDIR = "data/"
-if "programdir" in config:
-    PROGRAMDIR = config["programdir"]
-if PROGRAMDIR[-1] != "/":
-    PROGRAMDIR += "/"
-
-REPORTDIR = "data/reports/"
-if "reportdir" in config:
-    REPORTDIR = config["reportdir"]
-if REPORTDIR[-1] != "/":
-    REPORTDIR += "/"
 
 print("DATADIR: {}".format(DATADIR))
-print("PROGRAMDIR: {}".format(PROGRAMDIR))
-print("REPORTDIR: {}".format(REPORTDIR))
 
 MAX_THREADS = 56
 print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
@@ -89,7 +73,7 @@ for report_name, report_definition in reports.items():
 #sys.exit(0)
 
 # Collect all rust sources
-rust_sources = list(map(str, itertools.chain(pathlib.Path('implementation').glob('**/Cargo.toml'), pathlib.Path('implementation').glob('**/*.rs'))))
+RUST_SOURCES = list(map(str, itertools.chain(pathlib.Path('implementation').glob('**/Cargo.toml'), pathlib.Path('implementation').glob('**/*.rs'))))
 
 import datetime
 today = datetime.date.today().isoformat()
@@ -100,10 +84,12 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
+EXTERNAL_SOFTWARE_DIR = os.path.join(DATADIR, "external-software")
 DOWNLOAD_DIR = os.path.join(DATADIR, "downloads")
 GENOME_DIR = os.path.join(DATADIR, "genomes")
 ASSEMBLY_DIR = os.path.join(DATADIR, "assembly")
 EVALUATION_DIR = os.path.join(DATADIR, "evaluation")
+REPORT_DIR = os.path.join(DATADIR, "reports")
 
 GENOME_SUBDIR = "g{genome}-h{homopolymer_compression}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_SUBDIR, "reference")
@@ -142,14 +128,14 @@ QUAST_DIR = os.path.join(EVALUATION_DIR, "quast")
 QUAST_SUBDIR = ASSEMBLY_SUBDIR
 QUAST_OUTPUT_DIR = os.path.join(QUAST_DIR, QUAST_SUBDIR)
 
-REPORT_SUBDIR = os.path.join(REPORTDIR, "{report_name}", "{report_file_name}")
+REPORT_SUBDIR = os.path.join(REPORT_DIR, "{report_name}", "{report_file_name}")
 REPORT_TEX = os.path.join(REPORT_SUBDIR, "report.tex")
 REPORT_COMBINED_EAXMAX_PLOT = os.path.join(REPORT_SUBDIR, "combined_eaxmax_plot.pdf")
 REPORT_NAME_FILE = os.path.join(REPORT_SUBDIR, "name.txt")
 REPORT_HASHDIR = os.path.join(REPORT_SUBDIR, "hashdir")
 REPORT_PDF = os.path.join(REPORT_SUBDIR, "report.pdf")
 
-AGGREGATED_REPORT_SUBDIR = os.path.join(REPORTDIR, "{aggregated_report_name}")
+AGGREGATED_REPORT_SUBDIR = os.path.join(REPORT_DIR, "{aggregated_report_name}")
 AGGREGATED_REPORT_PDF = os.path.join(AGGREGATED_REPORT_SUBDIR, "aggregated_report.pdf")
 
 UNIQUIFY_IDS_SCRIPT = "scripts/uniquify_fasta_ids.py"
@@ -159,7 +145,10 @@ CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
 DOWNSAMPLE_FASTA_READS = "scripts/downsample_fasta_reads.py"
 
-QUAST_BINARY = "external-software/quast/quast.py"
+RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "rust_target")
+IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.log")
+RUST_BINARY = os.path.jojn(RUST_DIR, "release", "cli")
+QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "quast", "quast.py")
 
 #================================================
 #=== DOWNLOADS ==================================
@@ -589,7 +578,7 @@ def get_single_report_script_column_arguments(report_name, report_file_name):
                 result += " "
 
             arguments = column.arguments
-            result += "'" + column.shortname + "' '" + safe_format(QUAST_OUTPUT_DIR, **arguments) + "'"
+            result += "'" + column.shortname + "' '' '" + safe_format(QUAST_OUTPUT_DIR, **arguments) + "' ''"
         return result
     except Exception:
         traceback.print_exc()
@@ -750,19 +739,19 @@ rule find_wtdbg2_node_errors:
 ### bcalm2 ###
 
 rule compute_omnitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = PROGRAMDIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = RUST_BINARY,
     output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_trivial_omnitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = PROGRAMDIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = RUST_BINARY,
     output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
 
 rule compute_unitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = PROGRAMDIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = RUST_BINARY,
     output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
     threads: 1
     shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
@@ -794,7 +783,7 @@ rule compute_injectable_contigs_wtdbg2:
             reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
             dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
             raw_reads = GENOME_READS,
-            binary = PROGRAMDIR + "target/release/cli",
+            binary = RUST_BINARY,
     output: file = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
             log = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.log",
             latex = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.tex",
@@ -849,7 +838,7 @@ def get_injectable_fragment_contigs_input_dot_file_from_wildcards(wildcards):
 
 rule compute_injectable_fragment_contigs_wtdbg2:
     input:  dot = get_injectable_fragment_contigs_input_dot_file_from_wildcards,
-            binary = PROGRAMDIR + "target/release/cli",
+            binary = RUST_BINARY,
     output: file = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/contigwalks",
             latex = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/compute_injectable_contigs.tex",
             completed = touch(ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/contigwalks.completed"),
@@ -1026,7 +1015,7 @@ rule run_contigbreaker:
 
 rule run_gfa_trivial_omnitigs:
     input:  contigs = os.path.join(ALGORITHM_PREFIX_FORMAT, "raw_assembly.gfa"),
-            binary = os.path.join(PROGRAMDIR, "target/release/cli"),
+            binary = RUST_BINARY,
     output: trivial_omnitigs = os.path.join(ALGORITHM_PREFIX_FORMAT, "gfa_trivial_omnitigs", "trivial_omnitigs.fa"),
     log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "gfa_trivial_omnitigs", "trivial_omnitigs.log"),
     threads: 1
@@ -1795,7 +1784,6 @@ rule homopolymer_compress_reference:
     output: reference = GENOME_REFERENCE,
     wildcard_constraints:
             homopolymer_compression = "yes",
-            uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
     shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
 
@@ -1819,21 +1807,21 @@ rule downsample_reads:
 ######################################
 
 rule separate_linear_and_circular:
-    input: filtered = DATADIR + "{genome}/filtered.fna", verified = DATADIR + "{genome}/is_genome_verified.log", binary = PROGRAMDIR + "target/release/cli"
+    input: filtered = DATADIR + "{genome}/filtered.fna", verified = DATADIR + "{genome}/is_genome_verified.log", binary = RUST_BINARY,
     output: circular = DATADIR + "{genome}/circular.fna", linear = DATADIR + "{genome}/linear.fna", log = DATADIR + "{genome}/separate_linear_and_circular.log"
     conda: "config/conda-rust-env.yml"
     threads: 1
     shell: "cp '{input.filtered}' '{output.linear}'; data/target/release/cli circularise-genome --input '{input.filtered}' 2>&1 --output '{output.circular}' | tee '{output.log}'"
 
 rule verify_genome:
-    input: file = DATADIR + "{dir}/filtered.fna", binary = PROGRAMDIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/filtered.fna", binary = RUST_BINARY,
     output: log = DATADIR + "{dir}/is_genome_verified.log"
     conda: "config/conda-rust-env.yml"
     threads: 1
     shell: DATADIR + "target/release/cli verify-genome --input '{input.file}' 2>&1 | tee '{output.log}'"
 
 rule filter_genome:
-    input: file = DATADIR + "{dir}/raw.fna", binary = PROGRAMDIR + "target/release/cli"
+    input: file = DATADIR + "{dir}/raw.fna", binary = RUST_BINARY,
     output: file = DATADIR + "{dir}/filtered.fna", genome_name = DATADIR + "{dir}/name.txt", log = DATADIR + "{dir}/filtered.log"
     params: retain = lambda wildcards: "--retain '" + experiments_bcalm2[wildcards.dir]["filter_retain"] + "'" if "filter_retain" in experiments_bcalm2[wildcards.dir] else ""
     conda: "config/conda-rust-env.yml"
@@ -1873,27 +1861,29 @@ rule run_quast:
 ###### Rust ######
 ##################
 
+localrules: build_rust_release
 rule build_rust_release:
-    input:  PROGRAMDIR + "is_rust_tested.log",
-    output: PROGRAMDIR + "target/release/cli",
-    params: programdir = PROGRAMDIR,
+    input:  test_marker = IS_RUST_TESTED_MARKER,
+            sources = RUST_SOURCES,
+    output: binary = RUST_BINARY,
+    params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = 4000,
                cpus = MAX_THREADS,
                time_min = 30,
-    shell: "cargo build -j {threads} --release --target-dir '{params.programdir}target' --manifest-path 'implementation/Cargo.toml'"
+    shell: "cargo build -j {threads} --release --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml'"
 
 rule test_rust:
-    input:  expand("{source}", source = list(rust_sources))
-    output: touch(PROGRAMDIR + "is_rust_tested.log")
-    params: programdir = PROGRAMDIR,
+    input:  expand("{source}", source = list(RUST_SOURCES)),
+    output: touch(IS_RUST_TESTED_MARKER),
+    params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
     threads: 4
     resources: mem_mb = 4000,
                cpus = 2,
                time_min = 30,
-    shell: "cargo test -j {threads} --target-dir '{params.programdir}target' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
+    shell: "cargo test -j {threads} --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
 
 #############################
 ###### ContigValidator ######
@@ -2084,7 +2074,7 @@ rule download_and_prepare:
             references = expand(GENOME_REFERENCE_FORMAT, genome = genomes.keys()),
             quast = "external-software/quast/quast.py",
             wtdbg2 = "external-software/wtdbg2/wtdbg2",
-            rust = PROGRAMDIR + "target/release/cli",
+            rust = RUST_BINARY,
             ratatosk = "external-software/Ratatosk/build/src/Ratatosk",
 
 #rule prepare_wtdbg2:
