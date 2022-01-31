@@ -2018,7 +2018,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout 3a89775c82c25ab455c5938883150f94fb92d7d8
+        git checkout 7d453a590f7f5521d0150ee65fa3de53551844d7
         """
 
 # Do not make localrule, ensure it is compiled on the correct CPU.
@@ -2034,7 +2034,8 @@ rule build_flye:
         export CXX=x86_64-conda-linux-gnu-g++
         export CC=x86_64-conda-linux-gnu-gcc
         # export INCLUDES=-I/usr/include/ # Somehow this is not seen by minimap's Makefile, so we had to change it in our custom version of Flye
-        export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:=''}} # Redirect library path to include conda libraries
+        # The following also doesn't seem to work when building minimap, so again we had to modify minimap's Makefile
+        # export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:=''}} # Redirect library path to include conda libraries
         make
         """
 
