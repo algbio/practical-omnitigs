@@ -1027,8 +1027,8 @@ rule hifiasm:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 50000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50000),
     shell: "hifiasm -t {threads} -o '{params.output_prefix}' '{input.reads}'"
 
 localrules: hifiasm_gfa_to_fa
