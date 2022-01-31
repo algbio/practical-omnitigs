@@ -5,3 +5,4 @@ dependencies:
   - gcc_linux-64 == 9.3.0
   - gxx_linux-64 == 9.3.0
   - libstdcxx-devel_linux-64 == 9.3.0
+  - zlib == 1.2.11
