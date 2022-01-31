@@ -152,7 +152,8 @@ RUST_BINARY = os.path.join(RUST_DIR, "release", "cli")
 QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "quast", "quast.py")
 WTDBG2_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2", "wtdbg2")
 WTDBG2_CONSENSUS_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2", "wtpoa-cns")
-FLYE_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Flye", "bin", "flye")
+FLYE_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "Flye")
+FLYE_BINARY = os.path.join(FLYE_DIR, "bin", "flye")
 SIM_IT_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "sim-it", "sim-it.pl")
 RATATOSK_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Ratatosk", "build", "src", "Ratatosk")
 CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "ContigValidator")
@@ -2011,7 +2012,7 @@ rule install_sim_it:
 
 localrules: install_flye
 rule install_flye:
-    output: script = FLYE_BINARY,
+    output: flye_directory = FLYE_DIR,
     params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda:  "config/conda-install-flye-env.yml"
     shell:  """
@@ -2023,6 +2024,16 @@ rule install_flye:
         cd Flye
         git checkout 7413f5c39b6c8e9ab9caa564e15e7edd4e727cfd
 
+        make
+        """
+
+# Do not make localrule, ensure it is compiled on the correct CPU.
+# Otherwise, the compiler might generate unsupported instructions.
+rule build_flye:
+    input:  flye_directory = FLYE_DIR,
+    output: script = FLYE_BINARY,
+    shell:  """
+        cd '{input.flye_directory}'
         make
         """
 
