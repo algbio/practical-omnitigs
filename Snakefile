@@ -2012,7 +2012,7 @@ rule install_sim_it:
 
 localrules: install_flye
 rule install_flye:
-    output: flye_directory = FLYE_DIR,
+    output: flye_marker = os.path.join(FLYE_DIR, ".git", "HEAD"),
     params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda:  "config/conda-install-flye-env.yml"
     shell:  """
@@ -2030,10 +2030,11 @@ rule install_flye:
 # Do not make localrule, ensure it is compiled on the correct CPU.
 # Otherwise, the compiler might generate unsupported instructions.
 rule build_flye:
-    input:  flye_directory = FLYE_DIR,
+    input:  flye_marker = os.path.join(FLYE_DIR, ".git", "HEAD"),
+    params: flye_directory = FLYE_DIR,
     output: script = FLYE_BINARY,
     shell:  """
-        cd '{input.flye_directory}'
+        cd '{params.flye_directory}'
         make
         """
 
