@@ -2041,7 +2041,7 @@ rule build_flye:
         # export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:=''}} # Redirect library path to include conda libraries
         # make # This does not create the python script anymore
 
-        python3 setup.py install
+        /usr/bin/env python3 setup.py install
         """
 
 ###################################
