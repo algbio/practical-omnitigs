@@ -2010,8 +2010,8 @@ rule install_sim_it:
         mv sim-it/Sim-it1.2.pl sim-it/sim-it.pl
     """
 
-localrules: install_flye
-rule install_flye:
+localrules: download_flye
+rule download_flye:
     output: flye_marker = os.path.join(FLYE_DIR, ".git", "HEAD"),
     params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
     conda:  "config/conda-install-flye-env.yml"
@@ -2023,8 +2023,6 @@ rule install_flye:
         git clone https://github.com/sebschmi/Flye
         cd Flye
         git checkout 7413f5c39b6c8e9ab9caa564e15e7edd4e727cfd
-
-        make
         """
 
 # Do not make localrule, ensure it is compiled on the correct CPU.
