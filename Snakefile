@@ -2033,9 +2033,8 @@ rule build_flye:
 
         export CXX=x86_64-conda-linux-gnu-g++
         export CC=x86_64-conda-linux-gnu-gcc
-        export INCLUDES=-I/usr/include/
-        export CFLAGS=-I/usr/include/
-        export CXXFLAGS=-I/usr/include/
+        # export INCLUDES=-I/usr/include/ # Somehow this is not seen by minimap's Makefile, so we had to change it in our custom version of Flye
+        export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:=''}} # Redirect library path to include conda libraries
         make
         """
 
