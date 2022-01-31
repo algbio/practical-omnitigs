@@ -2033,6 +2033,7 @@ rule build_flye:
 
         export CXX=x86_64-conda-linux-gnu-g++
         export CC=x86_64-conda-linux-gnu-gcc
+        export INCLUDES=-I/usr/include/
         make
         """
 
