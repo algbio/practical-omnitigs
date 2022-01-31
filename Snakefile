@@ -2018,7 +2018,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout 7413f5c39b6c8e9ab9caa564e15e7edd4e727cfd
+        git checkout da430b9e5a416d2e3871b4668f5f3446034acb6a
         """
 
 # Do not make localrule, ensure it is compiled on the correct CPU.
@@ -2034,6 +2034,8 @@ rule build_flye:
         export CXX=x86_64-conda-linux-gnu-g++
         export CC=x86_64-conda-linux-gnu-gcc
         export INCLUDES=-I/usr/include/
+        export CFLAGS=-I/usr/include/
+        export CXXFLAGS=-I/usr/include/
         make
         """
 
