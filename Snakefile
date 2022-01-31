@@ -730,10 +730,10 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 
             return "bigmem"
         elif time <= 1440:
             return "short"
-        elif time <= 1440 * 14:
+        elif time <= 1440 * 3:
+            return "medium"
+        elif time <= 1440 * 7:
             return "long"
-        elif time <= 1440 * 60:
-            return "extralong"
         else:
             sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
     except Exception:
