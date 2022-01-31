@@ -2028,6 +2028,9 @@ rule build_flye:
     params: flye_directory = FLYE_DIR,
     output: script = FLYE_BINARY,
     conda:  "config/conda-install-flye-env.yml"
+    threads: 4
+    resources:
+        cpus = 4,
     shell:  """
         cd '{params.flye_directory}'
 
@@ -2036,7 +2039,9 @@ rule build_flye:
         # export INCLUDES=-I/usr/include/ # Somehow this is not seen by minimap's Makefile, so we had to change it in our custom version of Flye
         # The following also doesn't seem to work when building minimap, so again we had to modify minimap's Makefile
         # export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:=''}} # Redirect library path to include conda libraries
-        make
+        # make # This does not create the python script anymore
+
+        python3 setup.py install
         """
 
 ###################################
