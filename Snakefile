@@ -2019,6 +2019,8 @@ rule download_flye:
         git clone https://github.com/sebschmi/Flye
         cd Flye
         git checkout 7d453a590f7f5521d0150ee65fa3de53551844d7
+
+        mv bin/flye bin/flye.disabled # rename such that snakemake does not delete it
         """
 
 # Do not make localrule, ensure it is compiled on the correct CPU.
@@ -2042,6 +2044,8 @@ rule build_flye:
         # make # This does not create the python script anymore
 
         /usr/bin/env python3 setup.py install
+
+        mv bin/flye.disabled bin/flye # was renamed such that snakemake does not delete it
         """
 
 ###################################
