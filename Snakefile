@@ -1896,8 +1896,7 @@ rule download_bcalm2_gfa_converter:
     conda: "config/conda-download-env.yml"
     params: external_software_scripts_dir = EXTERNAL_SOFTWARE_SCRIPTS_DIR,
     threads: 1
-    shell:
-        """
+    shell:  """
         mkdir -p '{params.external_software_scripts_dir}'
         cd '{params.external_software_scripts_dir}'
         wget https://raw.githubusercontent.com/GATB/bcalm/v2.2.3/scripts/convertToGFA.py
@@ -1909,10 +1908,9 @@ rule install_contig_validator:
     input:  sdsl = SDSL_DIR,
     output: dir = directory(CONTIG_VALIDATOR_DIR),
     params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
-    conda: "config/conda-contigvalidator-env.yml"
+    conda:  "config/conda-contigvalidator-env.yml"
     threads: 1
-    shell: 
-        """
+    shell:  """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
         git clone --recursive https://github.com/mayankpahadia1993/ContigValidator.git
@@ -1940,10 +1938,9 @@ localrules: install_sdsl
 rule install_sdsl:
     output: dir = SDSL_DIR,
     params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
-    conda: "config/conda-contigvalidator-env.yml"
+    conda:  "config/conda-contigvalidator-env.yml"
     threads: 1
-    shell:
-        """
+    shell:  """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
         git clone https://github.com/simongog/sdsl-lite.git
@@ -1987,11 +1984,11 @@ rule install_wtdbg2:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
-    git clone https://github.com/sebschmi/wtdbg2.git
-    cd wtdbg2
-    git checkout c8403f562f3b999bb514ba3e9020007bcf01391c
-    make
-    """
+        git clone https://github.com/sebschmi/wtdbg2.git
+        cd wtdbg2
+        git checkout c8403f562f3b999bb514ba3e9020007bcf01391c
+        make
+        """
 
 rule install_sim_it:
     output: SIM_IT_BINARY,
@@ -2014,7 +2011,6 @@ localrules: download_flye
 rule download_flye:
     output: flye_marker = os.path.join(FLYE_DIR, ".git", "HEAD"),
     params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
-    conda:  "config/conda-install-flye-env.yml"
     shell:  """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
@@ -2031,8 +2027,12 @@ rule build_flye:
     input:  flye_marker = os.path.join(FLYE_DIR, ".git", "HEAD"),
     params: flye_directory = FLYE_DIR,
     output: script = FLYE_BINARY,
+    conda:  "config/conda-install-flye-env.yml"
     shell:  """
         cd '{params.flye_directory}'
+
+        export CXX=x86_64-conda-linux-gnu-g++
+        export CC=x86_64-conda-linux-gnu-gcc
         make
         """
 
