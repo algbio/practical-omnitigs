@@ -2018,7 +2018,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout da430b9e5a416d2e3871b4668f5f3446034acb6a
+        git checkout 3a89775c82c25ab455c5938883150f94fb92d7d8
         """
 
 # Do not make localrule, ensure it is compiled on the correct CPU.
