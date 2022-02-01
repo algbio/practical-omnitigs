@@ -159,6 +159,10 @@ RATATOSK_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Ratatosk", "build", "src"
 CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "ContigValidator")
 CONVERT_TO_GFA_BINARY = os.path.join(EXTERNAL_SOFTWARE_SCRIPTS_DIR, "convertToGFA.py")
 SDSL_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "sdsl-lite")
+MDBG_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "rust-mdbg")
+MDBG_CARGO_TOML = os.path.join(MDBG_DIR, "Cargo.toml")
+MDBG_BINARY = os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")
+MDBG_SIMPLIFY = os.path.join(MDBG_DIR, "utils", "magic_simplify")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -2046,6 +2050,37 @@ rule build_flye:
         /usr/bin/env python3 setup.py install
 
         mv bin/flye.disabled bin/flye # was renamed such that snakemake does not delete it
+        """
+
+localrules: download_mdbg
+rule download_mdbg:
+    output: mdbg_cargo_toml = MDBG_CARGO_TOML,
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    conda:  "config/conda-rust-env.yml"
+    threads: 1
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        rm -rf rust-mdbg
+        git clone https://github.com/ekimb/rust-mdbg
+        cd rust-mdbg
+        git checkout 902615693499d31d954f9af7b21626c706a58455
+
+        cargo fetch
+        """
+
+rule build_mdbg:
+    input:  mdbg_cargo_toml = MDBG_CARGO_TOML,
+    params: mdbg_directory = MDBG_DIR,
+    output: script = MDBG_BINARY,
+    conda:  "config/conda-rust-env.yml"
+    threads: 4
+    resources:
+        cpus = 4,
+    shell:  """
+        cd '{params.mdbg_directory}'
+        cargo --offline build --release
         """
 
 ###################################
