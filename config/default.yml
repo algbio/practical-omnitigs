@@ -369,6 +369,9 @@ column_templates:
     - shortname: "mdbg"
       select_assembler:
         mdbg:
+    - shortname: "lja"
+      select_assembler:
+        lja:
 
 reports:
 

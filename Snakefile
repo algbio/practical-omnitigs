@@ -1093,6 +1093,28 @@ rule mdbg:
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
+#################
+###### LJA ######
+#################
+
+rule lja:
+    input:  reads = GENOME_READS,
+            binary = LJA_BINARY,
+    output: contigs = LJA_ASSEMBLED_CONTIGS,
+    params: output_dir = os.path.join(LJA_OUTPUT_DIR, "output"),
+            original_contigs = os.path.join(LJA_OUTPUT_DIR, "output", "assembly.fasta"),
+    log:    log = LJA_LOG,
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 10000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10000),
+    shell:  """
+        mkdir -p '{params.output_dir}'
+        '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
+        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        """
+
 #############################
 ###### Read Simulation ######
 #############################
@@ -1962,7 +1984,7 @@ rule install_contig_validator:
         cd ContigValidator/src
         echo 'count_kmers: count_kmers_kmc' >> Makefile
         sed -i 's\\count_kmers: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\count_kmers_kmc: count_kmers_kmc.cpp KMC/kmc_api/kmc_file.o\\g' Makefile
-        LIBRARY_PATH="../../sdsl-lite/lib" CPATH="../../sdsl-lite/include" make
+        LIBRARY_PATH="../../sdsl-lite/lib" CPATH="../../sdsl-lite/include" make -j {threads}
         """
 
 localrules: install_quast
@@ -2012,7 +2034,7 @@ rule install_ratatosk:
         mkdir build
         cd build
         cmake ..
-        make
+        make -j {threads}
         """
 
 localrules: install_wtdbg2
@@ -2032,7 +2054,7 @@ rule install_wtdbg2:
         git clone https://github.com/sebschmi/wtdbg2.git
         cd wtdbg2
         git checkout c8403f562f3b999bb514ba3e9020007bcf01391c
-        make
+        make -j {threads}
         """
 
 rule install_sim_it:
@@ -2172,7 +2194,7 @@ rule build_lja:
         export CC=x86_64-conda-linux-gnu-gcc
 
         cmake .
-        make
+        make -j {threads}
         """
 
 ###################################
