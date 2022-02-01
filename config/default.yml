@@ -369,7 +369,6 @@ column_templates:
     - shortname: "mdbg"
       select_assembler:
         mdbg:
-          k: "none"
 
 reports:
 

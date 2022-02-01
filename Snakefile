@@ -124,13 +124,21 @@ HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, HIFIASM_SUBDIR)
 HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
 HIFIASM_LOG = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm.log")
 
-MDBG_ARGUMENT_STRING = "k{k}"
+MDBG_ARGUMENT_STRING = "none"
 ASSEMBLER_ARGUMENT_STRINGS["mdbg"] = MDBG_ARGUMENT_STRING
 MDBG_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "mdbg", assembler_arguments = MDBG_ARGUMENT_STRING)
 MDBG_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, MDBG_SUBDIR)
 MDBG_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "mdbg")
 MDBG_LOG = os.path.join(MDBG_OUTPUT_DIR, "mdbg.log")
 MDBG_ASSEMBLED_CONTIGS = os.path.join(MDBG_OUTPUT_DIR, "contigs.fa")
+
+LJA_ARGUMENT_STRING = "none"
+ASSEMBLER_ARGUMENT_STRINGS["lja"] = LJA_ARGUMENT_STRING
+LJA_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "lja", assembler_arguments = LJA_ARGUMENT_STRING)
+LJA_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, LJA_SUBDIR)
+LJA_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "lja")
+LJA_LOG = os.path.join(LJA_OUTPUT_DIR, "lja.log")
+LJA_ASSEMBLED_CONTIGS = os.path.join(LJA_OUTPUT_DIR, "contigs.fa")
 
 QUAST_DIR = os.path.join(EVALUATION_DIR, "quast")
 QUAST_SUBDIR = ASSEMBLY_SUBDIR
@@ -172,6 +180,8 @@ MDBG_CARGO_TOML = os.path.join(MDBG_DIR, "Cargo.toml")
 MDBG_BINARY = os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")
 MDBG_SIMPLIFY = os.path.join(MDBG_DIR, "utils", "magic_simplify")
 MDBG_MULTI_K = os.path.join(MDBG_DIR, "utils", "multik")
+LJA_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "LJA")
+LJA_BINARY = os.path.join(LJA_DIR, "bin", "lja")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -2130,6 +2140,39 @@ rule build_mdbg:
         # use built binaries instead of rerunning cargo
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release:'"'"'{params.rust_mdbg}'"'"':g' utils/multik
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release --bin to_basespace --:'"'"'{params.to_basespace}'"'"':g' utils/magic_simplify
+        """
+
+localrules: download_lja
+rule download_lja:
+    output: lja_marker = os.path.join(LJA_DIR, "CMakeLists.txt"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    conda:  "config/conda-download-env.yml"
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        rm -rf LJA
+        git clone https://github.com/AntonBankevich/LJA
+        cd LJA
+        git checkout 99f93262c50ff269ee28707f7c3bb77ea00eb576
+        """
+
+rule build_lja:
+    input:  lja_marker = os.path.join(LJA_DIR, "CMakeLists.txt"),
+    output: binary = LJA_BINARY,
+    params: lja_directory = LJA_DIR,
+    conda:  "config/conda-install-lja-env.yml"
+    threads: 4
+    resources:
+        cpus = 4,
+    shell:  """
+        cd '{params.lja_directory}'
+
+        export CXX=x86_64-conda-linux-gnu-g++
+        export CC=x86_64-conda-linux-gnu-gcc
+
+        cmake .
+        make
         """
 
 ###################################
