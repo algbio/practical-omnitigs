@@ -1086,8 +1086,8 @@ rule mdbg:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 10000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 10000),
     shell:  """
         '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
@@ -1107,8 +1107,8 @@ rule lja:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 10000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 10000),
     shell:  """
         mkdir -p '{params.output_dir}'
         '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
