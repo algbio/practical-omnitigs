@@ -366,6 +366,10 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
+    - shortname: "mdbg"
+      select_assembler:
+        mdbg:
+          k: "none"
 
 reports:
 
@@ -383,13 +387,13 @@ reports:
   "E.coli_HiFi":
     argument_matrix:
       genome: "E.coli_hifi"
-      read_downsampling_factor: 0.001
+      read_downsampling_factor: 0.01
     columns: *hifi_overview_columns
 
   "E.coli_HiFi_hoco":
     argument_matrix:
       genome: "E.coli_hifi"
-      read_downsampling_factor: 0.001
+      read_downsampling_factor: 0.01
       homopolymer_compression: "yes"
     columns: *hifi_overview_columns
 

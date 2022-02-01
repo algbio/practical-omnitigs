@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - gfatools == 0.5
+  - seqtk == 1.3

@@ -115,14 +115,22 @@ ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, FLYE_SUBDIR)
 FLYE_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "flye")
-FLYE_LOG = os.path.join(ASSEMBLY_DIR, FLYE_SUBDIR, "flye.log")
+FLYE_LOG = os.path.join(FLYE_OUTPUT_DIR, "flye.log")
 
 HIFIASM_ARGUMENT_STRING = "none"
 ASSEMBLER_ARGUMENT_STRINGS["hifiasm"] = HIFIASM_ARGUMENT_STRING
 HIFIASM_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "hifiasm", assembler_arguments = HIFIASM_ARGUMENT_STRING)
 HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, HIFIASM_SUBDIR)
 HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
-HIFIASM_LOG = os.path.join(ASSEMBLY_DIR, HIFIASM_SUBDIR, "hifiasm.log")
+HIFIASM_LOG = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm.log")
+
+MDBG_ARGUMENT_STRING = "k{k}"
+ASSEMBLER_ARGUMENT_STRINGS["mdbg"] = MDBG_ARGUMENT_STRING
+MDBG_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "mdbg", assembler_arguments = MDBG_ARGUMENT_STRING)
+MDBG_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, MDBG_SUBDIR)
+MDBG_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "mdbg")
+MDBG_LOG = os.path.join(MDBG_OUTPUT_DIR, "mdbg.log")
+MDBG_ASSEMBLED_CONTIGS = os.path.join(MDBG_OUTPUT_DIR, "contigs.fa")
 
 QUAST_DIR = os.path.join(EVALUATION_DIR, "quast")
 QUAST_SUBDIR = ASSEMBLY_SUBDIR
@@ -163,6 +171,7 @@ MDBG_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "rust-mdbg")
 MDBG_CARGO_TOML = os.path.join(MDBG_DIR, "Cargo.toml")
 MDBG_BINARY = os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")
 MDBG_SIMPLIFY = os.path.join(MDBG_DIR, "utils", "magic_simplify")
+MDBG_MULTI_K = os.path.join(MDBG_DIR, "utils", "multik")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -1051,6 +1060,28 @@ rule hifiasm_gfa_to_fa:
                     columns = line.split("\t")
                     output_file.write(">{}\n{}\n".format(columns[1], columns[2]))
 
+##################
+###### mdbg ######
+##################
+
+rule mdbg:
+    input:  reads = GENOME_READS,
+            script = MDBG_MULTI_K,
+            binary = MDBG_BINARY,
+    output: contigs = MDBG_ASSEMBLED_CONTIGS,
+    params: output_prefix = os.path.join(MDBG_OUTPUT_DIR, "contigs"),
+            original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs-final.msimpl.fa"),
+    log:    log = MDBG_LOG,
+    conda:  "config/conda-mdbg-env.yml"
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 10000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10000),
+    shell:  """
+        '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
+        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        """
 
 #############################
 ###### Read Simulation ######
@@ -2056,6 +2087,7 @@ localrules: download_mdbg
 rule download_mdbg:
     output: mdbg_cargo_toml = MDBG_CARGO_TOML,
     params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+            mdbg_target_directory = os.path.join(MDBG_DIR, "target"),
     conda:  "config/conda-rust-env.yml"
     threads: 1
     shell:  """
@@ -2068,19 +2100,36 @@ rule download_mdbg:
         git checkout 902615693499d31d954f9af7b21626c706a58455
 
         cargo fetch
+        
+        # rename such that snakemake does not delete them
+        mv utils/magic_simplify utils/magic_simplify.disabled
+        mv utils/multik utils/multik.disabled
         """
 
 rule build_mdbg:
     input:  mdbg_cargo_toml = MDBG_CARGO_TOML,
+    output: binary = MDBG_BINARY,
+            simplify = MDBG_SIMPLIFY,
+            multi_k = MDBG_MULTI_K,
     params: mdbg_directory = MDBG_DIR,
-    output: script = MDBG_BINARY,
+            mdbg_target_directory = os.path.abspath(os.path.join(MDBG_DIR, "target")),
+            rust_mdbg = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")),
+            to_basespace = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "to_basespace")),
     conda:  "config/conda-rust-env.yml"
     threads: 4
     resources:
         cpus = 4,
     shell:  """
         cd '{params.mdbg_directory}'
-        cargo --offline build --release
+        cargo --offline build --release --target-dir '{params.mdbg_target_directory}'
+        
+        # were renamed such that snakemake does not delete them
+        mv utils/magic_simplify.disabled utils/magic_simplify
+        mv utils/multik.disabled utils/multik
+
+        # use built binaries instead of rerunning cargo
+        sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release:'"'"'{params.rust_mdbg}'"'"':g' utils/multik
+        sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release --bin to_basespace --:'"'"'{params.to_basespace}'"'"':g' utils/magic_simplify
         """
 
 ###################################
