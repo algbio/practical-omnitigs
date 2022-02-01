@@ -1089,7 +1089,7 @@ rule mdbg:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 10000),
     shell:  """
-        RUST_BACKTRACE=1 '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
+        RUST_BACKTRACE=full '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
