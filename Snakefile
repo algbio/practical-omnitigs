@@ -2147,7 +2147,7 @@ rule build_mdbg:
             mdbg_target_directory = os.path.abspath(os.path.join(MDBG_DIR, "target")),
             rust_mdbg = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")),
             to_basespace = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "to_basespace")),
-    conda:  "config/conda-rust-env.yml"
+    conda:  "config/conda-install-mdbg-env.yml"
     threads: 4
     resources:
         cpus = 4,
