@@ -1,5 +1,5 @@
 channels:
   - conda-forge
-  - biopython
+  - bioconda
 dependencies:
   - seqtk == 1.3
