@@ -95,6 +95,7 @@ GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_SUBDIR, "reference")
 GENOME_READS_SUBDIR = os.path.join(GENOME_SUBDIR, "reads-r{read_downsampling_factor}-u{uniquify_ids}")
 GENOME_REFERENCE = os.path.join(GENOME_DIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
 GENOME_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
+GENOME_SINGLE_LINE_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "single_line_reads.fa")
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
 
 ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, "a{assembler}--{assembler_arguments}-")
@@ -1075,7 +1076,7 @@ rule hifiasm_gfa_to_fa:
 ##################
 
 rule mdbg:
-    input:  reads = GENOME_READS,
+    input:  reads = GENOME_SINGLE_LINE_READS,
             script = MDBG_MULTI_K,
             binary = MDBG_BINARY,
     output: contigs = MDBG_ASSEMBLED_CONTIGS,
@@ -1619,6 +1620,16 @@ rule downsample_reads:
     conda:  "config/conda-biopython-env.yml"
     shell:  "'{input.script}' '{input.reads}' '{output.reads}' {wildcards.read_downsampling_factor}"
 
+###########################################
+###### Convert to single-lined fasta ######
+###########################################
+
+rule convert_reads_to_single_lined_fasta:
+    input:  reads = GENOME_READS,
+    output: reads = GENOME_SINGLE_LINE_READS,
+    conda:  "config/conda-seqtk-env.yml"
+    shell:  "seqtk seq -AU '{input.reads}' > '{output.reads}'"
+
 ######################################
 ###### Input Genome Preparation ######
 ######################################
@@ -1742,7 +1753,7 @@ rule bandage:
     shell: "Bandage image {input} {output} --width 1000 --height 1000"
 
 #================================================
-#=== DOWNLOADS ==================================
+#=== Downloads ==================================
 #================================================
 
 def escape_dirname(raw):
