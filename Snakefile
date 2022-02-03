@@ -2173,6 +2173,10 @@ rule build_mdbg:
         # use built binaries instead of rerunning cargo
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release:'"'"'{params.rust_mdbg}'"'"':g' utils/multik
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release --bin to_basespace --:'"'"'{params.to_basespace}'"'"':g' utils/magic_simplify
+
+        # modify multik script for better log output
+        sed -i 's:$tprefix --bf >/dev/null:$tprefix --bf:g'
+        sed -i 's:$tprefix >/dev/null:$tprefix:g'
         """
 
 localrules: download_lja
