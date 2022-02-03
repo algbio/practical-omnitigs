@@ -2178,6 +2178,7 @@ rule build_mdbg:
         sed -i 's:$tprefix --bf >/dev/null:$tprefix --bf:g' utils/multik
         sed -i 's:$tprefix >/dev/null:$tprefix:g' utils/multik
         sed -i 's:function assemble:set -e\\nfunction assemble:g' utils/multik
+        sed -i 's:multik_reads.fa:$prefix.multik_reads.fa:g' utils/multik
         """
 
 localrules: download_lja
