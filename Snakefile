@@ -2145,8 +2145,8 @@ rule download_mdbg:
         cargo fetch
         
         # rename such that snakemake does not delete them
-        mv utils/magic_simplify utils/magic_simplify.disabled
-        mv utils/multik utils/multik.disabled
+        mv utils/magic_simplify utils/magic_simplify.original
+        mv utils/multik utils/multik.original
         """
 
 rule build_mdbg:
@@ -2167,17 +2167,17 @@ rule build_mdbg:
         cargo --offline build --release --target-dir '{params.mdbg_target_directory}'
         
         # were renamed such that snakemake does not delete them
-        mv utils/magic_simplify.disabled utils/magic_simplify
-        mv utils/multik.disabled utils/multik
+        cp utils/magic_simplify.original utils/magic_simplify
+        cp utils/multik.original utils/multik
 
         # use built binaries instead of rerunning cargo
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release:'"'"'{params.rust_mdbg}'"'"':g' utils/multik
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release --bin to_basespace --:'"'"'{params.to_basespace}'"'"':g' utils/magic_simplify
 
         # modify multik script for better log output
-        sed -i 's:$tprefix --bf >/dev/null:$tprefix --bf:g'
-        sed -i 's:$tprefix >/dev/null:$tprefix:g'
-        sed -i 's:function assemble:set -e\\nfunction assemble:g'
+        sed -i 's:$tprefix --bf >/dev/null:$tprefix --bf:g' utils/multik
+        sed -i 's:$tprefix >/dev/null:$tprefix:g' utils/multik
+        sed -i 's:function assemble:set -e\\nfunction assemble:g' utils/multik
         """
 
 localrules: download_lja
