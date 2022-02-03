@@ -2177,7 +2177,7 @@ rule build_mdbg:
         # modify multik script for better log output
         sed -i 's:$tprefix --bf >/dev/null:$tprefix --bf:g'
         sed -i 's:$tprefix >/dev/null:$tprefix:g'
-        sed -i 's:function assemble:set -e\nfunction assemble:g'
+        sed -i 's:function assemble:set -e\\nfunction assemble:g'
         """
 
 localrules: download_lja
