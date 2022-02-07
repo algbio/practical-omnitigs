@@ -1087,8 +1087,8 @@ rule mdbg:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
@@ -2138,9 +2138,9 @@ rule download_mdbg:
         cd '{params.external_software_dir}'
 
         rm -rf rust-mdbg
-        git clone https://github.com/ekimb/rust-mdbg
+        git clone https://github.com/sebschmi/rust-mdbg
         cd rust-mdbg
-        git checkout 902615693499d31d954f9af7b21626c706a58455
+        git checkout 0e306443412e2d95d6cbd4880f393d14b7b0da07
 
         cargo fetch
         
@@ -2173,13 +2173,6 @@ rule build_mdbg:
         # use built binaries instead of rerunning cargo
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release:'"'"'{params.rust_mdbg}'"'"':g' utils/multik
         sed -i 's:cargo run --manifest-path .DIR/../Cargo.toml --release --bin to_basespace --:'"'"'{params.to_basespace}'"'"':g' utils/magic_simplify
-
-        # modify multik script for better log output
-        sed -i 's:$tprefix --bf >/dev/null:$tprefix --bf:g' utils/multik
-        sed -i 's:$tprefix >/dev/null:$tprefix:g' utils/multik
-        sed -i 's:function assemble:set -e\\nfunction assemble:g' utils/multik
-        sed -i 's:multik_reads.fa:$prefix.multik_reads.fa:g' utils/multik
-        sed -i 's:$PWD/::g' utils/multik
         """
 
 localrules: download_lja
