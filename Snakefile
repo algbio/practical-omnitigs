@@ -62,7 +62,7 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("quast_mode", "normal")
         arguments.setdefault("filter_nw", "no")
 
-        print(arguments, flush = True)
+        #print(arguments, flush = True)
 
         columns = []
         for column_definition in report_definition["columns"]:
@@ -213,8 +213,8 @@ def get_all_report_files():
         for report_name, report_definition in reports.items():
             for report_file_name, report_file_definition in report_definition["report_files"].items():
                 report_file_arguments = report_file_definition.arguments
-                print(f"report_name: {report_name}")
-                print(f"report_file_arguments: {report_file_arguments}", flush = True)
+                #print(f"report_name: {report_name}")
+                #print(f"report_file_arguments: {report_file_arguments}", flush = True)
                 result.append(REPORT_PDF.format(report_name = report_name, report_file_name = str(report_file_arguments)))
 
 

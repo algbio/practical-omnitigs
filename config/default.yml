@@ -378,14 +378,14 @@ reports:
   "D.melanogaster_HiFi":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      filter_nw: ["hicanu", "hicanu_misassemblies"]
+      quast_mode: ["hicanu", "hicanu_misassemblies"]
     columns: *hifi_overview_columns
 
   "D.melanogaster_HiFi_hoco":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
       homopolymer_compression: "yes"
-      filter_nw: ["hicanu", "hicanu_misassemblies"]
+      quast_mode: ["hicanu", "hicanu_misassemblies"]
     columns: *hifi_overview_columns
 
   "E.coli_HiFi":
