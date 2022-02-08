@@ -378,14 +378,12 @@ reports:
   "D.melanogaster_HiFi":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      quast_mode: "hicanu"
     columns: *hifi_overview_columns
 
   "D.melanogaster_HiFi_hoco":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
       homopolymer_compression: "yes"
-      quast_mode: "hicanu"
     columns: *hifi_overview_columns
 
   "E.coli_HiFi":
@@ -1054,6 +1052,9 @@ genomes:
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
     genome_length: 143726002
+    genome_arguments:
+      quast_mode: "hicanu"
+      filter_nw: "yes"
     assembly_time_factor: 2
     assembly_mem_factor: 1
 

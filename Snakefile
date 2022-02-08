@@ -41,7 +41,7 @@ from report_file_parser import *
 
 for report_name, report_definition in reports.items():
     argument_matrix = ArgumentMatrix(report_definition.setdefault("argument_matrix", {}))
-    report_definition["argument_matrix"] = argument_matrix
+    report_definition["argument_matrix"] = argument_matrix # use correct type
 
     # print("Matrix of {} has length {}".format(report_name, len(argument_matrix)))
     # entries = list(iter(argument_matrix))
@@ -50,12 +50,19 @@ for report_name, report_definition in reports.items():
     #     print(entry)
 
     for arguments in argument_matrix:
+        genome_arguments = Arguments.from_dict(genomes[arguments["genome"]].setdefault("genome_arguments", {}))
+        genome_arguments.update(arguments)
+        arguments = genome_arguments # update method works in-place
+
         arguments.setdefault("read_downsampling_factor", "none")
         arguments.setdefault("homopolymer_compression", "none")
         arguments.setdefault("uniquify_ids", "no")
         arguments.setdefault("assembler", None)
         arguments.setdefault("assembler_arguments", None)
         arguments.setdefault("quast_mode", "normal")
+        arguments.setdefault("filter_nw", "no")
+
+        print(arguments, flush = True)
 
         columns = []
         for column_definition in report_definition["columns"]:
@@ -84,76 +91,79 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
-EXTERNAL_SOFTWARE_DIR = os.path.join(DATADIR, "external-software")
-DOWNLOAD_DIR = os.path.join(DATADIR, "downloads")
-GENOME_DIR = os.path.join(DATADIR, "genomes")
-ASSEMBLY_DIR = os.path.join(DATADIR, "assembly")
-EVALUATION_DIR = os.path.join(DATADIR, "evaluation")
-REPORT_DIR = os.path.join(DATADIR, "reports")
+EXTERNAL_SOFTWARE_ROOTDIR = os.path.join(DATADIR, "external-software")
+DOWNLOAD_ROOTDIR = os.path.join(DATADIR, "downloads")
+GENOME_ROOTDIR = os.path.join(DATADIR, "genomes")
+ASSEMBLY_ROOTDIR = os.path.join(DATADIR, "assembly")
+EVALUATION_ROOTDIR = os.path.join(DATADIR, "evaluation")
+REPORT_ROOTDIR = os.path.join(DATADIR, "reports")
 
-GENOME_SUBDIR = "g{genome}-h{homopolymer_compression}"
-GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_SUBDIR, "reference")
-GENOME_READS_SUBDIR = os.path.join(GENOME_SUBDIR, "reads-r{read_downsampling_factor}-u{uniquify_ids}")
-GENOME_REFERENCE = os.path.join(GENOME_DIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
-GENOME_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "reads.fa")
-GENOME_SINGLE_LINE_READS = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "single_line_reads.fa")
-UNIQUIFY_IDS_LOG = os.path.join(GENOME_DIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
+GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
+GENOME_REFERENCE_ARGUMENT_STRING = "reference-f{filter_nw}"
+GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
+GENOME_READS_ARGUMENT_STRING = "reads-r{read_downsampling_factor}-u{uniquify_ids}"
+GENOME_READS_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING)
+GENOME_REFERENCE = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
+GENOME_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "reads.fa")
+GENOME_SINGLE_LINE_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "single_line_reads.fa")
+UNIQUIFY_IDS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
 
-ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, "a{assembler}--{assembler_arguments}-")
-ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR)
+ASSEMBLY_ARGUMENT_STRING = "a{assembler}--{assembler_arguments}-"
+ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, ASSEMBLY_ARGUMENT_STRING)
+ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR)
 ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
 ASSEMBLER_ARGUMENT_STRINGS = {}
 
 WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}"
 ASSEMBLER_ARGUMENT_STRINGS["wtdbg2"] = WTDBG2_ARGUMENT_STRING
 WTDBG2_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "wtdbg2", assembler_arguments = WTDBG2_ARGUMENT_STRING)
-WTDBG2_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, WTDBG2_SUBDIR)
-WTDBG2_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "wtdbg2")
+WTDBG2_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, WTDBG2_SUBDIR)
+WTDBG2_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "wtdbg2")
 WTDBG2_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
 
 FLYE_ARGUMENT_STRING = "m{flye_mode}"
 ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
-FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, FLYE_SUBDIR)
-FLYE_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "flye")
+FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
+FLYE_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "flye")
 FLYE_LOG = os.path.join(FLYE_OUTPUT_DIR, "flye.log")
 
 HIFIASM_ARGUMENT_STRING = "none"
 ASSEMBLER_ARGUMENT_STRINGS["hifiasm"] = HIFIASM_ARGUMENT_STRING
 HIFIASM_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "hifiasm", assembler_arguments = HIFIASM_ARGUMENT_STRING)
-HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, HIFIASM_SUBDIR)
-HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
+HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, HIFIASM_SUBDIR)
+HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
 HIFIASM_LOG = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm.log")
 
 MDBG_ARGUMENT_STRING = "none"
 ASSEMBLER_ARGUMENT_STRINGS["mdbg"] = MDBG_ARGUMENT_STRING
 MDBG_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "mdbg", assembler_arguments = MDBG_ARGUMENT_STRING)
-MDBG_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, MDBG_SUBDIR)
-MDBG_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "mdbg")
+MDBG_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, MDBG_SUBDIR)
+MDBG_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "mdbg")
 MDBG_LOG = os.path.join(MDBG_OUTPUT_DIR, "mdbg.log")
 MDBG_ASSEMBLED_CONTIGS = os.path.join(MDBG_OUTPUT_DIR, "contigs.fa")
 
 LJA_ARGUMENT_STRING = "none"
 ASSEMBLER_ARGUMENT_STRINGS["lja"] = LJA_ARGUMENT_STRING
 LJA_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "lja", assembler_arguments = LJA_ARGUMENT_STRING)
-LJA_OUTPUT_DIR = os.path.join(ASSEMBLY_DIR, LJA_SUBDIR)
-LJA_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR), assembler = "lja")
+LJA_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, LJA_SUBDIR)
+LJA_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "lja")
 LJA_LOG = os.path.join(LJA_OUTPUT_DIR, "lja.log")
 LJA_ASSEMBLED_CONTIGS = os.path.join(LJA_OUTPUT_DIR, "contigs.fa")
 
-QUAST_DIR = os.path.join(EVALUATION_DIR, "quast-m{quast_mode}")
-QUAST_SUBDIR = ASSEMBLY_SUBDIR
-QUAST_OUTPUT_DIR = os.path.join(QUAST_DIR, QUAST_SUBDIR)
+QUAST_ROOTDIR = os.path.join(EVALUATION_ROOTDIR, "quast-m{quast_mode}")
+QUAST_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING, ASSEMBLY_ARGUMENT_STRING)
+QUAST_OUTPUT_DIR = os.path.join(QUAST_ROOTDIR, QUAST_SUBDIR)
 
-REPORT_SUBDIR = os.path.join(REPORT_DIR, "{report_name}", "{report_file_name}")
+REPORT_SUBDIR = os.path.join(REPORT_ROOTDIR, "{report_name}", "{report_file_name}")
 REPORT_TEX = os.path.join(REPORT_SUBDIR, "report.tex")
 REPORT_COMBINED_EAXMAX_PLOT = os.path.join(REPORT_SUBDIR, "combined_eaxmax_plot.pdf")
 REPORT_NAME_FILE = os.path.join(REPORT_SUBDIR, "name.txt")
-REPORT_HASHDIR = os.path.join(REPORT_DIR, "hashdir")
+REPORT_HASHDIR = os.path.join(REPORT_ROOTDIR, "hashdir")
 REPORT_PDF = os.path.join(REPORT_SUBDIR, "report.pdf")
 
-AGGREGATED_REPORT_SUBDIR = os.path.join(REPORT_DIR, "{aggregated_report_name}")
+AGGREGATED_REPORT_SUBDIR = os.path.join(REPORT_ROOTDIR, "{aggregated_report_name}")
 AGGREGATED_REPORT_PDF = os.path.join(AGGREGATED_REPORT_SUBDIR, "aggregated_report.pdf")
 
 UNIQUIFY_IDS_SCRIPT = "scripts/uniquify_fasta_ids.py"
@@ -162,27 +172,28 @@ CREATE_AGGREGATED_WTDBG2_REPORT_SCRIPT = "scripts/create_aggregated_wtdbg2_repor
 CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
 DOWNSAMPLE_FASTA_READS = "scripts/downsample_fasta_reads.py"
+FILTER_NW_FROM_REFERENCE = "scripts/filter_nw_from_reference.py"
 
-EXTERNAL_SOFTWARE_SCRIPTS_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "scripts")
-RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "rust_target")
+EXTERNAL_SOFTWARE_SCRIPTS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "scripts")
+RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "rust_target")
 IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.log")
 RUST_BINARY = os.path.join(RUST_DIR, "release", "cli")
-QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "quast", "quast.py")
-WTDBG2_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2", "wtdbg2")
-WTDBG2_CONSENSUS_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2", "wtpoa-cns")
-FLYE_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "Flye")
+QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "quast", "quast.py")
+WTDBG2_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2", "wtdbg2")
+WTDBG2_CONSENSUS_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2", "wtpoa-cns")
+FLYE_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "Flye")
 FLYE_BINARY = os.path.join(FLYE_DIR, "bin", "flye")
-SIM_IT_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "sim-it", "sim-it.pl")
-RATATOSK_BINARY = os.path.join(EXTERNAL_SOFTWARE_DIR, "Ratatosk", "build", "src", "Ratatosk")
-CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "ContigValidator")
+SIM_IT_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "sim-it", "sim-it.pl")
+RATATOSK_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "Ratatosk", "build", "src", "Ratatosk")
+CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "ContigValidator")
 CONVERT_TO_GFA_BINARY = os.path.join(EXTERNAL_SOFTWARE_SCRIPTS_DIR, "convertToGFA.py")
-SDSL_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "sdsl-lite")
-MDBG_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "rust-mdbg")
+SDSL_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "sdsl-lite")
+MDBG_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "rust-mdbg")
 MDBG_CARGO_TOML = os.path.join(MDBG_DIR, "Cargo.toml")
 MDBG_BINARY = os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")
 MDBG_SIMPLIFY = os.path.join(MDBG_DIR, "utils", "magic_simplify")
 MDBG_MULTI_K = os.path.join(MDBG_DIR, "utils", "multik")
-LJA_DIR = os.path.join(EXTERNAL_SOFTWARE_DIR, "LJA")
+LJA_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "LJA")
 LJA_BINARY = os.path.join(LJA_DIR, "bin", "lja")
 
 # TODO remove
@@ -202,7 +213,8 @@ def get_all_report_files():
         for report_name, report_definition in reports.items():
             for report_file_name, report_file_definition in report_definition["report_files"].items():
                 report_file_arguments = report_file_definition.arguments
-                #print(f"report_file_arguments: {report_file_arguments}", flush = True)
+                print(f"report_name: {report_name}")
+                print(f"report_file_arguments: {report_file_arguments}", flush = True)
                 result.append(REPORT_PDF.format(report_name = report_name, report_file_name = str(report_file_arguments)))
 
 
@@ -366,6 +378,8 @@ rule create_single_report_tex:
             script_column_arguments = get_single_report_script_column_arguments_from_wildcards,
             name_file = REPORT_NAME_FILE,
             hashdir = REPORT_HASHDIR,
+    wildcard_constraints:
+            report_name = "[^/]+",
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
@@ -429,7 +443,9 @@ rule create_aggregated_report_tex:
            script = "scripts/create_aggregated_wtdbg2_report.py",
     output: file = AGGREGATED_REPORT_PDF,
     params: source_reports_arg = lambda wildcards: "' '".join(get_aggregated_report_file_source_report_paths_from_wildcards(wildcards)),
-            source_report_names_arg = lambda wildcards: "' '".join([report_name + "/" + report_file_name for report_name, report_file_name in iterate_aggregated_report_file_source_reports_short_names(wildcards.aggregated_report_name)]),
+            source_report_names_arg = lambda wildcards: "' '".join([report_name + "/" + report_file_name for report_name, report_file_name in iterate_aggregated_report_file_source_reports_short_names(wildcards.aggregated_report_name)]),            
+    wildcard_constraints:
+            report_name = "[^/]+",
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
     shell: """
@@ -442,6 +458,8 @@ rule create_combined_eaxmax_graph:
             script = CREATE_COMBINED_EAXMAX_PLOT_SCRIPT,
     output: REPORT_COMBINED_EAXMAX_PLOT,
     params: input_quast_csvs = lambda wildcards, input: "' '".join([shortname + "' '" + quast for shortname, quast in zip(get_report_file_column_shortnames_from_wildcards(wildcards), input.quast_csvs)])
+    wildcard_constraints:
+            report_name = "[^/]+",
     conda:  "config/conda-seaborn-env.yml"
     threads: 1
     shell: """
@@ -1631,6 +1649,20 @@ rule convert_reads_to_single_lined_fasta:
     conda:  "config/conda-seqtk-env.yml"
     shell:  "seqtk seq -AU '{input.reads}' > '{output.reads}'"
 
+############################################
+###### Filter NW entries in reference ######
+############################################
+
+rule filter_nw:
+    input:  reference = safe_format(GENOME_REFERENCE, filter_nw = "no"),
+            script = FILTER_NW_FROM_REFERENCE,
+    output: reference = GENOME_REFERENCE,
+    wildcard_constraints:
+            homopolymer_compression = "none",
+            filter_nw = "yes",
+    conda:  "config/conda-biopython-env.yml"
+    shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
+
 ######################################
 ###### Input Genome Preparation ######
 ######################################
@@ -1826,8 +1858,8 @@ def checksum_url(url):
 
 localrules: download_fa_file
 rule download_fa_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
-            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.fa"),
+            checksum_file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "md5checksums.txt"),
     params: url = lambda wildcards: unescape_dirname(wildcards.url),
             checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
     wildcard_constraints:
@@ -1841,14 +1873,14 @@ rule download_fa_file:
     """
 
 #use rule download_fa_file as download_fa_gz_file with:
-#    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
+#    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.fa.gz"),
 #    wildcard_constraints:
 #            url = ".*\./?(f/?a|f/?n/?a|f/?a/?s/?t/?a)/?\./?g/?z"
 
 localrules: download_fa_gz_file
 rule download_fa_gz_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa.gz"),
-            checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.fa.gz"),
+            checksum_file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "md5checksums.txt"),
     params: url = lambda wildcards: unescape_dirname(wildcards.url),
             checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
     wildcard_constraints:
@@ -1864,8 +1896,8 @@ rule download_fa_gz_file:
 
 localrules: download_fastq_gz_file
 rule download_fastq_gz_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq.gz"),
-            #checksum_file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "md5checksums.txt"),
+    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.fastq.gz"),
+            #checksum_file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "md5checksums.txt"),
     params: url = lambda wildcards: unescape_dirname(wildcards.url),
             #checksum_url = lambda wildcards: checksum_url(unescape_dirname(wildcards.url)),
     wildcard_constraints:
@@ -1876,7 +1908,7 @@ rule download_fastq_gz_file:
 
 localrules: download_sra_file
 rule download_sra_file:
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
+    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.sra"),
     params: url = lambda wildcards: unescape_dirname(wildcards.url),
     wildcard_constraints:
             url = "http.*(((S|D)/?R/?R)|((S|D)/?R/?A))[0-9/\.]+"
@@ -1887,22 +1919,22 @@ rule download_sra_file:
 # convert files
 
 rule convert_fastq_download:
-    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fastq"),
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+    input:  file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.fastq"),
+    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.fa"),
     conda:  "config/conda-convert-reads-env.yml"
     shell:  """
         bioawk -c fastx '{{ print ">" $name "\\n" $seq }}' '{input.file}' > '{output.file}'
     """
 
 rule convert_sra_download:
-    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.sra"),
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "file.fa"),
+    input:  file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.sra"),
+    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.fa"),
     conda:  "config/conda-convert-reads-env.yml"
     shell:  "fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'"
 
 rule extract_download:
-    input:  file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}.gz"),
-    output: file = os.path.join(DOWNLOAD_DIR, "file", "{url}", "{file}"),
+    input:  file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "{file}.gz"),
+    output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "{file}"),
     params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
     wildcard_constraints:
             file = "[^/]*(?<!\.gz)",
@@ -1948,15 +1980,16 @@ def get_genome_reads_urls(wildcards):
 
 localrules: download_reference_genome
 rule download_reference_genome:
-    input:  file = lambda wildcards: os.path.join(DOWNLOAD_DIR, "file", escape_dirname(get_genome_url(wildcards)), "file.fa"),
+    input:  file = lambda wildcards: os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(get_genome_url(wildcards)), "file.fa"),
     output: file = GENOME_REFERENCE,
     wildcard_constraints:
             homopolymer_compression = "none",
+            filter_nw = "no",
     shell: "ln -sr -T '{input.file}' '{output.file}'"
 
 localrules: download_genome_reads
 rule download_genome_reads:
-    input:  files = lambda wildcards: [os.path.join(DOWNLOAD_DIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
+    input:  files = lambda wildcards: [os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
     output: file = GENOME_READS,
     wildcard_constraints:
             read_downsampling_factor = "none",
@@ -1999,7 +2032,7 @@ localrules: install_contig_validator
 rule install_contig_validator:
     input:  sdsl = SDSL_DIR,
     output: dir = directory(CONTIG_VALIDATOR_DIR),
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda:  "config/conda-contigvalidator-env.yml"
     threads: 1
     shell:  """
@@ -2015,7 +2048,7 @@ rule install_contig_validator:
 localrules: install_quast
 rule install_quast:
     output: script = QUAST_BINARY,
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     threads: 1
     shell: """
         mkdir -p '{params.external_software_dir}'
@@ -2029,7 +2062,7 @@ rule install_quast:
 localrules: install_sdsl
 rule install_sdsl:
     output: dir = SDSL_DIR,
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda:  "config/conda-contigvalidator-env.yml"
     threads: 1
     shell:  """
@@ -2044,7 +2077,7 @@ rule install_sdsl:
 localrules: install_ratatosk
 rule install_ratatosk:
     output: binary = RATATOSK_BINARY,
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda: "config/conda-install-ratatosk-env.yml"
     threads: 1
     shell: """
@@ -2064,12 +2097,12 @@ rule install_ratatosk:
 
 localrules: install_wtdbg2
 rule install_wtdbg2:
-    output: kbm2 = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2/kbm2"),
-            pgzf = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2/pgzf"),
+    output: kbm2 = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/kbm2"),
+            pgzf = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/pgzf"),
             wtdbg2 = WTDBG2_BINARY,
-            wtdbg_cns = os.path.join(EXTERNAL_SOFTWARE_DIR, "wtdbg2/wtdbg-cns"),
+            wtdbg_cns = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/wtdbg-cns"),
             wtpoa_cns = WTDBG2_CONSENSUS_BINARY,
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda: "config/conda-download-env.yml"
     threads: 1
     shell: """
@@ -2084,7 +2117,7 @@ rule install_wtdbg2:
 
 rule install_sim_it:
     output: SIM_IT_BINARY,
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda:  "config/conda-download-env.yml"
     shell:  """
         mkdir -p '{params.external_software_dir}'
@@ -2102,7 +2135,7 @@ rule install_sim_it:
 localrules: download_flye
 rule download_flye:
     output: flye_marker = os.path.join(FLYE_DIR, ".git", "HEAD"),
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     shell:  """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
@@ -2143,7 +2176,7 @@ rule build_flye:
 localrules: download_mdbg
 rule download_mdbg:
     output: mdbg_cargo_toml = MDBG_CARGO_TOML,
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
             mdbg_target_directory = os.path.join(MDBG_DIR, "target"),
     conda:  "config/conda-rust-env.yml"
     threads: 1
@@ -2192,7 +2225,7 @@ rule build_mdbg:
 localrules: download_lja
 rule download_lja:
     output: lja_marker = os.path.join(LJA_DIR, "CMakeLists.txt"),
-    params: external_software_dir = EXTERNAL_SOFTWARE_DIR,
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda:  "config/conda-download-env.yml"
     shell:  """
         mkdir -p '{params.external_software_dir}'
@@ -2230,7 +2263,7 @@ localrules: download_and_prepare
 rule download_and_prepare:
     input:  reads = expand(GENOME_READS, genome = genomes.keys(), homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no"),
             # correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
-            references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none"),
+            references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none", filter_nw = "no"),
             quast = QUAST_BINARY,
             wtdbg2 = WTDBG2_BINARY,
             rust = RUST_BINARY,

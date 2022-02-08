@@ -235,7 +235,7 @@ class Algorithm:
 class Column:
     def __init__(self, root_arguments, additional_arguments):
         #print("Creating column\nroot: {}\nadditional: {}".format(root_arguments, additional_arguments))
-        assert type(root_arguments) is Arguments
+        assert type(root_arguments) is Arguments, f"root_arguments is of type {type(root_arguments)} and not Arguments"
         assert type(additional_arguments) is Arguments
         self.arguments = root_arguments.copy()
         self.arguments.update(additional_arguments.copy())
