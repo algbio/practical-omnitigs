@@ -55,6 +55,7 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("uniquify_ids", "no")
         arguments.setdefault("assembler", None)
         arguments.setdefault("assembler_arguments", None)
+        arguments.setdefault("quast_mode", "normal")
 
         columns = []
         for column_definition in report_definition["columns"]:
@@ -141,7 +142,7 @@ LJA_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_DIR, ASSEMBLY_SUBDIR),
 LJA_LOG = os.path.join(LJA_OUTPUT_DIR, "lja.log")
 LJA_ASSEMBLED_CONTIGS = os.path.join(LJA_OUTPUT_DIR, "contigs.fa")
 
-QUAST_DIR = os.path.join(EVALUATION_DIR, "quast")
+QUAST_DIR = os.path.join(EVALUATION_DIR, "quast-m{quast_mode}")
 QUAST_SUBDIR = ASSEMBLY_SUBDIR
 QUAST_OUTPUT_DIR = os.path.join(QUAST_DIR, QUAST_SUBDIR)
 
@@ -1660,19 +1661,32 @@ rule filter_genome:
 ###### QUAST ######
 ###################
 
+def get_quast_extra_arguments_from_wildcards(wildcards):
+    try:
+        if wildcards.quast_mode == "hicanu":
+            return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000"
+        elif wildcards.quast_mode == "normal":
+            return ""
+        else:
+            raise Exception(f"Unknown quast_mode: {wildcards.quast_mode}")
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 rule run_quast:
     input:  contigs = ASSEMBLED_CONTIGS,
             reference = GENOME_REFERENCE,
             script = QUAST_BINARY,
     output: directory = directory(QUAST_OUTPUT_DIR),
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
+    params: extra_arguments = get_quast_extra_arguments_from_wildcards,
     conda: "config/conda-quast-env.yml"
     threads: 4
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50_000),
                cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
-    shell: "{input.script} -t {threads} --no-html --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
+    shell: "{input.script} {params.extra_arguments} -t {threads} --no-html --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 
 ##################
