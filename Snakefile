@@ -1713,9 +1713,9 @@ rule run_quast:
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     params: extra_arguments = get_quast_extra_arguments_from_wildcards,
     conda: "config/conda-quast-env.yml"
-    threads: 4
+    threads: 14,
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50_000),
-               cpus = 4,
+               cpus = 14,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
     shell: "{input.script} {params.extra_arguments} -t {threads} --no-html --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
