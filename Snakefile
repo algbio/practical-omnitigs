@@ -1700,7 +1700,7 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
         elif wildcards.quast_mode == "hicanu_misassemblies":
             return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90"
         elif wildcards.quast_mode == "normal":
-            return ""
+            return "--fragmented"
         else:
             raise Exception(f"Unknown quast_mode: {wildcards.quast_mode}")
     except Exception:
@@ -1720,7 +1720,7 @@ rule run_quast:
                cpus = 14,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
-    shell: "{input.script} {params.extra_arguments} -t {threads} --no-html --fragmented --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
+    shell: "{input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 
 ##################
