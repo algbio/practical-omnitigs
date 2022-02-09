@@ -2,11 +2,11 @@ use crate::macrotigs::macrotigs::Macrotigs;
 use crate::node_covering_node_visible_one_circular_safe::compute_maximal_node_covering_node_visible_one_circular_safe_walks;
 use bitvector::BitVector;
 use std::collections::{BTreeMap, BTreeSet};
-use traitgraph::algo::components::{is_cycle, is_strongly_connected};
 use traitgraph::index::GraphIndex;
 use traitgraph::index::OptionalGraphIndex;
 use traitgraph::interface::{DynamicGraph, ImmutableGraphContainer, StaticGraph};
 use traitgraph::walks::VecNodeWalk;
+use traitgraph_algo::components::{is_cycle, is_strongly_connected};
 use traitsequence::interface::Sequence;
 
 #[derive(Debug)]
@@ -528,12 +528,12 @@ mod tests {
     use crate::hamiltonian::preprocess_hamiltonian_circuit;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
-    use traitgraph::algo::components::is_strongly_connected;
-    use traitgraph::algo::predefined_graphs::{
-        create_random_graph, create_random_hamiltonian_graph,
-    };
     use traitgraph::implementation::petgraph_impl;
     use traitgraph::interface::{ImmutableGraphContainer, MutableGraphContainer};
+    use traitgraph_algo::components::is_strongly_connected;
+    use traitgraph_algo::predefined_graphs::{
+        create_random_graph, create_random_hamiltonian_graph,
+    };
 
     #[test]
     fn test_random_hamiltonian_graphs() {
@@ -592,7 +592,7 @@ mod tests {
         // This assertion is dependent on the random generator used and might fail if its implementation changes.
         debug_assert_eq!(
             result,
-            vec![true, true, true, true, true, false, false, true, true, true]
+            vec![true, false, false, true, true, true, false, true, false, true]
         );
     }
 
@@ -643,7 +643,7 @@ mod tests {
         // This assertion is dependent on the random generator used and might fail if its implementation changes.
         debug_assert_eq!(
             result,
-            vec![true, true, true, true, true, true, true, true, true, true]
+            vec![true, true, true, true, false, true, true, true, true, true]
         );
     }
 }

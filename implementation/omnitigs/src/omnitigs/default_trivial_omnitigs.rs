@@ -4,10 +4,10 @@ use crate::omnitigs::univocal_extension_algorithms::{
 use crate::omnitigs::{Omnitig, Omnitigs, TrivialOmnitigAlgorithm, UnivocalExtensionAlgorithm};
 use bitvector::BitVector;
 use std::marker::PhantomData;
-use traitgraph::algo::traversal::univocal_traversal::UnivocalIterator;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::{NodeOrEdge, StaticGraph};
 use traitgraph::walks::VecEdgeWalk;
+use traitgraph_algo::traversal::univocal_traversal::UnivocalIterator;
 use traitsequence::interface::Sequence;
 
 /// An algorithm to extract trivial omnitigs.

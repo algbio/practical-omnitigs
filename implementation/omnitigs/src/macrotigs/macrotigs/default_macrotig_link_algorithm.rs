@@ -1,9 +1,9 @@
 use super::{Macrotigs, MaximalMacrotigsAlgorithm};
 use crate::macrotigs::microtigs::Microtigs;
-use traitgraph::algo::traversal::univocal_traversal::is_edge_self_bivalent;
 use traitgraph::index::GraphIndex;
 use traitgraph::index::OptionalGraphIndex;
 use traitgraph::interface::StaticGraph;
+use traitgraph_algo::traversal::univocal_traversal::is_edge_self_bivalent;
 use traitsequence::interface::Sequence;
 
 /// Compute the maximal microtigs of a strongly connected graph using hydrostructure-based queries.

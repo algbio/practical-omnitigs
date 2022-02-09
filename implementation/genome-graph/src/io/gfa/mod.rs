@@ -2,7 +2,6 @@ use crate::error::Result;
 use crate::io::SequenceData;
 use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
-use bigraph::traitgraph::algo::dijkstra::DijkstraWeightedEdgeData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
@@ -16,6 +15,7 @@ use std::hash::Hash;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::sync::Arc;
+use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 /// Type of graphs read from gfa files.
 pub type PetGfaGraph<NodeData, EdgeData, SequenceHandle> =

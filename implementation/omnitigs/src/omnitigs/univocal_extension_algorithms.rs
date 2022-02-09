@@ -1,7 +1,7 @@
 use crate::omnitigs::{NodeCentricUnivocalExtensionAlgorithm, UnivocalExtensionAlgorithm};
+use crate::walks::{EdgeOmnitigLikeExt, NodeOmnitigLikeExt};
 use std::borrow::Borrow;
 use traitgraph::interface::StaticGraph;
-use traitgraph::walks::{EdgeWalk, NodeWalk};
 
 /// Computes the univocal extension of a walk assuming the graph is strongly connected.
 /// Might enter an infinite loop if the graph is not strongly connected.
@@ -11,7 +11,7 @@ impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>>
     UnivocalExtensionAlgorithm<Graph, ResultWalk> for SccUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::EdgeIndex]) -> ResultWalk {
-        EdgeWalk::compute_univocal_extension(walk.borrow(), graph)
+        EdgeOmnitigLikeExt::compute_univocal_extension(walk.borrow(), graph)
     }
 }
 
@@ -22,7 +22,7 @@ impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::EdgeIndex>>>
     UnivocalExtensionAlgorithm<Graph, ResultWalk> for NonSccUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::EdgeIndex]) -> ResultWalk {
-        EdgeWalk::compute_univocal_extension_non_scc(walk.borrow(), graph)
+        EdgeOmnitigLikeExt::compute_univocal_extension_non_scc(walk.borrow(), graph)
     }
 }
 
@@ -35,7 +35,7 @@ impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::NodeIndex>>>
     for SccNodeCentricUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::NodeIndex]) -> ResultWalk {
-        NodeWalk::compute_univocal_extension(walk.borrow(), graph)
+        NodeOmnitigLikeExt::compute_univocal_extension(walk.borrow(), graph)
     }
 }
 
@@ -47,6 +47,6 @@ impl<Graph: StaticGraph, ResultWalk: From<Vec<Graph::NodeIndex>>>
     for NonSccNodeCentricUnivocalExtensionStrategy
 {
     fn compute_univocal_extension(graph: &Graph, walk: &[Graph::NodeIndex]) -> ResultWalk {
-        NodeWalk::compute_univocal_extension_non_scc(walk.borrow(), graph)
+        NodeOmnitigLikeExt::compute_univocal_extension_non_scc(walk.borrow(), graph)
     }
 }

@@ -1,12 +1,13 @@
 use crate::hydrostructure::incremental_hydrostructure::NodeBridgeLikeIncrementalHydrostructure;
 use crate::macrotigs::macrotigs::Macrotigs;
 use crate::omnitigs::default_trivial_omnitigs::is_edge_in_maximal_trivial_omnitig_heart;
+use crate::walks::{EdgeOmnitigLikeExt, NodeOmnitigLikeExt};
 use bitvector::BitVector;
-use traitgraph::algo::components::is_strong_bridge;
 use traitgraph::index::GraphIndex;
 use traitgraph::interface::StaticGraph;
 use traitgraph::walks::{EdgeWalk, VecEdgeWalk};
 use traitgraph::walks::{NodeWalk, VecNodeWalk};
+use traitgraph_algo::components::is_strong_bridge;
 use traitsequence::interface::Sequence;
 
 fn check_safety<'graph, 'walk, Graph: StaticGraph>(
@@ -41,7 +42,7 @@ where
     let mut used_edges = BitVector::new(graph.edge_count());
     for macrotig in macrotigs.iter() {
         let univocal_extension =
-            EdgeWalk::compute_univocal_extension::<VecEdgeWalk<Graph>>(macrotig, graph);
+            EdgeOmnitigLikeExt::compute_univocal_extension::<VecEdgeWalk<Graph>>(macrotig, graph);
         for edge in univocal_extension.iter() {
             used_edges.insert(edge.as_usize());
         }
@@ -58,7 +59,7 @@ where
         }
 
         let trivial_omnitig: VecEdgeWalk<Graph> =
-            EdgeWalk::compute_univocal_extension((vec![edge]).as_slice(), graph);
+            EdgeOmnitigLikeExt::compute_univocal_extension((vec![edge]).as_slice(), graph);
         for edge in trivial_omnitig.iter() {
             used_edges.insert(edge.as_usize());
         }
@@ -116,7 +117,7 @@ where
     if walk.len() == 1 {
         let edge = walk.first().expect("Walk is empty.");
         if is_strong_bridge(graph, *edge) {
-            safe_walks.push(NodeWalk::compute_univocal_extension(
+            safe_walks.push(NodeOmnitigLikeExt::compute_univocal_extension(
                 &[*edge]
                     .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                     .expect("Walk cannot be represented as node walk."),
@@ -140,7 +141,7 @@ where
             if !check_safety(graph, &incremental_hydrostructure) {
                 let safe_walk = incremental_hydrostructure.current_walk();
                 let safe_walk = &safe_walk[0..safe_walk.len() - 1];
-                safe_walks.push(NodeWalk::compute_univocal_extension(
+                safe_walks.push(NodeOmnitigLikeExt::compute_univocal_extension(
                     &safe_walk
                         .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                         .expect("Walk cannot be represented as node walk."),
@@ -159,7 +160,7 @@ where
                 if !check_safety(graph, &incremental_hydrostructure)
                     && is_strong_bridge(graph, *edge)
                 {
-                    safe_walks.push(NodeWalk::compute_univocal_extension(
+                    safe_walks.push(NodeOmnitigLikeExt::compute_univocal_extension(
                         &[*edge]
                             .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                             .expect("Walk cannot be represented as node walk."),
@@ -178,7 +179,7 @@ where
                 .first()
                 .expect("Current walk is empty.");
             if !check_safety(graph, &incremental_hydrostructure) && is_strong_bridge(graph, *edge) {
-                safe_walks.push(NodeWalk::compute_univocal_extension(
+                safe_walks.push(NodeOmnitigLikeExt::compute_univocal_extension(
                     &[*edge]
                         .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                         .expect("Walk cannot be represented as node walk."),
@@ -193,7 +194,7 @@ where
                 .last()
                 .expect("Current walk is empty.");
             if is_strong_bridge(graph, *edge) {
-                safe_walks.push(NodeWalk::compute_univocal_extension(
+                safe_walks.push(NodeOmnitigLikeExt::compute_univocal_extension(
                     &[*edge]
                         .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)
                         .expect("Walk cannot be represented as node walk."),
@@ -209,7 +210,7 @@ where
 
     // When the loop aborts we have a suffix of the walk that is maximal safe.
     // Therefore, we add it to the safe walks.
-    safe_walks.push(NodeWalk::compute_univocal_extension(
+    safe_walks.push(NodeOmnitigLikeExt::compute_univocal_extension(
         &incremental_hydrostructure
             .current_walk()
             .clone_as_node_walk::<VecNodeWalk<Graph>>(graph)

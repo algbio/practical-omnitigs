@@ -4,27 +4,27 @@ use std::io::Write;
 
 #[derive(Parser)]
 pub struct FilterCommand {
-    #[clap(short, long, about = "The input file in fasta format")]
+    #[clap(short, long, help = "The input file in fasta format")]
     pub input: String,
 
     #[clap(
         short,
         long,
-        about = "The id of the record that should be retained, all other records are deleted"
+        help = "The id of the record that should be retained, all other records are deleted"
     )]
     pub retain: Option<String>,
 
     #[clap(
         short,
         long,
-        about = "The output file to which the remaining records should be written in fasta format"
+        help = "The output file to which the remaining records should be written in fasta format"
     )]
     pub output: String,
 
     #[clap(
         short,
         long,
-        about = "If given, extract the name of the genome into the given file"
+        help = "If given, extract the name of the genome into the given file"
     )]
     pub extract_name: Option<String>,
 }

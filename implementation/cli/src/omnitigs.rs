@@ -1,14 +1,12 @@
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
-use genome_graph::bigraph::traitgraph::algo::components::{
-    decompose_strongly_connected_components, is_strongly_connected,
-};
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::interface::GraphBase;
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use traitgraph_algo::components::{decompose_strongly_connected_components, is_strongly_connected};
 use traitsequence::interface::Sequence;
 
 #[derive(Parser)]
@@ -17,37 +15,37 @@ pub struct ComputeOmnitigsCommand {
         short,
         long,
         default_value = "bcalm2",
-        about = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file. If dot, then the input is a .dot file and the output is a list of sequences of node ids."
+        help = "The format of the input and output files. If bcalm2, the input file is in bcalm2 format and the output file is in fasta format. If wtdbg2, the inputs are .1.nodes and the .1.reads file and the reads file from which these were generated, and the output is the .ctg.lay file. If dot, then the input is a .dot file and the output is a list of sequences of node ids."
     )]
     pub file_format: String,
 
-    #[clap(short, long, about = "The input files in the specified format")]
+    #[clap(short, long, help = "The input files in the specified format")]
     pub input: Vec<String>,
 
     #[clap(
         short,
         long,
-        about = "The kmer size selected when generating the input with bcalm2"
+        help = "The kmer size selected when generating the input with bcalm2"
     )]
     pub kmer_size: Option<usize>,
 
     #[clap(
         short,
         long,
-        about = "The file the omnitigs are stored into in fasta format."
+        help = "The file the omnitigs are stored into in fasta format."
     )]
     pub output: String,
 
     #[clap(
         short,
         long,
-        about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
+        help = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
     )]
     pub latex: Option<String>,
 
     #[clap(
         long,
-        about = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
+        help = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
     )]
     pub output_as_wtdbg2_node_ids: bool,
 }

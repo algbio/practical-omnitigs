@@ -16,6 +16,7 @@ use crate::omnitigs::incremental_hydrostructure_macrotig_based_non_trivial_omnit
 use crate::omnitigs::univocal_extension_algorithms::{
     NonSccNodeCentricUnivocalExtensionStrategy, SccNodeCentricUnivocalExtensionStrategy,
 };
+use crate::walks::EdgeOmnitigLikeExt;
 use bigraph::interface::static_bigraph::{StaticBigraph, StaticEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
 use std::cmp::Ordering;

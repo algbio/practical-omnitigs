@@ -8,7 +8,7 @@ extern crate scan_fmt;
 
 use clap::Parser;
 use error_chain::{ChainedError, ExitCode};
-use simplelog::{CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
+use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod circularise_records;
 mod filter;
@@ -22,6 +22,7 @@ mod verify_genome;
 error_chain! {
     foreign_links {
         Io(std::io::Error);
+        Anyhow(anyhow::Error);
     }
 
     links {
@@ -92,6 +93,7 @@ fn initialise_logging() {
         },
         Config::default(),
         TerminalMode::Mixed,
+        ColorChoice::Auto,
     )])
     .unwrap();
 

@@ -1,42 +1,38 @@
 use crate::CliOptions;
 use clap::Parser;
-use genome_graph::bigraph::traitgraph::algo::components::is_strongly_connected;
-use genome_graph::bigraph::traitgraph::algo::predefined_graphs::{
-    compute_m_from_n_and_c, create_random_graph,
-};
 use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
-use genome_graph::bigraph::traitgraph::io::hamcircuit::{
-    read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp,
-};
 use omnitigs::hamiltonian::preprocess_hamiltonian_circuit;
 use omnitigs::macrotigs::macrotigs::Macrotigs;
 use omnitigs::node_covering_node_visible_one_circular_safe::compute_maximal_node_covering_node_visible_one_circular_safe_walks;
 use omnitigs::traitgraph::interface::ImmutableGraphContainer;
 use omnitigs::traitgraph::interface::MutableGraphContainer;
-use omnitigs::traitgraph::walks::NodeWalk;
+use omnitigs::walks::NodeOmnitigLikeExt;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::time::Instant;
+use traitgraph_algo::components::is_strongly_connected;
+use traitgraph_algo::predefined_graphs::{compute_m_from_n_and_c, create_random_graph};
+use traitgraph_tsplib_io::{read_hamcircuit_from_tsplib_tsp, write_hamcircuit_as_tsplib_tsp};
 use traitsequence::interface::Sequence;
 
 #[derive(Parser)]
 pub struct HamCircuitCommand {
-    #[clap(short, long, about = "The input file in tsplib format")]
+    #[clap(short, long, help = "The input file in tsplib format")]
     pub input: String,
 
     #[clap(
         short,
         long,
-        about = "If given, generate random strongly connected graphs instead of reading an input. Must have an argument of the form n<node count>+c<arc factor>."
+        help = "If given, generate random strongly connected graphs instead of reading an input. Must have an argument of the form n<node count>+c<arc factor>."
     )]
     random: Option<String>,
 
-    #[clap(long, about = "The file to write the raw graph in TSPLIB format.")]
+    #[clap(long, help = "The file to write the raw graph in TSPLIB format.")]
     output_raw: String,
 
     #[clap(
         long,
-        about = "The file to write the preprocessed graph in TSPLIB format."
+        help = "The file to write the preprocessed graph in TSPLIB format."
     )]
     output_preprocessed: String,
 }

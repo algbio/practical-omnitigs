@@ -1,10 +1,10 @@
-use traitgraph::algo::traversal::{
-    BackwardNeighborStrategy, BfsQueueStrategy, ForbiddenEdge, ForbiddenNode,
-    ForwardNeighborStrategy, PreOrderTraversal, TraversalNeighborStrategy,
-};
 use traitgraph::implementation::incremental_subgraph::IncrementalSubgraph;
 use traitgraph::interface::subgraph::DecoratingSubgraph;
 use traitgraph::interface::{GraphBase, NodeOrEdge, StaticGraph};
+use traitgraph_algo::traversal::{
+    BackwardNeighborStrategy, BfsQueueStrategy, ForbiddenEdge, ForbiddenNode,
+    ForwardNeighborStrategy, PreOrderTraversal, TraversalNeighborStrategy,
+};
 
 /// Returns the reachable subgraph from a node without using an edge.
 pub fn compute_restricted_edge_reachability<

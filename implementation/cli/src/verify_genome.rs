@@ -6,13 +6,14 @@ use traitsequence::interface::Sequence;
 
 #[derive(Parser)]
 pub struct VerifyGenomeCommand {
-    #[clap(short, long, about = "The input file in fasta format")]
+    #[clap(short, long, help = "The input file in fasta format")]
     pub input: String,
 }
 
 error_chain! {
     foreign_links {
         Io(std::io::Error);
+        Anyhow(anyhow::Error);
     }
 
     errors {

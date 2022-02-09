@@ -19,5 +19,7 @@ pub mod omnitigs;
 pub mod restricted_reachability;
 /// Algorithms to compute unitigs.
 pub mod unitigs;
+/// Core functions on walks for omnitig-like algorithms.
+pub mod walks;
 
 pub use traitgraph;

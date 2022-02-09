@@ -12,16 +12,19 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "=3.0.0-beta.5"
+clap = {version = "3.0.14", features = ["derive"]}
 compact-genome = {path = "../compact-genome"}
 genome-graph = {path = "../genome-graph"}
 omnitigs = {path = "../omnitigs"}
-traitsequence = "0.4"
-error-chain = "0.12"
-log = "0.4"
-simplelog = "0.8"
-colored = "2"
-bio = "0.31"
-statistical = "1"
-scan_fmt = "0.2"
-rand = "0.7"
+traitsequence = "0.6.0"
+error-chain = "0.12.4"
+log = "0.4.14"
+simplelog = "0.11.2"
+colored = "2.0.0"
+bio = "0.39.1"
+statistical = "1.0.0"
+scan_fmt = "0.2.6"
+rand = "0.8.4"
+traitgraph-algo = "0.6.2"
+traitgraph-tsplib-io = "0.6.2"
+anyhow = "1.0.53"

@@ -1,7 +1,7 @@
 use crate::CliOptions;
 use clap::Parser;
 use colored::*;
-use genome_graph::bigraph::traitgraph::algo::components::{
+use traitgraph_algo::components::{
     decompose_strongly_connected_components, decompose_weakly_connected_components,
     extract_subgraphs_from_node_mapping,
 };
@@ -19,40 +19,40 @@ use compact_genome::implementation::DefaultSequenceStore;
 
 #[derive(Parser)]
 pub struct VerifyEdgeCentricCommand {
-    #[clap(short, long, about = "The input file in bcalm2 format")]
+    #[clap(short, long, help = "The input file in bcalm2 format")]
     pub input: String,
 
     #[clap(
         short,
         long,
-        about = "The kmer size selected when generating the input with bcalm2"
+        help = "The kmer size selected when generating the input with bcalm2"
     )]
     pub kmer_size: usize,
 
     #[clap(
         short,
         long,
-        about = "The output file, to which the graph should be written in bcalm2 format for verification purposes"
+        help = "The output file, to which the graph should be written in bcalm2 format for verification purposes"
     )]
     pub output: Option<String>,
 
     #[clap(
         short,
         long,
-        about = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
+        help = "A file to output the properties and statistics computed by this command formatted as a LaTeX table"
     )]
     pub latex: Option<String>,
 }
 
 #[derive(Parser)]
 pub struct VerifyNodeCentricCommand {
-    #[clap(short, long, about = "The input file in bcalm2 format")]
+    #[clap(short, long, help = "The input file in bcalm2 format")]
     pub input: String,
 
     #[clap(
         short,
         long,
-        about = "The output file, to which the graph should be written in bcalm2 format for verification purposes"
+        help = "The output file, to which the graph should be written in bcalm2 format for verification purposes"
     )]
     pub output: Option<String>,
 }
