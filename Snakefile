@@ -104,6 +104,7 @@ GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_
 GENOME_READS_ARGUMENT_STRING = "reads-r{read_downsampling_factor}-u{uniquify_ids}"
 GENOME_READS_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING)
 GENOME_REFERENCE = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
+GENOME_REFERENCE_LENGTH = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "reference_length.txt")
 GENOME_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "reads.fa")
 GENOME_SINGLE_LINE_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "single_line_reads.fa")
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
@@ -179,8 +180,9 @@ CONVERT_VALIDATION_OUTPUTS_TO_LATEX_SCRIPT = "scripts/convert_validation_outputs
 CREATE_AGGREGATED_WTDBG2_REPORT_SCRIPT = "scripts/create_aggregated_wtdbg2_report.py"
 CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
-DOWNSAMPLE_FASTA_READS = "scripts/downsample_fasta_reads.py"
-FILTER_NW_FROM_REFERENCE = "scripts/filter_nw_from_reference.py"
+DOWNSAMPLE_FASTA_READS_SCRIPT = "scripts/downsample_fasta_reads.py"
+FILTER_NW_FROM_REFERENCE_SCRIPT = "scripts/filter_nw_from_reference.py"
+COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT = "scripts/compute_genome_reference_length.py"
 
 EXTERNAL_SOFTWARE_SCRIPTS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "scripts")
 RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "rust_target")
@@ -838,14 +840,6 @@ def get_wtdbg2_args_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-def get_genome_len_from_wildcards(wildcards):
-    try:
-        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
-        return str(genome_properties["genome_length"])
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
 def get_wtdbg2_caching_arguments_from_wildcards(wildcards):
     try:
         arguments = Arguments.from_str(wildcards.arguments)
@@ -962,6 +956,15 @@ def get_wtdbg2_cached_kbm_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
+def get_genome_len_from_file(path):
+    try:
+        with open(path, 'r') as f:
+            for line in file:
+                return line.strip()
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 rule wtdbg2:
     input:  reads = GENOME_READS,
             #contigs = get_wtdbg2_injectable_contigs_from_wildcards,
@@ -969,6 +972,7 @@ rule wtdbg2:
             #cached_nodes = get_wtdbg2_cached_nodes_from_wildcards,
             #cached_clips = get_wtdbg2_cached_clips_from_wildcards,
             #cached_kbm = get_wtdbg2_cached_kbm_from_wildcards,
+            reference_length = GENOME_REFERENCE_LENGTH,
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -984,7 +988,7 @@ rule wtdbg2:
             #cache_args = lambda wildcards, input, output: "--load-nodes '{cached_nodes}' --load-clips '{cached_clips}' --load-kbm '{cached_kbm}'".format(cached_nodes = input.cached_nodes, cached_clips = input.cached_clips, cached_kbm = input.cached_kbm) if is_wtdbg2_using_cache_from_wildcards(wildcards) else "--dump-kbm '{kbm}'".format(kbm = output.kbm),
             #inject_unitigs_args = lambda wildcards, input: "--inject-unitigs '{contigs}'".format(contigs = input.contigs) if is_wtdbg2_injecting_contigs_from_wildcards(wildcards) else "",
             #inject_fragment_unitigs_args = lambda wildcards, input: "--inject-fragment-unitigs '{contigs}'".format(contigs = input.fragment_contigs) if is_wtdbg2_injecting_fragment_contigs_from_wildcards(wildcards) else "",
-            genome_len_arg = get_genome_len_from_wildcards,
+            genome_len_arg = lambda wildcards, input: get_genome_len_from_file(input.reference_length),
             output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             #frg_dot_escaped = lambda wildcards, output: ["'" + file + "'" for file in output.frg_dot],
     threads: MAX_THREADS
@@ -1042,11 +1046,12 @@ rule link_wtdbg2_contigs:
 
 rule flye:
     input:  reads = GENOME_READS,
+            reference_length = GENOME_REFERENCE_LENGTH,
             script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
     log:    log = FLYE_LOG,
-    params: genome_len_arg = lambda wildcards: "-g " + get_genome_len_from_wildcards(wildcards),
+    params: genome_len_arg = lambda wildcards, input: get_genome_len_from_file(input.reference_length),
             output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
@@ -1149,10 +1154,11 @@ rule lja:
 
 rule hicanu:
     input:  reads = GENOME_READS,
+            reference_length = GENOME_REFERENCE_LENGTH,
     output: contigs = CANU_ASSEMBLED_CONTIGS,
     params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
             original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
-            genome_size = get_genome_len_from_wildcards,
+            genome_size = lambda wildcards, input: get_genome_len_from_file(input.reference_length),
     log:    log = CANU_LOG,
     threads: MAX_THREADS,
     conda:  "config/conda-canu-env.yml"
@@ -1661,7 +1667,7 @@ rule homopolymer_compress_reference:
 
 rule downsample_reads:
     input:  reads = safe_format(GENOME_READS, read_downsampling_factor = "none"),
-            script = DOWNSAMPLE_FASTA_READS,
+            script = DOWNSAMPLE_FASTA_READS_SCRIPT,
     output: reads = GENOME_READS,
     wildcard_constraints:
             read_downsampling_factor = "0.[0-9]+",
@@ -1686,13 +1692,24 @@ rule convert_reads_to_single_lined_fasta:
 
 rule filter_nw:
     input:  reference = safe_format(GENOME_REFERENCE, filter_nw = "no"),
-            script = FILTER_NW_FROM_REFERENCE,
+            script = FILTER_NW_FROM_REFERENCE_SCRIPT,
     output: reference = GENOME_REFERENCE,
     wildcard_constraints:
             homopolymer_compression = "none",
             filter_nw = "yes",
     conda:  "config/conda-biopython-env.yml"
     shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
+
+######################################
+###### Compute reference length ######
+######################################
+
+rule compute_reference_length:
+    input:  reference = GENOME_REFERENCE,
+            script = COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT,
+    output: reference_length = GENOME_REFERENCE_LENGTH,
+    conda:  "config/conda-biopython-env.yml"
+    shell:  "'{input.script}' '{input.reference}' '{output.reference_length}'"
 
 ######################################
 ###### Input Genome Preparation ######
