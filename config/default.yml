@@ -359,6 +359,26 @@ column_templates:
       select_assembler: 
         wtdbg2:
           wtdbg2_mode: "ccs"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          cli_arguments:
+            "--skip-fragment-assembly": True
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          injections:
+            "wtdbg2-inject-trivial-omnitigs": True
+          wtdbg2_mode: "ccs"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -372,6 +392,9 @@ column_templates:
     - shortname: "lja"
       select_assembler:
         lja:
+    - shortname: "HiCanu"
+      select_assembler:
+        canu:
 
 reports:
 

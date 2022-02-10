@@ -152,6 +152,14 @@ LJA_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBD
 LJA_LOG = os.path.join(LJA_OUTPUT_DIR, "lja.log")
 LJA_ASSEMBLED_CONTIGS = os.path.join(LJA_OUTPUT_DIR, "contigs.fa")
 
+CANU_ARGUMENT_STRING = "none"
+ASSEMBLER_ARGUMENT_STRINGS["canu"] = CANU_ARGUMENT_STRING
+CANU_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "canu", assembler_arguments = CANU_ARGUMENT_STRING)
+CANU_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, CANU_SUBDIR)
+CANU_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "canu")
+CANU_LOG = os.path.join(CANU_OUTPUT_DIR, "canu.log")
+CANU_ASSEMBLED_CONTIGS = os.path.join(CANU_OUTPUT_DIR, "contigs.fa")
+
 QUAST_ROOTDIR = os.path.join(EVALUATION_ROOTDIR, "quast-m{quast_mode}")
 QUAST_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING, ASSEMBLY_ARGUMENT_STRING)
 QUAST_OUTPUT_DIR = os.path.join(QUAST_ROOTDIR, QUAST_SUBDIR)
@@ -1133,6 +1141,29 @@ rule lja:
         mkdir -p '{params.output_dir}'
         '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        """
+
+####################
+###### HiCanu ######
+####################
+
+rule hicanu:
+    input:  reads = GENOME_READS,
+    output: contigs = CANU_ASSEMBLED_CONTIGS,
+    params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
+            original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
+            genome_size = get_genome_len_from_wildcards,
+    log:    log = CANU_LOG,
+    threads: MAX_THREADS,
+    conda:  "config/conda-canu-env.yml"
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+    shell:  """
+        mkdir -p '{params.output_dir}'
+        canu -assemble -p assembly -d '{params.output_dir}' genomeSize={params.genome_size} -pacbio-hifi '{input.reads}' | tee '{log.log}'
+        ls -sr -R '{params.original_contigs}' '{output.contigs}'
         """
 
 #############################
