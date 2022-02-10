@@ -956,15 +956,6 @@ def get_wtdbg2_cached_kbm_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-def get_genome_len_from_file(path):
-    try:
-        with open(path, 'r') as f:
-            for line in file:
-                return line.strip()
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
 rule wtdbg2:
     input:  reads = GENOME_READS,
             #contigs = get_wtdbg2_injectable_contigs_from_wildcards,
@@ -972,7 +963,7 @@ rule wtdbg2:
             #cached_nodes = get_wtdbg2_cached_nodes_from_wildcards,
             #cached_clips = get_wtdbg2_cached_clips_from_wildcards,
             #cached_kbm = get_wtdbg2_cached_kbm_from_wildcards,
-            reference_length = GENOME_REFERENCE_LENGTH,
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -988,7 +979,6 @@ rule wtdbg2:
             #cache_args = lambda wildcards, input, output: "--load-nodes '{cached_nodes}' --load-clips '{cached_clips}' --load-kbm '{cached_kbm}'".format(cached_nodes = input.cached_nodes, cached_clips = input.cached_clips, cached_kbm = input.cached_kbm) if is_wtdbg2_using_cache_from_wildcards(wildcards) else "--dump-kbm '{kbm}'".format(kbm = output.kbm),
             #inject_unitigs_args = lambda wildcards, input: "--inject-unitigs '{contigs}'".format(contigs = input.contigs) if is_wtdbg2_injecting_contigs_from_wildcards(wildcards) else "",
             #inject_fragment_unitigs_args = lambda wildcards, input: "--inject-fragment-unitigs '{contigs}'".format(contigs = input.fragment_contigs) if is_wtdbg2_injecting_fragment_contigs_from_wildcards(wildcards) else "",
-            genome_len_arg = lambda wildcards, input: get_genome_len_from_file(input.reference_length),
             output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             #frg_dot_escaped = lambda wildcards, output: ["'" + file + "'" for file in output.frg_dot],
     threads: MAX_THREADS
@@ -997,7 +987,8 @@ rule wtdbg2:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100000),
     shell: """
-        '{input.binary}' -x {wildcards.wtdbg2_mode} -g {params.genome_len_arg} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' 2>&1 | tee '{log.log}'
     """
     #'{input.binary}' -x {wildcards.wtdbg2_mode} -g {params.genome_len_arg} {params.args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' {params.cache_args} {params.inject_unitigs_args} {params.inject_fragment_unitigs_args} 2>&1 | tee '{log.log}'
     #if [ ! -z '{input.cached_kbm}' ]; then
@@ -1046,13 +1037,12 @@ rule link_wtdbg2_contigs:
 
 rule flye:
     input:  reads = GENOME_READS,
-            reference_length = GENOME_REFERENCE_LENGTH,
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
             script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
     log:    log = FLYE_LOG,
-    params: genome_len_arg = lambda wildcards, input: get_genome_len_from_file(input.reference_length),
-            output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
+    params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
@@ -1060,7 +1050,10 @@ rule flye:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
                mail_type = "END",
-    shell: "'{input.script}' {params.genome_len_arg} -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'"
+    shell:  """
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        """
 
 localrules: link_flye_contigs
 rule link_flye_contigs:
@@ -1154,11 +1147,10 @@ rule lja:
 
 rule hicanu:
     input:  reads = GENOME_READS,
-            reference_length = GENOME_REFERENCE_LENGTH,
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
     output: contigs = CANU_ASSEMBLED_CONTIGS,
     params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
             original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
-            genome_size = lambda wildcards, input: get_genome_len_from_file(input.reference_length),
     log:    log = CANU_LOG,
     threads: MAX_THREADS,
     conda:  "config/conda-canu-env.yml"
@@ -1167,8 +1159,9 @@ rule hicanu:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell:  """
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
-        canu -assemble -p assembly -d '{params.output_dir}' genomeSize={params.genome_size} useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
+        canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
         ls -sr -R '{params.original_contigs}' '{output.contigs}'
         """
 
