@@ -1162,7 +1162,7 @@ rule hicanu:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell:  """
         mkdir -p '{params.output_dir}'
-        canu -assemble -p assembly -d '{params.output_dir}' genomeSize={params.genome_size} -pacbio-hifi '{input.reads}' | tee '{log.log}'
+        canu -assemble -p assembly -d '{params.output_dir}' genomeSize={params.genome_size} useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
         ls -sr -R '{params.original_contigs}' '{output.contigs}'
         """
 
