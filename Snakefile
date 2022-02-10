@@ -1162,7 +1162,7 @@ rule hicanu:
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
         canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
-        ls -sr -R '{params.original_contigs}' '{output.contigs}'
+        ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
 #############################
