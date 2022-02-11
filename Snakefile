@@ -982,10 +982,10 @@ rule wtdbg2:
             output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             #frg_dot_escaped = lambda wildcards, output: ["'" + file + "'" for file in output.frg_dot],
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100000),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' 2>&1 | tee '{log.log}'
@@ -1008,6 +1008,10 @@ rule wtdbg2_extract_ctg_lay:
     output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
     params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
     conda:  "config/conda-extract-env.yml"
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 1_000),
     shell:  "cd '{params.working_directory}'; gunzip -k wtdbg2.ctg.lay.gz"
 
 rule wtdbg2_consensus:
@@ -1017,10 +1021,10 @@ rule wtdbg2_consensus:
     output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
     log:    log = WTDBG2_CONSENSUS_LOG,
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8000),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' | tee '{log.log}'"
 
 localrules: link_wtdbg2_contigs
