@@ -39,6 +39,16 @@ if aggregated_reports is None:
 
 from report_file_parser import *
 
+DEFAULT_ASSEMBLER_ARGUMENTS = {
+    "wtdbg2": {
+        "skip_fragment_assembly": "no",
+        "fragment_correction_steps": "all",
+        "tig_injection": "none",
+        "frg_injection": "none",
+        "frg_injection_stage": "none",
+    },
+}
+
 for report_name, report_definition in reports.items():
     argument_matrix = ArgumentMatrix(report_definition.setdefault("argument_matrix", {}))
     report_definition["argument_matrix"] = argument_matrix # use correct type
@@ -62,14 +72,21 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("quast_mode", "normal")
         arguments.setdefault("filter_nw", "no")
 
-        #print(arguments, flush = True)
-
         columns = []
         for column_definition in report_definition["columns"]:
-            columns.append(Column(arguments, Arguments.from_dict(column_definition)))
+            column_arguments = Arguments.from_dict(column_definition)
+            column = Column(arguments, column_arguments)
+
+            assembler_name = column.arguments.assembler_name()
+            if assembler_name in DEFAULT_ASSEMBLER_ARGUMENTS:
+                assembler_arguments = column.arguments.assembler_arguments()
+                for key, value in DEFAULT_ASSEMBLER_ARGUMENTS[assembler_name].items():
+                    assembler_arguments.setdefault(key, value)
+
+            columns.append(column)
+
         report_file = ReportFile(arguments, columns)
         report_definition.setdefault("report_files", {})[report_file.name] = report_file
-
 
 #import pprint
 #pp = pprint.PrettyPrinter(indent = 2, width = 200, compact = True)
@@ -115,10 +132,12 @@ ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR)
 ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
 ASSEMBLER_ARGUMENT_STRINGS = {}
 
-WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}"
+WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}-s{skip_fragment_assembly}-f{fragment_correction_steps}-t{tig_injection}-f{frg_injection}-s{frg_injection_stage}"
 ASSEMBLER_ARGUMENT_STRINGS["wtdbg2"] = WTDBG2_ARGUMENT_STRING
 WTDBG2_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "wtdbg2", assembler_arguments = WTDBG2_ARGUMENT_STRING)
 WTDBG2_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, WTDBG2_SUBDIR)
+WTDBG2_INJECTABLE_CONTIG_DIR = os.path.join(WTDBG2_OUTPUT_DIR, "injectable_contigs")
+WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR = os.path.join(WTDBG2_OUTPUT_DIR, "injectable_fragment_contigs")
 WTDBG2_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "wtdbg2")
 WTDBG2_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
@@ -527,117 +546,62 @@ rule latex:
 #     shell:  "PYTHONUNBUFFERED=1 '{input.script}' '{input.nodes}' '{input.reference}' '{params.output_prefix}' 2>&1 | tee '{log.log}'"
 
 ########################
-###### Algorithms ######
+###### Injections ######
 ########################
-
-### bcalm2 ###
-
-rule compute_omnitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = RUST_BINARY,
-    output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.omnitigs.tex"
-    threads: 1
-    shell: "'{input.binary}' compute-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-rule compute_trivial_omnitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = RUST_BINARY,
-    output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.trivialomnitigs.tex"
-    threads: 1
-    shell: "'{input.binary}' compute-trivial-omnitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-rule compute_unitigs:
-    input: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa", binary = RUST_BINARY,
-    output: file = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa", log = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.fa.log", latex = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.unitigs.tex"
-    threads: 1
-    shell: "'{input.binary}' compute-unitigs --input '{input.file}' --kmer-size {wildcards.k} --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
-
-### long reads ###
 
 def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
     try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        injections = assembler_arguments.get("injections", {})
+        injection = wildcards.tig_injection
 
-        if "wtdbg2-inject-unitigs" in injections:
+        if "unitigs" == injection:
             return "compute-unitigs"
-        elif "wtdbg2-inject-trivial-omnitigs" in injections:
+        elif "trivial_omnitigs" == injection:
             return "compute-trivial-omnitigs --non-scc"
-        elif "wtdbg2-inject-omnitigs" in injections:
+        elif "omnitigs" == injection:
             return "compute-omnitigs"
         else:
-            raise Exception("Missing injection command in assembler arguments: " + str(wildcards))
+            raise Exception(f"Wrong injection command in assembler arguments: {wildcards}")
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
 
 rule compute_injectable_contigs_wtdbg2:
-    input:  nodes = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.nodes",
-            reads = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.reads",
-            dot = lambda wildcards: get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.3.dot",
+    input:  nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"), tig_injection = "none"),
+            reads = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.reads"), tig_injection = "none"),
+            dot = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.dot"), tig_injection = "none"),
             raw_reads = GENOME_READS,
             binary = RUST_BINARY,
-    output: file = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks",
-            log = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.log",
-            latex = ALGORITHM_PREFIX_FORMAT + "injectable_contigs/compute_injectable_contigs.tex",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks.completed"),
-    params: command = get_injectable_contigs_rust_cli_command_from_wildcards
+    output: file = os.path.join(WTDBG2_INJECTABLE_CONTIG_DIR, "contigwalks.ssv"),
+            latex = os.path.join(WTDBG2_INJECTABLE_CONTIG_DIR, "compute_injectable_contigs.tex"),
+    log:    log = os.path.join(WTDBG2_INJECTABLE_CONTIG_DIR, "compute_injectable_contigs.log"),
+    params: command = get_injectable_contigs_rust_cli_command_from_wildcards,
     threads: 1
     resources: mem_mb = 48000
-    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{output.log}'"
+    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
     try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        fragment_injections = assembler_arguments.get("fragment_injections", {})
+        injection = wildcards.frg_injection
 
-        if "wtdbg2-inject-fragment-unitigs" in fragment_injections:
+        if "unitigs" == injection:
             return "compute-unitigs"
-        elif "wtdbg2-inject-fragment-trivial-omnitigs" in fragment_injections:
+        elif "trivial_omnitigs" == injection:
             return "compute-trivial-omnitigs --non-scc"
-        elif "wtdbg2-inject-fragment-omnitigs" in fragment_injections:
+        elif "omnitigs" == injection:
             return "compute-omnitigs"
         else:
-            raise Exception("Missing injection command in assembler arguments: " + str(wildcards))
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_injectable_fragment_contigs_input_dot_file_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        fragment_injections = assembler_arguments.get("fragment_injections", {})
-
-        result = fragment_injections.get("wtdbg2-inject-fragment-unitigs", None)
-        result = fragment_injections.get("wtdbg2-inject-fragment-trivial-omnitigs", result)
-        result = fragment_injections.get("wtdbg2-inject-fragment-omnitigs", result)
-
-        if result is None:
-            raise Exception("Missing injection command in assembler arguments: " + str(wildcards))
-
-        if result == True:
-            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.ctg.dot"
-        else:
-            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2." + str(result) + ".frg.dot"
+            raise Exception("Wrong injection command in assembler arguments: {wildcards}")
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
 
 rule compute_injectable_fragment_contigs_wtdbg2:
-    input:  dot = get_injectable_fragment_contigs_input_dot_file_from_wildcards,
+    input:  dot = lambda wildcards: safe_format(os.path.join(WTDBG2_OUTPUT_DIR, f"wtdbg2.{wildcards.frg_injection_stage}.dot"), frg_injection = "none", frg_injection_stage = "none"),
             binary = RUST_BINARY,
-    output: file = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/contigwalks",
-            latex = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/compute_injectable_contigs.tex",
-            completed = touch(ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/contigwalks.completed"),
-    log:    log = ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/compute_injectable_contigs.log",
-    params: command = get_injectable_fragment_contigs_rust_cli_command_from_wildcards
+    output: file = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "contigwalks.ssv"),
+            latex = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "compute_injectable_contigs.tex"),
+    log:    log = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "compute_injectable_contigs.log"),
+    params: command = get_injectable_fragment_contigs_rust_cli_command_from_wildcards,
     threads: 1
     resources: mem_mb = 48000
     shell: "'{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
@@ -825,144 +789,8 @@ rule run_gfa_trivial_omnitigs:
 ###### wtdbg2 ######
 ####################
 
-def get_wtdbg2_args_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        cli_arguments = assembler_arguments.get("cli_arguments", None)
-        if cli_arguments is None:
-            return ""
-
-        return cli_arguments.to_argument_string()
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_wtdbg2_caching_arguments_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        cli_arguments = assembler_arguments.get("cli_arguments", {})
-
-        cli_arguments.pop("--skip-fragment-assembly", None)
-        cli_arguments.pop("--fragment-correction-steps", None)
-        assembler_arguments.pop("injections", None)
-        assembler_arguments.pop("fragment_injections", None)
-        return arguments
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_wtdbg2_caching_prefix_from_wildcards(wildcards):
-    try:
-        arguments = get_wtdbg2_caching_arguments_from_wildcards(wildcards)
-        return WTDBG2_PREFIX_FORMAT.format(arguments = str(arguments))
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_wtdbg2_injectable_contigs_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        injections = assembler_arguments.get("injections", {})
-
-        if "wtdbg2-inject-unitigs" in injections or "wtdbg2-inject-trivial-omnitigs" in injections or "wtdbg2-inject-omnitigs" in injections:
-            return ALGORITHM_PREFIX_FORMAT + "injectable_contigs/contigwalks"
-
-        return []
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def is_wtdbg2_injecting_contigs_from_wildcards(wildcards):
-    try:
-        return get_wtdbg2_injectable_contigs_from_wildcards(wildcards) != []
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_wtdbg2_injectable_fragment_contigs_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        injections = assembler_arguments.get("fragment_injections", {})
-
-        if "wtdbg2-inject-fragment-unitigs" in injections or "wtdbg2-inject-fragment-trivial-omnitigs" in injections or "wtdbg2-inject-fragment-omnitigs" in injections:
-            return ALGORITHM_PREFIX_FORMAT + "injectable_fragment_contigs/contigwalks"
-
-        return []
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def is_wtdbg2_injecting_fragment_contigs_from_wildcards(wildcards):
-    try:
-        return get_wtdbg2_injectable_fragment_contigs_from_wildcards(wildcards) != []
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def is_wtdbg2_using_cache_from_wildcards(wildcards):
-    try:
-        arguments = Arguments.from_str(wildcards.arguments)
-        assembler_arguments = arguments.assembler_arguments()
-        if assembler_arguments is None:
-            raise Exception("Arguments have no assembler arguments: {}".format(arguments))
-        cli_arguments = assembler_arguments.get("cli_arguments", {})
-        injections = assembler_arguments.get("injections", {})
-        fragment_injections = assembler_arguments.get("fragment_injections", {})
-
-        return len(injections) > 0 or len(fragment_injections) > 0 or "--skip-fragment-assembly" in cli_arguments
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_wtdbg2_cached_nodes_from_wildcards(wildcards):
-    try:
-        if is_wtdbg2_using_cache_from_wildcards(wildcards):
-            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.1.nodes"
-
-        return []
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_wtdbg2_cached_clips_from_wildcards(wildcards):
-    try:
-        if is_wtdbg2_using_cache_from_wildcards(wildcards):
-            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.clps"
-
-        return []
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def get_wtdbg2_cached_kbm_from_wildcards(wildcards):
-    try:
-        if is_wtdbg2_using_cache_from_wildcards(wildcards):
-            return get_wtdbg2_caching_prefix_from_wildcards(wildcards) + "wtdbg2.kbm"
-
-        return []
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
 rule wtdbg2:
     input:  reads = GENOME_READS,
-            #contigs = get_wtdbg2_injectable_contigs_from_wildcards,
-            #fragment_contigs = get_wtdbg2_injectable_fragment_contigs_from_wildcards,
-            #cached_nodes = get_wtdbg2_cached_nodes_from_wildcards,
-            #cached_clips = get_wtdbg2_cached_clips_from_wildcards,
-            #cached_kbm = get_wtdbg2_cached_kbm_from_wildcards,
             reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
@@ -970,17 +798,18 @@ rule wtdbg2:
             reads = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.reads"),
             dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.dot.gz"),
             ctg_dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.dot.gz"),
-            #clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
-            #kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
+            clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
+            kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
             ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
             frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
     log:    log = WTDBG2_LOG,
-    params: #args = get_wtdbg2_args_from_wildcards,
-            #cache_args = lambda wildcards, input, output: "--load-nodes '{cached_nodes}' --load-clips '{cached_clips}' --load-kbm '{cached_kbm}'".format(cached_nodes = input.cached_nodes, cached_clips = input.cached_clips, cached_kbm = input.cached_kbm) if is_wtdbg2_using_cache_from_wildcards(wildcards) else "--dump-kbm '{kbm}'".format(kbm = output.kbm),
-            #inject_unitigs_args = lambda wildcards, input: "--inject-unitigs '{contigs}'".format(contigs = input.contigs) if is_wtdbg2_injecting_contigs_from_wildcards(wildcards) else "",
-            #inject_fragment_unitigs_args = lambda wildcards, input: "--inject-fragment-unitigs '{contigs}'".format(contigs = input.fragment_contigs) if is_wtdbg2_injecting_fragment_contigs_from_wildcards(wildcards) else "",
-            output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
-            #frg_dot_escaped = lambda wildcards, output: ["'" + file + "'" for file in output.frg_dot],
+    params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
+            skip_fragment_assembly = lambda wildcards: "--skip-fragment-assembly" if wildcards.skip_fragment_assembly == "yes" else "",
+            fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
+    wildcard_constraints:
+            tig_injection = "none",
+            frg_injection = "none",
+            frg_injection_stage = "none",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
                cpus = MAX_THREADS,
@@ -988,31 +817,74 @@ rule wtdbg2:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
-    #'{input.binary}' -x {wildcards.wtdbg2_mode} -g {params.genome_len_arg} {params.args} -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' {params.cache_args} {params.inject_unitigs_args} {params.inject_fragment_unitigs_args} 2>&1 | tee '{log.log}'
-    #if [ ! -z '{input.cached_kbm}' ]; then
-    #    ln -sr '{input.cached_kbm}' '{output.kbm}'
-    #fi
-    #
-    #if [ ! -z '{input.cached_clips}' ]; then
-    #    ln -sr '{input.cached_clips}' '{output.clips}'
-    #fi
-    #
-    #for file in {params.frg_dot_escaped}; do
-    #    touch "$file"
-    #done
 
-rule wtdbg2_extract_ctg_lay:
-    input:  file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
-    output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
+rule wtdbg2_with_injected_contigs:
+    input:  reads = GENOME_READS,
+            contigs = os.path.join(WTDBG2_INJECTABLE_CONTIG_DIR, "contigwalks.ssv"),
+            #fragment_contigs = get_wtdbg2_injectable_fragment_contigs_from_wildcards,
+            cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), tig_injection = "none", skip_fragment_assembly = "no", fragment_correction_steps = "all"),
+            cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), tig_injection = "none", skip_fragment_assembly = "no", fragment_correction_steps = "all"),
+            cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), tig_injection = "none", skip_fragment_assembly = "no", fragment_correction_steps = "all"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            binary = WTDBG2_BINARY,
+    output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
+    log:    log = WTDBG2_LOG,
+    params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
+            skip_fragment_assembly = lambda wildcards: "--skip-fragment-assembly" if wildcards.skip_fragment_assembly == "yes" else "",
+            fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
+    wildcard_constraints:
+            tig_injection = "((?!none).)*",
+            frg_injection = "none",
+            frg_injection_stage = "none",
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+    shell: """
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+    """
+
+rule wtdbg2_with_injected_fragment_contigs:
+    input:  reads = GENOME_READS,
+            fragment_contigs = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "contigwalks.ssv"),
+            cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), frg_injection = "none", frg_injection_stage = "none"),
+            cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), frg_injection = "none", frg_injection_stage = "none"),
+            cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), frg_injection = "none", frg_injection_stage = "none"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            binary = WTDBG2_BINARY,
+    output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
+    log:    log = WTDBG2_LOG,
+    params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
+    wildcard_constraints:
+            tig_injection = "none",
+            frg_injection = "((?!none).)*",
+            frg_injection_stage = "((?!none).)*",
+            skip_fragment_assembly = "no",
+            fragment_correction_steps = "all",
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+    shell: """
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
+    """
+
+rule wtdbg2_extract:
+    input:  file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}.gz"),
+    output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}"),
     params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
     conda:  "config/conda-extract-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 1_000),
-    shell:  "cd '{params.working_directory}'; gunzip -k wtdbg2.ctg.lay.gz"
+    shell:  "cd '{params.working_directory}'; gunzip -k wtdbg2.{wildcards.subfile}.gz"
 
 rule wtdbg2_consensus:
     input: reads = GENOME_READS,
