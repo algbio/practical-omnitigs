@@ -66,20 +66,39 @@ fn print_trivial_omnitigs_statistics<Graph: GraphBase>(
     info!(" === Trivial Omnitig Statistics === ");
     info!("");
 
-    let min_omnitig_len = maximal_omnitigs.iter().map(Sequence::len).min().unwrap();
-    let max_omnitig_len = maximal_omnitigs.iter().map(Sequence::len).max().unwrap();
-    let median_omnitigs_len = statistical::median(
-        &maximal_omnitigs
-            .iter()
-            .map(Sequence::len)
-            .collect::<Vec<_>>(),
-    );
-    let mean_omnitig_len = statistical::mean(
-        &maximal_omnitigs
-            .iter()
-            .map(|o| o.len() as f64)
-            .collect::<Vec<_>>(),
-    );
+    if maximal_omnitigs.is_empty() {
+        warn!("Found no trivial omnitigs");
+    }
+
+    let omnitig_lengths_usize = maximal_omnitigs
+        .iter()
+        .map(Sequence::len)
+        .collect::<Vec<_>>();
+    let omnitig_lengths_f64 = maximal_omnitigs
+        .iter()
+        .map(|o| o.len() as f64)
+        .collect::<Vec<_>>();
+
+    let min_omnitig_len = maximal_omnitigs
+        .iter()
+        .map(Sequence::len)
+        .min()
+        .unwrap_or(0);
+    let max_omnitig_len = maximal_omnitigs
+        .iter()
+        .map(Sequence::len)
+        .max()
+        .unwrap_or(0);
+    let median_omnitigs_len = if omnitig_lengths_usize.is_empty() {
+        0
+    } else {
+        statistical::median(&omnitig_lengths_usize)
+    };
+    let mean_omnitig_len = if omnitig_lengths_f64.is_empty() {
+        0.0
+    } else {
+        statistical::mean(&omnitig_lengths_f64)
+    };
 
     info!("Minimum edge length: {}", min_omnitig_len);
     info!("Maximum edge length: {}", max_omnitig_len);
@@ -172,6 +191,7 @@ pub(crate) fn compute_trivial_omnitigs(
             };
             info!("Removing reverse complements");
             maximal_omnitigs.remove_reverse_complements(&genome_graph);
+            assert!(!maximal_omnitigs.is_empty(), "Found no trivial omnitigs");
 
             print_trivial_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
 
