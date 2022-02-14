@@ -804,12 +804,12 @@ rule wtdbg2:
             frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
     log:    log = WTDBG2_LOG,
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
-            skip_fragment_assembly = lambda wildcards: "--skip-fragment-assembly" if wildcards.skip_fragment_assembly == "yes" else "",
             fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
     wildcard_constraints:
             tig_injection = "none",
             frg_injection = "none",
             frg_injection_stage = "none",
+            skip_fragment_assembly = "no",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
                cpus = MAX_THREADS,
@@ -817,7 +817,38 @@ rule wtdbg2:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+    """
+
+rule wtdbg2_skip_fragment_assembly:
+    input:  reads = GENOME_READS,
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            binary = WTDBG2_BINARY,
+    output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
+            nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
+            reads = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.reads"),
+            dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.dot.gz"),
+            ctg_dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.dot.gz"),
+            clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
+            kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
+            ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
+            frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
+    log:    log = WTDBG2_LOG,
+    params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
+            fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
+    wildcard_constraints:
+            tig_injection = "none",
+            frg_injection = "none",
+            frg_injection_stage = "none",
+            skip_fragment_assembly = "yes",
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+    shell: """
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' --skip-fragment-assembly {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_with_injected_contigs:
