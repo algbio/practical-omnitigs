@@ -3,7 +3,7 @@
 set +e
 
 echo "Checking for running snakemake"
-ps ux | grep -F "bin/snakemake " | grep -v grep
+ps ux | grep -F "practical-omnitigs/bin/snakemake " | grep -v grep
 if [ "${PIPESTATUS[2]}" -ne "0" ]; then
     echo "No snakemake found"
 else
@@ -12,11 +12,11 @@ else
 fi
 
 echo "Checking if there are any existing slurm jobs"
-if [ -z "$(squeue -o '%A %.28R %j' -u $(whoami) | tail -n +2)" ]; then
+if [ -z "$(squeue -o '%A %.28R %j' -u $(whoami) -M all | grep 'practical-omnitigs')" ]; then
     echo "No slurm jobs found"
 else
     echo "Found slurm jobs"
-    squeue -o '%A %.28R %j' -u $(whoami)
+    squeue -o '%A %.28R %j' -u $(whoami) -M all | grep 'practical-omnitigs')
     exit 1
 fi
 
