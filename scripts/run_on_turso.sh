@@ -16,7 +16,7 @@ if [ -z "$(squeue -o '%A %.28R %j' -u $(whoami) -M all | grep 'practical-omnitig
     echo "No slurm jobs found"
 else
     echo "Found slurm jobs"
-    squeue -o '%A %.28R %j' -u $(whoami) -M all | grep 'practical-omnitigs')
+    squeue -o '%A %.28R %j' -u $(whoami) -M all | grep 'practical-omnitigs'
     exit 1
 fi
 
