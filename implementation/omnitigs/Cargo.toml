@@ -15,9 +15,9 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-traitgraph = "0.6.1"
-traitgraph-algo = "0.6.2"
-bigraph = {path = "../bigraph", version = "0.6.0"}
+traitgraph = "0.7.0"
+traitgraph-algo = "0.7.0"
+bigraph = {path = "../bigraph", version = "0.6.1"}
 traitsequence = "0.6.0"
 bitvector = "0.1.5"
 rand = "0.8.4"

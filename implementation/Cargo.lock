@@ -91,7 +91,7 @@ dependencies = [
  "opaque_typedef",
  "opaque_typedef_macros",
  "petgraph",
- "traitgraph 0.7.0",
+ "traitgraph",
 ]
 
 [[package]]
@@ -291,7 +291,7 @@ dependencies = [
  "scan_fmt",
  "simplelog",
  "statistical",
- "traitgraph-algo 0.6.2",
+ "traitgraph-algo",
  "traitgraph-tsplib-io",
  "traitsequence",
 ]
@@ -446,7 +446,7 @@ dependencies = [
  "log",
  "num-traits",
  "regex",
- "traitgraph-algo 0.7.0",
+ "traitgraph-algo",
 ]
 
 [[package]]
@@ -769,8 +769,8 @@ dependencies = [
  "bitvector",
  "log",
  "rand 0.8.4",
- "traitgraph 0.6.1",
- "traitgraph-algo 0.6.2",
+ "traitgraph",
+ "traitgraph-algo",
  "traitsequence",
 ]
 
@@ -1340,18 +1340,6 @@ dependencies = [
 
 [[package]]
 name = "traitgraph"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b099a500945e8d085a7ba108c3a560b3f2208d7def5601ff5cdaa345219eabf8"
-dependencies = [
- "bitvector",
- "num-traits",
- "petgraph",
- "traitsequence",
-]
-
-[[package]]
-name = "traitgraph"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27f62d79568b92a08597725d326d351f5c0830c6b166b139511bc689bc3b768d"
@@ -1364,31 +1352,21 @@ dependencies = [
 
 [[package]]
 name = "traitgraph-algo"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7d0e4afe169ea94b213c4954f8f93836496855486c2d51b69a7c49ebce3a70b"
-dependencies = [
- "rand 0.8.4",
- "traitgraph 0.6.1",
-]
-
-[[package]]
-name = "traitgraph-algo"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "077c4fe1b0a506d7fd64247f620a9abea6bf35ad7a7e0f717db8c336cf85adb2"
 dependencies = [
  "rand 0.8.4",
- "traitgraph 0.7.0",
+ "traitgraph",
 ]
 
 [[package]]
 name = "traitgraph-tsplib-io"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc8698ef3e09104a33402b73aee086637ebac79a39b32e4ed86417297fcd62e2"
+checksum = "fecfa0c54e4b72a0efbacd9e10be3efe979016c0382d38ed2bb442ba623fb5b0"
 dependencies = [
- "traitgraph 0.6.1",
+ "traitgraph",
 ]
 
 [[package]]
