@@ -52,6 +52,10 @@ echo "$LOGDIR" > .logdir
 # echo "Cleaning shadow directory"
 # snakemake --profile config/turso --cleanup-shadow >> "$LOGDIR/run_on_turso.log" 2>&1
 
+export TMPDIR="/wrk/users/sebschmi/practical-omnitigs/tmp"
+export TEMP=$TMPDIR
+export TMP=$TMPDIR
+
 # Execute pipeline
 echo "Creating jobs"
 
