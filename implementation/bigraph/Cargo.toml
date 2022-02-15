@@ -15,7 +15,7 @@ license = "BSD-2-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-traitgraph = "0.6.1"
+traitgraph = "0.7.0"
 opaque_typedef = "0.0.5"
 opaque_typedef_macros = "0.0.5"
 petgraph = "0.5.1"
