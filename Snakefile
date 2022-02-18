@@ -1939,7 +1939,8 @@ rule uniquify_ids:
 localrules: fetch_rust
 rule fetch_rust:
     input:  sources = RUST_SOURCES,
-    log:    log = IS_RUST_FETCHED_MARKER,
+    output: is_rust_fetched_marker = touch(IS_RUST_FETCHED_MARKER),
+    log:    log = os.path.join(RUST_DIR, "fetch.log")
     params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
     threads: 1
@@ -1947,7 +1948,8 @@ rule fetch_rust:
 
 rule test_rust:
     input:  is_rust_fetched_marker = IS_RUST_FETCHED_MARKER,
-    log:    log = IS_RUST_TESTED_MARKER,
+    output: is_rust_tested_marker = touch(IS_RUST_TESTED_MARKER),
+    log:    log = os.path.join(RUST_DIR, "test.log")
     params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
