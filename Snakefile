@@ -1943,7 +1943,7 @@ rule fetch_rust:
     params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
     threads: 1
-    shell: "cargo fetch -j {threads}  --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{log.log}'"
+    shell: "cargo fetch --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{log.log}'"
 
 rule test_rust:
     input:  is_rust_fetched_marker = IS_RUST_FETCHED_MARKER,
