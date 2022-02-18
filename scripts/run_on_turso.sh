@@ -55,6 +55,7 @@ echo "$LOGDIR" > .logdir
 export TMPDIR="/wrk/users/sebschmi/practical-omnitigs/tmp"
 export TEMP=$TMPDIR
 export TMP=$TMPDIR
+mkdir -p "$TMPDIR"
 
 # Execute pipeline
 echo "Creating jobs"
