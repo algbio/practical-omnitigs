@@ -206,6 +206,7 @@ COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT = "scripts/compute_genome_reference_lengt
 EXTERNAL_SOFTWARE_SCRIPTS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "scripts")
 RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "rust_target")
 IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.log")
+IS_RUST_FETCHED_MARKER = os.path.join(RUST_DIR, "is_rust_fetched.log")
 RUST_BINARY = os.path.join(RUST_DIR, "release", "cli")
 QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "quast", "quast.py")
 WTDBG2_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2", "wtdbg2")
@@ -1669,35 +1670,6 @@ rule run_quast:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
     shell: "{input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
-
-##################
-###### Rust ######
-##################
-
-localrules: build_rust_release
-rule build_rust_release:
-    input:  test_marker = IS_RUST_TESTED_MARKER,
-            sources = RUST_SOURCES,
-    output: binary = RUST_BINARY,
-    params: rust_dir = RUST_DIR,
-    conda: "config/conda-rust-env.yml"
-    threads: MAX_THREADS
-    resources: mem_mb = 4000,
-               cpus = MAX_THREADS,
-               time_min = 30,
-    shell: "cargo build -j {threads} --release --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml'"
-
-rule test_rust:
-    input:  expand("{source}", source = list(RUST_SOURCES)),
-    output: touch(IS_RUST_TESTED_MARKER),
-    params: rust_dir = RUST_DIR,
-    conda: "config/conda-rust-env.yml"
-    threads: 4
-    resources: mem_mb = 4000,
-               cpus = 2,
-               time_min = 30,
-    shell: "cargo test -j {threads} --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{output}'"
-
 #############################
 ###### ContigValidator ######
 #############################
@@ -1963,6 +1935,38 @@ rule uniquify_ids:
 ###########################
 ###### Installations ######
 ###########################
+
+localrules: fetch_rust
+rule fetch_rust:
+    input:  sources = RUST_SOURCES,
+    log:    log = IS_RUST_FETCHED_MARKER,
+    params: rust_dir = RUST_DIR,
+    conda: "config/conda-rust-env.yml"
+    threads: 1
+    shell: "cargo fetch -j {threads}  --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{log.log}'"
+
+rule test_rust:
+    input:  is_rust_fetched_marker = IS_RUST_FETCHED_MARKER,
+    log:    log = IS_RUST_TESTED_MARKER,
+    params: rust_dir = RUST_DIR,
+    conda: "config/conda-rust-env.yml"
+    threads: MAX_THREADS
+    resources: mem_mb = 4000,
+               cpus = MAX_THREADS,
+               time_min = 30,
+    shell: "cargo test -j {threads} --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' --offline 2>&1 | tee '{log.log}'"
+
+rule build_rust_release:
+    input:  is_rust_tested_marker = IS_RUST_TESTED_MARKER,
+    output: binary = RUST_BINARY,
+    log:    log = os.path.join(RUST_DIR, "build_release.log")
+    params: rust_dir = RUST_DIR,
+    conda: "config/conda-rust-env.yml"
+    threads: MAX_THREADS
+    resources: mem_mb = 4000,
+               cpus = MAX_THREADS,
+               time_min = 30,
+    shell: "cargo build -j {threads} --release --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' --offline 2>&1 | tee '{log.log}'"
 
 localrules: download_bcalm2_gfa_converter
 rule download_bcalm2_gfa_converter:
