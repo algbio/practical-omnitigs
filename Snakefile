@@ -205,8 +205,8 @@ COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT = "scripts/compute_genome_reference_lengt
 
 EXTERNAL_SOFTWARE_SCRIPTS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "scripts")
 RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "rust_target")
-IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.log")
-IS_RUST_FETCHED_MARKER = os.path.join(RUST_DIR, "is_rust_fetched.log")
+IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.marker")
+IS_RUST_FETCHED_MARKER = os.path.join(RUST_DIR, "is_rust_fetched.marker")
 RUST_BINARY = os.path.join(RUST_DIR, "release", "cli")
 QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "quast", "quast.py")
 WTDBG2_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2", "wtdbg2")
