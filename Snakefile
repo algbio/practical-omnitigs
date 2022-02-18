@@ -1940,16 +1940,15 @@ localrules: fetch_rust
 rule fetch_rust:
     input:  sources = RUST_SOURCES,
     output: is_rust_fetched_marker = touch(IS_RUST_FETCHED_MARKER),
-    log:    log = os.path.join(RUST_DIR, "fetch.log")
-    params: rust_dir = RUST_DIR,
+    log:    log = os.path.join(RUST_DIR, "fetch.log"),
     conda: "config/conda-rust-env.yml"
     threads: 1
-    shell: "cargo fetch --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{log.log}'"
+    shell: "cargo fetch --manifest-path 'implementation/Cargo.toml' 2>&1 | tee '{log.log}'"
 
 rule test_rust:
     input:  is_rust_fetched_marker = IS_RUST_FETCHED_MARKER,
     output: is_rust_tested_marker = touch(IS_RUST_TESTED_MARKER),
-    log:    log = os.path.join(RUST_DIR, "test.log")
+    log:    log = os.path.join(RUST_DIR, "test.log"),
     params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
@@ -1961,7 +1960,7 @@ rule test_rust:
 rule build_rust_release:
     input:  is_rust_tested_marker = IS_RUST_TESTED_MARKER,
     output: binary = RUST_BINARY,
-    log:    log = os.path.join(RUST_DIR, "build_release.log")
+    log:    log = os.path.join(RUST_DIR, "build_release.log"),
     params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
     threads: MAX_THREADS
