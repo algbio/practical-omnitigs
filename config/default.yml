@@ -391,6 +391,7 @@ column_templates:
     - shortname: "mdbg"
       select_assembler:
         mdbg:
+          mdbg_mode: "D_melanogaster"
     - shortname: "lja"
       select_assembler:
         lja:

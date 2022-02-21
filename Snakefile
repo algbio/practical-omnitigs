@@ -47,6 +47,9 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
         "frg_injection": "none",
         "frg_injection_stage": "none",
     },
+    "mdbg": {
+        "mdbg_mode": "multik"
+    },
 }
 
 for report_name, report_definition in reports.items():
@@ -156,7 +159,7 @@ HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, HIFIASM_SUBDIR)
 HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
 HIFIASM_LOG = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm.log")
 
-MDBG_ARGUMENT_STRING = "none"
+MDBG_ARGUMENT_STRING = "m{mdbg_mode}"
 ASSEMBLER_ARGUMENT_STRINGS["mdbg"] = MDBG_ARGUMENT_STRING
 MDBG_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "mdbg", assembler_arguments = MDBG_ARGUMENT_STRING)
 MDBG_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, MDBG_SUBDIR)
@@ -1007,13 +1010,15 @@ rule hifiasm_gfa_to_fa:
 ###### mdbg ######
 ##################
 
-rule mdbg:
+rule mdbg_multik:
     input:  reads = GENOME_SINGLE_LINE_READS,
             script = MDBG_MULTI_K,
             binary = MDBG_BINARY,
     output: contigs = MDBG_ASSEMBLED_CONTIGS,
     params: output_prefix = os.path.join(MDBG_OUTPUT_DIR, "contigs"),
             original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs-final.msimpl.fa"),
+    wildcard_constraints:
+            mdbg_mode = "multik",
     log:    log = MDBG_LOG,
     conda:  "config/conda-mdbg-env.yml"
     threads: MAX_THREADS
@@ -1023,6 +1028,28 @@ rule mdbg:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
+        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        """
+
+rule mdbg_D_melanogaster:
+    input:  reads = GENOME_SINGLE_LINE_READS,
+            simplify_script = MDBG_SIMPLIFY,
+            binary = MDBG_BINARY,
+    output: contigs = MDBG_ASSEMBLED_CONTIGS,
+    params: output_prefix = os.path.join(MDBG_OUTPUT_DIR, "contigs"),
+            original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs-final.msimpl.fa"),
+    wildcard_constraints:
+            mdbg_mode = "D_melanogaster",
+    log:    log = MDBG_LOG,
+    conda:  "config/conda-mdbg-env.yml"
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
+    shell:  """
+        RUST_BACKTRACE=full '{input.binary}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
