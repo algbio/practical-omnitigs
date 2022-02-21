@@ -1,8 +1,9 @@
+use crate::io::gfa::BidirectedGfaEdgeData;
 use crate::io::SequenceData;
 use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::index::GraphIndex;
-use bigraph::traitgraph::interface::{GraphBase, ImmutableGraphContainer};
+use bigraph::traitgraph::interface::{GraphBase, ImmutableGraphContainer, StaticGraph};
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, NodeWalk};
 use bio::io::fasta::Record;
@@ -200,6 +201,79 @@ pub fn write_node_centric_walks_as_fasta_file<
         graph,
         source_sequence_store,
         kmer_size,
+        walks,
+        &mut bio::io::fasta::Writer::to_file(path).map_err(Error::from)?,
+    )
+}
+
+/// Write a sequence of node-centric walks in a graph as fasta records.
+/// The overlaps between the nodes are given by the edges.
+pub fn write_node_centric_walks_with_variable_overlaps_as_fasta<
+    'ws,
+    SourceSequenceStore: SequenceStore,
+    NodeData: SequenceData<SourceSequenceStore>,
+    Graph: StaticGraph<NodeData = NodeData, EdgeData = BidirectedGfaEdgeData<()>>,
+    Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+    Writer: std::io::Write,
+>(
+    graph: &Graph,
+    source_sequence_store: &SourceSequenceStore,
+    walks: WalkSource,
+    writer: &mut bio::io::fasta::Writer<Writer>,
+) -> crate::error::Result<()> {
+    for (i, walk) in walks.into_iter().enumerate() {
+        if walk.is_empty() {
+            return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
+        }
+
+        let mut sequence: DefaultGenome = graph
+            .node_data(walk[0])
+            .sequence_owned(source_sequence_store);
+        for (previous_node, node) in walk.iter().take(walk.len() - 1).zip(walk.iter().skip(1)) {
+            let node_data = graph.node_data(*node);
+            let edge = graph.edges_between(*previous_node, *node).next().unwrap();
+            let edge_data = graph.edge_data(edge);
+            if let Some(sequence_ref) = node_data.sequence_ref(source_sequence_store) {
+                let sequence_ref = sequence_ref.iter().skip(edge_data.overlap);
+                sequence.extend(sequence_ref.copied());
+            } else {
+                let sequence_owned: DefaultGenome = node_data.sequence_owned(source_sequence_store);
+                let sequence_owned = sequence_owned.iter().skip(edge_data.overlap);
+                sequence.extend(sequence_owned.copied());
+            }
+        }
+
+        let record =
+            bio::io::fasta::Record::with_attrs(&format!("{}", i), None, &sequence.clone_as_vec());
+        writer.write_record(&record).map_err(Error::from)?;
+    }
+
+    Ok(())
+}
+
+/// Write a sequence of node-centric walks in a graph as fasta records to a file.
+/// The overlaps between the nodes are given by the edges.
+/// The given file is created if it does not exist or truncated if it does exist.
+pub fn write_node_centric_walks_with_variable_overlaps_as_fasta_file<
+    'ws,
+    SourceSequenceStore: SequenceStore,
+    NodeData: SequenceData<SourceSequenceStore>,
+    Graph: StaticGraph<NodeData = NodeData, EdgeData = BidirectedGfaEdgeData<()>>,
+    Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
+    Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
+    WalkSource: 'ws + IntoIterator<Item = &'ws Walk>,
+    P: AsRef<Path>,
+>(
+    graph: &Graph,
+    source_sequence_store: &SourceSequenceStore,
+    walks: WalkSource,
+    path: P,
+) -> crate::error::Result<()> {
+    write_node_centric_walks_with_variable_overlaps_as_fasta(
+        graph,
+        source_sequence_store,
         walks,
         &mut bio::io::fasta::Writer::to_file(path).map_err(Error::from)?,
     )

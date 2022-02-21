@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::error::{Error, ErrorKind, Result};
 use crate::io::SequenceData;
 use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigraph};
 use bigraph::interface::BidirectedData;
@@ -22,7 +22,7 @@ pub type PetGfaGraph<NodeData, EdgeData, SequenceHandle> =
     crate::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper<
         crate::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph<
             BidirectedGfaNodeData<SequenceHandle, NodeData>,
-            EdgeData,
+            BidirectedGfaEdgeData<EdgeData>,
             usize,
         >,
     >;
@@ -37,7 +37,7 @@ pub type PetGfaEdgeGraph<NodeData, EdgeData, SequenceHandle> =
         >,
     >;
 
-/// Node data of a bidirected graph read from GFA
+/// Node data of a bidirected graph read from GFA.
 #[derive(Eq, PartialEq, Debug, Clone, Default)]
 pub struct BidirectedGfaNodeData<SequenceHandle, Data> {
     /// The sequence of this node. If forward is false, then this must be reverse complemented.
@@ -110,6 +110,15 @@ impl<GenomeSequenceStore: SequenceStore, Data> SequenceData<GenomeSequenceStore>
     }
 }
 
+/// Edge data of a bidirected graph read from GFA.
+#[derive(Eq, PartialEq, Debug, Clone, Default)]
+pub struct BidirectedGfaEdgeData<Data> {
+    /// Size of the overlap between the tail and head nodes.
+    pub overlap: usize,
+    /// Further data.
+    pub data: Data,
+}
+
 /// Properties of a GFA file that was read.
 pub struct GfaReadFileProperties {
     /// The order of the node-centric de Bruijn graph stored in the GFA file. If the GFA file does not contain the respective header field, then this field is usize::max_value().
@@ -127,7 +136,7 @@ pub fn read_gfa_as_bigraph_from_file<
     GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
     GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
     NodeData: From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
-    EdgeData: Default,
+    EdgeData: From<BidirectedGfaEdgeData<()>>,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     gfa_file: P,
@@ -151,7 +160,7 @@ pub fn read_gfa_as_bigraph<
     GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
     GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
     NodeData: From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
-    EdgeData: Default,
+    EdgeData: From<BidirectedGfaEdgeData<()>>,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
 >(
     gfa: R,
@@ -227,6 +236,17 @@ pub fn read_gfa_as_bigraph<
             let n1_direction = if columns.next().unwrap() == "+" { 0 } else { 1 };
             let n2_name = columns.next().unwrap();
             let n2_direction = if columns.next().unwrap() == "+" { 0 } else { 1 };
+            let overlap = if let Some(overlap) = columns.next() {
+                if let Some(overlap) = overlap.strip_suffix('M') {
+                    overlap
+                        .parse()
+                        .map_err(|_| Error::from_kind(ErrorKind::GfaUnknownOverlapPattern))?
+                } else {
+                    return Err(ErrorKind::GfaUnknownOverlapPattern.into());
+                }
+            } else {
+                return Err(ErrorKind::GfaMissingOverlapPattern.into());
+            };
 
             if let (Some(n1), Some(n2)) = (node_name_map.get(n1_name), node_name_map.get(n2_name)) {
                 let n1 = (n1.as_usize() + n1_direction).into();
@@ -242,13 +262,16 @@ pub fn read_gfa_as_bigraph<
                 );
 
                 if !has_edge {
-                    graph.add_edge(n1, n2, Default::default());
+                    let edge_data = BidirectedGfaEdgeData { data: (), overlap };
+                    graph.add_edge(n1, n2, edge_data.clone().into());
                     graph.add_edge(
                         graph.mirror_node(n2).unwrap(),
                         graph.mirror_node(n1).unwrap(),
-                        Default::default(),
+                        edge_data.into(),
                     );
                 }
+            } else {
+                return Err(ErrorKind::GfaMissingNode.into());
             }
         }
     }

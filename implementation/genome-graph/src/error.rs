@@ -18,4 +18,24 @@ error_chain! {
         /// A wrapper for errors thrown by fasta IO.
         ;
     }
+
+    errors {
+        #[allow(missing_docs)]
+        GfaUnknownOverlapPattern {
+            description("an L-line was encountered, but the overlap pattern is unknown")
+            display("an L-line was encountered, but the overlap pattern is unknown")
+        }
+
+        #[allow(missing_docs)]
+        GfaMissingOverlapPattern {
+            description("an L-line was encountered, but the overlap pattern is missing")
+            display("an L-line was encountered, but the overlap pattern is missing")
+        }
+
+        #[allow(missing_docs)]
+        GfaMissingNode {
+            description("an L-line was encountered, at least one of the nodes is missing")
+            display("an L-line was encountered, at least one of the nodes is missing")
+        }
+    }
 }

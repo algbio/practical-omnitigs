@@ -1,7 +1,7 @@
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::{DefaultSequenceStore, DefaultSequenceStoreHandle};
-use genome_graph::io::gfa::{BidirectedGfaNodeData, PetGfaEdgeGraph};
+use genome_graph::io::gfa::PetGfaGraph;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs};
 use omnitigs::traitgraph::interface::{GraphBase, ImmutableGraphContainer};
@@ -219,19 +219,13 @@ pub(crate) fn compute_trivial_omnitigs(
                 bail!("No input file given")
             };
             info!("Reading bigraph from '{}'", input);
-            let (genome_graph, gfa_file_properties): (
-                PetGfaEdgeGraph<
-                    BidirectedGfaNodeData<DefaultSequenceStoreHandle, ()>,
-                    (),
-                    DefaultSequenceStoreHandle,
-                >,
-                _,
-            ) = genome_graph::io::gfa::read_gfa_as_bigraph_from_file(
-                input,
-                &mut sequence_store,
-                true,
-                true,
-            )?;
+            let (genome_graph, _): (PetGfaGraph<(), (), DefaultSequenceStoreHandle>, _) =
+                genome_graph::io::gfa::read_gfa_as_bigraph_from_file(
+                    input,
+                    &mut sequence_store,
+                    true,
+                    true,
+                )?;
 
             info!(
                 "Graph has {} nodes and {} edges",
@@ -255,10 +249,9 @@ pub(crate) fn compute_trivial_omnitigs(
                 "Storing maximal trivial omnitigs as fasta to '{}'",
                 subcommand.output
             );
-            genome_graph::io::fasta::write_node_centric_walks_as_fasta_file(
+            genome_graph::io::fasta::write_node_centric_walks_with_variable_overlaps_as_fasta_file(
                 &genome_graph,
                 &sequence_store,
-                gfa_file_properties.k,
                 maximal_omnitigs.iter(),
                 &subcommand.output,
             )?;
