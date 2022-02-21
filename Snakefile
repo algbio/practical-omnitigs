@@ -48,7 +48,10 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
         "frg_injection_stage": "none",
     },
     "mdbg": {
-        "mdbg_mode": "multik"
+        "mdbg_mode": "multik",
+    },
+    "hifiasm": {
+        "contig_algorithm": "builtin",
     },
 }
 
@@ -82,10 +85,14 @@ for report_name, report_definition in reports.items():
 
             assembler_name = column.arguments.assembler_name()
             if assembler_name in DEFAULT_ASSEMBLER_ARGUMENTS:
+                #print(f"assembler_name: {assembler_name}")
                 assembler_arguments = column.arguments.assembler_arguments()
+                #print(f"assembler_arguments: {assembler_arguments}")
                 for key, value in DEFAULT_ASSEMBLER_ARGUMENTS[assembler_name].items():
                     assembler_arguments.setdefault(key, value)
+                #print(f"assembler_arguments: {assembler_arguments}")
 
+            #print(column, flush = True)
             columns.append(column)
 
         report_file = ReportFile(arguments, columns)
@@ -144,6 +151,7 @@ WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR = os.path.join(WTDBG2_OUTPUT_DIR, "injecta
 WTDBG2_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "wtdbg2")
 WTDBG2_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
+WTDBG2_ASSEMBLED_CONTIGS = os.path.join(WTDBG2_OUTPUT_DIR, "contigs.fa")
 
 FLYE_ARGUMENT_STRING = "m{flye_mode}"
 ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
@@ -151,13 +159,15 @@ FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_argumen
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
 FLYE_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "flye")
 FLYE_LOG = os.path.join(FLYE_OUTPUT_DIR, "flye.log")
+FLYE_ASSEMBLED_CONTIGS = os.path.join(FLYE_OUTPUT_DIR, "contigs.fa")
 
-HIFIASM_ARGUMENT_STRING = "none"
+HIFIASM_ARGUMENT_STRING = "c{contig_algorithm}"
 ASSEMBLER_ARGUMENT_STRINGS["hifiasm"] = HIFIASM_ARGUMENT_STRING
 HIFIASM_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "hifiasm", assembler_arguments = HIFIASM_ARGUMENT_STRING)
 HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, HIFIASM_SUBDIR)
 HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
 HIFIASM_LOG = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm.log")
+HIFIASM_ASSEMBLED_CONTIGS = os.path.join(HIFIASM_OUTPUT_DIR, "contigs.fa")
 
 MDBG_ARGUMENT_STRING = "m{mdbg_mode}"
 ASSEMBLER_ARGUMENT_STRINGS["mdbg"] = MDBG_ARGUMENT_STRING
@@ -315,7 +325,7 @@ def get_report_file_quasts(report_name, report_file_name):
         quasts = []
         for column in report_file.columns:
             #print(QUAST_OUTPUT_DIR)
-            #print(column.arguments, flush=True)
+            #print(column.arguments, flush = True)
             assembler = column.arguments.assembler_name()
             assembler_argument_string = ASSEMBLER_ARGUMENT_STRINGS[assembler]
             #print(assembler_argument_string, flush = True)
@@ -980,9 +990,11 @@ rule link_flye_contigs:
 rule hifiasm:
     input:  reads = GENOME_READS,
     output: contigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
-            unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.r_utg.gfa"),
+            unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"),
             directory = directory(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm")),
     params: output_prefix = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly"),
+    wildcard_constraints:
+            contig_algorithm = "builtin",
     conda:  "config/conda-hifiasm-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
@@ -991,10 +1003,11 @@ rule hifiasm:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50000),
     shell: "hifiasm -t {threads} -o '{params.output_prefix}' '{input.reads}'"
 
-localrules: hifiasm_gfa_to_fa
 rule hifiasm_gfa_to_fa:
-    input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR_PACKED, "hifiasm", "assembly.p_ctg.gfa"),
-    output: fa = ASSEMBLED_CONTIGS,
+    input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
+    output: fa = HIFIASM_ASSEMBLED_CONTIGS,
+    wildcard_constraints:
+            contig_algorithm = "builtin",
     wildcard_constraints:
             assembler = "hifiasm",
     run:
@@ -1005,6 +1018,16 @@ rule hifiasm_gfa_to_fa:
 
                     columns = line.split("\t")
                     output_file.write(">{}\n{}\n".format(columns[1], columns[2]))
+
+rule hifiasm_trivial_omnitigs:
+    input:  unitigs = safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"), contig_algorithm = "builtin"),
+            rust_binary = RUST_BINARY,
+    output: contigs = HIFIASM_ASSEMBLED_CONTIGS,
+            latex = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.tex"),
+    wildcard_constraints:
+            contig_algorithm = "trivial_omnitigs",
+    log:    log = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"),
+    shell: "'{input.rust_binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --non-scc 2>&1 | tee '{log.log}'"
 
 ##################
 ###### mdbg ######

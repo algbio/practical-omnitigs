@@ -388,6 +388,10 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
+    - shortname: "hifiasm YV"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs"
     - shortname: "mdbg"
       select_assembler:
         mdbg:

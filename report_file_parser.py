@@ -141,13 +141,21 @@ class Arguments(dict):
 
         result = self[name]
         if type(result) is not Arguments:
-            return Arguments()
+            sys.exit(f"ERROR: found {result}, expected arguments object")
 
-        result = list(result.values())
-        if len(result) != 1 or type(result[0]) is not Arguments:
-            return Arguments()
+        keys = list(result.keys())
+        values = list(result.values())
+        if len(result) != 1:
+            sys.exit(f"ERROR: subargument arguments has more than one choice")
 
-        return result[0]
+        if values[0] is None:
+            self[name][keys[0]] = Arguments()
+            values = list(result.values())
+
+        if type(values[0]) is not Arguments:
+            sys.exit(f"ERROR: subargument arguments is {values[0]}, but expected arguments object")
+
+        return values[0]
 
     def read_simulator_name(self):
         return self.subarguments_name("read_simulator")
