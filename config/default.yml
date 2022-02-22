@@ -354,6 +354,54 @@ column_templates:
           fragment_injections:
             "wtdbg2-inject-fragment-trivial-omnitigs": 10
 
+  hifi_overview_columns_ecoli: &hifi_overview_columns_ecoli
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+    - shortname: "hifiasm YV"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs"
+    - shortname: "mdbg"
+      select_assembler:
+        mdbg:
+    - shortname: "lja"
+      select_assembler:
+        lja:
+    - shortname: "HiCanu"
+      select_assembler:
+        canu:
+
   hifi_overview_columns: &hifi_overview_columns
     - shortname: "w2"
       select_assembler: 
@@ -422,14 +470,14 @@ reports:
     argument_matrix:
       genome: "E.coli_hifi"
       read_downsampling_factor: 0.01
-    columns: *hifi_overview_columns
+    columns: *hifi_overview_columns_ecoli
 
   "E.coli_HiFi_hoco":
     argument_matrix:
       genome: "E.coli_hifi"
       read_downsampling_factor: 0.01
       homopolymer_compression: "yes"
-    columns: *hifi_overview_columns
+    columns: *hifi_overview_columns_ecoli
 
   # "sim_hifi":
   #   argument_matrix:
