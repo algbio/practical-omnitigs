@@ -2040,7 +2040,7 @@ rule install_contig_validator:
     output: dir = directory(CONTIG_VALIDATOR_DIR),
     params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda:  "config/conda-contigvalidator-env.yml"
-    threads: 1
+    threads: MAX_THREADS
     shell:  """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
@@ -2085,7 +2085,7 @@ rule install_ratatosk:
     output: binary = RATATOSK_BINARY,
     params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda: "config/conda-install-ratatosk-env.yml"
-    threads: 1
+    threads: MAX_THREADS
     shell: """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
@@ -2110,7 +2110,7 @@ rule install_wtdbg2:
             wtpoa_cns = WTDBG2_CONSENSUS_BINARY,
     params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda: "config/conda-download-env.yml"
-    threads: 1
+    threads: MAX_THREADS
     shell: """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
@@ -2161,9 +2161,9 @@ rule build_flye:
     params: flye_directory = FLYE_DIR,
     output: script = FLYE_BINARY,
     conda:  "config/conda-install-flye-env.yml"
-    threads: 4
+    threads: MAX_THREADS
     resources:
-        cpus = 4,
+        cpus = MAX_THREADS,
     shell:  """
         cd '{params.flye_directory}'
 
@@ -2212,9 +2212,9 @@ rule build_mdbg:
             rust_mdbg = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")),
             to_basespace = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "to_basespace")),
     conda:  "config/conda-install-mdbg-env.yml"
-    threads: 4
+    threads: MAX_THREADS
     resources:
-        cpus = 4,
+        cpus = MAX_THREADS,
     shell:  """
         cd '{params.mdbg_directory}'
         cargo --offline build --release --target-dir '{params.mdbg_target_directory}'
@@ -2248,9 +2248,9 @@ rule build_lja:
     output: binary = LJA_BINARY,
     params: lja_directory = LJA_DIR,
     conda:  "config/conda-install-lja-env.yml"
-    threads: 4
+    threads: MAX_THREADS
     resources:
-        cpus = 4,
+        cpus = MAX_THREADS,
     shell:  """
         cd '{params.lja_directory}'
 
