@@ -238,6 +238,8 @@ MDBG_SIMPLIFY = os.path.join(MDBG_DIR, "utils", "magic_simplify")
 MDBG_MULTI_K = os.path.join(MDBG_DIR, "utils", "multik")
 LJA_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "LJA")
 LJA_BINARY = os.path.join(LJA_DIR, "bin", "lja")
+HIFIASM_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "hifiasm")
+HIFIASM_BINARY = os.path.join(HIFIASM_DIR, "hifiasm")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -989,6 +991,7 @@ rule link_flye_contigs:
 
 rule hifiasm:
     input:  reads = GENOME_READS,
+            binary = HIFIASM_BINARY,
     output: contigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
             unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"),
             directory = directory(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm")),
@@ -1001,7 +1004,7 @@ rule hifiasm:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50000),
-    shell: "hifiasm -t {threads} -o '{params.output_prefix}' '{input.reads}'"
+    shell: "'{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}'"
 
 rule hifiasm_gfa_to_fa:
     input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
@@ -2259,6 +2262,35 @@ rule build_lja:
 
         cmake .
         make -j {threads}
+        """
+
+localrules: download_hifiasm
+rule download_hifiasm:
+    output: hifiasm_marker = os.path.join(HIFIASM_DIR, "Makefile"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
+    conda:  "config/conda-download-env.yml"
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        rm -rf hifiasm
+        git clone https://github.com/sebschmi/hifiasm
+        cd hifiasm
+        git checkout c914c80547d8cdcfef392291831d6b2fb3b011f5
+        """
+
+rule build_hifiasm:
+    input:  hifiasm_marker = os.path.join(HIFIASM_DIR, "Makefile"),
+    output: binary = HIFIASM_BINARY,
+    params: hifiasm_directory = HIFIASM_DIR,
+    conda:  "config/conda-install-hifiasm-env.yml"
+    threads: MAX_THREADS
+    resources:
+        cpus = MAX_THREADS,
+    shell:  """
+        cd '{params.hifiasm_directory}'
+
+        make CXX=x86_64-conda-linux-gnu-g++ CC=x86_64-conda-linux-gnu-gcc CXXFLAGS=-I${{CONDA_PREFIX}}/include -j {threads}
         """
 
 ###################################
