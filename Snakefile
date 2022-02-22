@@ -1060,7 +1060,7 @@ rule mdbg_D_melanogaster:
             binary = MDBG_BINARY,
     output: contigs = MDBG_ASSEMBLED_CONTIGS,
     params: output_prefix = os.path.join(MDBG_OUTPUT_DIR, "contigs"),
-            original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs-final.msimpl.fa"),
+            original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs.msimpl.fa"),
     wildcard_constraints:
             mdbg_mode = "D_melanogaster",
     log:    log = MDBG_LOG,
