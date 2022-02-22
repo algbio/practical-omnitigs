@@ -17,7 +17,7 @@ cluster: >-
 #  $(./scripts/parse_sbatch_job_id.sh {dependencies})
 cluster-status: "scripts/get_slurm_job_status.py"
 max-status-checks-per-second: 10
-default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL, cluster=ukko2, options=""]
+default-resources: [cpus=1, time_min=60, mem_mb=100, queue=short, mail_type=FAIL, cluster=ukko2, options="", disk_mb=10000000]
 rerun-incomplete: true
 #immediate-submit: true
 #notemp: true
