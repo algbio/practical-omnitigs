@@ -2193,7 +2193,7 @@ rule download_mdbg:
         rm -rf rust-mdbg
         git clone https://github.com/sebschmi/rust-mdbg
         cd rust-mdbg
-        git checkout 0e306443412e2d95d6cbd4880f393d14b7b0da07
+        git checkout 7ce0cb61440c33d97f81c0976da9fc03cfc3e7d9
 
         cargo fetch
         
