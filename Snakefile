@@ -993,7 +993,9 @@ rule hifiasm:
     input:  reads = GENOME_READS,
             binary = HIFIASM_BINARY,
     output: contigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
-            unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"),
+            raw_unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.r_utg.gfa"),
+            raw_unitigs_bubpop = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.bubpop.r_utg.gfa"),
+            primary_unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"),
             directory = directory(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm")),
     params: output_prefix = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly"),
     wildcard_constraints:
