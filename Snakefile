@@ -971,7 +971,6 @@ rule flye:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
-               mail_type = "END",
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
