@@ -1024,12 +1024,12 @@ rule hifiasm_gfa_to_fa:
                     output_file.write(">{}\n{}\n".format(columns[1], columns[2]))
 
 rule hifiasm_trivial_omnitigs:
-    input:  unitigs = safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"), contig_algorithm = "builtin"),
+    input:  unitigs = lambda wildcards: safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.{graph_variant}.gfa"), contig_algorithm = "builtin", graph_variant = wildcards.contig_algorithm[len("trivial_omnitigs_"):]),
             rust_binary = RUST_BINARY,
     output: contigs = HIFIASM_ASSEMBLED_CONTIGS,
             latex = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.tex"),
     wildcard_constraints:
-            contig_algorithm = "trivial_omnitigs",
+            contig_algorithm = r"trivial_omnitigs_[a-z_\.]+",
     log:    log = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"),
     shell: "'{input.rust_binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --non-scc 2>&1 | tee '{log.log}'"
 
