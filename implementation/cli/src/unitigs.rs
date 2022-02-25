@@ -1,6 +1,7 @@
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
+use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use genome_graph::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
 use genome_graph::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph;
 use genome_graph::bigraph::traitgraph::interface::GraphBase;
@@ -126,7 +127,7 @@ pub(crate) fn compute_unitigs(
         None
     };
 
-    let mut sequence_store = DefaultSequenceStore::default();
+    let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
     match subcommand.file_format.as_str() {
         "bcalm2" => {

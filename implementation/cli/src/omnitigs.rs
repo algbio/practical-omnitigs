@@ -1,6 +1,7 @@
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
+use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::interface::GraphBase;
@@ -165,7 +166,7 @@ pub(crate) fn compute_omnitigs(
         None
     };
 
-    let mut sequence_store = DefaultSequenceStore::default();
+    let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
     match subcommand.file_format.as_str() {
         "bcalm2" => {

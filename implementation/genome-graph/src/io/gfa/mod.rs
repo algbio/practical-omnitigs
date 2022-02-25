@@ -4,8 +4,8 @@ use bigraph::interface::dynamic_bigraph::{DynamicBigraph, DynamicEdgeCentricBigr
 use bigraph::interface::BidirectedData;
 use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
-use bigraph::traitgraph::traitsequence::interface::Sequence;
 use compact_genome::implementation::DefaultGenome;
+use compact_genome::interface::alphabet::Alphabet;
 use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use compact_genome::interface::sequence_store::SequenceStore;
 use std::collections::HashMap;
@@ -14,7 +14,6 @@ use std::fs::File;
 use std::hash::Hash;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-use std::sync::Arc;
 use traitgraph_algo::dijkstra::DijkstraWeightedEdgeData;
 
 /// Type of graphs read from gfa files.
@@ -68,7 +67,8 @@ impl<SequenceHandle, Data: DijkstraWeightedEdgeData<usize>> DijkstraWeightedEdge
     }
 }
 
-impl<GenomeSequenceStore: SequenceStore, Data> SequenceData<GenomeSequenceStore>
+impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>, Data>
+    SequenceData<AlphabetType, GenomeSequenceStore>
     for BidirectedGfaNodeData<GenomeSequenceStore::Handle, Data>
 {
     fn sequence_handle(&self) -> &GenomeSequenceStore::Handle {
@@ -78,10 +78,11 @@ impl<GenomeSequenceStore: SequenceStore, Data> SequenceData<GenomeSequenceStore>
     fn sequence_ref<'a>(
         &self,
         source_sequence_store: &'a GenomeSequenceStore,
-    ) -> Option<&'a <GenomeSequenceStore as SequenceStore>::SequenceRef> {
+    ) -> Option<&'a <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef> {
         if self.forward {
             let handle =
                 <BidirectedGfaNodeData<GenomeSequenceStore::Handle, Data> as SequenceData<
+                    AlphabetType,
                     GenomeSequenceStore,
                 >>::sequence_handle(self);
             Some(source_sequence_store.get(handle))
@@ -91,13 +92,14 @@ impl<GenomeSequenceStore: SequenceStore, Data> SequenceData<GenomeSequenceStore>
     }
 
     fn sequence_owned<
-        ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>,
-        ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+        ResultSequence: for<'a> OwnedGenomeSequence<'a, AlphabetType, ResultSubsequence>,
+        ResultSubsequence: for<'a> GenomeSequence<'a, AlphabetType, ResultSubsequence> + ?Sized,
     >(
         &self,
         source_sequence_store: &GenomeSequenceStore,
     ) -> ResultSequence {
         let handle = <BidirectedGfaNodeData<GenomeSequenceStore::Handle, Data> as SequenceData<
+            AlphabetType,
             GenomeSequenceStore,
         >>::sequence_handle(self);
         if self.forward {
@@ -132,9 +134,14 @@ pub struct GfaReadFileProperties {
 /// This method also returns the k-mer length given in the gfa file.
 pub fn read_gfa_as_bigraph_from_file<
     P: AsRef<Path>,
+    AlphabetType: Alphabet,
     GenomeSequenceStoreHandle: Clone,
-    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
-    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
+    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, AlphabetType, GenomeSequenceStoreRef> + Debug + ?Sized,
+    GenomeSequenceStore: SequenceStore<
+        AlphabetType,
+        Handle = GenomeSequenceStoreHandle,
+        SequenceRef = GenomeSequenceStoreRef,
+    >,
     NodeData: From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
     EdgeData: From<BidirectedGfaEdgeData<()>>,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -156,9 +163,14 @@ pub fn read_gfa_as_bigraph_from_file<
 /// This method also returns the k-mer length given in the gfa file.
 pub fn read_gfa_as_bigraph<
     R: BufRead,
+    AlphabetType: Alphabet,
     GenomeSequenceStoreHandle: Clone,
-    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, GenomeSequenceStoreRef> + Debug + ?Sized,
-    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle, SequenceRef = GenomeSequenceStoreRef>,
+    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, AlphabetType, GenomeSequenceStoreRef> + Debug + ?Sized,
+    GenomeSequenceStore: SequenceStore<
+        AlphabetType,
+        Handle = GenomeSequenceStoreHandle,
+        SequenceRef = GenomeSequenceStoreRef,
+    >,
     NodeData: From<BidirectedGfaNodeData<GenomeSequenceStore::Handle, ()>>,
     EdgeData: From<BidirectedGfaEdgeData<()>>,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -197,7 +209,11 @@ pub fn read_gfa_as_bigraph<
             let node_name: &str = columns.next().unwrap();
 
             let sequence = columns.next().unwrap().as_bytes();
-            let sequence_handle = target_sequence_store.add(sequence);
+            let sequence_handle = target_sequence_store
+                .add_from_slice_u8(sequence)
+                .unwrap_or_else(|error| {
+                    panic!("Genome sequence with node_name {node_name} is invalid: {error:?}")
+                });
             let sequence = target_sequence_store.get(&sequence_handle);
             debug_assert!(
                 sequence.len() >= k || ignore_k,
@@ -287,8 +303,14 @@ pub fn read_gfa_as_bigraph<
 /// This method also returns the k-mer length given in the gfa file as well as the full gfa header.
 pub fn read_gfa_as_edge_centric_bigraph_from_file<
     P: AsRef<Path>,
+    AlphabetType: Alphabet + Clone + Eq + Hash + 'static,
     GenomeSequenceStoreHandle: Clone + Eq,
-    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle>,
+    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, AlphabetType, GenomeSequenceStoreRef> + Debug + ?Sized,
+    GenomeSequenceStore: SequenceStore<
+        AlphabetType,
+        Handle = GenomeSequenceStoreHandle,
+        SequenceRef = GenomeSequenceStoreRef,
+    >,
     NodeData: Default,
     EdgeData: Default
         + BidirectedData
@@ -310,8 +332,9 @@ pub fn read_gfa_as_edge_centric_bigraph_from_file<
 
 fn get_or_create_node<
     Graph: DynamicBigraph,
-    G: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone,
-    GenomeSubsequence: for<'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized,
+    AlphabetType: Alphabet,
+    G: for<'a> OwnedGenomeSequence<'a, AlphabetType, GenomeSubsequence> + Hash + Eq + Clone,
+    GenomeSubsequence: for<'a> GenomeSequence<'a, AlphabetType, GenomeSubsequence> + ?Sized,
 >(
     bigraph: &mut Graph,
     id_map: &mut HashMap<G, <Graph as GraphBase>::NodeIndex>,
@@ -345,8 +368,14 @@ where
 /// This method also returns the k-mer length given in the gfa file as well as the full gfa header.
 pub fn read_gfa_as_edge_centric_bigraph<
     R: BufRead,
+    AlphabetType: Alphabet + Clone + Eq + Hash + 'static,
     GenomeSequenceStoreHandle: Clone + Eq,
-    GenomeSequenceStore: SequenceStore<Handle = GenomeSequenceStoreHandle>,
+    GenomeSequenceStoreRef: for<'a> GenomeSequence<'a, AlphabetType, GenomeSequenceStoreRef> + Debug + ?Sized,
+    GenomeSequenceStore: SequenceStore<
+        AlphabetType,
+        Handle = GenomeSequenceStoreHandle,
+        SequenceRef = GenomeSequenceStoreRef,
+    >,
     NodeData: Default,
     EdgeData: Default
         + BidirectedData
@@ -387,8 +416,12 @@ pub fn read_gfa_as_edge_centric_bigraph<
 
             let sequence = columns.next().unwrap().as_bytes();
             //println!("sequence {}", sequence);
-            let sequence_handle = target_sequence_store.add(sequence);
-            let sequence = Arc::new(sequence);
+            let sequence_handle = target_sequence_store
+                .add_from_slice_u8(sequence)
+                .unwrap_or_else(|error| {
+                    panic!("Genome sequence with node_index {node_index} is invalid: {error:?}")
+                });
+            let sequence = target_sequence_store.get(&sequence_handle);
             let edge_data = BidirectedGfaNodeData {
                 sequence_handle: sequence_handle.clone(),
                 forward: true,
@@ -407,11 +440,11 @@ pub fn read_gfa_as_edge_centric_bigraph<
                 k
             );
 
-            let pre_plus: DefaultGenome = sequence.prefix(k - 1).iter().copied().collect();
-            let pre_minus: DefaultGenome =
+            let pre_plus: DefaultGenome<AlphabetType> = sequence.prefix(k - 1).convert();
+            let pre_minus: DefaultGenome<AlphabetType> =
                 sequence.suffix(k - 1).reverse_complement_iter().collect();
-            let succ_plus: DefaultGenome = sequence.suffix(k - 1).iter().copied().collect();
-            let succ_minus: DefaultGenome =
+            let succ_plus: DefaultGenome<AlphabetType> = sequence.suffix(k - 1).convert();
+            let succ_minus: DefaultGenome<AlphabetType> =
                 sequence.prefix(k - 1).reverse_complement_iter().collect();
 
             let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);
@@ -442,12 +475,13 @@ mod tests {
         read_gfa_as_edge_centric_bigraph, GfaReadFileProperties, PetGfaEdgeGraph,
     };
     use compact_genome::implementation::DefaultSequenceStore;
+    use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
     use std::io::BufReader;
 
     #[test]
     fn test_read_gfa_as_edge_centric_bigraph_simple() {
         let gfa = "H\tKL:Z:3\nS\t1\tACGA\nS\t2\tTCGT";
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
         let (_bigraph, GfaReadFileProperties { k, .. }): (PetGfaEdgeGraph<(), (), _>, _) =
             read_gfa_as_edge_centric_bigraph(
                 BufReader::new(gfa.as_bytes()),

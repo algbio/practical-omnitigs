@@ -1,7 +1,8 @@
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::DefaultGenome;
-use compact_genome::interface::sequence::GenomeSequence;
+use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
+use compact_genome::interface::sequence::OwnedGenomeSequence;
 use traitsequence::interface::Sequence;
 
 #[derive(Parser)]
@@ -61,15 +62,15 @@ pub(crate) fn verify_genome(
     let mut records_found = 0;
     for record in records {
         records_found += 1;
-        let genome: DefaultGenome = match record {
-            Ok(record) => record.seq().iter().copied().collect(),
+        let genome: DefaultGenome<DnaAlphabet> = match record {
+            Ok(record) => DefaultGenome::from_slice_u8(record.seq()).unwrap(),
             Err(err) => {
                 error!("Error reading genome file");
                 return Err(err.into());
             }
         };
 
-        let invalid_characters = String::from_utf8(genome.get_invalid_characters());
+        /*let invalid_characters = String::from_utf8(genome.get_invalid_characters());
         match invalid_characters {
             Ok(invalid_characters) => {
                 if !invalid_characters.is_empty() {
@@ -84,7 +85,7 @@ pub(crate) fn verify_genome(
                 error!("Genome contains a hole: characters that are not valid UTF-8");
                 return Err(Error::from(ErrorKind::GenomeHasNonUtf8Characters).into());
             }
-        }
+        }*/
 
         if genome.is_empty() {
             error!("Genome string is empty");

@@ -322,6 +322,7 @@ version = "0.6.0"
 dependencies = [
  "bitvec",
  "itertools",
+ "lazy_static",
  "ref-cast",
  "traitsequence",
 ]

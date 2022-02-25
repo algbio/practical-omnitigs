@@ -1,9 +1,10 @@
-use compact_genome::implementation::ascii_vec_sequence_store::{
-    AsciiVectorSequenceStore, AsciiVectorSequenceStoreHandle,
+use compact_genome::implementation::bit_vec_sequence_store::{
+    BitVectorSequenceStore, BitVectorSequenceStoreHandle,
 };
-use compact_genome::implementation::two_bit_vec_sequence_store::{
-    TwoBitVectorSequenceStore, TwoBitVectorSequenceStoreHandle,
+use compact_genome::implementation::vec_sequence_store::{
+    VectorSequenceStore, VectorSequenceStoreHandle,
 };
+use compact_genome::interface::alphabet::Alphabet;
 use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use compact_genome::interface::sequence_store::SequenceStore;
 
@@ -17,7 +18,7 @@ pub mod gfa;
 pub mod wtdbg2;
 
 /// Node or edge data of a genome graph that has an associated sequence.
-pub trait SequenceData<GenomeSequenceStore: SequenceStore> {
+pub trait SequenceData<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>> {
     /// Returns the handle of the sequence stored in this type.
     fn sequence_handle(&self) -> &GenomeSequenceStore::Handle;
 
@@ -30,55 +31,67 @@ pub trait SequenceData<GenomeSequenceStore: SequenceStore> {
 
     /// Returns an owned copy of the sequence pointed to by the handle of this type.
     fn sequence_owned<
-        ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>,
-        ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+        ResultSequence: for<'a> OwnedGenomeSequence<'a, AlphabetType, ResultSubsequence>,
+        ResultSubsequence: for<'a> GenomeSequence<'a, AlphabetType, ResultSubsequence> + ?Sized,
     >(
         &self,
         source_sequence_store: &GenomeSequenceStore,
     ) -> ResultSequence;
 }
 
-impl SequenceData<TwoBitVectorSequenceStore> for TwoBitVectorSequenceStoreHandle {
-    fn sequence_handle(&self) -> &<TwoBitVectorSequenceStore as SequenceStore>::Handle {
+impl<AlphabetType: Alphabet + 'static>
+    SequenceData<AlphabetType, BitVectorSequenceStore<AlphabetType>>
+    for BitVectorSequenceStoreHandle<AlphabetType>
+{
+    fn sequence_handle(
+        &self,
+    ) -> &<BitVectorSequenceStore<AlphabetType> as SequenceStore<AlphabetType>>::Handle {
         self
     }
 
     fn sequence_ref<'a>(
         &self,
-        source_sequence_store: &'a TwoBitVectorSequenceStore,
-    ) -> Option<&'a <TwoBitVectorSequenceStore as SequenceStore>::SequenceRef> {
+        source_sequence_store: &'a BitVectorSequenceStore<AlphabetType>,
+    ) -> Option<
+        &'a <BitVectorSequenceStore<AlphabetType> as SequenceStore<AlphabetType>>::SequenceRef,
+    > {
         Some(source_sequence_store.get(self))
     }
 
     fn sequence_owned<
-        ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>,
-        ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+        ResultSequence: for<'a> OwnedGenomeSequence<'a, AlphabetType, ResultSubsequence>,
+        ResultSubsequence: for<'a> GenomeSequence<'a, AlphabetType, ResultSubsequence> + ?Sized,
     >(
         &self,
-        source_sequence_store: &TwoBitVectorSequenceStore,
+        source_sequence_store: &BitVectorSequenceStore<AlphabetType>,
     ) -> ResultSequence {
         source_sequence_store.get(self).convert()
     }
 }
 
-impl SequenceData<AsciiVectorSequenceStore> for AsciiVectorSequenceStoreHandle {
-    fn sequence_handle(&self) -> &<AsciiVectorSequenceStore as SequenceStore>::Handle {
+impl<AlphabetType: Alphabet + 'static> SequenceData<AlphabetType, VectorSequenceStore<AlphabetType>>
+    for VectorSequenceStoreHandle<AlphabetType>
+{
+    fn sequence_handle(
+        &self,
+    ) -> &<VectorSequenceStore<AlphabetType> as SequenceStore<AlphabetType>>::Handle {
         self
     }
 
     fn sequence_ref<'a>(
         &self,
-        source_sequence_store: &'a AsciiVectorSequenceStore,
-    ) -> Option<&'a <AsciiVectorSequenceStore as SequenceStore>::SequenceRef> {
+        source_sequence_store: &'a VectorSequenceStore<AlphabetType>,
+    ) -> Option<&'a <VectorSequenceStore<AlphabetType> as SequenceStore<AlphabetType>>::SequenceRef>
+    {
         Some(source_sequence_store.get(self))
     }
 
     fn sequence_owned<
-        ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>,
-        ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+        ResultSequence: for<'a> OwnedGenomeSequence<'a, AlphabetType, ResultSubsequence>,
+        ResultSubsequence: for<'a> GenomeSequence<'a, AlphabetType, ResultSubsequence> + ?Sized,
     >(
         &self,
-        source_sequence_store: &AsciiVectorSequenceStore,
+        source_sequence_store: &VectorSequenceStore<AlphabetType>,
     ) -> ResultSequence {
         source_sequence_store.get(self).convert()
     }

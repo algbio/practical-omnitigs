@@ -5,12 +5,13 @@ categories = ["data-structures", "mathematics", "science"]
 keywords = ["bigraph", "graph", "bidirected", "abstract", "implementation"]
 version = "0.6.1"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
-edition = "2018"
+edition = "2021"
 homepage = "https://github.com/algbio/practical-omnitigs/tree/master/implementation/bigraph"
 documentation = "https://docs.rs/bigraph"
 repository = "https://github.com/algbio/practical-omnitigs"
 readme = "README.md"
 license = "BSD-2-Clause"
+rust-version = "1.58.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -16,6 +16,7 @@ use omnitigs::macrotigs::macrotigs::default_macrotig_link_algorithm::DefaultMacr
 use omnitigs::macrotigs::macrotigs::MaximalMacrotigsAlgorithm;
 use traitsequence::interface::Sequence;
 use compact_genome::implementation::DefaultSequenceStore;
+use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 
 #[derive(Parser)]
 pub struct VerifyEdgeCentricCommand {
@@ -265,7 +266,7 @@ pub(crate) fn verify_edge_centric(
         "Reading bigraph from '{}' with kmer size {}",
         subcommand.input, subcommand.kmer_size
     );
-    let mut sequence_store = DefaultSequenceStore::default();
+    let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
     let genome_graph: PetBCalm2EdgeGraph<_> =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
             &subcommand.input,
@@ -330,7 +331,7 @@ pub(crate) fn verify_node_centric(
     subcommand: &VerifyNodeCentricCommand,
 ) -> crate::Result<()> {
     info!("Reading bigraph from {}", subcommand.input);
-    let mut sequence_store = DefaultSequenceStore::default();
+    let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
     let genome_graph: PetBCalm2NodeGraph<_> =
         genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_node_centric_from_file(
             &subcommand.input,

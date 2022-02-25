@@ -5,12 +5,13 @@ categories = ["mathematics", "algorithms", "science"]
 keywords = ["genome", "assembly", "omnitigs", "bioinformatics"]
 version = "0.6.1"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
-edition = "2018"
+edition = "2021"
 homepage = "https://github.com/algbio/practical-omnitigs/tree/master/implementation/compact-genome"
 documentation = "https://docs.rs/compact-genome"
 repository = "https://github.com/algbio/practical-omnitigs"
 readme = "README.md"
 license = "BSD-2-Clause"
+rust-version = "1.58.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

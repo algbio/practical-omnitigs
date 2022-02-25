@@ -7,8 +7,9 @@ use bigraph::traitgraph::interface::{GraphBase, ImmutableGraphContainer, StaticG
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, NodeWalk};
 use bio::io::fasta::Record;
-use compact_genome::implementation::two_bit_vec_sequence::TwoBitVectorGenome;
+use compact_genome::implementation::bit_vec_sequence::BitVectorGenome;
 use compact_genome::implementation::DefaultGenome;
+use compact_genome::interface::alphabet::Alphabet;
 use compact_genome::interface::sequence::{
     EditableGenomeSequence, GenomeSequence, OwnedGenomeSequence,
 };
@@ -48,12 +49,13 @@ error_chain! {
 }
 
 /// Data that can be output as fasta record.
-pub trait FastaData<SourceSequenceStore: SequenceStore> {
+pub trait FastaData<AlphabetType: Alphabet, SourceSequenceStore: SequenceStore<AlphabetType>> {
     /// The type storing the genome sequence of this fasta record.
-    type Genome: for<'a> OwnedGenomeSequence<'a, Self::GenomeSubsequence>
-        + for<'a> EditableGenomeSequence<'a, Self::GenomeSubsequence>;
+    type Genome: for<'a> OwnedGenomeSequence<'a, AlphabetType, Self::GenomeSubsequence>
+        + for<'a> EditableGenomeSequence<'a, AlphabetType, Self::GenomeSubsequence>;
     /// The subsequence type of `Genome`.
-    type GenomeSubsequence: for<'a> GenomeSequence<'a, Self::GenomeSubsequence> + ?Sized;
+    type GenomeSubsequence: for<'a> GenomeSequence<'a, AlphabetType, Self::GenomeSubsequence>
+        + ?Sized;
 
     /// Returns the sequence of this fasta record.
     fn sequence<'a>(
@@ -65,8 +67,9 @@ pub trait FastaData<SourceSequenceStore: SequenceStore> {
 /// Write a sequence of walks in a graph as fasta records.
 pub fn write_walks_as_fasta<
     'ws,
-    SourceSequenceStore: SequenceStore,
-    EdgeData: SequenceData<SourceSequenceStore>,
+    AlphabetType: Alphabet + 'static,
+    SourceSequenceStore: SequenceStore<AlphabetType>,
+    EdgeData: SequenceData<AlphabetType, SourceSequenceStore>,
     Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
     Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
     Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
@@ -84,18 +87,19 @@ pub fn write_walks_as_fasta<
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence: DefaultGenome = graph
+        let mut sequence: DefaultGenome<AlphabetType> = graph
             .edge_data(walk[0])
             .sequence_owned(source_sequence_store);
         for edge in walk.iter().skip(1) {
             let edge_data = graph.edge_data(*edge);
             if let Some(sequence_ref) = edge_data.sequence_ref(source_sequence_store) {
                 let sequence_ref = sequence_ref.iter().skip(kmer_size - 1);
-                sequence.extend(sequence_ref.copied());
+                sequence.extend(sequence_ref.cloned());
             } else {
-                let sequence_owned: DefaultGenome = edge_data.sequence_owned(source_sequence_store);
+                let sequence_owned: DefaultGenome<AlphabetType> =
+                    edge_data.sequence_owned(source_sequence_store);
                 let sequence_owned = sequence_owned.iter().skip(kmer_size - 1);
-                sequence.extend(sequence_owned.copied());
+                sequence.extend(sequence_owned.cloned());
             }
         }
 
@@ -111,8 +115,9 @@ pub fn write_walks_as_fasta<
 /// The given file is created if it does not exist or truncated if it does exist.
 pub fn write_walks_as_fasta_file<
     'ws,
-    SourceSequenceStore: SequenceStore,
-    EdgeData: SequenceData<SourceSequenceStore>,
+    AlphabetType: Alphabet + 'static,
+    SourceSequenceStore: SequenceStore<AlphabetType>,
+    EdgeData: SequenceData<AlphabetType, SourceSequenceStore>,
     Graph: ImmutableGraphContainer<EdgeData = EdgeData>,
     Walk: 'ws + for<'w> EdgeWalk<'w, Graph, Subwalk>,
     Subwalk: for<'w> EdgeWalk<'w, Graph, Subwalk> + ?Sized,
@@ -137,8 +142,9 @@ pub fn write_walks_as_fasta_file<
 /// Write a sequence of node-centric walks in a graph as fasta records.
 pub fn write_node_centric_walks_as_fasta<
     'ws,
-    SourceSequenceStore: SequenceStore,
-    NodeData: SequenceData<SourceSequenceStore>,
+    AlphabetType: Alphabet + 'static,
+    SourceSequenceStore: SequenceStore<AlphabetType>,
+    NodeData: SequenceData<AlphabetType, SourceSequenceStore>,
     Graph: ImmutableGraphContainer<NodeData = NodeData>,
     Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
     Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
@@ -156,18 +162,19 @@ pub fn write_node_centric_walks_as_fasta<
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence: DefaultGenome = graph
+        let mut sequence: DefaultGenome<AlphabetType> = graph
             .node_data(walk[0])
             .sequence_owned(source_sequence_store);
         for node in walk.iter().skip(1) {
             let node_data = graph.node_data(*node);
             if let Some(sequence_ref) = node_data.sequence_ref(source_sequence_store) {
                 let sequence_ref = sequence_ref.iter().skip(kmer_size - 1);
-                sequence.extend(sequence_ref.copied());
+                sequence.extend(sequence_ref.cloned());
             } else {
-                let sequence_owned: DefaultGenome = node_data.sequence_owned(source_sequence_store);
+                let sequence_owned: DefaultGenome<AlphabetType> =
+                    node_data.sequence_owned(source_sequence_store);
                 let sequence_owned = sequence_owned.iter().skip(kmer_size - 1);
-                sequence.extend(sequence_owned.copied());
+                sequence.extend(sequence_owned.cloned());
             }
         }
 
@@ -183,8 +190,9 @@ pub fn write_node_centric_walks_as_fasta<
 /// The given file is created if it does not exist or truncated if it does exist.
 pub fn write_node_centric_walks_as_fasta_file<
     'ws,
-    SourceSequenceStore: SequenceStore,
-    NodeData: SequenceData<SourceSequenceStore>,
+    AlphabetType: Alphabet + 'static,
+    SourceSequenceStore: SequenceStore<AlphabetType>,
+    NodeData: SequenceData<AlphabetType, SourceSequenceStore>,
     Graph: ImmutableGraphContainer<NodeData = NodeData>,
     Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
     Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
@@ -210,8 +218,9 @@ pub fn write_node_centric_walks_as_fasta_file<
 /// The overlaps between the nodes are given by the edges.
 pub fn write_node_centric_walks_with_variable_overlaps_as_fasta<
     'ws,
-    SourceSequenceStore: SequenceStore,
-    NodeData: SequenceData<SourceSequenceStore>,
+    AlphabetType: Alphabet + 'static,
+    SourceSequenceStore: SequenceStore<AlphabetType>,
+    NodeData: SequenceData<AlphabetType, SourceSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = BidirectedGfaEdgeData<()>>,
     Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
     Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
@@ -228,7 +237,7 @@ pub fn write_node_centric_walks_with_variable_overlaps_as_fasta<
             return Err(Error::from_kind(ErrorKind::EmptyWalkError).into());
         }
 
-        let mut sequence: DefaultGenome = graph
+        let mut sequence: DefaultGenome<AlphabetType> = graph
             .node_data(walk[0])
             .sequence_owned(source_sequence_store);
         for (previous_node, node) in walk.iter().take(walk.len() - 1).zip(walk.iter().skip(1)) {
@@ -237,11 +246,12 @@ pub fn write_node_centric_walks_with_variable_overlaps_as_fasta<
             let edge_data = graph.edge_data(edge);
             if let Some(sequence_ref) = node_data.sequence_ref(source_sequence_store) {
                 let sequence_ref = sequence_ref.iter().skip(edge_data.overlap);
-                sequence.extend(sequence_ref.copied());
+                sequence.extend(sequence_ref.cloned());
             } else {
-                let sequence_owned: DefaultGenome = node_data.sequence_owned(source_sequence_store);
+                let sequence_owned: DefaultGenome<AlphabetType> =
+                    node_data.sequence_owned(source_sequence_store);
                 let sequence_owned = sequence_owned.iter().skip(edge_data.overlap);
-                sequence.extend(sequence_owned.copied());
+                sequence.extend(sequence_owned.cloned());
             }
         }
 
@@ -258,8 +268,9 @@ pub fn write_node_centric_walks_with_variable_overlaps_as_fasta<
 /// The given file is created if it does not exist or truncated if it does exist.
 pub fn write_node_centric_walks_with_variable_overlaps_as_fasta_file<
     'ws,
-    SourceSequenceStore: SequenceStore,
-    NodeData: SequenceData<SourceSequenceStore>,
+    AlphabetType: Alphabet + 'static,
+    SourceSequenceStore: SequenceStore<AlphabetType>,
+    NodeData: SequenceData<AlphabetType, SourceSequenceStore>,
     Graph: StaticGraph<NodeData = NodeData, EdgeData = BidirectedGfaEdgeData<()>>,
     Walk: 'ws + for<'w> NodeWalk<'w, Graph, Subwalk>,
     Subwalk: for<'w> NodeWalk<'w, Graph, Subwalk> + ?Sized,
@@ -305,13 +316,15 @@ impl<SequenceHandle: Clone> BidirectedData for FastaNodeData<SequenceHandle> {
     }
 }
 
-fn parse_fasta_record<GenomeSequenceStore: SequenceStore>(
+fn parse_fasta_record<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>>(
     record: Record,
     target_sequence_store: &mut GenomeSequenceStore,
 ) -> Result<FastaNodeData<GenomeSequenceStore::Handle>> {
     let id = record.id().to_owned();
     let description = record.desc().map(ToOwned::to_owned);
-    let sequence_handle = target_sequence_store.add(record.seq());
+    let sequence_handle = target_sequence_store
+        .add_from_slice_u8(record.seq())
+        .unwrap_or_else(|error| panic!("Genome sequence with id {id} is invalid: {error:?}"));
     Ok(FastaNodeData {
         id,
         description,
@@ -512,7 +525,8 @@ pub fn write_node_centric_bigraph_to_bcalm2<
 /// Read a genome graph in fasta format into an edge-centric representation from a file.
 pub fn read_bigraph_from_fasta_as_edge_centric_from_file<
     P: AsRef<Path> + Debug,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet + Hash + Eq + Clone + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData: Default + Clone,
     EdgeData: From<FastaNodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -522,7 +536,7 @@ pub fn read_bigraph_from_fasta_as_edge_centric_from_file<
     kmer_size: usize,
 ) -> crate::error::Result<Graph>
 where
-    <GenomeSequenceStore as SequenceStore>::Handle: Clone,
+    <GenomeSequenceStore as SequenceStore<AlphabetType>>::Handle: Clone,
 {
     read_bigraph_from_fasta_as_edge_centric(
         bio::io::fasta::Reader::from_file(path).map_err(Error::from)?,
@@ -533,8 +547,9 @@ where
 
 fn get_or_create_node<
     Graph: DynamicBigraph,
-    Genome: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone,
-    GenomeSubsequence: for<'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized,
+    AlphabetType: Alphabet,
+    Genome: for<'a> OwnedGenomeSequence<'a, AlphabetType, GenomeSubsequence> + Hash + Eq + Clone,
+    GenomeSubsequence: for<'a> GenomeSequence<'a, AlphabetType, GenomeSubsequence> + ?Sized,
 >(
     bigraph: &mut Graph,
     id_map: &mut HashMap<Genome, <Graph as GraphBase>::NodeIndex>,
@@ -567,7 +582,8 @@ where
 /// Read a genome graph in fasta format into an edge-centric representation.
 pub fn read_bigraph_from_fasta_as_edge_centric<
     R: std::io::BufRead,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet + Hash + Eq + Clone + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData: Default + Clone,
     EdgeData: From<FastaNodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -578,7 +594,7 @@ pub fn read_bigraph_from_fasta_as_edge_centric<
 ) -> crate::error::Result<Graph>
 where
     <Graph as GraphBase>::NodeIndex: Clone,
-    <GenomeSequenceStore as SequenceStore>::Handle: Clone,
+    <GenomeSequenceStore as SequenceStore<AlphabetType>>::Handle: Clone,
 {
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
@@ -591,10 +607,10 @@ where
         let prefix = sequence.prefix(node_kmer_size);
         let suffix = sequence.suffix(node_kmer_size);
 
-        let pre_plus: TwoBitVectorGenome = prefix.convert();
-        let pre_minus: TwoBitVectorGenome = suffix.convert_with_reverse_complement();
-        let succ_plus: TwoBitVectorGenome = suffix.convert();
-        let succ_minus: TwoBitVectorGenome = prefix.convert_with_reverse_complement();
+        let pre_plus: BitVectorGenome<AlphabetType> = prefix.convert();
+        let pre_minus: BitVectorGenome<AlphabetType> = suffix.convert_with_reverse_complement();
+        let succ_plus: BitVectorGenome<AlphabetType> = suffix.convert();
+        let succ_minus: BitVectorGenome<AlphabetType> = prefix.convert_with_reverse_complement();
 
         let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);
         let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, pre_minus);
@@ -613,7 +629,8 @@ where
 /// Write a genome graph in fasta format from an edge-centric representation to a file.
 pub fn write_edge_centric_bigraph_to_fasta_to_file<
     P: AsRef<Path>,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
     EdgeData: BidirectedData + Clone + Eq,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -635,7 +652,8 @@ where
 /// Write a genome graph in fasta format from an edge-centric representation.
 pub fn write_edge_centric_bigraph_to_fasta<
     W: std::io::Write,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData,
     EdgeData: BidirectedData + Clone + Eq,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -778,10 +796,10 @@ where
             let prefix = sequence.prefix(node_kmer_size);
             let suffix = sequence.suffix(node_kmer_size);
 
-            let pre_plus: TwoBitVectorGenome = prefix.convert();
-            let pre_minus: TwoBitVectorGenome = suffix.convert_with_reverse_complement();
-            let succ_plus: TwoBitVectorGenome = suffix.convert();
-            let succ_minus: TwoBitVectorGenome = prefix.convert_with_reverse_complement();
+            let pre_plus: BitVectorGenome = prefix.convert();
+            let pre_minus: BitVectorGenome = suffix.convert_with_reverse_complement();
+            let succ_plus: BitVectorGenome = suffix.convert();
+            let succ_minus: BitVectorGenome = prefix.convert_with_reverse_complement();
             drop(locked_target_sequence_store);
 
             let pre_plus = get_or_create_node_in_parallel(&bigraph, &id_map, pre_plus);

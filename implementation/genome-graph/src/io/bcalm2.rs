@@ -6,7 +6,8 @@ use bigraph::traitgraph::index::GraphIndex;
 use bigraph::traitgraph::interface::GraphBase;
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bio::io::fasta::Record;
-use compact_genome::implementation::two_bit_vec_sequence::TwoBitVectorGenome;
+use compact_genome::implementation::bit_vec_sequence::BitVectorGenome;
+use compact_genome::interface::alphabet::Alphabet;
 use compact_genome::interface::sequence::{GenomeSequence, OwnedGenomeSequence};
 use compact_genome::interface::sequence_store::SequenceStore;
 use num_traits::NumCast;
@@ -131,7 +132,8 @@ impl<GenomeSequenceStoreHandle: Clone> BidirectedData
     }
 }
 
-impl<GenomeSequenceStore: SequenceStore> SequenceData<GenomeSequenceStore>
+impl<AlphabetType: Alphabet, GenomeSequenceStore: SequenceStore<AlphabetType>>
+    SequenceData<AlphabetType, GenomeSequenceStore>
     for PlainBCalm2NodeData<GenomeSequenceStore::Handle>
 {
     fn sequence_handle(&self) -> &GenomeSequenceStore::Handle {
@@ -141,9 +143,10 @@ impl<GenomeSequenceStore: SequenceStore> SequenceData<GenomeSequenceStore>
     fn sequence_ref<'a>(
         &self,
         source_sequence_store: &'a GenomeSequenceStore,
-    ) -> Option<&'a <GenomeSequenceStore as SequenceStore>::SequenceRef> {
+    ) -> Option<&'a <GenomeSequenceStore as SequenceStore<AlphabetType>>::SequenceRef> {
         if self.forwards {
             let handle = <PlainBCalm2NodeData<GenomeSequenceStore::Handle> as SequenceData<
+                AlphabetType,
                 GenomeSequenceStore,
             >>::sequence_handle(self);
             Some(source_sequence_store.get(handle))
@@ -153,13 +156,14 @@ impl<GenomeSequenceStore: SequenceStore> SequenceData<GenomeSequenceStore>
     }
 
     fn sequence_owned<
-        ResultSequence: for<'a> OwnedGenomeSequence<'a, ResultSubsequence>,
-        ResultSubsequence: for<'a> GenomeSequence<'a, ResultSubsequence> + ?Sized,
+        ResultSequence: for<'a> OwnedGenomeSequence<'a, AlphabetType, ResultSubsequence>,
+        ResultSubsequence: for<'a> GenomeSequence<'a, AlphabetType, ResultSubsequence> + ?Sized,
     >(
         &self,
         source_sequence_store: &GenomeSequenceStore,
     ) -> ResultSequence {
         let handle = <PlainBCalm2NodeData<GenomeSequenceStore::Handle> as SequenceData<
+            AlphabetType,
             GenomeSequenceStore,
         >>::sequence_handle(self);
 
@@ -183,7 +187,10 @@ impl<GenomeSequenceStoreHandle: PartialEq> PartialEq
 
 impl<GenomeSequenceStoreHandle: Eq> Eq for PlainBCalm2NodeData<GenomeSequenceStoreHandle> {}
 
-fn parse_bcalm2_fasta_record<GenomeSequenceStore: SequenceStore>(
+fn parse_bcalm2_fasta_record<
+    AlphabetType: Alphabet + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
+>(
     record: Record,
     target_sequence_store: &mut GenomeSequenceStore,
 ) -> crate::error::Result<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> {
@@ -191,7 +198,9 @@ fn parse_bcalm2_fasta_record<GenomeSequenceStore: SequenceStore>(
         .id()
         .parse()
         .map_err(|e| Error::with_chain(e, ErrorKind::BCalm2IdError(record.id().to_owned())))?;
-    let sequence_handle = target_sequence_store.add(record.seq()); // TODO check if genome is valid
+    let sequence_handle = target_sequence_store
+        .add_from_slice_u8(record.seq())
+        .unwrap_or_else(|error| panic!("Genome sequence with id {id} is invalid: {error:?}"));
     let sequence = target_sequence_store.get(&sequence_handle);
 
     let mut length = None;
@@ -330,7 +339,8 @@ impl<'a, GenomeSequenceStoreHandle: Clone> From<&'a PlainBCalm2NodeData<GenomeSe
 /// Read a genome graph in bcalm2 fasta format into a node-centric representation from a file.
 pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
     P: AsRef<Path> + Debug,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + BidirectedData,
     EdgeData: Default + Clone,
     Graph: DynamicNodeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -347,7 +357,8 @@ pub fn read_bigraph_from_bcalm2_as_node_centric_from_file<
 /// Read a genome graph in bcalm2 fasta format into a node-centric representation.
 pub fn read_bigraph_from_bcalm2_as_node_centric<
     R: std::io::BufRead,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + BidirectedData,
     EdgeData: Default + Clone,
     Graph: DynamicNodeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -425,7 +436,8 @@ fn write_plain_bcalm2_node_data_to_bcalm2<GenomeSequenceStoreHandle>(
 /// Write a genome graph in bcalm2 fasta format from a node-centric representation to a file.
 pub fn write_node_centric_bigraph_to_bcalm2_to_file<
     P: AsRef<Path>,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
     EdgeData: Default + Clone,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -447,7 +459,8 @@ where
 /// Write a genome graph in bcalm2 fasta format from a node-centric representation.
 pub fn write_node_centric_bigraph_to_bcalm2<
     W: std::io::Write,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData,
     EdgeData: Default + Clone,
     Graph: DynamicBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -547,7 +560,8 @@ where
 /// Read a genome graph in bcalm2 fasta format into an edge-centric representation from a file.
 pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     P: AsRef<Path> + Debug,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet + 'static + Hash + Eq + Clone,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData: Default + Clone,
     EdgeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -557,7 +571,7 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric_from_file<
     kmer_size: usize,
 ) -> crate::error::Result<Graph>
 where
-    <GenomeSequenceStore as SequenceStore>::Handle: Clone,
+    <GenomeSequenceStore as SequenceStore<AlphabetType>>::Handle: Clone,
 {
     read_bigraph_from_bcalm2_as_edge_centric(
         bio::io::fasta::Reader::from_file(path).map_err(Error::from)?,
@@ -568,8 +582,9 @@ where
 
 fn get_or_create_node<
     Graph: DynamicBigraph,
-    Genome: for<'a> OwnedGenomeSequence<'a, GenomeSubsequence> + Hash + Eq + Clone,
-    GenomeSubsequence: for<'a> GenomeSequence<'a, GenomeSubsequence> + ?Sized,
+    AlphabetType: Alphabet,
+    Genome: for<'a> OwnedGenomeSequence<'a, AlphabetType, GenomeSubsequence> + Hash + Eq + Clone,
+    GenomeSubsequence: for<'a> GenomeSequence<'a, AlphabetType, GenomeSubsequence> + ?Sized,
 >(
     bigraph: &mut Graph,
     id_map: &mut HashMap<Genome, <Graph as GraphBase>::NodeIndex>,
@@ -602,7 +617,8 @@ where
 /// Read a genome graph in bcalm2 fasta format into an edge-centric representation.
 pub fn read_bigraph_from_bcalm2_as_edge_centric<
     R: std::io::BufRead,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet + Hash + Eq + Clone + 'static,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData: Default + Clone,
     EdgeData: From<PlainBCalm2NodeData<GenomeSequenceStore::Handle>> + Clone + Eq + BidirectedData,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -613,7 +629,7 @@ pub fn read_bigraph_from_bcalm2_as_edge_centric<
 ) -> crate::error::Result<Graph>
 where
     <Graph as GraphBase>::NodeIndex: Clone,
-    <GenomeSequenceStore as SequenceStore>::Handle: Clone,
+    <GenomeSequenceStore as SequenceStore<AlphabetType>>::Handle: Clone,
 {
     let mut bigraph = Graph::default();
     let mut id_map = HashMap::new();
@@ -626,10 +642,10 @@ where
         let prefix = sequence.prefix(node_kmer_size);
         let suffix = sequence.suffix(node_kmer_size);
 
-        let pre_plus: TwoBitVectorGenome = prefix.convert();
-        let pre_minus: TwoBitVectorGenome = suffix.convert_with_reverse_complement();
-        let succ_plus: TwoBitVectorGenome = suffix.convert();
-        let succ_minus: TwoBitVectorGenome = prefix.convert_with_reverse_complement();
+        let pre_plus: BitVectorGenome<AlphabetType> = prefix.convert();
+        let pre_minus: BitVectorGenome<AlphabetType> = suffix.convert_with_reverse_complement();
+        let succ_plus: BitVectorGenome<AlphabetType> = suffix.convert();
+        let succ_minus: BitVectorGenome<AlphabetType> = prefix.convert_with_reverse_complement();
 
         let pre_plus = get_or_create_node(&mut bigraph, &mut id_map, pre_plus);
         let pre_minus = get_or_create_node(&mut bigraph, &mut id_map, pre_minus);
@@ -648,7 +664,8 @@ where
 /// Write a genome graph in bcalm2 fasta format from an edge-centric representation to a file.
 pub fn write_edge_centric_bigraph_to_bcalm2_to_file<
     P: AsRef<Path>,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData, //: Into<PlainBCalm2NodeData<IndexType>>,
     EdgeData: BidirectedData + Clone + Eq,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -670,7 +687,8 @@ where
 /// Write a genome graph in bcalm2 fasta format from an edge-centric representation.
 pub fn write_edge_centric_bigraph_to_bcalm2<
     W: std::io::Write,
-    GenomeSequenceStore: SequenceStore,
+    AlphabetType: Alphabet,
+    GenomeSequenceStore: SequenceStore<AlphabetType>,
     NodeData,
     EdgeData: BidirectedData + Clone + Eq,
     Graph: DynamicEdgeCentricBigraph<NodeData = NodeData, EdgeData = EdgeData> + Default,
@@ -781,6 +799,7 @@ mod tests {
     };
     use crate::types::{PetBCalm2EdgeGraph, PetBCalm2NodeGraph};
     use compact_genome::implementation::DefaultSequenceStore;
+    use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 
     #[test]
     fn test_node_read_write() {
@@ -791,7 +810,7 @@ mod tests {
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:1:-\n\
             ATGATG\n";
         let input = Vec::from(test_file);
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2NodeGraph<_> = read_bigraph_from_bcalm2_as_node_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -824,7 +843,7 @@ mod tests {
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:1:-\n\
             ACGAGG\n";
         let input = Vec::from(test_file);
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -860,7 +879,7 @@ mod tests {
             TTGATG\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -895,7 +914,7 @@ mod tests {
             ATGATT\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -930,7 +949,7 @@ mod tests {
             CAGATT\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -966,7 +985,7 @@ mod tests {
             ATGATG\n";
         let input = Vec::from(test_file);
         println!("{}", String::from_utf8(input.clone()).unwrap());
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -1000,7 +1019,7 @@ mod tests {
             >2 LN:i:6 KC:i:15 km:f:2.2 L:-:0:- L:-:0:+ L:-:1:- L:-:2:+\n\
             ATGATG\n";
         let input = Vec::from(test_file);
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -1035,7 +1054,7 @@ mod tests {
             >2 LN:i:6 KC:i:15 km:f:2.2 L:+:0:- L:+:1:-\n\
             AAGAAC\n";
         let input = Vec::from(test_file);
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),
@@ -1070,7 +1089,7 @@ mod tests {
             >2 LN:i:6 KC:i:15 km:f:2.2 L:+:0:+ L:+:1:+ L:-:0:- L:-:1:-\n\
             TCGAAG\n";
         let input = Vec::from(test_file);
-        let mut sequence_store = DefaultSequenceStore::default();
+        let mut sequence_store = DefaultSequenceStore::<DnaAlphabet>::default();
 
         let graph: PetBCalm2EdgeGraph<_> = read_bigraph_from_bcalm2_as_edge_centric(
             bio::io::fasta::Reader::new(test_file),

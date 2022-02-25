@@ -1,10 +1,12 @@
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::{DefaultSequenceStore, DefaultSequenceStoreHandle};
+use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use genome_graph::io::gfa::PetGfaGraph;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs};
-use omnitigs::traitgraph::interface::{GraphBase, ImmutableGraphContainer};
+use omnitigs::traitgraph::interface::GraphBase;
+use omnitigs::traitgraph::interface::ImmutableGraphContainer;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use traitgraph_algo::components::is_strongly_connected;
@@ -219,13 +221,15 @@ pub(crate) fn compute_trivial_omnitigs(
                 bail!("No input file given")
             };
             info!("Reading bigraph from '{}'", input);
-            let (genome_graph, _): (PetGfaGraph<(), (), DefaultSequenceStoreHandle>, _) =
-                genome_graph::io::gfa::read_gfa_as_bigraph_from_file(
-                    input,
-                    &mut sequence_store,
-                    true,
-                    true,
-                )?;
+            let (genome_graph, _): (
+                PetGfaGraph<(), (), DefaultSequenceStoreHandle<DnaAlphabet>>,
+                _,
+            ) = genome_graph::io::gfa::read_gfa_as_bigraph_from_file(
+                input,
+                &mut sequence_store,
+                true,
+                true,
+            )?;
 
             info!(
                 "Graph has {} nodes and {} edges",

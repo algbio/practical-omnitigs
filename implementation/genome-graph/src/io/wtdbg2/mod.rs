@@ -5,7 +5,9 @@ use bigraph::traitgraph::interface::{Edge, ImmutableGraphContainer, StaticGraph}
 use bigraph::traitgraph::traitsequence::interface::Sequence;
 use bigraph::traitgraph::walks::{EdgeWalk, VecNodeWalk};
 use compact_genome::implementation::DefaultGenome;
+use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use compact_genome::interface::sequence::GenomeSequence;
+use compact_genome::interface::sequence::{EditableGenomeSequence, OwnedGenomeSequence};
 use regex::Regex;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -819,7 +821,7 @@ pub fn convert_walks_to_wtdbg2_contigs<
     walks: WalkSource,
     raw_reads: bio::io::fasta::Reader<R>,
 ) -> Result<RawWtdbg2Contigs> {
-    let mut read_map = HashMap::<_, DefaultGenome>::new();
+    let mut read_map = HashMap::<_, DefaultGenome<DnaAlphabet>>::new();
     info!("Loading reads");
     let mut last_print_time = Instant::now();
 
@@ -841,9 +843,12 @@ pub fn convert_walks_to_wtdbg2_contigs<
         }
         .to_owned();
         if let Some(genome) = read_map.get_mut(&id) {
-            genome.extend(record.seq().iter().copied());
+            genome.extend_from_slice_u8(record.seq()).unwrap();
         } else {
-            read_map.insert(id.to_owned(), record.seq().iter().copied().collect());
+            read_map.insert(
+                id.to_owned(),
+                DefaultGenome::from_slice_u8(record.seq()).unwrap(),
+            );
         }
     }
     info!("Finished loading {} reads", read_map.len());
@@ -1063,7 +1068,7 @@ pub fn write_contigs_to_wtdbg2<
     raw_reads: bio::io::fasta::Reader<R>,
     output: &mut W,
 ) -> Result<()> {
-    let mut read_map = HashMap::<_, DefaultGenome>::new();
+    let mut read_map = HashMap::<_, DefaultGenome<DnaAlphabet>>::new();
     info!("Loading reads");
     let mut last_print_time = Instant::now();
 
@@ -1085,9 +1090,12 @@ pub fn write_contigs_to_wtdbg2<
         }
         .to_owned();
         if let Some(genome) = read_map.get_mut(&id) {
-            genome.extend(record.seq().iter().copied());
+            genome.extend_from_slice_u8(record.seq()).unwrap();
         } else {
-            read_map.insert(id.to_owned(), record.seq().iter().copied().collect());
+            read_map.insert(
+                id.to_owned(),
+                DefaultGenome::from_slice_u8(record.seq()).unwrap(),
+            );
         }
     }
     info!("Finished loading {} reads", read_map.len());
