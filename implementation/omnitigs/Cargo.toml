@@ -3,7 +3,7 @@ name = "omnitigs"
 description = "Omnitig-related algorithms"
 categories = ["mathematics", "algorithms", "science"]
 keywords = ["genome", "assembly", "omnitigs", "bioinformatics"]
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2021"
 homepage = "https://github.com/algbio/practical-omnitigs/tree/master/implementation/compact-genome"
@@ -18,7 +18,7 @@ rust-version = "1.58.1"
 [dependencies]
 traitgraph = "0.7.0"
 traitgraph-algo = "0.7.0"
-bigraph = {path = "../bigraph", version = "0.6.1"}
+bigraph = {path = "../bigraph", version = "0.7.0"}
 traitsequence = "0.6.0"
 bitvector = "0.1.5"
 rand = "0.8.4"

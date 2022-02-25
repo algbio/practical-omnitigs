@@ -1,7 +1,7 @@
 [package]
 name = "genome-graph"
 description = "Representation of genome graphs"
-version = "0.6.2"
+version = "0.7.0"
 authors = ["Sebastian Schmidt <sebastian.schmidt@helsinki.fi>"]
 edition = "2021"
 categories = ["data-structures", "science"]
@@ -16,8 +16,8 @@ rust-version = "1.58.1"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bigraph = {path = "../bigraph", version = "0.6.1"}
-compact-genome = {path = "../compact-genome", version = "0.6.0"}
+bigraph = {path = "../bigraph", version = "0.7.0"}
+compact-genome = {path = "../compact-genome", version = "0.7.0"}
 traitgraph-algo = "0.7.0"
 num-traits = "0.2.14"
 bio = "0.39.1"

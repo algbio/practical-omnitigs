@@ -84,7 +84,7 @@ dependencies = [
 
 [[package]]
 name = "bigraph"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "bitvector",
  "num-traits",
@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "compact-genome"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "bitvec",
  "itertools",
@@ -437,7 +437,7 @@ dependencies = [
 
 [[package]]
 name = "genome-graph"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "bigraph",
@@ -764,7 +764,7 @@ dependencies = [
 
 [[package]]
 name = "omnitigs"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "bigraph",
  "bitvector",
