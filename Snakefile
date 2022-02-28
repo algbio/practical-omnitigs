@@ -1042,7 +1042,9 @@ rule hifiasm_gfa_to_fa:
                         continue
 
                     columns = line.split("\t")
+                    print(f"Writing contig {columns[1]}...")
                     output_file.write(">{}\n{}\n".format(columns[1], columns[2]))
+                print(f"Wrote all contigs")
 
 rule hifiasm_trivial_omnitigs:
     input:  unitigs = lambda wildcards: safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.{graph_variant}.gfa"), contig_algorithm = "builtin", graph_variant = wildcards.contig_algorithm[len("trivial_omnitigs_"):]),
