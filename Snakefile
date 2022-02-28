@@ -46,6 +46,7 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
         "tig_injection": "none",
         "frg_injection": "none",
         "frg_injection_stage": "none",
+        "hodeco_consensus": "none",
     },
     "mdbg": {
         "mdbg_mode": "multik",
@@ -142,7 +143,7 @@ ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR)
 ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
 ASSEMBLER_ARGUMENT_STRINGS = {}
 
-WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}-s{skip_fragment_assembly}-f{fragment_correction_steps}-t{tig_injection}-f{frg_injection}-s{frg_injection_stage}"
+WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}-s{skip_fragment_assembly}-f{fragment_correction_steps}-t{tig_injection}-f{frg_injection}-s{frg_injection_stage}-d{hodeco_consensus}"
 ASSEMBLER_ARGUMENT_STRINGS["wtdbg2"] = WTDBG2_ARGUMENT_STRING
 WTDBG2_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "wtdbg2", assembler_arguments = WTDBG2_ARGUMENT_STRING)
 WTDBG2_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, WTDBG2_SUBDIR)
@@ -938,6 +939,24 @@ rule wtdbg2_consensus:
            binary = WTDBG2_CONSENSUS_BINARY,
     output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
     log:    log = WTDBG2_CONSENSUS_LOG,
+    wildcard_constraints:
+            hodeco_consensus = "none",
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
+    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' | tee '{log.log}'"
+
+rule wtdbg2_consensus_hodeco_simple:
+    input: reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
+           contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none"),
+           binary = WTDBG2_CONSENSUS_BINARY,
+    output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
+    log:    log = WTDBG2_CONSENSUS_LOG,
+    wildcard_constraints:
+            hodeco_consensus = "simple",
+            homopolymer_compression = "yes",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8_000),
                cpus = MAX_THREADS,
