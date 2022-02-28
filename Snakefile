@@ -992,6 +992,7 @@ rule hifiasm:
     input:  reads = GENOME_READS,
             binary = HIFIASM_BINARY,
     output: contigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
+            alternate_contigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.a_ctg.gfa"),
             raw_unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.r_utg.gfa"),
             raw_unitigs_bubpop = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.bubpop.r_utg.gfa"),
             primary_unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"),
@@ -1009,14 +1010,15 @@ rule hifiasm:
 
 rule hifiasm_gfa_to_fa:
     input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
+            alternate_gfa = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.a_ctg.gfa"),
     output: fa = HIFIASM_ASSEMBLED_CONTIGS,
     wildcard_constraints:
             contig_algorithm = "builtin",
     wildcard_constraints:
             assembler = "hifiasm",
     run:
-            with open(input.gfa, 'r') as input_file, open(output.fa, 'w') as output_file:
-                for line in input_file:
+            with open(input.gfa, 'r') as input_file, open(input.alternate_gfa, 'r') as alternate_input_file, open(output.fa, 'w') as output_file:
+                for line in zip(input_file, alternate_input_file):
                     if line[0] != "S":
                         continue
 
