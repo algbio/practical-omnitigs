@@ -1037,7 +1037,7 @@ rule hifiasm_gfa_to_fa:
             assembler = "hifiasm",
     run:
             with open(input.gfa, 'r') as input_file, open(input.alternate_gfa, 'r') as alternate_input_file, open(output.fa, 'w') as output_file:
-                for line in zip(input_file, alternate_input_file):
+                for line in itertools.chain(input_file, alternate_input_file):
                     if line[0] != "S":
                         continue
 
