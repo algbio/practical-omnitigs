@@ -467,7 +467,7 @@ column_templates:
       select_assembler:
         canu:
 
-  hifi_hodeco_overview_columns: &hifi_hodeco_overview_columns
+  hifi_hodeco_simple_overview_columns: &hifi_hodeco_simple_overview_columns
     - shortname: "w2"
       homopolymer_compression: "yes"
       select_assembler: 
@@ -549,11 +549,11 @@ reports:
       quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns
 
-  "D.melanogaster_HiFi_hodeco":
+  "D.melanogaster_HiFi_hodeco_simple":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
       quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
-    columns: *hifi_hodeco_overview_columns
+    columns: *hifi_hodeco_simple_overview_columns
 
   "E.coli_HiFi":
     argument_matrix:

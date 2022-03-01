@@ -216,6 +216,7 @@ HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
 DOWNSAMPLE_FASTA_READS_SCRIPT = "scripts/downsample_fasta_reads.py"
 FILTER_NW_FROM_REFERENCE_SCRIPT = "scripts/filter_nw_from_reference.py"
 COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT = "scripts/compute_genome_reference_length.py"
+WTDBG2_HODECO_SCRIPT = "scripts/wtdbg2_hodeco.py"
 
 EXTERNAL_SOFTWARE_SCRIPTS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "scripts")
 RUST_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "rust_target")
@@ -926,6 +927,8 @@ rule wtdbg2_extract:
     input:  file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}.gz"),
     output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}"),
     params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
+    wildcard_constraints:
+            hodeco_consensus = "none",
     conda:  "config/conda-extract-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = 1,
@@ -934,9 +937,8 @@ rule wtdbg2_extract:
     shell:  "cd '{params.working_directory}'; gunzip -k wtdbg2.{wildcards.subfile}.gz"
 
 rule wtdbg2_consensus:
-    input: reads = GENOME_READS,
-           contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
-           binary = WTDBG2_CONSENSUS_BINARY,
+    input:  contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
+            binary = WTDBG2_CONSENSUS_BINARY,
     output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
     log:    log = WTDBG2_CONSENSUS_LOG,
     wildcard_constraints:
@@ -946,23 +948,26 @@ rule wtdbg2_consensus:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
-    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' | tee '{log.log}'"
+    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' 2>&1 | tee '{log.log}'"
 
-rule wtdbg2_consensus_hodeco_simple:
-    input: reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
-           contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none"),
-           binary = WTDBG2_CONSENSUS_BINARY,
-    output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
-    log:    log = WTDBG2_CONSENSUS_LOG,
+rule wtdbg2_transform_ctg_lay_hodeco_simple:
+    input:  contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none"),
+            normal_reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
+            hoco_reads = safe_format(GENOME_READS, homopolymer_compression = "yes"),
+            script = WTDBG2_HODECO_SCRIPT,
+    output: contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
+    log:    log = os.path.join(WTDBG2_OUTPUT_DIR, "transform_ctg_lay_hodeco_simple.log"),
+    conda:  "config/conda-biopython-env.yml"
     wildcard_constraints:
             hodeco_consensus = "simple",
             homopolymer_compression = "yes",
-    threads: MAX_THREADS
+    threads: 1
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
-    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' | tee '{log.log}'"
+    shell:  "{input.script} {input.contigs} {output.contigs} {input.normal_reads} {input.hoco_reads} 2>&1 | tee '{log.log}'"
+
 
 localrules: link_wtdbg2_contigs
 rule link_wtdbg2_contigs:
