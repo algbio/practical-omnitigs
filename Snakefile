@@ -941,8 +941,6 @@ rule wtdbg2_consensus:
             binary = WTDBG2_CONSENSUS_BINARY,
     output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
     log:    log = WTDBG2_CONSENSUS_LOG,
-    wildcard_constraints:
-            hodeco_consensus = "none",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8_000),
                cpus = MAX_THREADS,
