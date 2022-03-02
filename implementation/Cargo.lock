@@ -85,6 +85,8 @@ dependencies = [
 [[package]]
 name = "bigraph"
 version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da35c5245664b5c0d5e0729ca752cbfe0a66aebebfb3821257c657b62963e19f"
 dependencies = [
  "bitvector",
  "num-traits",
