@@ -960,10 +960,10 @@ rule wtdbg2_transform_ctg_lay_hodeco_simple:
             hodeco_consensus = "simple",
             homopolymer_compression = "yes",
     threads: 1
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8_000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 60_000),
     shell:  "{input.script} {input.contigs} {output.contigs} {input.normal_reads} {input.hoco_reads} 2>&1 | tee '{log.log}'"
 
 
