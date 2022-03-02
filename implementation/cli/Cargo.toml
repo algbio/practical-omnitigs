@@ -16,7 +16,7 @@ publish = false
 clap = {version = "3.0.14", features = ["derive"]}
 compact-genome = "0.7.0"
 genome-graph = {path = "../genome-graph"}
-omnitigs = {path = "../omnitigs"}
+omnitigs = "0.7.0"
 traitsequence = "0.6.0"
 error-chain = "0.12.4"
 log = "0.4.14"
