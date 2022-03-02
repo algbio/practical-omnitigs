@@ -1,4 +1,4 @@
-# Compact Genome
+# Genome graph.
 
 [![](http://meritbadge.herokuapp.com/genome-graph)](https://crates.io/crates/genome-graph)
 [![](https://docs.rs/genome-graph/badge.svg)](https://docs.rs/genome-graph)
