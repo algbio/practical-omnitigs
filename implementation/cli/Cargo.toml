@@ -14,7 +14,7 @@ publish = false
 
 [dependencies]
 clap = {version = "3.0.14", features = ["derive"]}
-compact-genome = {path = "../compact-genome"}
+compact-genome = "0.7.0"
 genome-graph = {path = "../genome-graph"}
 omnitigs = {path = "../omnitigs"}
 traitsequence = "0.6.0"

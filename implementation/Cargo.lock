@@ -319,6 +319,8 @@ dependencies = [
 [[package]]
 name = "compact-genome"
 version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ffcdd1c6e0a547bf141b45f72e0bcb4131f9997424bcbdb4dbd69111992712"
 dependencies = [
  "bitvec",
  "itertools",

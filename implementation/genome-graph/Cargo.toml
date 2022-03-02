@@ -17,7 +17,7 @@ rust-version = "1.58.1"
 
 [dependencies]
 bigraph = {path = "../bigraph", version = "0.7.0"}
-compact-genome = {path = "../compact-genome", version = "0.7.0"}
+compact-genome = "0.7.0"
 traitgraph-algo = "0.7.0"
 num-traits = "0.2.14"
 bio = "0.39.1"

@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["bigraph", "compact-genome", "cli", "genome-graph", "omnitigs"]
+members = ["bigraph", "cli", "genome-graph", "omnitigs"]
 
 [profile.release]
 debug = true
