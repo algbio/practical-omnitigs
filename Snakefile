@@ -137,6 +137,9 @@ GENOME_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "reads.fa")
 GENOME_SINGLE_LINE_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "single_line_reads.fa")
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
 
+HOCO_READS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "hoco.log")
+HOCO_REFERENCE_LOG = os.path.joi(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "hoco.log")
+
 ASSEMBLY_ARGUMENT_STRING = "a{assembler}--{assembler_arguments}-"
 ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, ASSEMBLY_ARGUMENT_STRING)
 ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR)
@@ -835,7 +838,7 @@ rule wtdbg2:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        /usr/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_skip_fragment_assembly:
@@ -865,7 +868,7 @@ rule wtdbg2_skip_fragment_assembly:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' --skip-fragment-assembly {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        /usr/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' --skip-fragment-assembly {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_with_injected_contigs:
@@ -893,7 +896,7 @@ rule wtdbg2_with_injected_contigs:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        /usr/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_with_injected_fragment_contigs:
@@ -920,7 +923,7 @@ rule wtdbg2_with_injected_fragment_contigs:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
+        /usr/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_extract:
@@ -934,7 +937,7 @@ rule wtdbg2_extract:
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 1_000),
-    shell:  "cd '{params.working_directory}'; gunzip -k wtdbg2.{wildcards.subfile}.gz"
+    shell:  "cd '{params.working_directory}'; /usr/bin/time -v gunzip -k wtdbg2.{wildcards.subfile}.gz"
 
 rule wtdbg2_consensus:
     input:  contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
@@ -946,7 +949,7 @@ rule wtdbg2_consensus:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
-    shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' 2>&1 | tee '{log.log}'"
+    shell: "/usr/bin/time -v {input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' 2>&1 | tee '{log.log}'"
 
 rule wtdbg2_transform_ctg_lay_hodeco_simple:
     input:  contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none", homopolymer_compression = "yes"),
@@ -964,7 +967,7 @@ rule wtdbg2_transform_ctg_lay_hodeco_simple:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 60_000),
-    shell:  "{input.script} {input.contigs} {output.contigs} {input.normal_reads} {input.hoco_reads} 2>&1 | tee '{log.log}'"
+    shell:  "/usr/bin/time -v {input.script} {input.contigs} {output.contigs} {input.normal_reads} {input.hoco_reads} 2>&1 | tee '{log.log}'"
 
 
 localrules: link_wtdbg2_contigs
@@ -995,7 +998,7 @@ rule flye:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        /usr/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
 localrules: link_flye_contigs
@@ -1028,7 +1031,7 @@ rule hifiasm:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50000),
-    shell: "'{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}'"
+    shell: "/usr/bin/time -v '{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}'"
 
 rule hifiasm_gfa_to_fa:
     input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
@@ -1057,7 +1060,7 @@ rule hifiasm_trivial_omnitigs:
     wildcard_constraints:
             contig_algorithm = r"trivial_omnitigs_[a-z_\.]+",
     log:    log = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"),
-    shell: "'{input.rust_binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --non-scc 2>&1 | tee '{log.log}'"
+    shell: "/usr/bin/time -v '{input.rust_binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --non-scc 2>&1 | tee '{log.log}'"
 
 ##################
 ###### mdbg ######
@@ -1080,7 +1083,7 @@ rule mdbg_multik:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
-        RUST_BACKTRACE=full '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
+        RUST_BACKTRACE=full /usr/bin/time -v '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1101,8 +1104,8 @@ rule mdbg_D_melanogaster:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
-        RUST_BACKTRACE=full '{input.binary}' '{input.reads}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
-        '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        RUST_BACKTRACE=full /usr/bin/time -v '{input.binary}' '{input.reads}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        /usr/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1124,7 +1127,7 @@ rule lja:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell:  """
         mkdir -p '{params.output_dir}'
-        '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
+        /usr/bin/time -v '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1148,7 +1151,7 @@ rule hicanu:
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
-        canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
+        /usr/bin/time -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1618,6 +1621,7 @@ rule homopolymer_compress_reads:
     input:  reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
             script = HOMOPOLYMER_COMPRESS_FASTA_SCRIPT,
     output: reads = GENOME_READS,
+    log:    HOCO_READS_LOG,
     wildcard_constraints:
             homopolymer_compression = "yes",
             uniquify_ids = "no",
@@ -1626,12 +1630,13 @@ rule homopolymer_compress_reads:
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
-    shell:  "'{input.script}' '{input.reads}' '{output.reads}'"
+    shell:  "/usr/bin/time -v '{input.script}' '{input.reads}' '{output.reads}'"
 
 rule homopolymer_compress_reference:
     input:  reference = safe_format(GENOME_REFERENCE, homopolymer_compression = "none"),
             script = HOMOPOLYMER_COMPRESS_FASTA_SCRIPT,
     output: reference = GENOME_REFERENCE,
+    log:    HOCO_REFERENCE_LOG,
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
@@ -1639,7 +1644,7 @@ rule homopolymer_compress_reference:
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
-    shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
+    shell:  "/usr/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
 
 ###############################
 ###### Read downsampling ######
@@ -1654,7 +1659,7 @@ rule downsample_reads:
             homopolymer_compression = "none",
             uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
-    shell:  "'{input.script}' '{input.reads}' '{output.reads}' {wildcards.read_downsampling_factor}"
+    shell:  "/usr/bin/time -v '{input.script}' '{input.reads}' '{output.reads}' {wildcards.read_downsampling_factor}"
 
 ###########################################
 ###### Convert to single-lined fasta ######
@@ -1664,7 +1669,7 @@ rule convert_reads_to_single_lined_fasta:
     input:  reads = GENOME_READS,
     output: reads = GENOME_SINGLE_LINE_READS,
     conda:  "config/conda-seqtk-env.yml"
-    shell:  "seqtk seq -AU '{input.reads}' > '{output.reads}'"
+    shell:  "/usr/bin/time -v seqtk seq -AU '{input.reads}' > '{output.reads}'"
 
 ############################################
 ###### Filter NW entries in reference ######
@@ -1678,7 +1683,7 @@ rule filter_nw:
             homopolymer_compression = "none",
             filter_nw = "yes",
     conda:  "config/conda-biopython-env.yml"
-    shell:  "'{input.script}' '{input.reference}' '{output.reference}'"
+    shell:  "/usr/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
 
 ######################################
 ###### Compute reference length ######
@@ -1689,7 +1694,7 @@ rule compute_reference_length:
             script = COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT,
     output: reference_length = GENOME_REFERENCE_LENGTH,
     conda:  "config/conda-biopython-env.yml"
-    shell:  "'{input.script}' '{input.reference}' '{output.reference_length}'"
+    shell:  "/usr/bin/time -v '{input.script}' '{input.reference}' '{output.reference_length}'"
 
 ######################################
 ###### Input Genome Preparation ######
@@ -1750,7 +1755,7 @@ rule run_quast:
                cpus = 14,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
-    shell: "{input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
+    shell: "/usr/bin/time -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 #############################
 ###### ContigValidator ######
@@ -1792,7 +1797,7 @@ rule convert_bcalm2_output_to_gfa:
             converter = CONVERT_TO_GFA_BINARY,
     output: gfa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.gfa"
     threads: 1
-    shell:  "'{input.converter}' {input.fa} {output.gfa} {wildcards.k}"
+    shell:  "/usr/bin/time -v '{input.converter}' {input.fa} {output.gfa} {wildcards.k}"
 
 rule bandage:
     input: "{file}.gfa"
