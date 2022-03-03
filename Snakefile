@@ -1623,33 +1623,35 @@ rule homopolymer_compress_reads:
             binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
     output: reads = GENOME_READS,
     log:    HOCO_READS_LOG,
+    params: threads = str(MAX_THREADS - 2)
     wildcard_constraints:
             homopolymer_compression = "yes",
             uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
-               cpus = 4,
+               cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
-    shell:  "/usr/bin/time -v '{input.binary}' --threads 2 '{input.reads}' '{output.reads}'"
+    shell:  "/usr/bin/time -v '{input.binary}' --threads {params.threads} '{input.reads}' '{output.reads}'"
 
 rule homopolymer_compress_reference:
     input:  reference = safe_format(GENOME_REFERENCE, homopolymer_compression = "none"),
             binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
     output: reference = GENOME_REFERENCE,
     log:    HOCO_REFERENCE_LOG,
+    params: threads = str(MAX_THREADS - 2)
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
-               cpus = 4,
+               cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
-    shell:  "/usr/bin/time -v '{input.binary}' --threads 2 '{input.reference}' '{output.reference}'"
+    shell:  "/usr/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}'"
 
 ###############################
 ###### Read downsampling ######
