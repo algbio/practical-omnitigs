@@ -138,7 +138,7 @@ GENOME_SINGLE_LINE_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "si
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
 
 HOCO_READS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "hoco.log")
-HOCO_REFERENCE_LOG = os.path.joi(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "hoco.log")
+HOCO_REFERENCE_LOG = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "hoco.log")
 
 ASSEMBLY_ARGUMENT_STRING = "a{assembler}--{assembler_arguments}-"
 ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, ASSEMBLY_ARGUMENT_STRING)
@@ -215,7 +215,6 @@ UNIQUIFY_IDS_SCRIPT = "scripts/uniquify_fasta_ids.py"
 CONVERT_VALIDATION_OUTPUTS_TO_LATEX_SCRIPT = "scripts/convert_validation_outputs_to_latex.py"
 CREATE_AGGREGATED_WTDBG2_REPORT_SCRIPT = "scripts/create_aggregated_wtdbg2_report.py"
 CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
-HOMOPOLYMER_COMPRESS_FASTA_SCRIPT = "scripts/homopolymer_compress_fasta.py"
 DOWNSAMPLE_FASTA_READS_SCRIPT = "scripts/downsample_fasta_reads.py"
 FILTER_NW_FROM_REFERENCE_SCRIPT = "scripts/filter_nw_from_reference.py"
 COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT = "scripts/compute_genome_reference_length.py"
@@ -245,6 +244,8 @@ LJA_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "LJA")
 LJA_BINARY = os.path.join(LJA_DIR, "bin", "lja")
 HIFIASM_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "hifiasm")
 HIFIASM_BINARY = os.path.join(HIFIASM_DIR, "hifiasm")
+HOMOPOLYMER_COMPRESS_RS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "homopolymer-compress-rs")
+HOMOPOLYMER_COMPRESS_RS_BINARY = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "target", "release", "homopolymer-compress")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -1619,7 +1620,7 @@ rule hicanu:
 
 rule homopolymer_compress_reads:
     input:  reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
-            script = HOMOPOLYMER_COMPRESS_FASTA_SCRIPT,
+            binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
     output: reads = GENOME_READS,
     log:    HOCO_READS_LOG,
     wildcard_constraints:
@@ -1627,24 +1628,28 @@ rule homopolymer_compress_reads:
             uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
-               cpus = 1,
+               cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
-    shell:  "/usr/bin/time -v '{input.script}' '{input.reads}' '{output.reads}'"
+    # Use two threads, since the program uses two extra threads for IO.
+    # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
+    shell:  "/usr/bin/time -v '{input.binary}' --threads 2 '{input.reads}' '{output.reads}'"
 
 rule homopolymer_compress_reference:
     input:  reference = safe_format(GENOME_REFERENCE, homopolymer_compression = "none"),
-            script = HOMOPOLYMER_COMPRESS_FASTA_SCRIPT,
+            binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
     output: reference = GENOME_REFERENCE,
     log:    HOCO_REFERENCE_LOG,
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
-               cpus = 1,
+               cpus = 4,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
-    shell:  "/usr/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
+    # Use two threads, since the program uses two extra threads for IO.
+    # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
+    shell:  "/usr/bin/time -v '{input.binary}' --threads 2 '{input.reference}' '{output.reference}'"
 
 ###############################
 ###### Read downsampling ######
@@ -2252,7 +2257,7 @@ rule build_mdbg:
         cpus = MAX_THREADS,
     shell:  """
         cd '{params.mdbg_directory}'
-        cargo --offline build --release --target-dir '{params.mdbg_target_directory}'
+        cargo --offline build --release -j {threads} --target-dir '{params.mdbg_target_directory}'
         
         # were renamed such that snakemake does not delete them
         cp utils/magic_simplify.original utils/magic_simplify
@@ -2323,6 +2328,38 @@ rule build_hifiasm:
         cd '{params.hifiasm_directory}'
 
         make CXX=x86_64-conda-linux-gnu-g++ CC=x86_64-conda-linux-gnu-gcc CXXFLAGS=-I${{CONDA_PREFIX}}/include -j {threads}
+        """
+
+localrules: download_homopolymer_compress_rs
+rule download_homopolymer_compress_rs:
+    output: cargo_toml = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "Cargo.toml"),
+    log:    log = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "download.log"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
+    conda:  "config/conda-rust-env.yml"
+    threads: 1
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        git clone https://github.com/sebschmi/homopolymer-compress-rs.git
+        cd homopolymer-compress-rs
+        git checkout d94145fb8fa2868876bccb46dd80c12d3b17c724
+
+        cargo fetch
+        """
+
+rule build_homopolymer_compress_rs:
+    input:  cargo_toml = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "Cargo.toml"),
+    output: binary = HOMOPOLYMER_COMPRESS_RS_BINARY
+    log:    log = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "build.log"),
+    params: homopolymer_compress_rs_dir = HOMOPOLYMER_COMPRESS_RS_DIR,
+    conda:  "config/conda-rust-env.yml"
+    threads: MAX_THREADS
+    resources:
+        cpus = MAX_THREADS,
+    shell:  """
+        cd '{params.homopolymer_compress_rs_dir}'
+        cargo build --offline --release -j {threads}
         """
 
 ###################################
