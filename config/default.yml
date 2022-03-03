@@ -469,20 +469,17 @@ column_templates:
 
   hifi_hodeco_simple_overview_columns: &hifi_hodeco_simple_overview_columns
     - shortname: "w2"
-      homopolymer_compression: "yes"
       select_assembler: 
         wtdbg2:
           wtdbg2_mode: "ccs"
           hodeco_consensus: "simple"
     - shortname: "w2 sfa"
-      homopolymer_compression: "yes"
       select_assembler:
         wtdbg2:
           skip_fragment_assembly: "yes"
           wtdbg2_mode: "ccs"
           hodeco_consensus: "simple"
     - shortname: "w2 YV sfa"
-      homopolymer_compression: "yes"
       select_assembler:
         wtdbg2:
           skip_fragment_assembly: "yes"
@@ -490,14 +487,12 @@ column_templates:
           tig_injection: "trivial_omnitigs"
           hodeco_consensus: "simple"
     - shortname: "w2 YV"
-      homopolymer_compression: "yes"
       select_assembler:
         wtdbg2:
           wtdbg2_mode: "ccs"
           tig_injection: "trivial_omnitigs"
           hodeco_consensus: "simple"
     - shortname: "w2 frg YV"
-      homopolymer_compression: "yes"
       select_assembler:
         wtdbg2:
           wtdbg2_mode: "ccs"

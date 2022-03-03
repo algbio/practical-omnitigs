@@ -949,7 +949,7 @@ rule wtdbg2_consensus:
     shell: "{input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' 2>&1 | tee '{log.log}'"
 
 rule wtdbg2_transform_ctg_lay_hodeco_simple:
-    input:  contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none"),
+    input:  contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none", homopolymer_compression = "yes"),
             normal_reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
             hoco_reads = safe_format(GENOME_READS, homopolymer_compression = "yes"),
             script = WTDBG2_HODECO_SCRIPT,
@@ -958,7 +958,7 @@ rule wtdbg2_transform_ctg_lay_hodeco_simple:
     conda:  "config/conda-biopython-env.yml"
     wildcard_constraints:
             hodeco_consensus = "simple",
-            homopolymer_compression = "yes",
+            homopolymer_compression = "none",
     threads: 1
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60_000),
                cpus = MAX_THREADS,
