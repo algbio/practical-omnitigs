@@ -1,7 +1,6 @@
 # Practical [Omnitigs](https://www.liebertpub.com/doi/full/10.1089/cmb.2016.0141)
 
 ![](https://github.com/algbio/practical-omnitigs/workflows/Tests%20%26%20Lints/badge.svg?branch=master)
-[![Coverage Status](https://coveralls.io/repos/github/algbio/practical-omnitigs/badge.svg?branch=master)](https://coveralls.io/github/algbio/practical-omnitigs?branch=master)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4334939.svg)](https://doi.org/10.5281/zenodo.4335367)
 
 This is a repository to conduct experiments with omnitig-related models in the context of genome assembly.
