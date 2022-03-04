@@ -6,3 +6,4 @@ dependencies:
   - gcc_impl_linux-64 == 9.3.0
   - zlib == 1.2.11
   - git == 2.30.0
+  - time == 1.8

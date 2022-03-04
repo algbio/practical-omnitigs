@@ -3,3 +3,4 @@ channels:
   - bioconda
 dependencies:
   - canu == 2.2
+  - time == 1.8

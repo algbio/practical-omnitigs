@@ -9,3 +9,4 @@ dependencies:
   - zlib == 1.2.11
   - python == 3.9.10
   - cmake == 3.21.3
+  - time == 1.8

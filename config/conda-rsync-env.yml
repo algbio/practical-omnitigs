@@ -2,3 +2,4 @@ channels:
         - conda-forge
 dependencies:
         - rsync==3.2.3
+        - time == 1.8

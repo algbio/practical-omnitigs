@@ -2,3 +2,4 @@ channels:
         - anaconda
 dependencies:
         - wget==1.20.1
+        - time == 1.8

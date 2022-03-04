@@ -2,3 +2,4 @@ channels:
         - conda-forge
 dependencies:
         - biopython==1.78
+        - time == 1.8

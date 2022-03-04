@@ -2,3 +2,4 @@ channels:
   - conda-forge
 dependencies:
   - tectonic==0.1.12
+  - time == 1.8

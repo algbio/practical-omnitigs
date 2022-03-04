@@ -2,3 +2,4 @@ channels:
         - bioconda
 dependencies:
         - hifiasm==0.14
+        - time == 1.8

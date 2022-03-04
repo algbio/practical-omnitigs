@@ -3,3 +3,4 @@ channels:
 dependencies:
         - gzip == 1.10
         - p7zip == 16.02
+        - time == 1.8
