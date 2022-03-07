@@ -249,8 +249,6 @@ HOMOPOLYMER_COMPRESS_RS_BINARY = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "targ
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2-homopolymer-decompression")
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "target", "release", "wtdbg2-homopolymer-decompression")
 
-TIME_COMMAND = "${{{{CONDA_PREFIX}}}}/bin/time"
-
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
 
@@ -831,7 +829,6 @@ rule wtdbg2:
     log:    log = WTDBG2_LOG,
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             tig_injection = "none",
             frg_injection = "none",
@@ -844,7 +841,7 @@ rule wtdbg2:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{params.time_command}' -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_skip_fragment_assembly:
@@ -862,7 +859,6 @@ rule wtdbg2_skip_fragment_assembly:
     log:    log = WTDBG2_LOG,
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             tig_injection = "none",
             frg_injection = "none",
@@ -875,7 +871,7 @@ rule wtdbg2_skip_fragment_assembly:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{params.time_command}' -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' --skip-fragment-assembly {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' --skip-fragment-assembly {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_with_injected_contigs:
@@ -892,7 +888,6 @@ rule wtdbg2_with_injected_contigs:
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             skip_fragment_assembly = lambda wildcards: "--skip-fragment-assembly" if wildcards.skip_fragment_assembly == "yes" else "",
             fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             tig_injection = "((?!none).)*",
             frg_injection = "none",
@@ -904,7 +899,7 @@ rule wtdbg2_with_injected_contigs:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{params.time_command}' -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_with_injected_fragment_contigs:
@@ -918,7 +913,6 @@ rule wtdbg2_with_injected_fragment_contigs:
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             tig_injection = "none",
             frg_injection = "((?!none).)*",
@@ -932,14 +926,13 @@ rule wtdbg2_with_injected_fragment_contigs:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{params.time_command}' -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_extract:
     input:  file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}.gz"),
     output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}"),
     params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             hodeco_consensus = "none",
     conda:  "config/conda-extract-env.yml"
@@ -947,20 +940,19 @@ rule wtdbg2_extract:
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 1_000),
-    shell:  "cd '{params.working_directory}'; '{params.time_command}' -v gunzip -k wtdbg2.{wildcards.subfile}.gz"
+    shell:  "cd '{params.working_directory}'; ${{CONDA_PREFIX}}/bin/time -v gunzip -k wtdbg2.{wildcards.subfile}.gz"
 
 rule wtdbg2_consensus:
     input:  contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
             binary = WTDBG2_CONSENSUS_BINARY,
     output: consensus = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.raw.fa"),
-    params: time_command = TIME_COMMAND,
     log:    log = WTDBG2_CONSENSUS_LOG,
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 8_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
-    shell: "'{params.time_command}' -v {input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' 2>&1 | tee '{log.log}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v {input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' 2>&1 | tee '{log.log}'"
 
 rule wtdbg2_transform_ctg_lay_hodeco_simple:
     input:  contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none", homopolymer_compression = "yes"),
@@ -968,7 +960,6 @@ rule wtdbg2_transform_ctg_lay_hodeco_simple:
             #hoco_reads = safe_format(GENOME_READS, homopolymer_compression = "yes"),
             binary = WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY,
     output: contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
-    params: time_command = TIME_COMMAND,
     log:    log = os.path.join(WTDBG2_OUTPUT_DIR, "transform_ctg_lay_hodeco_simple.log"),
     #conda:  "config/conda-biopython-env.yml"
     wildcard_constraints:
@@ -979,7 +970,7 @@ rule wtdbg2_transform_ctg_lay_hodeco_simple:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 60_000),
-    shell:  "'{params.time_command}' -v {input.binary} --input {input.contigs} --output {output.contigs} --normal-reads {input.normal_reads} --compute-threads {threads} 2>&1 | tee '{log.log}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v {input.binary} --input {input.contigs} --output {output.contigs} --normal-reads {input.normal_reads} --compute-threads {threads} 2>&1 | tee '{log.log}'"
 
 
 localrules: link_wtdbg2_contigs
@@ -1002,7 +993,6 @@ rule flye:
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
     log:    log = FLYE_LOG,
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
-            time_command = TIME_COMMAND,
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
@@ -1011,7 +1001,7 @@ rule flye:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        '{params.time_command}' -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
 localrules: link_flye_contigs
@@ -1036,7 +1026,6 @@ rule hifiasm:
             primary_unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"),
             directory = directory(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm")),
     params: output_prefix = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly"),
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             contig_algorithm = "builtin",
     conda:  "config/conda-hifiasm-env.yml"
@@ -1045,7 +1034,7 @@ rule hifiasm:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50000),
-    shell: "'{params.time_command}' -v '{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}'"
 
 rule hifiasm_gfa_to_fa:
     input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
@@ -1071,11 +1060,10 @@ rule hifiasm_trivial_omnitigs:
             rust_binary = RUST_BINARY,
     output: contigs = HIFIASM_ASSEMBLED_CONTIGS,
             latex = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.tex"),
-    params: time_command = TIME_COMMAND,
     wildcard_constraints:
             contig_algorithm = r"trivial_omnitigs_[a-z_\.]+",
     log:    log = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"),
-    shell: "'{params.time_command}' -v '{input.rust_binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --non-scc 2>&1 | tee '{log.log}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.rust_binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --non-scc 2>&1 | tee '{log.log}'"
 
 ##################
 ###### mdbg ######
@@ -1088,7 +1076,6 @@ rule mdbg_multik:
     output: contigs = MDBG_ASSEMBLED_CONTIGS,
     params: output_prefix = os.path.join(MDBG_OUTPUT_DIR, "contigs"),
             original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs-final.msimpl.fa"),
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             mdbg_mode = "multik",
     log:    log = MDBG_LOG,
@@ -1099,7 +1086,7 @@ rule mdbg_multik:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
-        RUST_BACKTRACE=full '{params.time_command}' -v '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
+        RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1110,7 +1097,6 @@ rule mdbg_D_melanogaster:
     output: contigs = MDBG_ASSEMBLED_CONTIGS,
     params: output_prefix = os.path.join(MDBG_OUTPUT_DIR, "contigs"),
             original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs.msimpl.fa"),
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             mdbg_mode = "D_melanogaster",
     log:    log = MDBG_LOG,
@@ -1121,8 +1107,8 @@ rule mdbg_D_melanogaster:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
-        RUST_BACKTRACE=full '{params.time_command}' -v '{input.binary}' '{input.reads}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
-        '{params.time_command}' -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1136,7 +1122,6 @@ rule lja:
     output: contigs = LJA_ASSEMBLED_CONTIGS,
     params: output_dir = os.path.join(LJA_OUTPUT_DIR, "output"),
             original_contigs = os.path.join(LJA_OUTPUT_DIR, "output", "assembly.fasta"),
-            time_command = TIME_COMMAND,
     log:    log = LJA_LOG,
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
@@ -1145,7 +1130,7 @@ rule lja:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
     shell:  """
         mkdir -p '{params.output_dir}'
-        '{params.time_command}' -v '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1159,7 +1144,6 @@ rule hicanu:
     output: contigs = CANU_ASSEMBLED_CONTIGS,
     params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
             original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
-            time_command = TIME_COMMAND,
     log:    log = CANU_LOG,
     threads: MAX_THREADS,
     conda:  "config/conda-canu-env.yml"
@@ -1170,7 +1154,7 @@ rule hicanu:
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
-        '{params.time_command}' -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1642,7 +1626,6 @@ rule homopolymer_compress_reads:
     output: reads = GENOME_READS,
     log:    HOCO_READS_LOG,
     params: threads = str(MAX_THREADS - 2),
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             homopolymer_compression = "yes",
             uniquify_ids = "no",
@@ -1653,7 +1636,7 @@ rule homopolymer_compress_reads:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
-    shell:  "'{params.time_command}' -v '{input.binary}' --threads {params.threads} '{input.reads}' '{output.reads}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reads}' '{output.reads}'"
 
 rule homopolymer_compress_reference:
     input:  reference = safe_format(GENOME_REFERENCE, homopolymer_compression = "none"),
@@ -1661,7 +1644,6 @@ rule homopolymer_compress_reference:
     output: reference = GENOME_REFERENCE,
     log:    HOCO_REFERENCE_LOG,
     params: threads = str(MAX_THREADS - 2),
-            time_command = TIME_COMMAND,
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
@@ -1671,7 +1653,7 @@ rule homopolymer_compress_reference:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
-    shell:  "'{params.time_command}' -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}'"
 
 ###############################
 ###### Read downsampling ######
@@ -1681,13 +1663,12 @@ rule downsample_reads:
     input:  reads = safe_format(GENOME_READS, read_downsampling_factor = "none"),
             script = DOWNSAMPLE_FASTA_READS_SCRIPT,
     output: reads = GENOME_READS,
-    params: time_command = TIME_COMMAND,
     wildcard_constraints:
             read_downsampling_factor = "0.[0-9]+",
             homopolymer_compression = "none",
             uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
-    shell:  "'{params.time_command}' -v '{input.script}' '{input.reads}' '{output.reads}' {wildcards.read_downsampling_factor}"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reads}' '{output.reads}' {wildcards.read_downsampling_factor}"
 
 ###########################################
 ###### Convert to single-lined fasta ######
@@ -1696,9 +1677,8 @@ rule downsample_reads:
 rule convert_reads_to_single_lined_fasta:
     input:  reads = GENOME_READS,
     output: reads = GENOME_SINGLE_LINE_READS,
-    params: time_command = TIME_COMMAND,
     conda:  "config/conda-seqtk-env.yml"
-    shell:  "'{params.time_command}' -v seqtk seq -AU '{input.reads}' > '{output.reads}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v seqtk seq -AU '{input.reads}' > '{output.reads}'"
 
 ############################################
 ###### Filter NW entries in reference ######
@@ -1708,12 +1688,11 @@ rule filter_nw:
     input:  reference = safe_format(GENOME_REFERENCE, filter_nw = "no"),
             script = FILTER_NW_FROM_REFERENCE_SCRIPT,
     output: reference = GENOME_REFERENCE,
-    params: time_command = TIME_COMMAND,
     wildcard_constraints:
             homopolymer_compression = "none",
             filter_nw = "yes",
     conda:  "config/conda-biopython-env.yml"
-    shell:  "'{params.time_command}' -v '{input.script}' '{input.reference}' '{output.reference}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
 
 ######################################
 ###### Compute reference length ######
@@ -1723,9 +1702,8 @@ rule compute_reference_length:
     input:  reference = GENOME_REFERENCE,
             script = COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT,
     output: reference_length = GENOME_REFERENCE_LENGTH,
-    params: time_command = TIME_COMMAND,
     conda:  "config/conda-biopython-env.yml"
-    shell:  "'{params.time_command}' -v '{input.script}' '{input.reference}' '{output.reference_length}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reference}' '{output.reference_length}'"
 
 ######################################
 ###### Input Genome Preparation ######
@@ -1780,14 +1758,13 @@ rule run_quast:
     output: directory = directory(QUAST_OUTPUT_DIR),
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     params: extra_arguments = get_quast_extra_arguments_from_wildcards,
-            time_command = TIME_COMMAND,
     conda: "config/conda-quast-env.yml"
     threads: 14,
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50_000),
                cpus = 14,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
-    shell: "'{params.time_command}' -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 #############################
 ###### ContigValidator ######
@@ -1828,9 +1805,8 @@ rule convert_bcalm2_output_to_gfa:
     input:  fa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.fa",
             converter = CONVERT_TO_GFA_BINARY,
     output: gfa = DATADIR + "{dir}/{file}.k{k}-a{abundance_min}.bcalm2.gfa",
-    params: time_command = TIME_COMMAND,
     threads: 1
-    shell:  "'{params.time_command}' -v '{input.converter}' {input.fa} {output.gfa} {wildcards.k}"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.converter}' {input.fa} {output.gfa} {wildcards.k}"
 
 rule bandage:
     input: "{file}.gfa"
