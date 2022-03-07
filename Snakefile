@@ -771,9 +771,9 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 
 
         if mem >= 250000:
             return "bigmem"
-        elif time <= 1440:
+        elif time <= 60 * 8:
             return "short"
-        elif time <= 1440 * 3:
+        elif time <= 1440:
             return "medium"
         elif time <= 1440 * 7:
             return "long"
