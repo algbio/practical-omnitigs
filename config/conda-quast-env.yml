@@ -7,3 +7,5 @@ dependencies:
   - minimap2=2.17
   - time == 1.8
   - font-ttf-dejavu-sans-mono == 2.37
+  - font-ttf-ubuntu == 0.83
+  - fonts-conda-forge == 1
