@@ -5,5 +5,5 @@ dependencies:
   - gxx_linux-64 == 9.4.0
   - libstdcxx-devel_linux-64 == 9.4.0
   - sysroot_linux-64 == 2.17
-  - rust == 1.58.1
+  - rust == 1.59.0
   - time == 1.8

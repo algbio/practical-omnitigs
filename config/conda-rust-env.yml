@@ -1,5 +1,5 @@
 channels:
         - conda-forge
 dependencies:
-        - rust==1.58.1
+        - rust==1.59.0
         - time == 1.8
