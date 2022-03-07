@@ -6,5 +6,5 @@ dependencies:
   #- gxx_linux-64 == 9.4.0
   #- libstdcxx-devel_linux-64 == 9.4.0
   #- zlib == 1.2.11
-  #- python == 3.9.10
+  - python == 3.9.10
   - time == 1.8
