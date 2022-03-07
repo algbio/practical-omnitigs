@@ -249,7 +249,7 @@ HOMOPOLYMER_COMPRESS_RS_BINARY = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "targ
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2-homopolymer-decompression")
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "target", "release", "wtdbg2-homopolymer-decompression")
 
-TIME_COMMAND = "${{CONDA_PREFIX}}/bin/time"
+TIME_COMMAND = "${{{{CONDA_PREFIX}}}}/bin/time"
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
