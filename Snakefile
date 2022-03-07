@@ -2303,8 +2303,8 @@ rule build_lja:
     shell:  """
         cd '{params.lja_directory}'
 
-        export CXX=x86_64-conda-linux-gnu-g++
-        export CC=x86_64-conda-linux-gnu-gcc
+        #export CXX=x86_64-conda-linux-gnu-g++
+        #export CC=x86_64-conda-linux-gnu-gcc
 
         cmake .
         make -j {threads}
