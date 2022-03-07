@@ -10,3 +10,4 @@ dependencies:
   - python == 3.9.10
   - cmake == 3.21.3
   - time == 1.8
+  - llvm-openmp == 13.0.1
