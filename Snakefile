@@ -2285,6 +2285,11 @@ rule download_lja:
         git clone https://github.com/AntonBankevich/LJA
         cd LJA
         git checkout 99f93262c50ff269ee28707f7c3bb77ea00eb576
+
+        sed -i 's/find_package(OpenMP)//g' CMakeLists.txt
+        sed -i 's/${{OpenMP_CXX_FLAGS}}/-lomp/g' CMakeLists.txt
+        sed -i 's/${{OpenMP_C_FLAGS}}/-lomp/g' CMakeLists.txt
+        sed -i 's/${{OpenMP_EXE_LINKER_FLAGS}}/-lomp/g' CMakeLists.txt
         """
 
 rule build_lja:
