@@ -246,6 +246,8 @@ HIFIASM_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "hifiasm")
 HIFIASM_BINARY = os.path.join(HIFIASM_DIR, "hifiasm")
 HOMOPOLYMER_COMPRESS_RS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "homopolymer-compress-rs")
 HOMOPOLYMER_COMPRESS_RS_BINARY = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "target", "release", "homopolymer-compress")
+WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2-homopolymer-decompression")
+WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "target", "release", "wtdbg2-homopolymer-decompression")
 
 TIME_COMMAND = "/bin/time"
 
@@ -963,21 +965,21 @@ rule wtdbg2_consensus:
 rule wtdbg2_transform_ctg_lay_hodeco_simple:
     input:  contigs = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"), hodeco_consensus = "none", homopolymer_compression = "yes"),
             normal_reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
-            hoco_reads = safe_format(GENOME_READS, homopolymer_compression = "yes"),
-            script = WTDBG2_HODECO_SCRIPT,
+            #hoco_reads = safe_format(GENOME_READS, homopolymer_compression = "yes"),
+            binary = WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY,
     output: contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
     params: time_command = TIME_COMMAND,
     log:    log = os.path.join(WTDBG2_OUTPUT_DIR, "transform_ctg_lay_hodeco_simple.log"),
-    conda:  "config/conda-biopython-env.yml"
+    #conda:  "config/conda-biopython-env.yml"
     wildcard_constraints:
             hodeco_consensus = "simple",
             homopolymer_compression = "none",
-    threads: 1
+    threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 60_000),
-    shell:  "'{params.time_command}' -v {input.script} {input.contigs} {output.contigs} {input.normal_reads} {input.hoco_reads} 2>&1 | tee '{log.log}'"
+    shell:  "'{params.time_command}' -v {input.binary} --input {input.contigs} --output {output.contigs} --normal-reads {input.normal_reads} --compute-threads {threads} 2>&1 | tee '{log.log}'"
 
 
 localrules: link_wtdbg2_contigs
@@ -2385,6 +2387,38 @@ rule build_homopolymer_compress_rs:
         cpus = MAX_THREADS,
     shell:  """
         cd '{params.homopolymer_compress_rs_dir}'
+        cargo build --offline --release -j {threads}
+        """
+
+localrules: download_wtdbg2_homopolymer_decompression
+rule download_wtdbg2_homopolymer_decompression:
+    output: cargo_toml = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "Cargo.toml"),
+    log:    log = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "download.log"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
+    conda:  "config/conda-rust-env.yml"
+    threads: 1
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        git clone https://github.com/sebschmi/wtdbg2-homopolymer-decompression.git
+        cd wtdbg2-homopolymer-decompression
+        git checkout fd0ad2ae9a410405a31c1106032b8dc22455bb8c
+
+        cargo fetch
+        """
+
+rule build_wtdbg2_homopolymer_decompression:
+    input:  cargo_toml = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "Cargo.toml"),
+    output: binary = WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY
+    log:    log = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "build.log"),
+    params: wtdbg2_homopolymer_decompression_dir = WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR,
+    conda:  "config/conda-rust-env.yml"
+    threads: MAX_THREADS
+    resources:
+        cpus = MAX_THREADS,
+    shell:  """
+        cd '{params.wtdbg2_homopolymer_decompression_dir}'
         cargo build --offline --release -j {threads}
         """
 
