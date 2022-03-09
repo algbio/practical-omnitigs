@@ -2385,7 +2385,7 @@ rule download_wtdbg2_homopolymer_decompression:
 
         git clone https://github.com/sebschmi/wtdbg2-homopolymer-decompression.git
         cd wtdbg2-homopolymer-decompression
-        git checkout 03da513c2aed5c8636cc3534c24c8d49ed90c1e0
+        git checkout 3bec6c0b751a70d53312b359171b9a576f67ebb6
 
         cargo fetch
         """
