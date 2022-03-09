@@ -2211,8 +2211,8 @@ rule build_flye:
     shell:  """
         cd '{params.flye_directory}'
 
-        #export CXX=x86_64-conda-linux-gnu-g++
-        #export CC=x86_64-conda-linux-gnu-gcc
+        export CXX=x86_64-conda-linux-gnu-g++
+        export CC=x86_64-conda-linux-gnu-gcc
         # export INCLUDES=-I/usr/include/ # Somehow this is not seen by minimap's Makefile, so we had to change it in our custom version of Flye
         # The following also doesn't seem to work when building minimap, so again we had to modify minimap's Makefile
         # export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:=''}} # Redirect library path to include conda libraries
@@ -2286,10 +2286,10 @@ rule download_lja:
         cd LJA
         git checkout 99f93262c50ff269ee28707f7c3bb77ea00eb576
 
-        sed -i 's/find_package(OpenMP)//g' CMakeLists.txt
-        sed -i "s:\${{OpenMP_CXX_FLAGS}}:-L${{CONDA_PREFIX}}/lib -lgomp :g" CMakeLists.txt
-        sed -i "s:\${{OpenMP_C_FLAGS}}:-L${{CONDA_PREFIX}}/lib -lgomp :g" CMakeLists.txt
-        sed -i "s:\${{OpenMP_EXE_LINKER_FLAGS}}:-L${{CONDA_PREFIX}}/lib -lgomp :g" CMakeLists.txt
+        #sed -i 's/find_package(OpenMP)//g' CMakeLists.txt
+        #sed -i "s:\${{OpenMP_CXX_FLAGS}}:-L${{CONDA_PREFIX}}/lib -lgomp :g" CMakeLists.txt
+        #sed -i "s:\${{OpenMP_C_FLAGS}}:-L${{CONDA_PREFIX}}/lib -lgomp :g" CMakeLists.txt
+        #sed -i "s:\${{OpenMP_EXE_LINKER_FLAGS}}:-L${{CONDA_PREFIX}}/lib -lgomp :g" CMakeLists.txt
         """
 
 rule build_lja:
@@ -2303,8 +2303,8 @@ rule build_lja:
     shell:  """
         cd '{params.lja_directory}'
 
-        #export CXX=x86_64-conda-linux-gnu-g++
-        #export CC=x86_64-conda-linux-gnu-gcc
+        export CXX=x86_64-conda-linux-gnu-g++
+        export CC=x86_64-conda-linux-gnu-gcc
 
         cmake .
         make -j {threads}
@@ -2336,8 +2336,8 @@ rule build_hifiasm:
     shell:  """
         cd '{params.hifiasm_directory}'
 
-        #make CXX=x86_64-conda-linux-gnu-g++ CC=x86_64-conda-linux-gnu-gcc CXXFLAGS=-I${{CONDA_PREFIX}}/include -j {threads}
-        make -j {threads}
+        make CXX=x86_64-conda-linux-gnu-g++ CC=x86_64-conda-linux-gnu-gcc CXXFLAGS=-I${{CONDA_PREFIX}}/include -j {threads}
+        #make -j {threads}
         """
 
 localrules: download_homopolymer_compress_rs
