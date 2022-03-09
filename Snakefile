@@ -2408,6 +2408,10 @@ rule build_wtdbg2_homopolymer_decompression:
 ###### Download requirements ######
 ###################################
 
+localrules: compile_all
+rule compile_all:
+    input:  [WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY, HOMOPOLYMER_COMPRESS_RS_BINARY, HIFIASM_BINARY, LJA_BINARY, MDBG_BINARY, FLYE_BINARY, WTDBG2_BINARY, QUAST_BINARY, RUST_BINARY],
+
 localrules: download_and_prepare
 rule download_and_prepare:
     input:  reads = expand(GENOME_READS, genome = genomes.keys(), homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no"),
