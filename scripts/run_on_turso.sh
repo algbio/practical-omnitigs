@@ -58,6 +58,7 @@ export TMP=$TMPDIR
 mkdir -p "$TMPDIR"
 
 # Build environments (due to a bug in snakemake, this needs to be done in a separate step for now)
+echo "Building conda environments"
 snakemake --use-conda --cores 1 --conda-create-envs-only "$@" 2>&1 | tee "$LOGDIR/run_on_turso.log"
 
 # Execute pipeline
