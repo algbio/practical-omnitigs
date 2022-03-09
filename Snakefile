@@ -1126,8 +1126,8 @@ rule lja:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         mkdir -p '{params.output_dir}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
