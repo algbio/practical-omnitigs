@@ -5,7 +5,7 @@ Convert the output of the different validation tools into a LaTeX file.
 Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> [<label> <experiment prefix> ...] 
 """
 
-import sys, subprocess, hashlib, os, pathlib
+import sys, subprocess, hashlib, os, pathlib, json
 import traceback
 
 hashdir = os.path.abspath(sys.argv[1])
@@ -17,12 +17,12 @@ output_file_name = sys.argv[6]
 
 experiments = []
 
-for i in range(7, len(sys.argv), 4):
-	if i + 3 >= len(sys.argv):
-		exit("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
+for i in range(7, len(sys.argv), 5):
+	if i + 4 >= len(sys.argv):
+		exit("Number of experiment parameters not divisible by 5")
 
 	# shortname, omnitig algo file, QUAST dir, ContigValidator file
-	experiments.append((sys.argv[i], sys.argv[i + 1], sys.argv[i + 2], sys.argv[i + 3]))
+	experiments.append((sys.argv[i], sys.argv[i + 1], sys.argv[i + 2], sys.argv[i + 3], sys.argv[i + 4]))
 
 def append_latex_table_second_column(table, appendix):
 	if len(table) == 0:
@@ -109,7 +109,7 @@ name_lines = [x.replace("_", "\\_") for x in name_lines]
 
 headline = "Parameter"
 algorithm_table = []
-# for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+# for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 # 	headline += " & " + label
 # 	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
 # 	algorithm_table = append_latex_table_second_column(algorithm_table, table)
@@ -136,7 +136,7 @@ def read_quast_file(filename):
 
 headline = "Parameter"
 quast_table = []
-for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 	headline += " & " + label
 	table = read_quast_file(os.path.join(quast_directory, "report.tex"))
 	quast_table = append_latex_table_second_column(quast_table, table)
@@ -145,7 +145,7 @@ quast_table = [headline + "\\\\ \\hline"] + quast_table
 
 headline = "Parameter"
 quast_misassemblies_table = []
-for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 	headline += " & " + label
 	table = read_quast_file(os.path.join(quast_directory, "contigs_reports", "misassemblies_report.tex"))
 	quast_misassemblies_table = append_latex_table_second_column(quast_misassemblies_table, table)
@@ -173,7 +173,7 @@ quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_ta
 
 headline = "Parameter"
 contig_validator_table = []
-# for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+# for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 # 	headline += " & " + label
 # 	table = read_contig_validator_file(prefix)
 # 	contig_validator_table = append_latex_table_second_column(contig_validator_table, table)
@@ -191,6 +191,25 @@ try:
 except:
 	print("Did not find graph statistics file '" + graph_statistics_file_name + "'")
 	graph_statistics_table = []
+
+#########################################
+### Process resources evaluation file ###
+#########################################
+
+headline = "Parameter"
+resources_table = []
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
+	headline += " & " + label
+	try:
+		with open(resources_evaluation_name, 'r') as resources_evaluation_file:
+			resources_evaluation = json.load(resources_evaluation_file)
+			subtable = [f"time [s] & {resources_evaluation["total"]["time"]} \\\\", f"mem [GiB] & {resources_evaluation["total"]["mem"] / (1024**2):.2}"]
+			resources_table = append_latex_table_second_column(resources_table, subtable)
+	except:
+		print("Error processing resources evaluation file")
+		raise
+
+resources_table = [headline + "\\\\ \\hline"] + resources_table
 
 ########################
 ### Build LaTeX file ###
@@ -295,6 +314,8 @@ write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp (or 3000bp
 write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[28:])
 write_table(output_file, "QUAST: misassembly statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), quast_misassemblies_table)
 
+write_table(output_file, "Resource usage", len(experiments), resources_table)
+
 
 from os import path
 
@@ -303,7 +324,7 @@ if combined_eaxmax_plot_name != 'none':
     write_image(output_file, "EAxmax", combined_eaxmax_plot_name, 1000, 1000)
 
 output_file.write("\\newpage")
-for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 	plot_file_path = os.path.join(quast_directory, "aligned_stats", "EAxmax_plot.pdf")
 	if path.isfile(plot_file_path):
 		quast_png_name = plot_file_path
@@ -311,7 +332,7 @@ for (label, tig_algo_file, quast_directory, contig_validator_file) in experiment
 	else:
 		print("Did not find '" + plot_file_path + "'")
 
-for (label, tig_algo_file, quast_directory, contig_validator_file) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 	plot_file_path = os.path.join(quast_directory, "aligned_stats", "NGAx_plot.pdf")
 	if path.isfile(plot_file_path):
 		quast_png_name = plot_file_path

@@ -4,7 +4,9 @@ import re
 import json
 import traceback
 import pathlib
+import parse
 from urllib.parse import urlparse
+import datetime
 
 ###############################
 ###### Preprocess Config ######
@@ -126,6 +128,8 @@ ASSEMBLY_ROOTDIR = os.path.join(DATADIR, "assembly")
 EVALUATION_ROOTDIR = os.path.join(DATADIR, "evaluation")
 REPORT_ROOTDIR = os.path.join(DATADIR, "reports")
 
+# Genomes
+
 GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
 GENOME_REFERENCE_ARGUMENT_STRING = "reference-f{filter_nw}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
@@ -140,10 +144,13 @@ UNIQUIFY_IDS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "uniquify_i
 HOCO_READS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "hoco.log")
 HOCO_REFERENCE_LOG = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "hoco.log")
 
+# Assemblies
+
 ASSEMBLY_ARGUMENT_STRING = "a{assembler}--{assembler_arguments}-"
 ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, ASSEMBLY_ARGUMENT_STRING)
 ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR)
 ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
+ASSEMBLY_LOG = os.path.join(ASSEMBLY_OUTPUT_DIR, "assembly.log")
 ASSEMBLER_ARGUMENT_STRINGS = {}
 
 WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}-s{skip_fragment_assembly}-f{fragment_correction_steps}-t{tig_injection}-f{frg_injection}-s{frg_injection_stage}-d{hodeco_consensus}"
@@ -153,7 +160,8 @@ WTDBG2_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, WTDBG2_SUBDIR)
 WTDBG2_INJECTABLE_CONTIG_DIR = os.path.join(WTDBG2_OUTPUT_DIR, "injectable_contigs")
 WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR = os.path.join(WTDBG2_OUTPUT_DIR, "injectable_fragment_contigs")
 WTDBG2_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "wtdbg2")
-WTDBG2_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.log")
+WTDBG2_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "assembly.log")
+WTDBG2_EXTRACT_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "extract.{subfile}.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
 WTDBG2_ASSEMBLED_CONTIGS = os.path.join(WTDBG2_OUTPUT_DIR, "contigs.fa")
 
@@ -162,7 +170,7 @@ ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
 FLYE_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "flye")
-FLYE_LOG = os.path.join(FLYE_OUTPUT_DIR, "flye.log")
+FLYE_LOG = os.path.join(FLYE_OUTPUT_DIR, "assembly.log")
 FLYE_ASSEMBLED_CONTIGS = os.path.join(FLYE_OUTPUT_DIR, "contigs.fa")
 
 HIFIASM_ARGUMENT_STRING = "c{contig_algorithm}"
@@ -170,7 +178,7 @@ ASSEMBLER_ARGUMENT_STRINGS["hifiasm"] = HIFIASM_ARGUMENT_STRING
 HIFIASM_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "hifiasm", assembler_arguments = HIFIASM_ARGUMENT_STRING)
 HIFIASM_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, HIFIASM_SUBDIR)
 HIFIASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "hifiasm")
-HIFIASM_LOG = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm.log")
+HIFIASM_LOG = os.path.join(HIFIASM_OUTPUT_DIR, "assembly.log")
 HIFIASM_ASSEMBLED_CONTIGS = os.path.join(HIFIASM_OUTPUT_DIR, "contigs.fa")
 
 MDBG_ARGUMENT_STRING = "m{mdbg_mode}"
@@ -178,7 +186,7 @@ ASSEMBLER_ARGUMENT_STRINGS["mdbg"] = MDBG_ARGUMENT_STRING
 MDBG_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "mdbg", assembler_arguments = MDBG_ARGUMENT_STRING)
 MDBG_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, MDBG_SUBDIR)
 MDBG_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "mdbg")
-MDBG_LOG = os.path.join(MDBG_OUTPUT_DIR, "mdbg.log")
+MDBG_LOG = os.path.join(MDBG_OUTPUT_DIR, "assembly.log")
 MDBG_ASSEMBLED_CONTIGS = os.path.join(MDBG_OUTPUT_DIR, "contigs.fa")
 
 LJA_ARGUMENT_STRING = "none"
@@ -186,7 +194,7 @@ ASSEMBLER_ARGUMENT_STRINGS["lja"] = LJA_ARGUMENT_STRING
 LJA_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "lja", assembler_arguments = LJA_ARGUMENT_STRING)
 LJA_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, LJA_SUBDIR)
 LJA_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "lja")
-LJA_LOG = os.path.join(LJA_OUTPUT_DIR, "lja.log")
+LJA_LOG = os.path.join(LJA_OUTPUT_DIR, "assembly.log")
 LJA_ASSEMBLED_CONTIGS = os.path.join(LJA_OUTPUT_DIR, "contigs.fa")
 
 CANU_ARGUMENT_STRING = "none"
@@ -194,12 +202,21 @@ ASSEMBLER_ARGUMENT_STRINGS["canu"] = CANU_ARGUMENT_STRING
 CANU_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "canu", assembler_arguments = CANU_ARGUMENT_STRING)
 CANU_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, CANU_SUBDIR)
 CANU_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "canu")
-CANU_LOG = os.path.join(CANU_OUTPUT_DIR, "canu.log")
+CANU_LOG = os.path.join(CANU_OUTPUT_DIR, "assembly.log")
 CANU_ASSEMBLED_CONTIGS = os.path.join(CANU_OUTPUT_DIR, "contigs.fa")
+
+# Evaluations
 
 QUAST_ROOTDIR = os.path.join(EVALUATION_ROOTDIR, "quast-m{quast_mode}")
 QUAST_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING, ASSEMBLY_ARGUMENT_STRING)
 QUAST_OUTPUT_DIR = os.path.join(QUAST_ROOTDIR, QUAST_SUBDIR)
+
+RESOURCES_ROOTDIR = os.path.join(EVALUATION_ROOTDIR, "resources")
+RESOURCES_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING, ASSEMBLY_ARGUMENT_STRING)
+RESOURCES_OUTPUT_DIR = os.path.join(RESOURCES_ROOTDIR, RESOURCES_SUBDIR)
+RESOURCES_EVALUATION = os.path.join(RESOURCES_OUTPUT_DIR, "resources.json")
+
+# Reports
 
 REPORT_SUBDIR = os.path.join(REPORT_ROOTDIR, "{report_name}", "{report_file_name}")
 REPORT_TEX = os.path.join(REPORT_SUBDIR, "report.tex")
@@ -288,7 +305,7 @@ def get_test_report_files():
     try:
         result = []
         for report_name, report_definition in reports.items():
-            if report_name != "E.coli_HiFi_hoco":
+            if not report_name.startswith("E.coli_HiFi"):
                 continue
 
             for report_file_name, report_file_definition in report_definition["report_files"].items():
@@ -355,6 +372,27 @@ def get_report_file_quasts_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
+def get_report_file_resources_evaluations_from_wildcards(wildcards):
+    try:
+        report_name = wildcards.report_name
+        report_file_name = wildcards.report_file_name
+        report_file = get_report_file(report_name, report_file_name)
+        result = []
+        for column in report_file.columns:
+            #print(RESOURCES_EVALUATION)
+            #print(column.arguments, flush = True)
+            assembler = column.arguments.assembler_name()
+            assembler_argument_string = ASSEMBLER_ARGUMENT_STRINGS[assembler]
+            #print(assembler_argument_string, flush = True)
+            #print(column.arguments.assembler_arguments(), flush = True)
+            assembler_arguments = assembler_argument_string.format(**column.arguments.assembler_arguments())
+            #print(assembler_arguments, flush = True)
+            result.append(safe_format(RESOURCES_EVALUATION, assembler = assembler, assembler_arguments = assembler_arguments).format(**column.arguments))
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 def get_report_file_column_shortnames(report_name, report_file_name):
     try:
         report_file = get_report_file(report_name, report_file_name)
@@ -408,7 +446,8 @@ def get_single_report_script_column_arguments(report_name, report_file_name):
             assembler_argument_string = ASSEMBLER_ARGUMENT_STRINGS[assembler]
             assembler_arguments = assembler_argument_string.format(**column.arguments.assembler_arguments())
             quast_output_dir = safe_format(QUAST_OUTPUT_DIR, assembler = assembler, assembler_arguments = assembler_arguments).format(**column.arguments)
-            result += f"'{column.shortname}' '' '{quast_output_dir}' ''"
+            resources_evaluation_file = safe_format(RESOURCES_EVALUATION, assembler = assembler, assembler_arguments = assembler_arguments).format(**column.arguments)
+            result += f"'{column.shortname}' '' '{quast_output_dir}' '' '{resources_evaluation_file}'"
         return result
     except Exception:
         traceback.print_exc()
@@ -425,6 +464,7 @@ localrules: create_single_report_tex
 rule create_single_report_tex:
     input:  quasts = get_report_file_quasts_from_wildcards,
             combined_eaxmax_plot = REPORT_COMBINED_EAXMAX_PLOT,
+            resources_evaluations = get_report_file_resources_evaluations_from_wildcards,
             script = CONVERT_VALIDATION_OUTPUTS_TO_LATEX_SCRIPT,
     output: report = REPORT_TEX,
     params: genome_name = lambda wildcards: ", ".join(get_report_genome_names_from_wildcards(wildcards)),
@@ -933,6 +973,7 @@ rule wtdbg2_extract:
     input:  file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}.gz"),
     output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}"),
     params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
+    log:    WTDBG2_EXTRACT_LOG,
     wildcard_constraints:
             hodeco_consensus = "none",
     conda:  "config/conda-extract-env.yml"
@@ -940,7 +981,7 @@ rule wtdbg2_extract:
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 1_000),
-    shell:  "cd '{params.working_directory}'; ${{CONDA_PREFIX}}/bin/time -v gunzip -k wtdbg2.{wildcards.subfile}.gz"
+    shell:  "cd '{params.working_directory}'; ${{CONDA_PREFIX}}/bin/time -v gunzip -k wtdbg2.{wildcards.subfile}.gz 2>&1 | tee '{log}'"
 
 rule wtdbg2_consensus:
     input:  contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
@@ -1026,6 +1067,7 @@ rule hifiasm:
             primary_unitigs = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_utg.gfa"),
             directory = directory(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm")),
     params: output_prefix = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly"),
+    log:    HIFIASM_LOG
     wildcard_constraints:
             contig_algorithm = "builtin",
     conda:  "config/conda-hifiasm-env.yml"
@@ -1034,7 +1076,7 @@ rule hifiasm:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50000),
-    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}' 2>&1 | tee '{log}'"
 
 rule hifiasm_gfa_to_fa:
     input:  gfa = os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.p_ctg.gfa"),
@@ -1154,7 +1196,7 @@ rule hicanu:
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
-        ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1636,7 +1678,7 @@ rule homopolymer_compress_reads:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
-    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reads}' '{output.reads}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reads}' '{output.reads}' 2>&1 | tee '{log}'"
 
 rule homopolymer_compress_reference:
     input:  reference = safe_format(GENOME_REFERENCE, homopolymer_compression = "none"),
@@ -1653,7 +1695,7 @@ rule homopolymer_compress_reference:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
-    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}'"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}' 2>&1 | tee '{log}'"
 
 ###############################
 ###### Read downsampling ######
@@ -1765,6 +1807,103 @@ rule run_quast:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
     shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
+
+##################################
+###### Resources evaluation ######
+##################################
+
+def get_evaluate_resources_inputs(wildcards):
+    try:
+        result = {}
+        assembler_arguments = wildcards.assembler_arguments
+        assembler_arguments = parse.parse(ASSEMBLER_ARGUMENT_STRINGS[wildcards.assembler], wildcards.assembler_arguments).named
+
+        if wildcards.assembler == "wtdbg2":
+            # hoco resources
+            if assembler_arguments["hodeco_consensus"] != "none":
+                assembly_hoco = "yes"
+                result["hoco"] = safe_format(HOCO_READS_LOG, homopolymer_compression = "yes").format(**wildcards)
+                result["hodeco"] = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "transform_ctg_lay_hodeco_simple.log"), **assembler_arguments).format(**wildcards)
+            else:
+                assembly_hoco = wildcards.homopolymer_compression
+
+            # injections
+            has_injections = False
+            if assembler_arguments["tig_injection"] != "none":
+                result["trivial_omnitigs"] = safe_format(safe_format(os.path.join(WTDBG2_INJECTABLE_CONTIG_DIR, "compute_injectable_contigs.log"), homopolymer_compression = assembly_hoco, hodeco_consensus = "none"), **assembler_arguments).format(**wildcards)
+                has_injections = True
+            elif assembler_arguments["frg_injection"] != "none":
+                result["trivial_omnitigs"] = safe_format(safe_format(os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "compute_injectable_contigs.log"), homopolymer_compression = assembly_hoco, hodeco_consensus = "none"), **assembler_arguments).format(**wildcards)
+                has_injections = True
+
+            if has_injections:
+                # two-step assembly
+                result["assembly"] = safe_format(safe_format(WTDBG2_LOG, tig_injection = "none", frg_injection = "none", frg_injection_stage = "none", homopolymer_compression = assembly_hoco, hodeco_consensus = "none"), **assembler_arguments).format(**wildcards)
+                result["wtdbg2_extract"] = safe_format(safe_format(WTDBG2_EXTRACT_LOG, subfile = "ctg.lay", tig_injection = "none", frg_injection = "none", frg_injection_stage = "none", homopolymer_compression = assembly_hoco, hodeco_consensus = "none"), **assembler_arguments).format(**wildcards)
+                result["contig_assembly"] = safe_format(safe_format(WTDBG2_LOG, homopolymer_compression = assembly_hoco, hodeco_consensus = "none"), **assembler_arguments).format(**wildcards)
+            else:
+                # one-step assembly
+                result["assembly"] = safe_format(safe_format(WTDBG2_LOG, homopolymer_compression = assembly_hoco, hodeco_consensus = "none"), **assembler_arguments).format(**wildcards)
+                # extract
+                result["wtdbg2_extract"] = safe_format(safe_format(WTDBG2_EXTRACT_LOG, subfile = "ctg.lay", homopolymer_compression = assembly_hoco, hodeco_consensus = "none"), **assembler_arguments).format(**wildcards)
+
+
+            # consensus
+            result["wtdbg2_consensus"] = safe_format(WTDBG2_CONSENSUS_LOG, **assembler_arguments).format(**wildcards)
+        elif wildcards.assembler == "hifiasm":
+            if assembler_arguments["contig_algorithm"].startswith("trivial_omnitigs_"):
+                result["trivial_omnitigs"] = safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"), **assembler_arguments).format(**wildcards)
+        else:
+            # assembly
+            result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
+
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def decode_time(string):
+    if string.count(':') == 2:
+        hours, minutes, seconds = map(float, string.split(':'))
+        time = datetime.timedelta(hours = hours, minutes = minutes, seconds = seconds)
+    elif string.count(':') == 1:
+        minutes, seconds = map(float, string.split(':'))
+        time = datetime.timedelta(minutes = minutes, seconds = seconds)
+    return time.total_seconds()
+
+localrules: evaluate_resources
+rule evaluate_resources:
+    input:  files = lambda wildcards: get_evaluate_resources_inputs(wildcards).values(),
+    output: file = RESOURCES_EVALUATION,
+    params: file_map = get_evaluate_resources_inputs,
+    threads: 1,
+    run:
+        result = {}
+        for key, input_file in params.file_map.items():
+            with open(input_file, 'r') as input_file:
+                values = {}
+                for line in input_file:
+                    if "Elapsed (wall clock) time" in line:
+                        assert "time" not in values
+                        values["time"] = decode_time(line.split(':')[1].strip())
+                    elif "Maximum resident set size" in line:
+                        assert "mem" not in values
+                        values["mem"] = int(line.split(':')[1].strip())
+
+                assert "time" in values
+                assert "mem" in values
+                result[key] = values
+
+        sum_time = sum([values["time"] for values in result.values()])
+        max_mem = max([values["mem"] for values in result.values()])
+        result["total"] = {
+            "time": sum_time,
+            "mem": max_mem,
+        }
+
+        with open(output.file, 'w') as output_file:
+            json.dump(result, output_file)
+
 
 #############################
 ###### ContigValidator ######

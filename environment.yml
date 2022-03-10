@@ -6,3 +6,4 @@ dependencies:
         - snakemake == 7.1.0
         - mamba
         - time == 1.8
+        - parse == 1.19.0

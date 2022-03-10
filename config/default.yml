@@ -410,6 +410,67 @@ column_templates:
       select_assembler:
         canu:
 
+  hifi_hodeco_simple_overview_columns_ecoli: &hifi_hodeco_simple_overview_columns_ecoli
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+    - shortname: "hifiasm YVr"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_r_utg"
+    - shortname: "hifiasm YVrbp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_bubpop.r_utg"
+    - shortname: "hifiasm YVp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_p_utg"
+    - shortname: "mdbg"
+      select_assembler:
+        mdbg:
+    - shortname: "lja"
+      select_assembler:
+        lja:
+    - shortname: "HiCanu"
+      select_assembler:
+        canu:
+
   hifi_overview_columns: &hifi_overview_columns
     - shortname: "w2"
       select_assembler: 
@@ -554,6 +615,7 @@ reports:
     argument_matrix:
       genome: "E.coli_hifi"
       read_downsampling_factor: 0.01
+      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_ecoli
 
   "E.coli_HiFi_hoco":
@@ -561,7 +623,15 @@ reports:
       genome: "E.coli_hifi"
       read_downsampling_factor: 0.01
       homopolymer_compression: "yes"
+      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_ecoli
+
+  "E.coli_HiFi_hodeco_simple":
+    argument_matrix:
+      genome: "E.coli_hifi"
+      read_downsampling_factor: 0.01
+      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_hodeco_simple_overview_columns_ecoli
 
   # "sim_hifi":
   #   argument_matrix:
