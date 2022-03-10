@@ -5,6 +5,7 @@ dependencies:
   - gcc_linux-64 == 9.4.0
   - gxx_linux-64 == 9.4.0
   - libstdcxx-devel_linux-64 == 9.4.0
+  - sysroot_linux-64 == 2.17
   - zlib == 1.2.11
   - python == 3.9.10
   - time == 1.8

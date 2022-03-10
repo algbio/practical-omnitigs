@@ -92,7 +92,7 @@ def append_latex_table_second_column(table, appendix):
 
 name_file = open(genome_name_file_name, 'r')
 name_lines = name_file.readlines()
-name_lines = [x.replace("_", "\\_") for x in name_lines]
+name_lines = [x.replace("_", "\\_").replace("{", "").replace("}", "") for x in name_lines]
 
 ###############################
 ### Process algorithm files ###
@@ -203,7 +203,9 @@ for (label, tig_algo_file, quast_directory, contig_validator_name, resources_eva
 	try:
 		with open(resources_evaluation_name, 'r') as resources_evaluation_file:
 			resources_evaluation = json.load(resources_evaluation_file)
-			subtable = [f"time [s] & {resources_evaluation["total"]["time"]} \\\\", f"mem [GiB] & {resources_evaluation["total"]["mem"] / (1024**2):.2}"]
+			time = resources_evaluation["total"]["time"]
+			mem = resources_evaluation["total"]["mem"] / (1024**2)
+			subtable = [f"time [s] & {time:.2f} \\\\", f"mem [GiB] & {mem:.2f} \\\\"]
 			resources_table = append_latex_table_second_column(resources_table, subtable)
 	except:
 		print("Error processing resources evaluation file")

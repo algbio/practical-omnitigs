@@ -641,7 +641,7 @@ rule compute_injectable_contigs_wtdbg2:
     params: command = get_injectable_contigs_rust_cli_command_from_wildcards,
     threads: 1
     resources: mem_mb = 48000
-    shell: "'{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
     try:
@@ -668,7 +668,7 @@ rule compute_injectable_fragment_contigs_wtdbg2:
     params: command = get_injectable_fragment_contigs_rust_cli_command_from_wildcards,
     threads: 1
     resources: mem_mb = 48000
-    shell: "'{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 #################################
 ###### Postprocess Contigs ######
@@ -972,8 +972,9 @@ rule wtdbg2_with_injected_fragment_contigs:
 rule wtdbg2_extract:
     input:  file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}.gz"),
     output: file = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{subfile}"),
-    params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
     log:    WTDBG2_EXTRACT_LOG,
+    params: working_directory = lambda wildcards, input: os.path.dirname(input.file),
+            abslog = lambda wildcards: os.path.abspath(WTDBG2_EXTRACT_LOG.format(**wildcards)),
     wildcard_constraints:
             hodeco_consensus = "none",
     conda:  "config/conda-extract-env.yml"
@@ -981,7 +982,10 @@ rule wtdbg2_extract:
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 1_000),
-    shell:  "cd '{params.working_directory}'; ${{CONDA_PREFIX}}/bin/time -v gunzip -k wtdbg2.{wildcards.subfile}.gz 2>&1 | tee '{log}'"
+    shell:  """
+        cd '{params.working_directory}'
+        ${{CONDA_PREFIX}}/bin/time -v gunzip -k wtdbg2.{wildcards.subfile}.gz 2>&1 | tee '{params.abslog}'
+        """
 
 rule wtdbg2_consensus:
     input:  contigs = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay"),
@@ -1851,6 +1855,10 @@ def get_evaluate_resources_inputs(wildcards):
             # consensus
             result["wtdbg2_consensus"] = safe_format(WTDBG2_CONSENSUS_LOG, **assembler_arguments).format(**wildcards)
         elif wildcards.assembler == "hifiasm":
+            # assembly
+            result["assembly"] = safe_format(safe_format(HIFIASM_LOG, contig_algorithm = "builtin")).format(**wildcards)
+
+            # injections
             if assembler_arguments["contig_algorithm"].startswith("trivial_omnitigs_"):
                 result["trivial_omnitigs"] = safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"), **assembler_arguments).format(**wildcards)
         else:
@@ -1863,13 +1871,19 @@ def get_evaluate_resources_inputs(wildcards):
         sys.exit("Catched exception")
 
 def decode_time(string):
-    if string.count(':') == 2:
-        hours, minutes, seconds = map(float, string.split(':'))
-        time = datetime.timedelta(hours = hours, minutes = minutes, seconds = seconds)
-    elif string.count(':') == 1:
-        minutes, seconds = map(float, string.split(':'))
-        time = datetime.timedelta(minutes = minutes, seconds = seconds)
-    return time.total_seconds()
+    try:
+        if string.count(':') == 2:
+            hours, minutes, seconds = map(float, string.split(':'))
+            time = datetime.timedelta(hours = hours, minutes = minutes, seconds = seconds)
+        elif string.count(':') == 1:
+            minutes, seconds = map(float, string.split(':'))
+            time = datetime.timedelta(minutes = minutes, seconds = seconds)
+        else:
+            raise Exception(f"unknown time string '{string}'")
+        return time.total_seconds()
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
 
 localrules: evaluate_resources
 rule evaluate_resources:
@@ -1879,19 +1893,20 @@ rule evaluate_resources:
     threads: 1,
     run:
         result = {}
-        for key, input_file in params.file_map.items():
-            with open(input_file, 'r') as input_file:
+        for key, input_file_name in params.file_map.items():
+            with open(input_file_name, 'r') as input_file:
                 values = {}
                 for line in input_file:
-                    if "Elapsed (wall clock) time" in line:
+                    if "Elapsed (wall clock) time (h:mm:ss or m:ss):" in line:
                         assert "time" not in values
-                        values["time"] = decode_time(line.split(':')[1].strip())
+                        line = line.replace("Elapsed (wall clock) time (h:mm:ss or m:ss):", "").strip()
+                        values["time"] = decode_time(line)
                     elif "Maximum resident set size" in line:
                         assert "mem" not in values
                         values["mem"] = int(line.split(':')[1].strip())
 
-                assert "time" in values
-                assert "mem" in values
+                assert "time" in values, f"No time found in {input_file_name}"
+                assert "mem" in values, f"No mem found in {input_file_name}"
                 result[key] = values
 
         sum_time = sum([values["time"] for values in result.values()])
@@ -2332,7 +2347,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout 7d453a590f7f5521d0150ee65fa3de53551844d7
+        git checkout 38921327d6c5e57a59e71a7181995f2f0c04be75
 
         mv bin/flye bin/flye.disabled # rename such that snakemake does not delete it
         """
