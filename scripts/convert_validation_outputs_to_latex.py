@@ -206,6 +206,16 @@ for (label, tig_algo_file, quast_directory, contig_validator_name, resources_eva
 			time = resources_evaluation["total"]["time"]
 			mem = resources_evaluation["total"]["mem"] / (1024**2)
 			subtable = [f"time [s] & {time:.2f} \\\\", f"mem [GiB] & {mem:.2f} \\\\"]
+
+			for key, values in resources_evaluation.items():
+				if key == "total":
+					continue
+				key = key.replace("_", "\\_")
+				time = values["time"]
+				mem = values["mem"] / (1024**2)
+				subtable.append(f"{key} time & {time:.2f} \\\\")
+				subtable.append(f"{key} mem & {mem:.2f} \\\\")
+
 			resources_table = append_latex_table_second_column(resources_table, subtable)
 	except:
 		print("Error processing resources evaluation file")
