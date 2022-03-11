@@ -3,3 +3,4 @@
 .logdir
 __pycache__
 /data
+data.tar.*
