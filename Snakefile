@@ -1158,6 +1158,28 @@ rule mdbg_D_melanogaster:
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
+rule mdbg_HG002:
+    input:  reads = GENOME_SINGLE_LINE_READS,
+            simplify_script = MDBG_SIMPLIFY,
+            binary = MDBG_BINARY,
+    output: contigs = MDBG_ASSEMBLED_CONTIGS,
+    params: output_prefix = os.path.join(MDBG_OUTPUT_DIR, "contigs"),
+            original_contigs = os.path.join(MDBG_OUTPUT_DIR, "contigs.msimpl.fa"),
+    wildcard_constraints:
+            mdbg_mode = "HG002",
+    log:    log = MDBG_LOG,
+    conda:  "config/conda-mdbg-env.yml"
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
+    shell:  """
+        RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 21 -l 14 --density 0.003 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        """
+
 #################
 ###### LJA ######
 #################
@@ -1784,6 +1806,8 @@ rule filter_genome:
 def get_quast_extra_arguments_from_wildcards(wildcards):
     try:
         if wildcards.quast_mode == "hicanu":
+            return "-s"
+        elif wildcards.quast_mode == "hicanu_alignments":
             return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000"
         elif wildcards.quast_mode == "hicanu_misassemblies":
             return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90"

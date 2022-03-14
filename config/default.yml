@@ -590,32 +590,151 @@ column_templates:
       select_assembler:
         canu:
 
+  hifi_overview_columns_hg002: &hifi_overview_columns_hg002
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+    - shortname: "hifiasm YVr"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_r_utg"
+    - shortname: "hifiasm YVrbp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_bubpop.r_utg"
+    - shortname: "hifiasm YVp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_p_utg"
+    - shortname: "mdbg"
+      select_assembler:
+        mdbg:
+          mdbg_mode: "HG002"
+    - shortname: "lja"
+      select_assembler:
+        lja:
+    - shortname: "HiCanu"
+      select_assembler:
+        canu:
+
+  hifi_hodeco_simple_overview_columns_hg002: &hifi_hodeco_simple_overview_columns_hg002
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+    - shortname: "hifiasm"
+      select_assembler:
+        hifiasm:
+    - shortname: "hifiasm YVr"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_r_utg"
+    - shortname: "hifiasm YVrbp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_bubpop.r_utg"
+    - shortname: "hifiasm YVp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "trivial_omnitigs_p_utg"
+    - shortname: "mdbg"
+      select_assembler:
+        mdbg:
+          mdbg_mode: "HG002"
+    - shortname: "lja"
+      select_assembler:
+        lja:
+    - shortname: "HiCanu"
+      select_assembler:
+        canu:
+
 reports:
 
   "D.melanogaster_HiFi":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns
 
   "D.melanogaster_HiFi_hoco":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
       homopolymer_compression: "yes"
-      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns
 
   "D.melanogaster_HiFi_hodeco_simple":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns
 
   "E.coli_HiFi":
     argument_matrix:
       genome: "E.coli_hifi"
       read_downsampling_factor: 0.01
-      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_ecoli
 
   "E.coli_HiFi_hoco":
@@ -623,628 +742,72 @@ reports:
       genome: "E.coli_hifi"
       read_downsampling_factor: 0.01
       homopolymer_compression: "yes"
-      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_ecoli
 
   "E.coli_HiFi_hodeco_simple":
     argument_matrix:
       genome: "E.coli_hifi"
       read_downsampling_factor: 0.01
-      quast_mode: ["hicanu", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns_ecoli
 
-  # "sim_hifi":
-  #   argument_matrix:
-  #     genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-  #     read_simulator:
-  #       - "bbmap_hifi"
-  #       - simlord:
-  #           cli_arguments:
-  #             "--coverage": "15"
-  #   columns: *hifi_columns
+  "HG002_HiFi_20kb_16x":
+    argument_matrix:
+      genome: "HG002_HiFi_20kb_16x"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_overview_columns_hg002
 
-  # "sim_hifi_contigbreaker":
-  #   argument_matrix:
-  #     genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-  #     read_simulator:
-  #       - "bbmap_hifi"
-  #       - simlord:
-  #           cli_arguments:
-  #             "--coverage": "15"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ccs"
-  #       flye:
-  #         cli_arguments:
-  #           "--pacbio-hifi": True
-  #   columns: *contigbreaker_hifi_columns
+  "HG002_HiFi_20kb_16x_hoco":
+    argument_matrix:
+      genome: "HG002_HiFi_20kb_16x"
+      homopolymer_compression: "yes"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_overview_columns_hg002
 
-  # "sim_hifi_fragment_correction_steps":
-  #   argument_matrix:
-  #     genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-  #     read_simulator:
-  #       - "bbmap_hifi"
-  #       - simlord:
-  #           cli_arguments:
-  #             "--coverage": "15"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ccs"
-  #   columns: *fragment_injection_step_columns
+  "HG002_HiFi_20kb_16x_hodeco_simple":
+    argument_matrix:
+      genome: "HG002_HiFi_20kb_16x"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_hodeco_simple_overview_columns_hg002
 
-  # "sim_hifi_hifiasm_trivial_omnitigs":
-  #   argument_matrix:
-  #     genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
-  #     read_simulator:
-  #       - "bbmap_hifi"
-  #       - simlord:
-  #           cli_arguments:
-  #             "--coverage": "15"
-  #     assembler: "hifiasm"
-  #     postprocessor:
-  #       "none": True
-  #       "gfa_trivial_omnitigs": True
-  #   columns: *hifiasm_trivial_omnitigs_columns
+  "HG002_HiFi_15kb_37x":
+    argument_matrix:
+      genome: "HG002_HiFi_15kb_37x"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_overview_columns_hg002
 
-  # "sim_hifi_with_human":
-  #   argument_matrix:
-  #     genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
-  #     read_simulator:
-  #       - "bbmap_hifi"
-  #       - simlord:
-  #           cli_arguments:
-  #             "--coverage": "15"
-  #   columns: *hifi_columns
+  "HG002_HiFi_15kb_37x_hoco":
+    argument_matrix:
+      genome: "HG002_HiFi_15kb_37x"
+      homopolymer_compression: "yes"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_overview_columns_hg002
 
-  # "sim_hifi_fragment_correction_steps_with_human":
-  #   argument_matrix:
-  #     genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
-  #     read_simulator:
-  #       - "bbmap_hifi"
-  #       - simlord:
-  #           cli_arguments:
-  #             "--coverage": "15"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ccs"
-  #   columns: *fragment_injection_step_columns
+  "HG002_HiFi_15kb_37x_hodeco_simple":
+    argument_matrix:
+      genome: "HG002_HiFi_15kb_37x"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_hodeco_simple_overview_columns_hg002
 
-  # "Flye_comparison":
-  #   argument_matrix:
-  #     genome: "C.elegans"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #   columns:
-  #     - shortname: "w2 sfa"
-  #       select_assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "--skip-fragment-assembly": True
-  #     - shortname: "YV sfa"
-  #       select_assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "--skip-fragment-assembly": True
-  #           injections:
-  #             "wtdbg2-inject-trivial-omnitigs": True
-  #     - shortname: "YV"
-  #       select_assembler:
-  #         wtdbg2:
-  #           injections:
-  #             "wtdbg2-inject-trivial-omnitigs": True
-  #     - shortname: "wtdbg2"
-  #       select_assembler:
-  #         wtdbg2:
-  #     - shortname: "flye raw"
-  #       select_assembler:
-  #         flye:
-  #           cli_arguments:
-  #             "--pacbio-raw": True
-  #     - shortname: "flye corr"
-  #       select_assembler:
-  #         flye:
-  #           cli_arguments:
-  #             "--pacbio-corr": True
+  "HG002_HiFi_13.5kb_29x":
+    argument_matrix:
+      genome: "HG002_HiFi_13.5kb_29x"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_overview_columns_hg002
 
-  # "contigbreaker_references":
-  #   argument_matrix:
-  #     assembler: "reference"
-  #     postprocessor:
-  #       contigbreaker:
-  #         "--min-surrounding-aligned-bases": 0
-  #   columns:
-  #     - shortname: "C.e."
-  #       genome: "C.elegans"
-  #     - shortname: "A.t."
-  #       genome: "A.thaliana"
-  #     - shortname: "D.m.A4"
-  #       genome: "D.melanogaster_A4"
-  #     - shortname: "D.m.ISO1"
-  #       genome: "D.melanogaster_ISO1"
-  #     - shortname: "Ming."
-  #       genome: "Minghui63"
+  "HG002_HiFi_13.5kb_29x_hoco":
+    argument_matrix:
+      genome: "HG002_HiFi_13.5kb_29x"
+      homopolymer_compression: "yes"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_overview_columns_hg002
 
-  # "verify_quast":
-  #   argument_matrix:
-  #     assembler: "reference"
-  #   columns:
-  #     - shortname: "C.e."
-  #       genome: "C.elegans"
-  #     - shortname: "A.t."
-  #       genome: "A.thaliana"
-  #     - shortname: "D.m.A4"
-  #       genome: "D.melanogaster_A4"
-  #     - shortname: "D.m.ISO1"
-  #       genome: "D.melanogaster_ISO1"
-  #     - shortname: "Ming."
-  #       genome: "Minghui63"
-  #     - shortname: "HG002"
-  #       genome: "HG002"
-
-  # "C.elegans":
-  #   argument_matrix:
-  #     genome: "C.elegans"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #           "-s": [0.02, 0.05, 0.1]
-  #       flye:
-  #         cli_arguments:
-  #           - "--pacbio-raw": True
-  #           - "--pacbio-corr": True
-  #     read_simulator:
-  #       - null
-  #       - perfect:
-  #           cli_arguments:
-  #             "--read-length-interval": "15000 25000"
-  #             "--coverage": 20
-  #             "--distribution": "cut"
-  #   columns: *default_columns_with_flye
-
-  # "C.elegans_plain":
-  #   argument_matrix:
-  #     genome: "C.elegans"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #       flye:
-  #         cli_arguments:
-  #           - "--pacbio-corr": True
-  #   columns: *default_columns_with_flye
-
-  # "C.elegans_fragment_correction_steps":
-  #   argument_matrix:
-  #     genome: "C.elegans"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #   columns: *fragment_injection_step_columns
-
-  # "C.elegans_contigbreaker":
-  #   argument_matrix:
-  #     genome: "C.elegans"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #       flye:
-  #         cli_arguments:
-  #           - "--pacbio-corr": True
-  #   columns: *contigbreaker_columns
-
-  # "A.thaliana":
-  #   argument_matrix:
-  #     genome: "A.thaliana"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "sq"
-  #       flye:
-  #         cli_arguments:
-  #           "--pacbio-raw": True
-  #     read_simulator:
-  #       - null
-  #       - perfect:
-  #           cli_arguments:
-  #             "--read-length-interval": "15000 25000"
-  #             "--coverage": 20
-  #             "--distribution": "cut"
-  #   columns: *default_columns_with_flye
-
-  # "A.thaliana_plain":
-  #   argument_matrix:
-  #     genome: "A.thaliana"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "sq"
-  #       flye:
-  #         cli_arguments:
-  #           - "--pacbio-raw": True
-  #   columns: *default_columns_with_flye
-
-  # "A.thaliana_fragment_correction_steps":
-  #   argument_matrix:
-  #     genome: "A.thaliana"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "sq"
-  #   columns: *fragment_injection_step_columns
-
-  # "A.thaliana_contigbreaker":
-  #   argument_matrix:
-  #     genome: "A.thaliana"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "sq"
-  #       flye:
-  #         cli_arguments:
-  #           "--pacbio-raw": True
-  #   columns: *contigbreaker_columns
-
-  # "D.melanogaster_A4":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_A4"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #       flye:
-  #         cli_arguments:
-  #           "--pacbio-raw": True
-  #     read_simulator:
-  #       - null
-  #       - perfect:
-  #           cli_arguments:
-  #             "--read-length-interval": "15000 25000"
-  #             "--coverage": 20
-  #             "--distribution": "cut"
-  #   columns: *default_columns_with_flye
-
-  # "D.melanogaster_A4_plain":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_A4"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #       flye:
-  #         cli_arguments:
-  #           - "--pacbio-raw": True
-  #   columns: *default_columns_with_flye
-
-  # "D.melanogaster_A4_fragment_correction_steps":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_A4"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #   columns: *fragment_injection_step_columns
-
-  # "D.melanogaster_A4_contigbreaker":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_A4"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "rs"
-  #       flye:
-  #         cli_arguments:
-  #           "--pacbio-raw": True
-  #   columns: *contigbreaker_columns
-
-  # "D.melanogaster_ISO1":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_ISO1"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ont"
-  #       flye:
-  #         cli_arguments:
-  #           "--nano-raw": True
-  #     read_simulator:
-  #       - null
-  #       - perfect:
-  #           cli_arguments:
-  #             "--read-length-interval": "15000 25000"
-  #             "--coverage": 20
-  #             "--distribution": "cut"
-  #   columns: *default_columns_with_flye
-
-  # "D.melanogaster_ISO1_plain":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_ISO1"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ont"
-  #       flye:
-  #         cli_arguments:
-  #           - "--nano-raw": True
-  #   columns: *default_columns_with_flye
-
-  # "D.melanogaster_ISO1_fragment_correction_steps":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_ISO1"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ont"
-  #   columns: *fragment_injection_step_columns
-
-  # "D.melanogaster_ISO1_contigbreaker":
-  #   argument_matrix:
-  #     genome: "D.melanogaster_ISO1"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ont"
-  #       flye:
-  #         cli_arguments:
-  #           "--nano-raw": True
-  #   columns: *contigbreaker_columns
-
-  # "Minghui63":
-  #   argument_matrix:
-  #     genome: "Minghui63"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           - "-x": "rs"
-  #           - "-x": "sq"
-  #           - "-x": "ccs"
-  #             "-s": [0.4, 0.5, 0.7, 0.95]
-  #       flye:
-  #         cli_arguments:
-  #           "--pacbio-hifi": [True]
-  #     read_simulator:
-  #       - null
-  #       - perfect:
-  #           cli_arguments:
-  #             "--read-length-interval": "15000 25000"
-  #             "--coverage": 20
-  #             "--distribution": "cut"
-  #   columns: *hifi_columns
-
-  # "Minghui63_fragment_correction_steps":
-  #   argument_matrix:
-  #     genome: "Minghui63"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": "ccs"
-  #   columns: *fragment_injection_step_columns
-
-  # "Minghui63_contigbreaker":
-  #   argument_matrix:
-  #     genome: "Minghui63"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           - "-x": "ccs"
-  #       flye:
-  #         cli_arguments:
-  #           - "--pacbio-hifi": True
-  #   columns: *contigbreaker_hifi_columns
-
-  # "Minghui63_hifiasm_trivial_omnitigs":
-  #   argument_matrix:
-  #     genome: "Minghui63"
-  #     assembler: "hifiasm"
-  #     postprocessor:
-  #       "none": True
-  #       "gfa_trivial_omnitigs": True
-  #   columns: *hifiasm_trivial_omnitigs_columns
-
-  # "HG002":
-  #   argument_matrix:
-  #     genome: "HG002"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": ["rs", "sq", "ccs"]
-  #       flye:
-  #         cli_arguments:
-  #           - "--pacbio-raw": [True]
-  #     read_simulator:
-  #       - null
-  #       - perfect:
-  #           cli_arguments:
-  #             "--read-length-interval": "15000 25000"
-  #             "--coverage": 20
-  #             "--distribution": "cut"
-  #   columns: *default_columns_with_flye
-
-  # "HG002_ratatosk":
-  #   argument_matrix:
-  #     genome: "HG002_ratatosk"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           - "-x": ["rs", "sq", "ccs"]
-  #   columns:
-  #     - shortname: "Y-to-V sfa"
-  #       select_assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "--skip-fragment-assembly": True
-  #           injections:
-  #             "wtdbg2-inject-trivial-omnitigs": True
-  #     - shortname: "w2 sfa"
-  #       select_assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "--skip-fragment-assembly": True
-  #     - shortname: "YV"
-  #       select_assembler:
-  #         wtdbg2:
-  #           injections:
-  #             "wtdbg2-inject-trivial-omnitigs": True
-  #     - shortname: "frg YV"
-  #       select_assembler:
-  #         wtdbg2:
-  #           fragment_injections:
-  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
-  #     - shortname: "w2"
-  #       select_assembler:
-  #         wtdbg2:
-  #     - shortname: "flye corr"
-  #       select_assembler:
-  #         flye:
-  #           cli_arguments:
-  #             "--pacbio-corr": True
-  #     - shortname: "flye hifi"
-  #       select_assembler:
-  #         flye:
-  #           cli_arguments:
-  #             "--pacbio-hifi": True
-
-  # "HG002_HiFi":
-  #   argument_matrix:
-  #     genome: "HG002_HiFi"
-  #     assembler:
-  #       wtdbg2:
-  #         cli_arguments:
-  #           "-x": ["rs", "sq", "ccs"]
-  #       flye:
-  #         cli_arguments:
-  #           "--pacbio-hifi": [True]
-  #   columns: *hifi_columns
-
-  # "E.coli":
-  #   argument_matrix:
-  #     genome: "E.coli"
-  #   columns:
-  #     - shortname: "w2 rs"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "rs"
-  #     - shortname: "YV rs"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "rs"
-  #           injections:
-  #             "wtdbg2-inject-trivial-omnitigs": True
-  #     - shortname: "fYV rs"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "rs"
-  #           fragment_injections:
-  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
-  #     - shortname: "flye raw"
-  #       assembler:
-  #         flye:
-  #           cli_arguments:
-  #             "--pacbio-raw": True
-  #     - shortname: "ha"
-  #       assembler: "hifiasm"
-  #       read_simulator: "bbmap_hifi"
-
-  # "wtdbg2_deep_analysis":
-  #   argument_matrix:
-  #     genome: "E.coli"
-  #     read_simulator:
-  #       perfect:
-  #         cli_arguments:
-  #           "--read-length-interval": "15000 25000"
-  #           "--coverage": 20
-  #           "--distribution": "cut"
-  #   columns:
-  #     - shortname: "w2 rs"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "rs"
-  #     - shortname: "w2 rs YV"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "rs"
-  #           injections:
-  #             "wtdbg2-inject-trivial-omnitigs": True
-  #     - shortname: "w2 rs frg YV"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "rs"
-  #           fragment_injections:
-  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
-  #     - shortname: "w2 ccs"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "ccs"
-  #     - shortname: "w2 ccs YV"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "ccs"
-  #           injections:
-  #             "wtdbg2-inject-trivial-omnitigs": True
-  #     - shortname: "w2 ccs frg YV"
-  #       assembler:
-  #         wtdbg2:
-  #           cli_arguments:
-  #             "-x": "ccs"
-  #           fragment_injections:
-  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
-
-aggregated_reports:
-#   "aggregated":
-#     reports:
-#       - "C.elegans_plain"
-#       - "A.thaliana_plain"
-#       - "D.melanogaster_A4_plain"
-#       - "D.melanogaster_ISO1_plain"
-
-#   "aggregated_fragment_correction_steps":
-#     reports:
-#       - "C.elegans_fragment_correction_steps"
-#       - "A.thaliana_fragment_correction_steps"
-#       - "D.melanogaster_A4_fragment_correction_steps"
-#       - "D.melanogaster_ISO1_fragment_correction_steps"
-
-#   "aggregated_contigbreaker":
-#     reports:
-#       - "C.elegans_contigbreaker"
-#       - "A.thaliana_contigbreaker"
-#       - "D.melanogaster_A4_contigbreaker"
-#       - "D.melanogaster_ISO1_contigbreaker"
-#       - "Minghui63_contigbreaker"
-
-#   "aggregated_sim_hifi":
-#     reports:
-#       - "sim_hifi"
-
-#   "aggregated_sim_hifi_fragment_correction_steps":
-#     reports:
-#       - "sim_hifi_fragment_correction_steps"
-
-#   "aggregated_contigbreaker_sim_hifi":
-#     reports:
-#       - "sim_hifi_contigbreaker"
-#       - "Minghui63_contigbreaker"
-
-#   "aggregated_hifiasm_trivial_omnitigs":
-#     reports:
-#       - "sim_hifi_hifiasm_trivial_omnitigs"
-#       - "Minghui63_hifiasm_trivial_omnitigs"
-
+  "HG002_HiFi_13.5kb_29x_hodeco_simple":
+    argument_matrix:
+      genome: "HG002_HiFi_13.5kb_29x"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+    columns: *hifi_hodeco_simple_overview_columns_hg002
 
 genomes:
   "E.coli":
@@ -1300,13 +863,80 @@ genomes:
     assembly_time_factor: 2
     assembly_mem_factor: 1
 
-  "HG002_HiFi":
-    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
+  # Reads and reference both from HG002
+  # Reads are from PacBio company
+  # Reference from https://www.ncbi.nlm.nih.gov/grc
+  "HG002_HiFi_20kb_16x":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.29_GRCh38.p14/GCA_000001405.29_GRCh38.p14_genomic.fna.gz"
     #genome_length: 3100000000
     assembly_time_factor: 4
     assembly_mem_factor: 4
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382244/SRR10382244.1", "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
     format: "sra"
+
+  # Reads and reference both from HG002
+  # Reads are from PacBio company
+  # Reference from https://www.ncbi.nlm.nih.gov/grc
+  "HG002_HiFi_15kb_37x":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.29_GRCh38.p14/GCA_000001405.29_GRCh38.p14_genomic.fna.gz"
+    #genome_length: 3100000000
+    assembly_time_factor: 4
+    assembly_mem_factor: 4
+    format: "sra"
+    reads:
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382246.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382247.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382248.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382249.1"
+
+  # Reads and reference both from HG002
+  # Reads from https://www.nature.com/articles/s41587-019-0217-9
+  # Reference from https://www.ncbi.nlm.nih.gov/grc
+  "HG002_HiFi_13.5kb_29x":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.29_GRCh38.p14/GCA_000001405.29_GRCh38.p14_genomic.fna.gz"
+    assembly_time_factor: 4
+    assembly_mem_factor: 4
+    format: "sra"
+    reads:
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858433/SRR8858433.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858434/SRR8858434.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858435/SRR8858435.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858436/SRR8858436.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858437/SRR8858437.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858438/SRR8858438.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858439/SRR8858439.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858440/SRR8858440.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858442/SRR8858442.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858443/SRR8858443.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858444/SRR8858444.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858445/SRR8858445.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858446/SRR8858446.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858447/SRR8858447.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858448/SRR8858448.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858449/SRR8858449.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858450/SRR8858450.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858451/SRR8858451.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858452/SRR8858452.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858453/SRR8858453.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858454/SRR8858454.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858455/SRR8858455.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858456/SRR8858456.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858457/SRR8858457.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858458/SRR8858458.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858459/SRR8858459.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858460/SRR8858460.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858461/SRR8858461.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858462/SRR8858462.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858463/SRR8858463.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858464/SRR8858464.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858465/SRR8858465.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858466/SRR8858466.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858467/SRR8858467.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858468/SRR8858468.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858469/SRR8858469.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858470/SRR8858470.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8859679/SRR8859679.1"
 
   "HG002":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
@@ -1905,3 +1535,618 @@ corrected_genomes:
     correction_short_reads: ["https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/NHGRI_Illumina300X_AJtrio_novoalign_bams/HG002.GRCh38.300x.bam"]
     source_genome: "HG002"
     correction_type: "ratatosk"
+
+
+aggregated_reports:
+#   "aggregated":
+#     reports:
+#       - "C.elegans_plain"
+#       - "A.thaliana_plain"
+#       - "D.melanogaster_A4_plain"
+#       - "D.melanogaster_ISO1_plain"
+
+#   "aggregated_fragment_correction_steps":
+#     reports:
+#       - "C.elegans_fragment_correction_steps"
+#       - "A.thaliana_fragment_correction_steps"
+#       - "D.melanogaster_A4_fragment_correction_steps"
+#       - "D.melanogaster_ISO1_fragment_correction_steps"
+
+#   "aggregated_contigbreaker":
+#     reports:
+#       - "C.elegans_contigbreaker"
+#       - "A.thaliana_contigbreaker"
+#       - "D.melanogaster_A4_contigbreaker"
+#       - "D.melanogaster_ISO1_contigbreaker"
+#       - "Minghui63_contigbreaker"
+
+#   "aggregated_sim_hifi":
+#     reports:
+#       - "sim_hifi"
+
+#   "aggregated_sim_hifi_fragment_correction_steps":
+#     reports:
+#       - "sim_hifi_fragment_correction_steps"
+
+#   "aggregated_contigbreaker_sim_hifi":
+#     reports:
+#       - "sim_hifi_contigbreaker"
+#       - "Minghui63_contigbreaker"
+
+#   "aggregated_hifiasm_trivial_omnitigs":
+#     reports:
+#       - "sim_hifi_hifiasm_trivial_omnitigs"
+#       - "Minghui63_hifiasm_trivial_omnitigs"
+
+
+
+  # "sim_hifi":
+  #   argument_matrix:
+  #     genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+  #     read_simulator:
+  #       - "bbmap_hifi"
+  #       - simlord:
+  #           cli_arguments:
+  #             "--coverage": "15"
+  #   columns: *hifi_columns
+
+  # "sim_hifi_contigbreaker":
+  #   argument_matrix:
+  #     genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+  #     read_simulator:
+  #       - "bbmap_hifi"
+  #       - simlord:
+  #           cli_arguments:
+  #             "--coverage": "15"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ccs"
+  #       flye:
+  #         cli_arguments:
+  #           "--pacbio-hifi": True
+  #   columns: *contigbreaker_hifi_columns
+
+  # "sim_hifi_fragment_correction_steps":
+  #   argument_matrix:
+  #     genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+  #     read_simulator:
+  #       - "bbmap_hifi"
+  #       - simlord:
+  #           cli_arguments:
+  #             "--coverage": "15"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ccs"
+  #   columns: *fragment_injection_step_columns
+
+  # "sim_hifi_hifiasm_trivial_omnitigs":
+  #   argument_matrix:
+  #     genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63"]
+  #     read_simulator:
+  #       - "bbmap_hifi"
+  #       - simlord:
+  #           cli_arguments:
+  #             "--coverage": "15"
+  #     assembler: "hifiasm"
+  #     postprocessor:
+  #       "none": True
+  #       "gfa_trivial_omnitigs": True
+  #   columns: *hifiasm_trivial_omnitigs_columns
+
+  # "sim_hifi_with_human":
+  #   argument_matrix:
+  #     genome: ["C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
+  #     read_simulator:
+  #       - "bbmap_hifi"
+  #       - simlord:
+  #           cli_arguments:
+  #             "--coverage": "15"
+  #   columns: *hifi_columns
+
+  # "sim_hifi_fragment_correction_steps_with_human":
+  #   argument_matrix:
+  #     genome: ["E.coli", "C.elegans", "A.thaliana", "D.melanogaster_A4", "D.melanogaster_ISO1", "Minghui63", "HG002"]
+  #     read_simulator:
+  #       - "bbmap_hifi"
+  #       - simlord:
+  #           cli_arguments:
+  #             "--coverage": "15"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ccs"
+  #   columns: *fragment_injection_step_columns
+
+  # "Flye_comparison":
+  #   argument_matrix:
+  #     genome: "C.elegans"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #   columns:
+  #     - shortname: "w2 sfa"
+  #       select_assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "--skip-fragment-assembly": True
+  #     - shortname: "YV sfa"
+  #       select_assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "--skip-fragment-assembly": True
+  #           injections:
+  #             "wtdbg2-inject-trivial-omnitigs": True
+  #     - shortname: "YV"
+  #       select_assembler:
+  #         wtdbg2:
+  #           injections:
+  #             "wtdbg2-inject-trivial-omnitigs": True
+  #     - shortname: "wtdbg2"
+  #       select_assembler:
+  #         wtdbg2:
+  #     - shortname: "flye raw"
+  #       select_assembler:
+  #         flye:
+  #           cli_arguments:
+  #             "--pacbio-raw": True
+  #     - shortname: "flye corr"
+  #       select_assembler:
+  #         flye:
+  #           cli_arguments:
+  #             "--pacbio-corr": True
+
+  # "contigbreaker_references":
+  #   argument_matrix:
+  #     assembler: "reference"
+  #     postprocessor:
+  #       contigbreaker:
+  #         "--min-surrounding-aligned-bases": 0
+  #   columns:
+  #     - shortname: "C.e."
+  #       genome: "C.elegans"
+  #     - shortname: "A.t."
+  #       genome: "A.thaliana"
+  #     - shortname: "D.m.A4"
+  #       genome: "D.melanogaster_A4"
+  #     - shortname: "D.m.ISO1"
+  #       genome: "D.melanogaster_ISO1"
+  #     - shortname: "Ming."
+  #       genome: "Minghui63"
+
+  # "verify_quast":
+  #   argument_matrix:
+  #     assembler: "reference"
+  #   columns:
+  #     - shortname: "C.e."
+  #       genome: "C.elegans"
+  #     - shortname: "A.t."
+  #       genome: "A.thaliana"
+  #     - shortname: "D.m.A4"
+  #       genome: "D.melanogaster_A4"
+  #     - shortname: "D.m.ISO1"
+  #       genome: "D.melanogaster_ISO1"
+  #     - shortname: "Ming."
+  #       genome: "Minghui63"
+  #     - shortname: "HG002"
+  #       genome: "HG002"
+
+  # "C.elegans":
+  #   argument_matrix:
+  #     genome: "C.elegans"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #           "-s": [0.02, 0.05, 0.1]
+  #       flye:
+  #         cli_arguments:
+  #           - "--pacbio-raw": True
+  #           - "--pacbio-corr": True
+  #     read_simulator:
+  #       - null
+  #       - perfect:
+  #           cli_arguments:
+  #             "--read-length-interval": "15000 25000"
+  #             "--coverage": 20
+  #             "--distribution": "cut"
+  #   columns: *default_columns_with_flye
+
+  # "C.elegans_plain":
+  #   argument_matrix:
+  #     genome: "C.elegans"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #       flye:
+  #         cli_arguments:
+  #           - "--pacbio-corr": True
+  #   columns: *default_columns_with_flye
+
+  # "C.elegans_fragment_correction_steps":
+  #   argument_matrix:
+  #     genome: "C.elegans"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #   columns: *fragment_injection_step_columns
+
+  # "C.elegans_contigbreaker":
+  #   argument_matrix:
+  #     genome: "C.elegans"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #       flye:
+  #         cli_arguments:
+  #           - "--pacbio-corr": True
+  #   columns: *contigbreaker_columns
+
+  # "A.thaliana":
+  #   argument_matrix:
+  #     genome: "A.thaliana"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "sq"
+  #       flye:
+  #         cli_arguments:
+  #           "--pacbio-raw": True
+  #     read_simulator:
+  #       - null
+  #       - perfect:
+  #           cli_arguments:
+  #             "--read-length-interval": "15000 25000"
+  #             "--coverage": 20
+  #             "--distribution": "cut"
+  #   columns: *default_columns_with_flye
+
+  # "A.thaliana_plain":
+  #   argument_matrix:
+  #     genome: "A.thaliana"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "sq"
+  #       flye:
+  #         cli_arguments:
+  #           - "--pacbio-raw": True
+  #   columns: *default_columns_with_flye
+
+  # "A.thaliana_fragment_correction_steps":
+  #   argument_matrix:
+  #     genome: "A.thaliana"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "sq"
+  #   columns: *fragment_injection_step_columns
+
+  # "A.thaliana_contigbreaker":
+  #   argument_matrix:
+  #     genome: "A.thaliana"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "sq"
+  #       flye:
+  #         cli_arguments:
+  #           "--pacbio-raw": True
+  #   columns: *contigbreaker_columns
+
+  # "D.melanogaster_A4":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_A4"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #       flye:
+  #         cli_arguments:
+  #           "--pacbio-raw": True
+  #     read_simulator:
+  #       - null
+  #       - perfect:
+  #           cli_arguments:
+  #             "--read-length-interval": "15000 25000"
+  #             "--coverage": 20
+  #             "--distribution": "cut"
+  #   columns: *default_columns_with_flye
+
+  # "D.melanogaster_A4_plain":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_A4"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #       flye:
+  #         cli_arguments:
+  #           - "--pacbio-raw": True
+  #   columns: *default_columns_with_flye
+
+  # "D.melanogaster_A4_fragment_correction_steps":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_A4"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #   columns: *fragment_injection_step_columns
+
+  # "D.melanogaster_A4_contigbreaker":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_A4"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "rs"
+  #       flye:
+  #         cli_arguments:
+  #           "--pacbio-raw": True
+  #   columns: *contigbreaker_columns
+
+  # "D.melanogaster_ISO1":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_ISO1"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ont"
+  #       flye:
+  #         cli_arguments:
+  #           "--nano-raw": True
+  #     read_simulator:
+  #       - null
+  #       - perfect:
+  #           cli_arguments:
+  #             "--read-length-interval": "15000 25000"
+  #             "--coverage": 20
+  #             "--distribution": "cut"
+  #   columns: *default_columns_with_flye
+
+  # "D.melanogaster_ISO1_plain":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_ISO1"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ont"
+  #       flye:
+  #         cli_arguments:
+  #           - "--nano-raw": True
+  #   columns: *default_columns_with_flye
+
+  # "D.melanogaster_ISO1_fragment_correction_steps":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_ISO1"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ont"
+  #   columns: *fragment_injection_step_columns
+
+  # "D.melanogaster_ISO1_contigbreaker":
+  #   argument_matrix:
+  #     genome: "D.melanogaster_ISO1"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ont"
+  #       flye:
+  #         cli_arguments:
+  #           "--nano-raw": True
+  #   columns: *contigbreaker_columns
+
+  # "Minghui63":
+  #   argument_matrix:
+  #     genome: "Minghui63"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           - "-x": "rs"
+  #           - "-x": "sq"
+  #           - "-x": "ccs"
+  #             "-s": [0.4, 0.5, 0.7, 0.95]
+  #       flye:
+  #         cli_arguments:
+  #           "--pacbio-hifi": [True]
+  #     read_simulator:
+  #       - null
+  #       - perfect:
+  #           cli_arguments:
+  #             "--read-length-interval": "15000 25000"
+  #             "--coverage": 20
+  #             "--distribution": "cut"
+  #   columns: *hifi_columns
+
+  # "Minghui63_fragment_correction_steps":
+  #   argument_matrix:
+  #     genome: "Minghui63"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": "ccs"
+  #   columns: *fragment_injection_step_columns
+
+  # "Minghui63_contigbreaker":
+  #   argument_matrix:
+  #     genome: "Minghui63"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           - "-x": "ccs"
+  #       flye:
+  #         cli_arguments:
+  #           - "--pacbio-hifi": True
+  #   columns: *contigbreaker_hifi_columns
+
+  # "Minghui63_hifiasm_trivial_omnitigs":
+  #   argument_matrix:
+  #     genome: "Minghui63"
+  #     assembler: "hifiasm"
+  #     postprocessor:
+  #       "none": True
+  #       "gfa_trivial_omnitigs": True
+  #   columns: *hifiasm_trivial_omnitigs_columns
+
+  # "HG002":
+  #   argument_matrix:
+  #     genome: "HG002"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": ["rs", "sq", "ccs"]
+  #       flye:
+  #         cli_arguments:
+  #           - "--pacbio-raw": [True]
+  #     read_simulator:
+  #       - null
+  #       - perfect:
+  #           cli_arguments:
+  #             "--read-length-interval": "15000 25000"
+  #             "--coverage": 20
+  #             "--distribution": "cut"
+  #   columns: *default_columns_with_flye
+
+  # "HG002_ratatosk":
+  #   argument_matrix:
+  #     genome: "HG002_ratatosk"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           - "-x": ["rs", "sq", "ccs"]
+  #   columns:
+  #     - shortname: "Y-to-V sfa"
+  #       select_assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "--skip-fragment-assembly": True
+  #           injections:
+  #             "wtdbg2-inject-trivial-omnitigs": True
+  #     - shortname: "w2 sfa"
+  #       select_assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "--skip-fragment-assembly": True
+  #     - shortname: "YV"
+  #       select_assembler:
+  #         wtdbg2:
+  #           injections:
+  #             "wtdbg2-inject-trivial-omnitigs": True
+  #     - shortname: "frg YV"
+  #       select_assembler:
+  #         wtdbg2:
+  #           fragment_injections:
+  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
+  #     - shortname: "w2"
+  #       select_assembler:
+  #         wtdbg2:
+  #     - shortname: "flye corr"
+  #       select_assembler:
+  #         flye:
+  #           cli_arguments:
+  #             "--pacbio-corr": True
+  #     - shortname: "flye hifi"
+  #       select_assembler:
+  #         flye:
+  #           cli_arguments:
+  #             "--pacbio-hifi": True
+
+  # "HG002_HiFi":
+  #   argument_matrix:
+  #     genome: "HG002_HiFi"
+  #     assembler:
+  #       wtdbg2:
+  #         cli_arguments:
+  #           "-x": ["rs", "sq", "ccs"]
+  #       flye:
+  #         cli_arguments:
+  #           "--pacbio-hifi": [True]
+  #   columns: *hifi_columns
+
+  # "E.coli":
+  #   argument_matrix:
+  #     genome: "E.coli"
+  #   columns:
+  #     - shortname: "w2 rs"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "rs"
+  #     - shortname: "YV rs"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "rs"
+  #           injections:
+  #             "wtdbg2-inject-trivial-omnitigs": True
+  #     - shortname: "fYV rs"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "rs"
+  #           fragment_injections:
+  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
+  #     - shortname: "flye raw"
+  #       assembler:
+  #         flye:
+  #           cli_arguments:
+  #             "--pacbio-raw": True
+  #     - shortname: "ha"
+  #       assembler: "hifiasm"
+  #       read_simulator: "bbmap_hifi"
+
+  # "wtdbg2_deep_analysis":
+  #   argument_matrix:
+  #     genome: "E.coli"
+  #     read_simulator:
+  #       perfect:
+  #         cli_arguments:
+  #           "--read-length-interval": "15000 25000"
+  #           "--coverage": 20
+  #           "--distribution": "cut"
+  #   columns:
+  #     - shortname: "w2 rs"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "rs"
+  #     - shortname: "w2 rs YV"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "rs"
+  #           injections:
+  #             "wtdbg2-inject-trivial-omnitigs": True
+  #     - shortname: "w2 rs frg YV"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "rs"
+  #           fragment_injections:
+  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
+  #     - shortname: "w2 ccs"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "ccs"
+  #     - shortname: "w2 ccs YV"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "ccs"
+  #           injections:
+  #             "wtdbg2-inject-trivial-omnitigs": True
+  #     - shortname: "w2 ccs frg YV"
+  #       assembler:
+  #         wtdbg2:
+  #           cli_arguments:
+  #             "-x": "ccs"
+  #           fragment_injections:
+  #             "wtdbg2-inject-fragment-trivial-omnitigs": True
