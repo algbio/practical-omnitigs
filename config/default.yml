@@ -899,7 +899,7 @@ genomes:
     format: "sra"
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858433/SRR8858433.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858434/SRR8858434.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858435/SRR8858435.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858436/SRR8858436.1"
