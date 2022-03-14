@@ -2600,6 +2600,12 @@ rule download_and_prepare:
             rust = RUST_BINARY,
             ratatosk = RATATOSK_BINARY,
 
+HUMAN_GENOMES = ["HG002_HiFi_20kb_16x", "HG002_HiFi_15kb_37x", "HG002_HiFi_13.5kb_29x"]
+localrules: download_human_data
+rule download_human_data:
+    input:  reads = [GENOME_READS.format(genome = genome, homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no") for genome in HUMAN_GENOMES],
+            references = [GENOME_REFERENCE.format(genome = genome, homopolymer_compression = "none", filter_nw = "no") for genome in HUMAN_GENOMES],
+
 #rule prepare_wtdbg2:
 
 ##############################
