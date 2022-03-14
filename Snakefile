@@ -80,6 +80,7 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("assembler_arguments", None)
         arguments.setdefault("quast_mode", "normal")
         arguments.setdefault("filter_nw", "no")
+        arguments.setdefault("retain_cm", "no")
 
         columns = []
         for column_definition in report_definition["columns"]:
@@ -131,7 +132,7 @@ REPORT_ROOTDIR = os.path.join(DATADIR, "reports")
 # Genomes
 
 GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
-GENOME_REFERENCE_ARGUMENT_STRING = "reference-f{filter_nw}"
+GENOME_REFERENCE_ARGUMENT_STRING = "reference-n{filter_nw}-c{retain_cm}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
 GENOME_READS_ARGUMENT_STRING = "reads-r{read_downsampling_factor}-u{uniquify_ids}"
 GENOME_READS_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING)
@@ -153,7 +154,7 @@ ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
 ASSEMBLY_LOG = os.path.join(ASSEMBLY_OUTPUT_DIR, "assembly.log")
 ASSEMBLER_ARGUMENT_STRINGS = {}
 
-WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}-s{skip_fragment_assembly}-f{fragment_correction_steps}-t{tig_injection}-f{frg_injection}-s{frg_injection_stage}-d{hodeco_consensus}"
+WTDBG2_ARGUMENT_STRING = "m{wtdbg2_mode}-s{skip_fragment_assembly}-f{fragment_correction_steps}-t{tig_injection}-f{frg_injection}-s{frg_injection_stage}-d{hodeco_consensus}-c{retain_cm}"
 ASSEMBLER_ARGUMENT_STRINGS["wtdbg2"] = WTDBG2_ARGUMENT_STRING
 WTDBG2_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "wtdbg2", assembler_arguments = WTDBG2_ARGUMENT_STRING)
 WTDBG2_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, WTDBG2_SUBDIR)
@@ -165,7 +166,7 @@ WTDBG2_EXTRACT_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "extract.{subfile}.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
 WTDBG2_ASSEMBLED_CONTIGS = os.path.join(WTDBG2_OUTPUT_DIR, "contigs.fa")
 
-FLYE_ARGUMENT_STRING = "m{flye_mode}"
+FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}"
 ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
@@ -197,7 +198,7 @@ LJA_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBD
 LJA_LOG = os.path.join(LJA_OUTPUT_DIR, "assembly.log")
 LJA_ASSEMBLED_CONTIGS = os.path.join(LJA_OUTPUT_DIR, "contigs.fa")
 
-CANU_ARGUMENT_STRING = "none"
+CANU_ARGUMENT_STRING = "c{retain_cm}"
 ASSEMBLER_ARGUMENT_STRINGS["canu"] = CANU_ARGUMENT_STRING
 CANU_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "canu", assembler_arguments = CANU_ARGUMENT_STRING)
 CANU_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, CANU_SUBDIR)
@@ -234,6 +235,7 @@ CREATE_AGGREGATED_WTDBG2_REPORT_SCRIPT = "scripts/create_aggregated_wtdbg2_repor
 CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 DOWNSAMPLE_FASTA_READS_SCRIPT = "scripts/downsample_fasta_reads.py"
 FILTER_NW_FROM_REFERENCE_SCRIPT = "scripts/filter_nw_from_reference.py"
+RETAIN_CM_IN_REFERENCE_SCRIPT = "scripts/retain_cm_in_reference.py"
 COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT = "scripts/compute_genome_reference_length.py"
 WTDBG2_HODECO_SCRIPT = "scripts/wtdbg2_hodeco.py"
 
@@ -351,14 +353,19 @@ def get_report_file_quasts(report_name, report_file_name):
         report_file = get_report_file(report_name, report_file_name)
         quasts = []
         for column in report_file.columns:
-            #print(QUAST_OUTPUT_DIR)
-            #print(column.arguments, flush = True)
+            #print(f"QUAST_OUTPUT_DIR: {QUAST_OUTPUT_DIR}")
+            #print(f"column.arguments: {column.arguments}", flush = True)
             assembler = column.arguments.assembler_name()
             assembler_argument_string = ASSEMBLER_ARGUMENT_STRINGS[assembler]
             #print(assembler_argument_string, flush = True)
-            #print(column.arguments.assembler_arguments(), flush = True)
-            assembler_arguments = assembler_argument_string.format(**column.arguments.assembler_arguments())
-            #print(assembler_arguments, flush = True)
+
+            assembler_arguments = column.arguments.assembler_arguments()
+            #print(f"raw assembler_arguments: {assembler_arguments}", flush = True)
+            assembler_arguments.setdefault("retain_cm", column.arguments["retain_cm"])
+            #print(f"completed assembler_arguments: {assembler_arguments}", flush = True)
+            assembler_arguments = assembler_argument_string.format(**assembler_arguments)
+            #print(f"serialised assembler_arguments: {assembler_arguments}", flush = True)
+
             quasts.append(safe_format(QUAST_OUTPUT_DIR, assembler = assembler, assembler_arguments = assembler_arguments).format(**column.arguments))
         return quasts
     except Exception:
@@ -1759,6 +1766,22 @@ rule filter_nw:
     wildcard_constraints:
             homopolymer_compression = "none",
             filter_nw = "yes",
+            retain_cm = "no",
+    conda:  "config/conda-biopython-env.yml"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
+
+#################################################
+###### Retain only CM entries in reference ######
+#################################################
+
+rule retain_cm:
+    input:  reference = safe_format(GENOME_REFERENCE, retain_cm = "no"),
+            script = RETAIN_CM_IN_REFERENCE_SCRIPT,
+    output: reference = GENOME_REFERENCE,
+    wildcard_constraints:
+            homopolymer_compression = "none",
+            retain_cm = "yes",
+            filter_nw = "no",
     conda:  "config/conda-biopython-env.yml"
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
 
@@ -2180,6 +2203,7 @@ rule download_reference_genome:
     wildcard_constraints:
             homopolymer_compression = "none",
             filter_nw = "no",
+            retain_cm = "no",
     shell: "ln -sr -T '{input.file}' '{output.file}'"
 
 localrules: download_genome_reads
@@ -2594,7 +2618,7 @@ localrules: download_and_prepare
 rule download_and_prepare:
     input:  reads = expand(GENOME_READS, genome = genomes.keys(), homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no"),
             # correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
-            references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none", filter_nw = "no"),
+            references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none", filter_nw = "no", retain_cm = "no"),
             quast = QUAST_BINARY,
             wtdbg2 = WTDBG2_BINARY,
             rust = RUST_BINARY,
@@ -2604,7 +2628,7 @@ HUMAN_GENOMES = ["HG002_HiFi_20kb_16x", "HG002_HiFi_15kb_37x", "HG002_HiFi_13.5k
 localrules: download_human_data
 rule download_human_data:
     input:  reads = [GENOME_READS.format(genome = genome, homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no") for genome in HUMAN_GENOMES],
-            references = [GENOME_REFERENCE.format(genome = genome, homopolymer_compression = "none", filter_nw = "no") for genome in HUMAN_GENOMES],
+            references = [GENOME_REFERENCE.format(genome = genome, homopolymer_compression = "none", filter_nw = "no", retain_cm = "no") for genome in HUMAN_GENOMES],
 
 #rule prepare_wtdbg2:
 
