@@ -888,9 +888,9 @@ genomes:
     genome_arguments:
       retain_cm: "yes"
     reads:
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382246/SRR10382246.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382247/SRR10382247.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382248/SRR10382248.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382246/SRR10382246.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382247/SRR10382247.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1038224/SRR10382248.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382249.1"
 
   # Reads and reference both from HG002
