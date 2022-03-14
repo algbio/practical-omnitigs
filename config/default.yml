@@ -884,9 +884,9 @@ genomes:
     assembly_mem_factor: 4
     format: "sra"
     reads:
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382246.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382247.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382248.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382246/SRR10382246.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382247/SRR10382247.1"
+      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382248/SRR10382248.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382249.1"
 
   # Reads and reference both from HG002
