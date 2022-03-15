@@ -10,12 +10,12 @@ ALL_STATUSES = RUNNING_STATUS + COMPLETED_STATUS + FAILED_STATUS
 
 jobid = None
 for arg in sys.argv[1:]:
-	if arg.isdigit():
-		jobid = arg
+  if arg.isdigit():
+    jobid = arg
 
 if jobid is None:
   joined_args = "' '".join(sys.argv)
-	sys.exit(f"No numeric argument given. Arguments: '{joined_args}'")
+  sys.exit(f"No numeric argument given. Arguments: '{joined_args}'")
 
 try:
   original_states = [state.strip() for state in subprocess.check_output("sacct -j {} --format 'JobID%20,State%20' --noheader -M all".format(jobid), shell=True).decode(sys.stdout.encoding).strip().split('\n')]
