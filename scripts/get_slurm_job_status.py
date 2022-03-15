@@ -9,7 +9,7 @@ FAILED_STATUS = ["FAILED", "CANCELLED", "BOOT_FAIL", "DEADLINE", "NODE_FAIL", "O
 ALL_STATUSES = RUNNING_STATUS + COMPLETED_STATUS + FAILED_STATUS
 
 jobid = None
-  joined_args = "' '".join(sys.argv)
+joined_args = "' '".join(sys.argv)
 for arg in sys.argv[1:]:
   for subarg in arg.split():
     if subarg.isdigit():
