@@ -467,7 +467,6 @@ def get_single_report_script_column_arguments_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-localrules: create_single_report_tex
 rule create_single_report_tex:
     input:  quasts = get_report_file_quasts_from_wildcards,
             combined_eaxmax_plot = REPORT_COMBINED_EAXMAX_PLOT,
@@ -537,7 +536,6 @@ def get_aggregated_report_file_source_report_paths_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-localrules: create_aggregated_report_tex
 rule create_aggregated_report_tex:
     input: source_reports = get_aggregated_report_file_source_report_paths_from_wildcards,
            script = "scripts/create_aggregated_wtdbg2_report.py",
@@ -552,7 +550,6 @@ rule create_aggregated_report_tex:
         python3 '{input.script}' --source-reports '{params.source_reports_arg}' --source-report-names '{params.source_report_names_arg}' --output '{output.file}'
         """
 
-localrules: create_combined_eaxmax_graph
 rule create_combined_eaxmax_graph:
     input:  quast_csvs = lambda wildcards: [os.path.join(q, "aligned_stats", "EAxmax_plot.csv") for q in get_report_file_quasts_from_wildcards(wildcards)],
             script = CREATE_COMBINED_EAXMAX_PLOT_SCRIPT,
@@ -567,7 +564,6 @@ rule create_combined_eaxmax_graph:
         python3 '{input.script}' '{params.input_quast_csvs}' '{output}'
         """
 
-localrules: png_to_pdf
 rule png_to_pdf:
     input: "{file}.png"
     output: "{file}.image.pdf"
@@ -575,7 +571,6 @@ rule png_to_pdf:
     threads: 1
     shell: "convert {input} {output}"
 
-localrules: latex
 rule latex:
     input: "{subpath}report.tex"
     output: "{subpath}report.pdf"
@@ -1930,7 +1925,6 @@ def decode_time(string):
         traceback.print_exc()
         sys.exit("Catched exception")
 
-localrules: evaluate_resources
 rule evaluate_resources:
     input:  files = lambda wildcards: get_evaluate_resources_inputs(wildcards).values(),
     output: file = RESOURCES_EVALUATION,
