@@ -9,12 +9,15 @@ FAILED_STATUS = ["FAILED", "CANCELLED", "BOOT_FAIL", "DEADLINE", "NODE_FAIL", "O
 ALL_STATUSES = RUNNING_STATUS + COMPLETED_STATUS + FAILED_STATUS
 
 jobid = None
+  joined_args = "' '".join(sys.argv)
 for arg in sys.argv[1:]:
-  if arg.isdigit():
-    jobid = arg
+  for subarg in arg.split():
+    if subarg.isdigit():
+      if jobid is not None:
+        sys.exit(f"Found two numeric arguments.argument Arguments: '{joined_args}'")
+      jobid = subarg
 
 if jobid is None:
-  joined_args = "' '".join(sys.argv)
   sys.exit(f"No numeric argument given. Arguments: '{joined_args}'")
 
 try:
