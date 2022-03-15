@@ -874,6 +874,7 @@ genomes:
     format: "sra"
     genome_arguments:
       retain_cm: "yes"
+      uniquify_ids: "yes"
     reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382244/SRR10382244.1", "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"]
 
   # Reads and reference both from HG002
@@ -887,6 +888,7 @@ genomes:
     format: "sra"
     genome_arguments:
       retain_cm: "yes"
+      uniquify_ids: "yes"
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382246/SRR10382246.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382247/SRR10382247.1"
@@ -903,6 +905,7 @@ genomes:
     format: "sra"
     genome_arguments:
       retain_cm: "yes"
+      uniquify_ids: "yes"
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"

@@ -1703,7 +1703,6 @@ rule homopolymer_compress_reads:
     params: threads = str(MAX_THREADS - 2),
     wildcard_constraints:
             homopolymer_compression = "yes",
-            uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = MAX_THREADS,
@@ -1741,7 +1740,6 @@ rule downsample_reads:
     wildcard_constraints:
             read_downsampling_factor = "0.[0-9]+",
             homopolymer_compression = "none",
-            uniquify_ids = "no",
     conda:  "config/conda-biopython-env.yml"
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reads}' '{output.reads}' {wildcards.read_downsampling_factor}"
 
