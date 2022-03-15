@@ -2204,7 +2204,6 @@ rule download_reference_genome:
             retain_cm = "no",
     shell: "ln -sr -T '{input.file}' '{output.file}'"
 
-localrules: download_genome_reads
 rule download_genome_reads:
     input:  files = lambda wildcards: [os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
     output: file = GENOME_READS,
