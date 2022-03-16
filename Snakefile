@@ -1156,7 +1156,7 @@ rule mdbg_D_melanogaster:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
-        ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee -a '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1178,7 +1178,7 @@ rule mdbg_HG002:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 21 -l 14 --density 0.003 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
-        ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee -a '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
         """
 
@@ -1937,12 +1937,10 @@ rule evaluate_resources:
                 values = {}
                 for line in input_file:
                     if "Elapsed (wall clock) time (h:mm:ss or m:ss):" in line:
-                        assert "time" not in values
                         line = line.replace("Elapsed (wall clock) time (h:mm:ss or m:ss):", "").strip()
-                        values["time"] = decode_time(line)
+                        values["time"] = decode_time(line) + values.setdefault("time", 0)
                     elif "Maximum resident set size" in line:
-                        assert "mem" not in values
-                        values["mem"] = int(line.split(':')[1].strip())
+                        values["mem"] = max(int(line.split(':')[1].strip()), values.setdefault("mem", 0))
 
                 assert "time" in values, f"No time found in {input_file_name}"
                 assert "mem" in values, f"No mem found in {input_file_name}"
