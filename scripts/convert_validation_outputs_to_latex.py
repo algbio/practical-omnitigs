@@ -254,10 +254,14 @@ table_footer = """\\hline
 	\\end{table}
 	"""
 
-def write_table(output_file, caption, column_count, rows):
+def write_table(output_file, caption, column_count, rows, midrules = []):
+	midrules = set(midrules)
 	output_file.write(table_header(caption, column_count))
-	for row in rows:
-		output_file.write(row + '\n')
+	for index, row in enumerate(rows):
+		output_file.write(row)
+		if index in midrules:
+			output_file.write("\\hline")
+		output_file.write('\n')
 	output_file.write(table_footer)
 
 def write_image(output_file, caption, file, natwidth, natheight):
@@ -323,7 +327,7 @@ write_table(output_file, "ContigValidator", len(experiments), contig_validator_t
 write_table(output_file, "QUAST: \\# of contigs", len(experiments), quast_table[0:7])
 write_table(output_file, "QUAST: total length of contigs", len(experiments), [quast_table[0]] + quast_table[7:13])
 write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[13:28])
-write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[28:])
+write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[28:], midrules = [12, 21])
 write_table(output_file, "QUAST: misassembly statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), quast_misassemblies_table)
 
 write_table(output_file, "Resource usage", len(experiments), resources_table)
