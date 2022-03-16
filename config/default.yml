@@ -411,6 +411,11 @@ column_templates:
         canu:
 
   hifi_hodeco_simple_overview_columns_ecoli: &hifi_hodeco_simple_overview_columns_ecoli
+    - shortname: "w2 noho"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "none"
     - shortname: "w2"
       select_assembler: 
         wtdbg2:
@@ -505,18 +510,6 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    - shortname: "hifiasm YVr"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "trivial_omnitigs_r_utg"
-    - shortname: "hifiasm YVrbp"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "trivial_omnitigs_bubpop.r_utg"
-    - shortname: "hifiasm YVp"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "trivial_omnitigs_p_utg"
     - shortname: "mdbg"
       select_assembler:
         mdbg:
@@ -529,6 +522,11 @@ column_templates:
         canu:
 
   hifi_hodeco_simple_overview_columns: &hifi_hodeco_simple_overview_columns
+    - shortname: "w2 noho"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "none"
     - shortname: "w2"
       select_assembler: 
         wtdbg2:
@@ -567,18 +565,6 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    - shortname: "hifiasm YVr"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "trivial_omnitigs_r_utg"
-    - shortname: "hifiasm YVrbp"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "trivial_omnitigs_bubpop.r_utg"
-    - shortname: "hifiasm YVp"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "trivial_omnitigs_p_utg"
     - shortname: "mdbg"
       select_assembler:
         mdbg:
@@ -648,6 +634,11 @@ column_templates:
         canu:
 
   hifi_hodeco_simple_overview_columns_hg002: &hifi_hodeco_simple_overview_columns_hg002
+    - shortname: "w2 noho"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "none"
     - shortname: "w2"
       select_assembler: 
         wtdbg2:
