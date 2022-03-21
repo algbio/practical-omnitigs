@@ -874,7 +874,7 @@ genomes:
   "HG002_HiFi_15kb_37x":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.29_GRCh38.p14/GCA_000001405.29_GRCh38.p14_genomic.fna.gz"
     #genome_length: 3100000000
-    assembly_time_factor: 4
+    assembly_time_factor: 6
     assembly_mem_factor: 4
     format: "sra"
     genome_arguments:
