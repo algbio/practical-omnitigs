@@ -768,12 +768,12 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_hg002
 
-  "HG002_HiFi_15kb_37x_hoco":
-    argument_matrix:
-      genome: "HG002_HiFi_15kb_37x"
-      homopolymer_compression: "yes"
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
-    columns: *hifi_overview_columns_hg002
+  #"HG002_HiFi_15kb_37x_hoco":
+  #  argument_matrix:
+  #    genome: "HG002_HiFi_15kb_37x"
+  #    homopolymer_compression: "yes"
+  #    quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+  #  columns: *hifi_overview_columns_hg002
 
   "HG002_HiFi_15kb_37x_hodeco_simple":
     argument_matrix:
