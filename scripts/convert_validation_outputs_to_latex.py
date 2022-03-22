@@ -264,6 +264,12 @@ def format_row_numbers(row):
 		if column.isdigit():
 			column = int(column)
 			column = f"{column:,}"
+		else:
+			try:
+				column = float(column)
+				column = f"{column:,.2f}"
+			except ValueError:
+				pass
 		result.append(column)
 
 	return " & ".join(result) + "\\\\"
