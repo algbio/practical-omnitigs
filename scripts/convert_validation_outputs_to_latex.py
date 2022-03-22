@@ -254,10 +254,24 @@ table_footer = """\\hline
 	\\end{table}
 	"""
 
+def format_row_numbers(row):
+	row = row.strip()
+	row = row.strip('\\')
+	result = []
+
+	for column in row.split('&'):
+		column = column.strip()
+		if column.isdigit():
+			column = f"{column:,}"
+		result.append(column)
+
+	return " & ".join(result) + "\\\\"
+
 def write_table(output_file, caption, column_count, rows, midrules = []):
 	midrules = set(midrules)
 	output_file.write(table_header(caption, column_count))
 	for index, row in enumerate(rows):
+		row = format_row_numbers(row)
 		output_file.write(row)
 		if index in midrules:
 			output_file.write("\\hline")
