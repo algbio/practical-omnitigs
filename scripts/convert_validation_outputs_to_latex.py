@@ -256,12 +256,13 @@ table_footer = """\\hline
 
 def format_row_numbers(row):
 	row = row.strip()
-	row = row.strip('\\')
+	row = row.rstrip('\\')
 	result = []
 
 	for column in row.split('&'):
 		column = column.strip()
 		if column.isdigit():
+			column = int(column)
 			column = f"{column:,}"
 		result.append(column)
 
