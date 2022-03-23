@@ -684,12 +684,12 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns
 
-  "D.melanogaster_HiFi_hoco":
-    argument_matrix:
-      genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      homopolymer_compression: "yes"
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
-    columns: *hifi_overview_columns
+  #"D.melanogaster_HiFi_hoco":
+  #  argument_matrix:
+  #    genome: "D.melanogaster_A4xISO1_HiFi24kb"
+  #    homopolymer_compression: "yes"
+  #    quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+  #  columns: *hifi_overview_columns
 
   "D.melanogaster_HiFi_hodeco_simple":
     argument_matrix:
@@ -704,13 +704,13 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_ecoli
 
-  "E.coli_HiFi_hoco":
-    argument_matrix:
-      genome: "E.coli_hifi"
-      read_downsampling_factor: 0.01
-      homopolymer_compression: "yes"
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
-    columns: *hifi_overview_columns_ecoli
+  #"E.coli_HiFi_hoco":
+  #  argument_matrix:
+  #    genome: "E.coli_hifi"
+  #    read_downsampling_factor: 0.01
+  #    homopolymer_compression: "yes"
+  #    quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+  #  columns: *hifi_overview_columns_ecoli
 
   "E.coli_HiFi_hodeco_simple":
     argument_matrix:
@@ -725,12 +725,12 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_hg002
 
-  "HG002_HiFi_20kb_16x_hoco":
-    argument_matrix:
-      genome: "HG002_HiFi_20kb_16x"
-      homopolymer_compression: "yes"
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
-    columns: *hifi_overview_columns_hg002
+  #"HG002_HiFi_20kb_16x_hoco":
+  #  argument_matrix:
+  #    genome: "HG002_HiFi_20kb_16x"
+  #    homopolymer_compression: "yes"
+  #    quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+  #  columns: *hifi_overview_columns_hg002
 
   "HG002_HiFi_20kb_16x_hodeco_simple":
     argument_matrix:
@@ -763,12 +763,12 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_hg002
 
-  "HG002_HiFi_13.5kb_29x_hoco":
-    argument_matrix:
-      genome: "HG002_HiFi_13.5kb_29x"
-      homopolymer_compression: "yes"
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
-    columns: *hifi_overview_columns_hg002
+  #"HG002_HiFi_13.5kb_29x_hoco":
+  #  argument_matrix:
+  #    genome: "HG002_HiFi_13.5kb_29x"
+  #    homopolymer_compression: "yes"
+  #    quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
+  #  columns: *hifi_overview_columns_hg002
 
   "HG002_HiFi_13.5kb_29x_hodeco_simple":
     argument_matrix:
