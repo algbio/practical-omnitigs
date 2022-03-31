@@ -1013,10 +1013,10 @@ rule wtdbg2_transform_ctg_lay_hodeco_simple:
             hodeco_consensus = "simple",
             homopolymer_compression = "none",
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 60_000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 18_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 60_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 18_000),
     shell:  "${{CONDA_PREFIX}}/bin/time -v {input.binary} --input {input.contigs} --output {output.contigs} --normal-reads {input.normal_reads} --compute-threads {threads} 2>&1 | tee '{log.log}'"
 
 
