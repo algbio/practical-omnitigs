@@ -857,7 +857,7 @@ rule run_gfa_trivial_omnitigs:
 
 rule wtdbg2:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -888,7 +888,7 @@ rule wtdbg2:
 
 rule wtdbg2_skip_fragment_assembly:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -923,7 +923,7 @@ rule wtdbg2_with_injected_contigs:
             cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), tig_injection = "none", fragment_correction_steps = "all"),
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), tig_injection = "none", fragment_correction_steps = "all"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), tig_injection = "none", fragment_correction_steps = "all"),
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
@@ -950,7 +950,7 @@ rule wtdbg2_with_injected_fragment_contigs:
             cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), frg_injection = "none", frg_injection_stage = "none"),
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), frg_injection = "none", frg_injection_stage = "none"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), frg_injection = "none", frg_injection_stage = "none"),
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
@@ -1034,7 +1034,7 @@ rule link_wtdbg2_contigs:
 
 rule flye:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
             script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
@@ -1210,7 +1210,7 @@ rule lja:
 
 rule hicanu:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
     output: contigs = CANU_ASSEMBLED_CONTIGS,
     params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
             original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
