@@ -805,13 +805,18 @@ genomes:
     reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11317948/SRR11317948.1"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
-    #genome_length: 5594605
 
+  # Reads from E.coli K-12 MG1655
+  # Reference from E.coli K-12 MG1655
   "E.coli_hifi":
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11434954/SRR11434954.1"]
+    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10971019/SRR10971019.1"]
     format: "sra"
-    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
-    #genome_length: 5594605
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz"
+    genome_arguments:
+      fastk_k: 40
+      himodel_kmer_threshold: 10
+      himodel_min_valid: 60
+      himodel_max_valid: 500
 
   "C.elegans":
     reads: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]

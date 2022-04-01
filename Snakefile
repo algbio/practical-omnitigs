@@ -129,6 +129,7 @@ print("Finished config preprocessing", flush = True)
 EXTERNAL_SOFTWARE_ROOTDIR = os.path.join(DATADIR, "external-software")
 DOWNLOAD_ROOTDIR = os.path.join(DATADIR, "downloads")
 GENOME_ROOTDIR = os.path.join(DATADIR, "genomes")
+SIMULATION_ROOTDIR = os.path.join(DATADIR, "simulation")
 ASSEMBLY_ROOTDIR = os.path.join(DATADIR, "assembly")
 EVALUATION_ROOTDIR = os.path.join(DATADIR, "evaluation")
 REPORT_ROOTDIR = os.path.join(DATADIR, "reports")
@@ -138,10 +139,10 @@ REPORT_ROOTDIR = os.path.join(DATADIR, "reports")
 GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
 GENOME_REFERENCE_ARGUMENT_STRING = "reference-n{filter_nw}-c{retain_cm}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
-GENOME_READS_ARGUMENT_STRING = "reads-s{read_source}-m{read_simulation_model_source}-r{read_downsampling_factor}-u{uniquify_ids}"
-GENOME_READS_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING)
 GENOME_REFERENCE = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
 GENOME_REFERENCE_LENGTH = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference_length.txt")
+GENOME_READS_ARGUMENT_STRING = "reads-s{read_source}-m{read_simulation_model_source}-r{read_downsampling_factor}-u{uniquify_ids}"
+GENOME_READS_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING)
 GENOME_READS_DIR = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR)
 GENOME_READS = os.path.join(GENOME_READS_DIR, "reads.fa")
 GENOME_SINGLE_LINE_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "single_line_reads.fa")
@@ -149,6 +150,21 @@ UNIQUIFY_IDS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "uniquify_i
 
 HOCO_READS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "hoco.log")
 HOCO_REFERENCE_LOG = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "hoco.log")
+
+# Simulations
+
+FASTK_ARGUMENT_STRING = "k{fastk_k}"
+FASTK_OUTPUT_DIR = os.path.join(SIMULATION_ROOTDIR, "fastk", GENOME_READS_SUBDIR, FASTK_ARGUMENT_STRING)
+FASTK_INPUT_READS = os.path.join(FASTK_OUTPUT_DIR, "reads.fa")
+FASTK_TABLE = os.path.join(FASTK_OUTPUT_DIR, "reads.ktab")
+FASTK_PROFILE = os.path.join(FASTK_OUTPUT_DIR, "reads.prof")
+FASTK_SYMMETRIC_TABLE = os.path.join(FASTK_OUTPUT_DIR, "symmetric_reads.ktab")
+
+HISIM_ARGUMENT_STRING = "a{himodel_kmer_threshold}-l{himodel_min_valid}-h{himodel_max_valid}"
+HIMODEL_OUTPUT_DIR = os.path.join(SIMULATION_ROOTDIR, "himodel", GENOME_READS_SUBDIR, FASTK_ARGUMENT_STRING, HISIM_ARGUMENT_STRING)
+HIMODEL_INPUT_SYMMETRIC_TABLE = os.path.join(HIMODEL_OUTPUT_DIR, "reads.ktab")
+HIMODEL_INPUT_PROFILE = os.path.join(HIMODEL_OUTPUT_DIR, "reads.prof")
+HIMODEL_MODEL = os.path.join(HIMODEL_OUTPUT_DIR, "reads.model")
 
 # Assemblies
 
@@ -279,6 +295,7 @@ HISIM_SIM_BINARY = os.path.join(HISIM_DIR, "HIsim")
 HISIM_FASTA_BINARY = os.path.join(HISIM_DIR, "HIfasta")
 FASTK_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "FASTK")
 FASTK_BINARY = os.path.join(FASTK_DIR, "FastK")
+FASTK_SYMMEX_BINARY = os.path.join(FASTK_DIR, "Symmex")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -1740,10 +1757,141 @@ rule homopolymer_compress_reference:
 ###### Read simulation ######
 #############################
 
+# Since fastk stores some outputs in the input dir, we need to link the input to the output dir.
+# Otherwise parallel cluster executions with the same input dir will lock-conflict on Lustre.
+localrules: link_fastk_reads
+rule link_fastk_reads:
+    input:  reads = GENOME_READS,
+    output: reads = FASTK_INPUT_READS,
+    shell: "ln -sr -T '{input.reads}' '{output.reads}'"
+
+rule fastk_build_table_and_prof:
+    input:  reads = FASTK_INPUT_READS,
+            binary = FASTK_BINARY,
+    output: table = FASTK_TABLE,
+            profile = FASTK_PROFILE,
+    log:    os.path.join(FASTK_OUTPUT_DIR, "build_table.log")
+    wildcard_constraints:
+        read_source = "real",
+        read_simulation_model_source = "none",
+        uniquify_ids = "no",
+        fastk_k = "(([4-9][0-9])|(1[0-1][0-9])|(12[0-8]))", # >= 40, <= 128
+    threads: MAX_THREADS,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+    shell:  """
+        '{input.binary}' -v -T{threads} -t1 -p -k{wildcards.fastk_k} '{input.reads}' 2>&1 | tee '{log}'
+        """
+
+rule symmex_table:
+    input:  table = FASTK_TABLE,
+            binary = FASTK_SYMMEX_BINARY,
+    output: table = FASTK_SYMMETRIC_TABLE,
+    params: tmp_dir = lambda wildcards, output: os.path.dirname(output.table)
+    log:    os.path.join(FASTK_OUTPUT_DIR, "symmex_table.log")
+    wildcard_constraints:
+        read_source = "real",
+        read_simulation_model_source = "none",
+        uniquify_ids = "no",
+        fastk_k = "(([4-9][0-9])|(1[0-1][0-9])|(12[0-8]))", # >= 40, <= 128
+    threads: MAX_THREADS,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+    shell:  """
+        '{input.binary}' -v -T{threads} -P'{params.tmp_dir}' '{input.table}' '{output.table}' 2>&1 | tee '{log}'
+        """
+
+# Since himodel stores some outputs in the input dir, we need to link the input to the output dir.
+# Otherwise parallel cluster executions with the same input dir will lock-conflict on Lustre.
+localrules: link_himodel_symmetric_table
+rule link_himodel_symmetric_table:
+    input:  table = FASTK_SYMMETRIC_TABLE,
+    output: table = HIMODEL_INPUT_SYMMETRIC_TABLE,
+    params: input_filename = lambda wildcards, input: os.path.basename(input.table),
+            input_dirname = lambda wildcards, input: os.path.dirname(input.table),
+            output_filename = lambda wildcards, output: os.path.basename(output.table),
+            output_dirname = lambda wildcards, output: os.path.dirname(output.table),
+    shell:  """
+        ln -sr -T '{input.table}' '{output.table}'
+        
+        for INPUT_FILE_NAME in $(ls '{params.input_dirname}/.{params.input_filename}.'* | xargs -n 1 basename); do
+            INPUT_FILE='{params.input_dirname}'/"${{INPUT_FILE_NAME}}"
+            OUTPUT_FILE_NAME=${{INPUT_FILE_NAME/{params.input_filename}/{params.output_filename}}}
+            OUTPUT_FILE='{params.output_dirname}'/"${{OUTPUT_FILE_NAME}}"
+            ln -sr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
+        done
+        """
+
+# Since himodel stores some outputs in the input dir, we need to link the input to the output dir.
+# Otherwise parallel cluster executions with the same input dir will lock-conflict on Lustre.
+localrules: link_himodel_profile
+rule link_himodel_profile:
+    input:  profile = FASTK_PROFILE,
+    output: profile = HIMODEL_INPUT_PROFILE,
+    params: input_filename = lambda wildcards, input: os.path.basename(input.profile),
+            input_filename_pidx = lambda wildcards, input: os.path.basename(input.profile)[:-4] + "pidx",
+            input_dirname = lambda wildcards, input: os.path.dirname(input.profile),
+            output_filename = lambda wildcards, output: os.path.basename(output.profile),
+            output_filename_pidx = lambda wildcards, output: os.path.basename(output.profile)[:-4] + "pidx",
+            output_dirname = lambda wildcards, output: os.path.dirname(output.profile),
+    shell:  """
+        ln -sr -T '{input.profile}' '{output.profile}'
+        
+        for INPUT_FILE_NAME in $(ls '{params.input_dirname}/.{params.input_filename}.'* | xargs -n 1 basename); do
+            INPUT_FILE='{params.input_dirname}'/"${{INPUT_FILE_NAME}}"
+            OUTPUT_FILE_NAME=${{INPUT_FILE_NAME/{params.input_filename}/{params.output_filename}}}
+            OUTPUT_FILE='{params.output_dirname}'/"${{OUTPUT_FILE_NAME}}"
+            ln -sr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
+        done
+        for INPUT_FILE_NAME in $(ls '{params.input_dirname}/.{params.input_filename_pidx}.'* | xargs -n 1 basename); do
+            INPUT_FILE='{params.input_dirname}'/"${{INPUT_FILE_NAME}}"
+            OUTPUT_FILE_NAME=${{INPUT_FILE_NAME/{params.input_filename_pidx}/{params.output_filename_pidx}}}
+            OUTPUT_FILE='{params.output_dirname}'/"${{OUTPUT_FILE_NAME}}"
+            ln -sr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
+        done
+        """
+
+def hisim_model_input_prefix(wildcards, input):
+    try:
+        result = input.symmetric_table[:-5]
+        if result != input.profile[:-5]:
+            raise Exception(f"mismatching symmetric table and profile files (need to match except for the extension): '{input.symmetric_table}' and '{input.profile}'")
+        return os.path.basename(result)
+    except:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 rule hisim_model:
-    input:  binary = HISIM_MODEL_BINARY,
-    #output: 
-    log:    os.path.join(GENOME_READS_DIR, "hisim_model.log"),
+    input:  symmetric_table = HIMODEL_INPUT_SYMMETRIC_TABLE,
+            profile = HIMODEL_INPUT_PROFILE,
+            binary = HISIM_MODEL_BINARY,
+    output: model = HIMODEL_MODEL,
+    log:    os.path.join(HIMODEL_OUTPUT_DIR, "himodel.log")
+    params: working_directory = HIMODEL_OUTPUT_DIR,
+            input_binary = lambda wildcards, input: os.path.abspath(input.binary),
+            input_prefix = hisim_model_input_prefix,
+            log = "himodel.log",
+    wildcard_constraints:
+        read_source = "real",
+        read_simulation_model_source = "none",
+        uniquify_ids = "no",
+        fastk_k = "(([4-9][0-9])|(1[0-1][0-9])|(12[0-8]))", # >= 40, <= 128
+        himodel_kmer_threshold = "[1-9][0-9]*",
+        himodel_min_valid = "[1-9][0-9]*",
+        himodel_max_valid = "[1-9][0-9]*",
+    threads: MAX_THREADS,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+    shell:  """
+        cd '{params.working_directory}'
+        '{params.input_binary}' -v -T{threads} -g{wildcards.himodel_min_valid}:{wildcards.himodel_max_valid} -e{wildcards.himodel_kmer_threshold} '{params.input_prefix}' 2>&1 | tee '{params.log}'
+        """
 
 ###############################
 ###### Read downsampling ######
@@ -2686,7 +2834,7 @@ rule download_fastk:
 
 rule build_fastk:
     input:  makefile = os.path.join(FASTK_DIR, "Makefile"),
-    output: binary = FASTK_BINARY,
+    output: binaries = [FASTK_BINARY, FASTK_SYMMEX_BINARY],
     log:    os.path.join(FASTK_DIR, "build.log"),
     params: fastk_dir = FASTK_DIR,
     conda:  "config/conda-install-fastk-env.yml"
