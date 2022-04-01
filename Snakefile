@@ -29,7 +29,9 @@ if "datadir" in config:
 print("DATADIR: {}".format(DATADIR))
 
 MAX_THREADS = 56
-print("Setting MAX_THREADS to " + str(MAX_THREADS), flush = True)
+print(f"Setting MAX_THREADS to {MAX_THREADS}", flush = True)
+BUILD_THREADS = 7
+print(f"Setting BUILD_THREADS to {BUILD_THREADS}", flush = True)
 
 # Preprocess experiments configuration
 genomes = config["genomes"]
@@ -73,6 +75,8 @@ for report_name, report_definition in reports.items():
         genome_arguments.update(arguments)
         arguments = genome_arguments # update method works in-place
 
+        arguments.setdefault("read_source", "real")
+        arguments.setdefault("read_simulation_model_source", "none")
         arguments.setdefault("read_downsampling_factor", "none")
         arguments.setdefault("homopolymer_compression", "none")
         arguments.setdefault("uniquify_ids", "no")
@@ -134,11 +138,12 @@ REPORT_ROOTDIR = os.path.join(DATADIR, "reports")
 GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
 GENOME_REFERENCE_ARGUMENT_STRING = "reference-n{filter_nw}-c{retain_cm}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
-GENOME_READS_ARGUMENT_STRING = "reads-r{read_downsampling_factor}-u{uniquify_ids}"
+GENOME_READS_ARGUMENT_STRING = "reads-s{read_source}-m{read_simulation_model_source}-r{read_downsampling_factor}-u{uniquify_ids}"
 GENOME_READS_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING)
 GENOME_REFERENCE = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
 GENOME_REFERENCE_LENGTH = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference_length.txt")
-GENOME_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "reads.fa")
+GENOME_READS_DIR = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR)
+GENOME_READS = os.path.join(GENOME_READS_DIR, "reads.fa")
 GENOME_SINGLE_LINE_READS = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "single_line_reads.fa")
 UNIQUIFY_IDS_LOG = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR, "uniquify_ids.log")
 
@@ -245,8 +250,9 @@ IS_RUST_TESTED_MARKER = os.path.join(RUST_DIR, "is_rust_tested.marker")
 IS_RUST_FETCHED_MARKER = os.path.join(RUST_DIR, "is_rust_fetched.marker")
 RUST_BINARY = os.path.join(RUST_DIR, "release", "cli")
 QUAST_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "quast", "quast.py")
-WTDBG2_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2", "wtdbg2")
-WTDBG2_CONSENSUS_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2", "wtpoa-cns")
+WTDBG2_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2")
+WTDBG2_BINARY = os.path.join(WTDBG2_DIR, "wtdbg2")
+WTDBG2_CONSENSUS_BINARY = os.path.join(WTDBG2_DIR, "wtpoa-cns")
 FLYE_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "Flye")
 FLYE_BINARY = os.path.join(FLYE_DIR, "bin", "flye")
 SIM_IT_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "sim-it", "sim-it.pl")
@@ -267,6 +273,12 @@ HOMOPOLYMER_COMPRESS_RS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "homopolym
 HOMOPOLYMER_COMPRESS_RS_BINARY = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "target", "release", "homopolymer-compress")
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2-homopolymer-decompression")
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "target", "release", "wtdbg2-homopolymer-decompression")
+HISIM_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "HI.SIM")
+HISIM_MODEL_BINARY = os.path.join(HISIM_DIR, "HImodel")
+HISIM_SIM_BINARY = os.path.join(HISIM_DIR, "HIsim")
+HISIM_FASTA_BINARY = os.path.join(HISIM_DIR, "HIfasta")
+FASTK_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "FASTK")
+FASTK_BINARY = os.path.join(FASTK_DIR, "FastK")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -1724,6 +1736,15 @@ rule homopolymer_compress_reference:
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}' 2>&1 | tee '{log}'"
 
+#############################
+###### Read simulation ######
+#############################
+
+rule hisim_model:
+    input:  binary = HISIM_MODEL_BINARY,
+    #output: 
+    log:    os.path.join(GENOME_READS_DIR, "hisim_model.log"),
+
 ###############################
 ###### Read downsampling ######
 ###############################
@@ -2200,6 +2221,8 @@ rule download_genome_reads:
     input:  files = lambda wildcards: [os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
     output: file = GENOME_READS,
     wildcard_constraints:
+            read_source = "real",
+            read_simulation_model_source = "none",
             read_downsampling_factor = "none",
             homopolymer_compression = "none",
             uniquify_ids = "no",
@@ -2238,9 +2261,9 @@ rule test_rust:
     log:    log = os.path.join(RUST_DIR, "test.log"),
     params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources: mem_mb = 4000,
-               cpus = MAX_THREADS,
+               cpus = BUILD_THREADS,
                time_min = 30,
     shell: "cargo test -j {threads} --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' --offline 2>&1 | tee '{log.log}'"
 
@@ -2250,9 +2273,9 @@ rule build_rust_release:
     log:    log = os.path.join(RUST_DIR, "build_release.log"),
     params: rust_dir = RUST_DIR,
     conda: "config/conda-rust-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources: mem_mb = 4000,
-               cpus = MAX_THREADS,
+               cpus = BUILD_THREADS,
                time_min = 30,
     shell: "cargo build -j {threads} --release --target-dir '{params.rust_dir}' --manifest-path 'implementation/Cargo.toml' --offline 2>&1 | tee '{log.log}'"
 
@@ -2320,7 +2343,7 @@ rule install_ratatosk:
     output: binary = RATATOSK_BINARY,
     params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda: "config/conda-install-ratatosk-env.yml"
-    threads: MAX_THREADS
+    threads: 1
     shell: """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
@@ -2336,16 +2359,12 @@ rule install_ratatosk:
         make -j {threads}
         """
 
-localrules: install_wtdbg2
-rule install_wtdbg2:
-    output: kbm2 = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/kbm2"),
-            pgzf = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/pgzf"),
-            wtdbg2 = WTDBG2_BINARY,
-            wtdbg_cns = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/wtdbg-cns"),
-            wtpoa_cns = WTDBG2_CONSENSUS_BINARY,
+localrules: download_wtdbg2
+rule download_wtdbg2:
+    output: makefile = os.path.join(WTDBG2_DIR, "Makefile"),
     params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
     conda: "config/conda-download-env.yml"
-    threads: MAX_THREADS
+    threads: 1
     shell: """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
@@ -2353,7 +2372,25 @@ rule install_wtdbg2:
         git clone https://github.com/sebschmi/wtdbg2.git
         cd wtdbg2
         git checkout c8403f562f3b999bb514ba3e9020007bcf01391c
-        make -j {threads}
+
+        sed -i 's:CFLAGS=:CFLAGS=-I${{CONDA_PREFIX}}/include -L${{CONDA_PREFIX}}/lib :g' Makefile
+        """
+
+rule build_wtdbg2:
+    input:  makefile = os.path.join(WTDBG2_DIR, "Makefile"),
+    output: kbm2 = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/kbm2"),
+            pgzf = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/pgzf"),
+            wtdbg2 = WTDBG2_BINARY,
+            wtdbg_cns = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2/wtdbg-cns"),
+            wtpoa_cns = WTDBG2_CONSENSUS_BINARY,
+    params: wtdbg2_dir = WTDBG2_DIR,
+    conda: "config/conda-install-wtdbg2-env.yml"
+    threads: BUILD_THREADS,
+    resources:
+        cpus = BUILD_THREADS,
+    shell: """
+        cd '{params.wtdbg2_dir}'
+        make CC=x86_64-conda-linux-gnu-gcc -j {threads}
         """
 
 rule install_sim_it:
@@ -2396,9 +2433,9 @@ rule build_flye:
     params: flye_directory = FLYE_DIR,
     output: script = FLYE_BINARY,
     conda:  "config/conda-install-flye-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources:
-        cpus = MAX_THREADS,
+        cpus = BUILD_THREADS,
     shell:  """
         cd '{params.flye_directory}'
 
@@ -2447,9 +2484,9 @@ rule build_mdbg:
             rust_mdbg = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "rust-mdbg")),
             to_basespace = os.path.abspath(os.path.join(MDBG_DIR, "target", "release", "to_basespace")),
     conda:  "config/conda-install-mdbg-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources:
-        cpus = MAX_THREADS,
+        cpus = BUILD_THREADS,
     shell:  """
         cd '{params.mdbg_directory}'
         cargo --offline build --release -j {threads} --target-dir '{params.mdbg_target_directory}'
@@ -2488,9 +2525,9 @@ rule build_lja:
     output: binary = LJA_BINARY,
     params: lja_directory = LJA_DIR,
     conda:  "config/conda-install-lja-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources:
-        cpus = MAX_THREADS,
+        cpus = BUILD_THREADS,
     shell:  """
         cd '{params.lja_directory}'
 
@@ -2521,9 +2558,9 @@ rule build_hifiasm:
     output: binary = HIFIASM_BINARY,
     params: hifiasm_directory = HIFIASM_DIR,
     conda:  "config/conda-install-hifiasm-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources:
-        cpus = MAX_THREADS,
+        cpus = BUILD_THREADS,
     shell:  """
         cd '{params.hifiasm_directory}'
 
@@ -2555,9 +2592,9 @@ rule build_homopolymer_compress_rs:
     log:    log = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "build.log"),
     params: homopolymer_compress_rs_dir = HOMOPOLYMER_COMPRESS_RS_DIR,
     conda:  "config/conda-rust-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources:
-        cpus = MAX_THREADS,
+        cpus = BUILD_THREADS,
     shell:  """
         cd '{params.homopolymer_compress_rs_dir}'
         cargo build --offline --release -j {threads}
@@ -2587,12 +2624,78 @@ rule build_wtdbg2_homopolymer_decompression:
     log:    log = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "build.log"),
     params: wtdbg2_homopolymer_decompression_dir = WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR,
     conda:  "config/conda-rust-env.yml"
-    threads: MAX_THREADS
+    threads: BUILD_THREADS
     resources:
-        cpus = MAX_THREADS,
+        cpus = BUILD_THREADS,
     shell:  """
         cd '{params.wtdbg2_homopolymer_decompression_dir}'
         cargo build --offline --release -j {threads}
+        """
+
+localrules: download_hisim
+rule download_hisim:
+    output: makefile = os.path.join(HISIM_DIR, "Makefile"),
+    log:    os.path.join(HISIM_DIR, "download.log"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
+    conda:  "config/conda-download-env.yml"
+    threads: 1
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        git clone https://github.com/thegenemyers/HI.SIM.git
+        cd HI.SIM
+        git checkout d05807c0c941b0978b0edebaace41e91eda33dd6
+
+        sed -i 's:CFLAGS = :CFLAGS = -I${{CONDA_PREFIX}}/include -L${{CONDA_PREFIX}}/lib :g' Makefile
+        """
+
+rule build_hisim:
+    input:  makefile = os.path.join(HISIM_DIR, "Makefile"),
+    output: binaries = [HISIM_MODEL_BINARY, HISIM_SIM_BINARY, HISIM_FASTA_BINARY],
+    log:    os.path.join(HISIM_DIR, "build.log"),
+    params: hisim_dir = HISIM_DIR,
+    conda:  "config/conda-install-hisim-env.yml"
+    threads: BUILD_THREADS,
+    resources:
+        cpus = BUILD_THREADS,
+    shell:  """
+        cd '{params.hisim_dir}'
+        make CC=x86_64-conda-linux-gnu-gcc -j {threads} all
+        """
+
+localrules: download_fastk
+rule download_fastk:
+    output: makefile = os.path.join(FASTK_DIR, "Makefile"),
+    log:    os.path.join(FASTK_DIR, "download.log"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
+    conda:  "config/conda-download-env.yml"
+    threads: 1
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        git clone https://github.com/thegenemyers/FASTK.git
+        cd FASTK
+        git checkout 4604bfcdfd9251d05b27fbd5aef38187e9a9c9ad
+
+        sed -i 's:CFLAGS = :CFLAGS = -I${{CONDA_PREFIX}}/include -L${{CONDA_PREFIX}}/lib :g' Makefile
+        sed -i 's:CFLAGS   = :CFLAGS = -I${{CONDA_PREFIX}}/include :g' HTSLIB/Makefile
+        sed -i 's:LDFLAGS  = :LDFLAGS = -L${{CONDA_PREFIX}}/lib :g' HTSLIB/Makefile
+        """
+
+rule build_fastk:
+    input:  makefile = os.path.join(FASTK_DIR, "Makefile"),
+    output: binary = FASTK_BINARY,
+    log:    os.path.join(FASTK_DIR, "build.log"),
+    params: fastk_dir = FASTK_DIR,
+    conda:  "config/conda-install-fastk-env.yml"
+    threads: BUILD_THREADS,
+    resources:
+        cpus = BUILD_THREADS,
+    shell:  """
+        cd '{params.fastk_dir}'
+        make CC=x86_64-conda-linux-gnu-gcc -j {threads} all
         """
 
 ###################################
@@ -2605,7 +2708,7 @@ rule compile_all:
 
 localrules: download_and_prepare
 rule download_and_prepare:
-    input:  reads = expand(GENOME_READS, genome = genomes.keys(), homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no"),
+    input:  reads = expand(GENOME_READS, genome = genomes.keys(), read_source = "real", read_simulation_model_source = "none", homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no"),
             # correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
             references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none", filter_nw = "no", retain_cm = "no"),
             quast = QUAST_BINARY,
@@ -2616,7 +2719,7 @@ rule download_and_prepare:
 HUMAN_GENOMES = ["HG002_HiFi_20kb_16x", "HG002_HiFi_15kb_37x", "HG002_HiFi_13.5kb_29x"]
 localrules: download_human_data
 rule download_human_data:
-    input:  reads = [GENOME_READS.format(genome = genome, homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no") for genome in HUMAN_GENOMES],
+    input:  reads = [GENOME_READS.format(genome = genome, read_source = "real", read_simulation_model_source = "none", homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no") for genome in HUMAN_GENOMES],
             references = [GENOME_REFERENCE.format(genome = genome, homopolymer_compression = "none", filter_nw = "no", retain_cm = "no") for genome in HUMAN_GENOMES],
 
 #rule prepare_wtdbg2:
