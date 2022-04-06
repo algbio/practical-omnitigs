@@ -2965,6 +2965,8 @@ rule build_fastk:
         cpus = BUILD_THREADS,
     shell:  """
         cd '{params.fastk_dir}'
+        make CC=x86_64-conda-linux-gnu-gcc -j {threads} deflate.lib
+        make CC=x86_64-conda-linux-gnu-gcc -j {threads} libhts.a
         make CC=x86_64-conda-linux-gnu-gcc -j {threads} all
         """
 
@@ -2991,8 +2993,6 @@ localrules: download_human_data
 rule download_human_data:
     input:  reads = [GENOME_READS.format(genome = genome, read_source = "real", read_simulation_model_source = "none", homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no") for genome in HUMAN_GENOMES],
             references = [GENOME_REFERENCE.format(genome = genome, homopolymer_compression = "none", filter_nw = "no", retain_cm = "no") for genome in HUMAN_GENOMES],
-
-#rule prepare_wtdbg2:
 
 ##############################
 ###### Download results ######
