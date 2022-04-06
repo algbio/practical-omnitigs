@@ -126,7 +126,7 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
-EXTERNAL_SOFTWARE_ROOTDIR = os.path.join(DATADIR, "external-software")
+EXTERNAL_SOFTWARE_ROOTDIR = os.path.join(DATADIR, "external-software/c{cluster}/")
 DOWNLOAD_ROOTDIR = os.path.join(DATADIR, "downloads")
 GENOME_ROOTDIR = os.path.join(DATADIR, "genomes")
 SIMULATION_ROOTDIR = os.path.join(DATADIR, "simulation")
@@ -837,17 +837,45 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 
     try:
         time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
         mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
+        cluster = compute_genome_cluster_from_wildcards(wildcards, base_time_min, base_mem_mb)
 
-        if mem >= 250000:
-            return "bigmem"
-        elif time <= 60 * 8:
-            return "short"
-        elif time <= 1440:
-            return "medium"
-        elif time <= 1440 * 7:
-            return "long"
+        if cluster == "ukko":
+            if mem >= 250_000:
+                return "bigmem"
+            elif time <= 60 * 8:
+                return "short,medium,bigmem"
+            elif time <= 1440 * 2:
+                return "medium,bigmem"
+            else:
+                sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+        elif cluster == "kale":
+            if mem >= 380_000:
+                return "bigmem"
+            elif time <= 1440:
+                return "short,medium,long,bigmem"
+            elif time <= 1440 * 7:
+                return "medium,long,bigmem"
+            elif time <= 1440 * 14:
+                return "long,bigmem"
+            else:
+                sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
         else:
-            sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+            sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def compute_genome_cluster_from_wildcards(wildcards, base_time_min, base_mem_mb = 0):
+    try:
+        time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
+        mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
+
+        if time <= 1440 * 2:
+            return "ukko"
+        elif time <= 1440 * 14:
+            return "kale"
+        else:
+            sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -863,6 +891,7 @@ rule run_contigbreaker:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                cpus = MAX_THREADS,
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 60_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 60_000),
     conda: "tools/contigbreaker/environment.yml"
     shell: "'{input.script}' --threads {threads} --input-contigs '{input.contigs}' --input-reads '{input.reads}' --output-contigs '{output.broken_contigs}'"
 
@@ -873,10 +902,11 @@ rule run_gfa_trivial_omnitigs:
     log:    log = os.path.join(ALGORITHM_PREFIX_FORMAT, "gfa_trivial_omnitigs", "trivial_omnitigs.log"),
     threads: 1
     resources:
-            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 10000),
+            mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 10_000),
             time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
             cpus = 1,
-            queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10000),
+            queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 10_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 10_000),
     shell: "'{input.binary}' compute-trivial-omnitigs --non-scc --file-format hifiasm --input '{input.contigs}' --output '{output.trivial_omnitigs}' 2>&1 | tee '{log.log}'"
 
 
@@ -910,6 +940,7 @@ rule wtdbg2:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
@@ -940,6 +971,7 @@ rule wtdbg2_skip_fragment_assembly:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' --skip-fragment-assembly {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
@@ -968,6 +1000,7 @@ rule wtdbg2_with_injected_contigs:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
@@ -995,6 +1028,7 @@ rule wtdbg2_with_injected_fragment_contigs:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
@@ -1013,6 +1047,7 @@ rule wtdbg2_extract:
                cpus = 1,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 360, 1_000),
     shell:  """
         cd '{params.working_directory}'
         ${{CONDA_PREFIX}}/bin/time -v gunzip -k wtdbg2.{wildcards.subfile}.gz 2>&1 | tee '{params.abslog}'
@@ -1028,6 +1063,7 @@ rule wtdbg2_consensus:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 8_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 360, 8_000),
     shell: "${{CONDA_PREFIX}}/bin/time -v {input.binary} -t {threads} -i '{input.contigs}' -fo '{output.consensus}' 2>&1 | tee '{log.log}'"
 
 rule wtdbg2_transform_ctg_lay_hodeco_simple:
@@ -1046,6 +1082,7 @@ rule wtdbg2_transform_ctg_lay_hodeco_simple:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 360),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 360, 18_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 360, 18_000),
     shell:  "${{CONDA_PREFIX}}/bin/time -v {input.binary} --input {input.contigs} --output {output.contigs} --normal-reads {input.normal_reads} --compute-threads {threads} 2>&1 | tee '{log.log}'"
 
 
@@ -1071,10 +1108,11 @@ rule flye:
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75000),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 75_000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
@@ -1107,10 +1145,11 @@ rule hifiasm:
             contig_algorithm = "builtin",
     conda:  "config/conda-hifiasm-env.yml"
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50000),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 50_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 50_000),
     shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --primary -t {threads} -o '{params.output_prefix}' '{input.reads}' 2>&1 | tee '{log}'"
 
 rule hifiasm_gfa_to_fa:
@@ -1162,6 +1201,7 @@ rule mdbg_multik:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
@@ -1183,6 +1223,7 @@ rule mdbg_D_melanogaster:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee -a '{log.log}'
@@ -1205,6 +1246,7 @@ rule mdbg_HG002:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 21 -l 14 --density 0.003 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee -a '{log.log}'
@@ -1227,6 +1269,7 @@ rule lja:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         mkdir -p '{params.output_dir}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
@@ -1250,6 +1293,7 @@ rule hicanu:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
@@ -1732,6 +1776,7 @@ rule homopolymer_compress_reads:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reads}' '{output.reads}' 2>&1 | tee '{log}'"
@@ -1749,6 +1794,7 @@ rule homopolymer_compress_reference:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}' 2>&1 | tee '{log}'"
@@ -1781,6 +1827,7 @@ rule fastk_build_table_and_prof:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
     shell:  """
         '{input.binary}' -v -T{threads} -t1 -p -k{wildcards.fastk_k} '{input.reads}' 2>&1 | tee '{log}'
         """
@@ -1801,6 +1848,7 @@ rule symmex_table:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
     shell:  """
         '{input.binary}' -v -T{threads} -P'{params.tmp_dir}' '{input.table}' '{output.table}' 2>&1 | tee '{log}'
         """
@@ -1876,8 +1924,10 @@ rule hisim_model:
             input_prefix = hisim_model_input_prefix,
             log = "himodel.log",
     wildcard_constraints:
+        homopolymer_compression = "none",
         read_source = "real",
         read_simulation_model_source = "none",
+        read_downsampling_factor = "none",
         uniquify_ids = "no",
         fastk_k = "(([4-9][0-9])|(1[0-1][0-9])|(12[0-8]))", # >= 40, <= 128
         himodel_kmer_threshold = "[1-9][0-9]*",
@@ -1888,9 +1938,72 @@ rule hisim_model:
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
     shell:  """
         cd '{params.working_directory}'
         '{params.input_binary}' -v -T{threads} -g{wildcards.himodel_min_valid}:{wildcards.himodel_max_valid} -e{wildcards.himodel_kmer_threshold} '{params.input_prefix}' 2>&1 | tee '{params.log}'
+        """
+
+def hisim_sim_params(wildcards):
+    try:
+        if wildcards.read_source == "hisim_test":
+            return "-c40.0"
+        else:
+            raise Exception(f"Unknown read source: {wildcards.read_source}")
+    except:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def hisim_sim_model(wildcards):
+    try:
+        read_simulation_model_source = wildcards.read_simulation_model_source
+        if read_simulation_model_source == "none":
+            read_simulation_model_source = wildcards.genome
+
+        genome = genomes[read_simulation_model_source]
+        genome_arguments = genome.setdefault("genome_arguments", {})
+        fastk_k = genome_arguments["fastk_k"]
+        himodel_kmer_threshold = genome_arguments["himodel_kmer_threshold"]
+        himodel_min_valid = genome_arguments["himodel_min_valid"]
+        himodel_max_valid = genome_arguments["himodel_max_valid"]
+
+        return safe_format(HIMODEL_MODEL, read_source = "real", read_simulation_model_source = "none", read_downsampling_factor = "none", uniquify_ids = "no", fastk_k = fastk_k, himodel_kmer_threshold = himodel_kmer_threshold, himodel_min_valid = himodel_min_valid, himodel_max_valid = himodel_max_valid)
+    except:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def hisim_ploidy_tree(wildcards):
+    try:
+        if wildcards.read_source == "hisim_test":
+            return "0.2,0.0"
+        else:
+            raise Exception(f"Unknown read source: {wildcards.read_source}")
+    except:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+rule hisim_sim:
+    input:  reference = safe_format(GENOME_REFERENCE, filter_nw = "no", retain_cm = "no"),
+            model = hisim_sim_model,
+            binary = HISIM_SIM_BINARY,
+    output: reads = GENOME_READS,
+    params: sim_params = hisim_sim_params,
+            output_prefix = lambda wildcards, output: os.path.join(os.path.dirname(output.reads), os.path.basename(output.reads).replace(".fa", "")),
+            ploidy_tree = hisim_ploidy_tree,
+    log:    os.path.join(GENOME_READS_DIR, "hisim.log"),
+    wildcard_constraints:
+        read_source = "hisim_.*",
+        read_downsampling_factor = "none",
+        uniquify_ids = "no",
+    threads: 1,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
+    shell:  """
+        '{input.binary}' -v '{input.reference}' '{input.model}' -o'{params.output_prefix}' {params.sim_params} -fh -r3541529 -U 2>&1 | tee '{log}'
+        ln -sr -T '{params.output_prefix}.fasta' '{output.reads}'
         """
 
 ###############################
@@ -2019,6 +2132,7 @@ rule run_quast:
                cpus = 14,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 120, 50_000),
     shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
 
 ##################################
