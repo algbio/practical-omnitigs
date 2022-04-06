@@ -126,7 +126,7 @@ print("Finished config preprocessing", flush = True)
 ###### Directories ######
 #########################
 
-EXTERNAL_SOFTWARE_ROOTDIR = os.path.join(DATADIR, "external-software/c{cluster}/")
+EXTERNAL_SOFTWARE_ROOTDIR = os.path.join(DATADIR, "external-software")
 DOWNLOAD_ROOTDIR = os.path.join(DATADIR, "downloads")
 GENOME_ROOTDIR = os.path.join(DATADIR, "genomes")
 SIMULATION_ROOTDIR = os.path.join(DATADIR, "simulation")
