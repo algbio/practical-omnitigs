@@ -851,8 +851,12 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 
                 return "short,medium,bigmem,aurinko"
             elif time <= 1440 * 2:
                 return "medium,bigmem,aurinko"
+            elif time <= 1440 * 3:
+                return "bigmem,aurinko"
             else:
-                sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+                return "aurinko" # aurinko can handle anything
+            #else:
+            #    sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
         elif cluster == "kale":
             raise Exception("kale disabled")
 
