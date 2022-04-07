@@ -87,6 +87,9 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("retain_cm", "no")
         arguments.setdefault("filter_plasmids", "no")
 
+        if arguments["read_source"].startswith("hisim_"):
+            arguments["uniquify_ids"] = "yes"
+
         columns = []
         for column_definition in report_definition["columns"]:
             column_arguments = Arguments.from_dict(column_definition)
