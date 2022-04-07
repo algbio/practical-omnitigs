@@ -2559,7 +2559,13 @@ rule download_genome_reads:
             homopolymer_compression = "none",
             uniquify_ids = "no",
     params: input_files = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
-    shell: "cat {params.input_files} > '{output.file}'"
+    threads: 1,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 100),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 100),
+    shell:  "cat {params.input_files} > '{output.file}'"
 
 rule uniquify_ids:
     input:  reads = safe_format(GENOME_READS, uniquify_ids = "no"),
