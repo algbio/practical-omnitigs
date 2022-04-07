@@ -1002,6 +1002,7 @@ rule wtdbg2_with_injected_contigs:
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), tig_injection = "none", fragment_correction_steps = "all"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), tig_injection = "none", fragment_correction_steps = "all"),
             reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            edge_cov = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.edge-cov"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
@@ -1020,7 +1021,8 @@ rule wtdbg2_with_injected_contigs:
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
+        read -r EDGE_COV < '{input.edge_cov}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -e $EDGE_COV -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-unitigs '{input.contigs}' {params.skip_fragment_assembly} {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_with_injected_fragment_contigs:
@@ -1030,6 +1032,7 @@ rule wtdbg2_with_injected_fragment_contigs:
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), frg_injection = "none", frg_injection_stage = "none"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), frg_injection = "none", frg_injection_stage = "none"),
             reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            edge_cov = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.edge-cov"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
@@ -1048,7 +1051,8 @@ rule wtdbg2_with_injected_fragment_contigs:
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
+        read -r EDGE_COV < '{input.edge_cov}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -e $EDGE_COV -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_extract:
@@ -1110,6 +1114,13 @@ rule link_wtdbg2_contigs:
     wildcard_constraints:
             assembler = "wtdbg2",
     shell:  "ln -sr -T '{input.contigs}' '{output.contigs}'"
+
+rule wtdbg2_find_edge_cov:
+    input:  WTDBG2_LOG,
+    output: os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.edge-cov"),
+    shell:  """
+        grep 'Set --edge-cov to ' '{input}' | sed 's/.*Set --edge-cov to //g' > '{output}'
+        """
 
 ##################
 ###### Flye ######
@@ -2000,11 +2011,11 @@ def hisim_sim_model(wildcards):
 def hisim_sim_params(wildcards):
     try:
         if wildcards.read_source == "hisim_test":
-            return "-c40.0 -x10000"
+            return "-c40.0"
         elif wildcards.read_source == "hisim_human":
-            return "-x10000"
+            return ""
         elif wildcards.read_source == "hisim_human_haploid":
-            return "-x10000"
+            return ""
         else:
             raise Exception(f"Unknown read source: {wildcards.read_source}")
     except:
@@ -2692,7 +2703,7 @@ rule download_wtdbg2:
 
         git clone https://github.com/sebschmi/wtdbg2.git
         cd wtdbg2
-        git checkout c8403f562f3b999bb514ba3e9020007bcf01391c
+        git checkout 78c3077b713aaee48b6c0835105ce6c666f6e796
 
         sed -i 's:CFLAGS=:CFLAGS=-I${{CONDA_PREFIX}}/include -L${{CONDA_PREFIX}}/lib :g' Makefile
         """
