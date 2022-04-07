@@ -843,14 +843,19 @@ def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 
 
         if cluster == "ukko":
             if mem >= 250_000:
-                return "bigmem"
+                if time <= 1440 * 3:
+                    return "bigmem,aurinko"
+                else:
+                    return "aurinko"
             elif time <= 60 * 8:
-                return "short,medium,bigmem"
+                return "short,medium,bigmem,aurinko"
             elif time <= 1440 * 2:
-                return "medium,bigmem"
+                return "medium,bigmem,aurinko"
             else:
                 sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
         elif cluster == "kale":
+            raise Exception("kale disabled")
+
             if mem >= 380_000:
                 return "bigmem"
             elif time <= 1440:
@@ -872,12 +877,14 @@ def compute_genome_cluster_from_wildcards(wildcards, base_time_min, base_mem_mb 
         time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
         mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
 
-        if time <= 1440 * 2:
-            return "ukko"
-        elif time <= 1440 * 14:
-            return "kale"
-        else:
-            sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+        #if time <= 1440 * 2:
+        #    return "ukko"
+        #elif time <= 1440 * 14:
+        #    return "kale"
+        #else:
+        #    sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+
+        return "ukko" # run everything on ukko for now, using aurinko for long jobs
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
