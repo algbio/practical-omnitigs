@@ -1833,6 +1833,7 @@ rule fastk_build_table_and_prof:
             binary = FASTK_BINARY,
     output: table = FASTK_TABLE,
             profile = FASTK_PROFILE,
+    params: tmp_dir = lambda wildcards, output: os.path.dirname(output.table)
     log:    os.path.join(FASTK_OUTPUT_DIR, "build_table.log")
     wildcard_constraints:
         read_source = "real",
@@ -1846,7 +1847,7 @@ rule fastk_build_table_and_prof:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
     shell:  """
-        '{input.binary}' -v -T{threads} -t1 -p -k{wildcards.fastk_k} '{input.reads}' 2>&1 | tee '{log}'
+        '{input.binary}' -v -T{threads} -P'{params.tmp_dir}' -t1 -p -k{wildcards.fastk_k} '{input.reads}' 2>&1 | tee '{log}'
         """
 
 rule symmex_table:
