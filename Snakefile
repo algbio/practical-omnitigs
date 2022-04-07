@@ -85,6 +85,7 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("quast_mode", "normal")
         arguments.setdefault("filter_nw", "no")
         arguments.setdefault("retain_cm", "no")
+        arguments.setdefault("filter_plasmids", "no")
 
         columns = []
         for column_definition in report_definition["columns"]:
@@ -137,7 +138,7 @@ REPORT_ROOTDIR = os.path.join(DATADIR, "reports")
 # Genomes
 
 GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
-GENOME_REFERENCE_ARGUMENT_STRING = "reference-n{filter_nw}-c{retain_cm}"
+GENOME_REFERENCE_ARGUMENT_STRING = "reference-n{filter_nw}-c{retain_cm}-p{filter_plasmids}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
 GENOME_REFERENCE = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
 GENOME_REFERENCE_LENGTH = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference_length.txt")
@@ -257,6 +258,7 @@ CREATE_COMBINED_EAXMAX_PLOT_SCRIPT = "scripts/create_combined_eaxmax_plot.py"
 DOWNSAMPLE_FASTA_READS_SCRIPT = "scripts/downsample_fasta_reads.py"
 FILTER_NW_FROM_REFERENCE_SCRIPT = "scripts/filter_nw_from_reference.py"
 RETAIN_CM_IN_REFERENCE_SCRIPT = "scripts/retain_cm_in_reference.py"
+FILTER_PLASMIDS_IN_REFERENCE_SCRIPT = "scripts/filter_plasmids_in_reference.py"
 COMPUTE_GENOME_REFERENCE_LENGTH_SCRIPT = "scripts/compute_genome_reference_length.py"
 WTDBG2_HODECO_SCRIPT = "scripts/wtdbg2_hodeco.py"
 
@@ -916,7 +918,7 @@ rule run_gfa_trivial_omnitigs:
 
 rule wtdbg2:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -948,7 +950,7 @@ rule wtdbg2:
 
 rule wtdbg2_skip_fragment_assembly:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -984,7 +986,7 @@ rule wtdbg2_with_injected_contigs:
             cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), tig_injection = "none", fragment_correction_steps = "all"),
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), tig_injection = "none", fragment_correction_steps = "all"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), tig_injection = "none", fragment_correction_steps = "all"),
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
@@ -1012,7 +1014,7 @@ rule wtdbg2_with_injected_fragment_contigs:
             cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), frg_injection = "none", frg_injection_stage = "none"),
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), frg_injection = "none", frg_injection_stage = "none"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), frg_injection = "none", frg_injection_stage = "none"),
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
@@ -1100,7 +1102,7 @@ rule link_wtdbg2_contigs:
 
 rule flye:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
             script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
@@ -1282,7 +1284,7 @@ rule lja:
 
 rule hicanu:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no"),
+            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
     output: contigs = CANU_ASSEMBLED_CONTIGS,
     params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
             original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
@@ -1944,16 +1946,19 @@ rule hisim_model:
         '{params.input_binary}' -v -T{threads} -g{wildcards.himodel_min_valid}:{wildcards.himodel_max_valid} -e{wildcards.himodel_kmer_threshold} '{params.input_prefix}' 2>&1 | tee '{params.log}'
         """
 
-def hisim_sim_params(wildcards):
+def hisim_sim_genome_reference(wildcards):
     try:
-        if wildcards.read_source == "hisim_test":
-            return "-c40.0"
-        elif wildcards.read_source == "hisim_human":
-            return ""
-        elif wildcards.read_source == "hisim_human_haploid":
-            return ""
-        else:
-            raise Exception(f"Unknown read source: {wildcards.read_source}")
+        read_simulation_model_source = wildcards.read_simulation_model_source
+        if read_simulation_model_source == "none":
+            read_simulation_model_source = wildcards.genome
+
+        genome = genomes[read_simulation_model_source]
+        genome_arguments = genome.setdefault("genome_arguments", {})
+        
+        filter_nw = genome_arguments.setdefault("filter_nw", "no")
+        retain_cm = genome_arguments.setdefault("retain_cm", "no")
+        filter_plasmids = genome_arguments.setdefault("filter_plasmids", "no")
+        return safe_format(GENOME_REFERENCE, genome = read_simulation_model_source, filter_nw = filter_nw, retain_cm = retain_cm, filter_plasmids = filter_plasmids)
     except:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -1971,7 +1976,21 @@ def hisim_sim_model(wildcards):
         himodel_min_valid = genome_arguments["himodel_min_valid"]
         himodel_max_valid = genome_arguments["himodel_max_valid"]
 
-        return safe_format(HIMODEL_MODEL, read_source = "real", read_simulation_model_source = "none", read_downsampling_factor = "none", uniquify_ids = "no", fastk_k = fastk_k, himodel_kmer_threshold = himodel_kmer_threshold, himodel_min_valid = himodel_min_valid, himodel_max_valid = himodel_max_valid)
+        return safe_format(HIMODEL_MODEL, genome = read_simulation_model_source, read_source = "real", read_simulation_model_source = "none", read_downsampling_factor = "none", uniquify_ids = "no", fastk_k = fastk_k, himodel_kmer_threshold = himodel_kmer_threshold, himodel_min_valid = himodel_min_valid, himodel_max_valid = himodel_max_valid)
+    except:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def hisim_sim_params(wildcards):
+    try:
+        if wildcards.read_source == "hisim_test":
+            return "-c40.0"
+        elif wildcards.read_source == "hisim_human":
+            return ""
+        elif wildcards.read_source == "hisim_human_haploid":
+            return ""
+        else:
+            raise Exception(f"Unknown read source: {wildcards.read_source}")
     except:
         traceback.print_exc()
         sys.exit("Catched exception")
@@ -1991,7 +2010,7 @@ def hisim_ploidy_tree(wildcards):
         sys.exit("Catched exception")
 
 rule hisim_sim:
-    input:  reference = safe_format(GENOME_REFERENCE, filter_nw = "no", retain_cm = "no"),
+    input:  reference = hisim_sim_genome_reference,
             model = hisim_sim_model,
             binary = HISIM_SIM_BINARY,
     output: reads = GENOME_READS,
@@ -2043,7 +2062,7 @@ rule convert_reads_to_single_lined_fasta:
 ############################################
 
 rule filter_nw:
-    input:  reference = safe_format(GENOME_REFERENCE, filter_nw = "no"),
+    input:  reference = safe_format(GENOME_REFERENCE, filter_nw = "no", filter_plasmids = "no"),
             script = FILTER_NW_FROM_REFERENCE_SCRIPT,
     output: reference = GENOME_REFERENCE,
     wildcard_constraints:
@@ -2058,13 +2077,29 @@ rule filter_nw:
 #################################################
 
 rule retain_cm:
-    input:  reference = safe_format(GENOME_REFERENCE, retain_cm = "no"),
+    input:  reference = safe_format(GENOME_REFERENCE, retain_cm = "no", filter_plasmids = "no"),
             script = RETAIN_CM_IN_REFERENCE_SCRIPT,
     output: reference = GENOME_REFERENCE,
     wildcard_constraints:
             homopolymer_compression = "none",
             retain_cm = "yes",
             filter_nw = "no",
+    conda:  "config/conda-biopython-env.yml"
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
+
+#################################################
+###### Filter plasmid entries in reference ######
+#################################################
+
+rule filter_plasmids:
+    input:  reference = safe_format(GENOME_REFERENCE, retain_cm = "no", filter_nw = "no"),
+            script = FILTER_PLASMIDS_IN_REFERENCE_SCRIPT,
+    output: reference = GENOME_REFERENCE,
+    wildcard_constraints:
+            homopolymer_compression = "none",
+            retain_cm = "no",
+            filter_nw = "no",
+            filter_plasmids = "yes",
     conda:  "config/conda-biopython-env.yml"
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reference}' '{output.reference}'"
 
@@ -2590,7 +2625,7 @@ rule install_quast:
 
     git clone https://github.com/sebschmi/quast
     cd quast
-    git checkout ea1ad3da48e5d66de3c1560ea97adb79359f0b5a
+    git checkout c7c90bdb1570f000541086150c6f3707bc2711ac
     """
 
 localrules: install_sdsl
@@ -2982,7 +3017,7 @@ localrules: download_and_prepare
 rule download_and_prepare:
     input:  reads = expand(GENOME_READS, genome = genomes.keys(), read_source = "real", read_simulation_model_source = "none", homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no"),
             # correction_reads = expand(CORRECTION_SHORT_READS_FORMAT, corrected_genome = corrected_genomes.keys()),
-            references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none", filter_nw = "no", retain_cm = "no"),
+            references = expand(GENOME_REFERENCE, genome = genomes.keys(), homopolymer_compression = "none", filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
             quast = QUAST_BINARY,
             wtdbg2 = WTDBG2_BINARY,
             rust = RUST_BINARY,
@@ -2992,7 +3027,7 @@ HUMAN_GENOMES = ["HG002_HiFi_20kb_16x", "HG002_HiFi_15kb_37x", "HG002_HiFi_13.5k
 localrules: download_human_data
 rule download_human_data:
     input:  reads = [GENOME_READS.format(genome = genome, read_source = "real", read_simulation_model_source = "none", homopolymer_compression = "none", read_downsampling_factor = "none", uniquify_ids = "no") for genome in HUMAN_GENOMES],
-            references = [GENOME_REFERENCE.format(genome = genome, homopolymer_compression = "none", filter_nw = "no", retain_cm = "no") for genome in HUMAN_GENOMES],
+            references = [GENOME_REFERENCE.format(genome = genome, homopolymer_compression = "none", filter_nw = "no", retain_cm = "no", filter_plasmids = "no") for genome in HUMAN_GENOMES],
 
 ##############################
 ###### Download results ######

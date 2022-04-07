@@ -814,6 +814,7 @@ genomes:
       himodel_kmer_threshold: 10
       himodel_min_valid: 60
       himodel_max_valid: 500
+      filter_plasmids: "yes"
 
   "C.elegans":
     reads: ["http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/40X/polished_assembly/pREADS_data-corrected.fasta"]
