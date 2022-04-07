@@ -87,6 +87,7 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("retain_cm", "no")
         arguments.setdefault("filter_plasmids", "no")
 
+        # hisim produces reads with duplicate ids, so we always need to uniquify those
         if arguments["read_source"].startswith("hisim_"):
             arguments["uniquify_ids"] = "yes"
 
