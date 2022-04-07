@@ -2655,10 +2655,11 @@ rule install_quast:
     shell: """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
+        rm -rf quast
 
-    git clone https://github.com/sebschmi/quast
-    cd quast
-    git checkout c7c90bdb1570f000541086150c6f3707bc2711ac
+        git clone https://github.com/sebschmi/quast
+        cd quast
+        git checkout c7c90bdb1570f000541086150c6f3707bc2711ac
     """
 
 localrules: install_sdsl
