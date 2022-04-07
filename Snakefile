@@ -2000,11 +2000,11 @@ def hisim_sim_model(wildcards):
 def hisim_sim_params(wildcards):
     try:
         if wildcards.read_source == "hisim_test":
-            return "-c40.0"
+            return "-c40.0 -x10000"
         elif wildcards.read_source == "hisim_human":
-            return ""
+            return "-x10000"
         elif wildcards.read_source == "hisim_human_haploid":
-            return ""
+            return "-x10000"
         else:
             raise Exception(f"Unknown read source: {wildcards.read_source}")
     except:
