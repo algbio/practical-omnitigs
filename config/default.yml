@@ -866,6 +866,10 @@ genomes:
     format: "sra"
     genome_arguments:
       uniquify_ids: "yes"
+      fastk_k: 51
+      himodel_kmer_threshold: 4
+      himodel_min_valid: 10
+      himodel_max_valid: 1000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11292120/SRR11292120.2"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11292121/SRR11292121.2"
@@ -884,6 +888,10 @@ genomes:
     genome_arguments:
       retain_cm: "yes"
       uniquify_ids: "yes"
+      fastk_k: 51
+      himodel_kmer_threshold: 3
+      himodel_min_valid: 5
+      himodel_max_valid: 1000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382244/SRR10382244.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"
@@ -900,6 +908,10 @@ genomes:
     genome_arguments:
       retain_cm: "yes"
       uniquify_ids: "yes"
+      fastk_k: 51
+      himodel_kmer_threshold: 6
+      himodel_min_valid: 10
+      himodel_max_valid: 1000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382246/SRR10382246.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382247/SRR10382247.1"
@@ -917,6 +929,10 @@ genomes:
     genome_arguments:
       retain_cm: "yes"
       uniquify_ids: "yes"
+      fastk_k: 51
+      himodel_kmer_threshold: 4
+      himodel_min_valid: 8
+      himodel_max_valid: 1000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"
