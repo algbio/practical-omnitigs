@@ -1854,9 +1854,9 @@ rule fastk_build_table_and_prof:
     threads: MAX_THREADS,
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 1_000),
-               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 1_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 120, 1_000),
     shell:  """
         '{input.binary}' -v -T{threads} -P'{params.tmp_dir}' -t1 -p -k{wildcards.fastk_k} '{input.reads}' 2>&1 | tee '{log}'
         """
