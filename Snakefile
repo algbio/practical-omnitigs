@@ -163,7 +163,9 @@ FASTK_OUTPUT_DIR = os.path.join(SIMULATION_ROOTDIR, "fastk", GENOME_READS_SUBDIR
 FASTK_INPUT_READS = os.path.join(FASTK_OUTPUT_DIR, "reads.fa")
 FASTK_TABLE = os.path.join(FASTK_OUTPUT_DIR, "reads.ktab")
 FASTK_PROFILE = os.path.join(FASTK_OUTPUT_DIR, "reads.prof")
-FASTK_SYMMETRIC_TABLE = os.path.join(FASTK_OUTPUT_DIR, "symmetric_reads.ktab")
+FASTK_HIST = os.path.join(FASTK_OUTPUT_DIR, "reads.hist")
+FASTK_SYMMETRIC_TABLE = os.path.join(FASTK_OUTPUT_DIR, "symmetric_reads", "symmetric_reads.ktab")
+FASTK_HISTEX_EVALUATION = os.path.join(EVALUATION_ROOTDIR, "histex", GENOME_READS_SUBDIR, FASTK_ARGUMENT_STRING, "histogram.txt")
 
 HISIM_ARGUMENT_STRING = "a{himodel_kmer_threshold}-l{himodel_min_valid}-h{himodel_max_valid}"
 HIMODEL_OUTPUT_DIR = os.path.join(SIMULATION_ROOTDIR, "himodel", GENOME_READS_SUBDIR, FASTK_ARGUMENT_STRING, HISIM_ARGUMENT_STRING)
@@ -302,6 +304,7 @@ HISIM_FASTA_BINARY = os.path.join(HISIM_DIR, "HIfasta")
 FASTK_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "FASTK")
 FASTK_BINARY = os.path.join(FASTK_DIR, "FastK")
 FASTK_SYMMEX_BINARY = os.path.join(FASTK_DIR, "Symmex")
+FASTK_HISTEX_BINARY = os.path.join(FASTK_DIR, "Histex")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -1844,6 +1847,7 @@ rule fastk_build_table_and_prof:
             binary = FASTK_BINARY,
     output: table = FASTK_TABLE,
             profile = FASTK_PROFILE,
+            hist = FASTK_HIST,
     params: tmp_dir = lambda wildcards, output: os.path.dirname(output.table)
     log:    os.path.join(FASTK_OUTPUT_DIR, "build_table.log")
     wildcard_constraints:
@@ -1860,6 +1864,27 @@ rule fastk_build_table_and_prof:
     shell:  """
         '{input.binary}' -v -T{threads} -P'{params.tmp_dir}' -t1 -p -k{wildcards.fastk_k} '{input.reads}' 2>&1 | tee '{log}'
         """
+
+rule histex_evaluation_table:
+    input:  hist = FASTK_HIST,
+            binary = FASTK_HISTEX_BINARY,
+    log:    histogram = FASTK_HISTEX_EVALUATION,
+    wildcard_constraints:
+        read_source = "real",
+        read_simulation_model_source = "none",
+        uniquify_ids = "no",
+        fastk_k = "(([4-9][0-9])|(1[0-1][0-9])|(12[0-8]))", # >= 40, <= 128
+    threads: 1,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 10),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 10, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 10, 1_000),
+    shell:  """
+        '{input.binary}' -h10000 '{input.hist}' 2>&1 | tee '{log.histogram}'
+        '{input.binary}' -k -h10000 '{input.hist}' 2>&1 | tee -a '{log.histogram}'
+        """
+
 
 rule symmex_table:
     input:  table = FASTK_TABLE,
