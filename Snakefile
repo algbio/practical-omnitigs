@@ -3007,9 +3007,9 @@ rule download_hisim:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
-        git clone https://github.com/thegenemyers/HI.SIM.git
+        git clone https://github.com/sebschmi/HI.SIM.git
         cd HI.SIM
-        git checkout d05807c0c941b0978b0edebaace41e91eda33dd6
+        git checkout b5e8ce542d56b90fb7062e10f1e4e2f27b4d5266
 
         sed -i 's:CFLAGS = :CFLAGS = -I${{CONDA_PREFIX}}/include -L${{CONDA_PREFIX}}/lib :g' Makefile
         """
