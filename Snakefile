@@ -3019,7 +3019,7 @@ rule download_hisim:
         rm -rf HI.SIM
         git clone https://github.com/sebschmi/HI.SIM.git
         cd HI.SIM
-        git checkout 0a2675125fd7512dda5a9ba71acef68cb72a8289
+        git checkout b3b0f53837c3f1f005017719dfe1df24200b428d
 
         sed -i 's:CFLAGS = :CFLAGS = -I${{CONDA_PREFIX}}/include -L${{CONDA_PREFIX}}/lib :g' Makefile
         """
