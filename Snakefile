@@ -2651,6 +2651,8 @@ rule download_bcalm2_gfa_converter:
     shell:  """
         mkdir -p '{params.external_software_scripts_dir}'
         cd '{params.external_software_scripts_dir}'
+
+        rm -rf convertToGFA.py
         wget https://raw.githubusercontent.com/GATB/bcalm/v2.2.3/scripts/convertToGFA.py
         chmod u+x convertToGFA.py
         """
@@ -2665,6 +2667,8 @@ rule install_contig_validator:
     shell:  """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
+
+        rm -rf ContigValidator
         git clone --recursive https://github.com/mayankpahadia1993/ContigValidator.git
         cd ContigValidator/src
         echo 'count_kmers: count_kmers_kmc' >> Makefile
@@ -2680,8 +2684,8 @@ rule install_quast:
     shell: """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
-        rm -rf quast
 
+        rm -rf quast
         git clone https://github.com/sebschmi/quast
         cd quast
         git checkout c7c90bdb1570f000541086150c6f3707bc2711ac
@@ -2696,6 +2700,8 @@ rule install_sdsl:
     shell:  """
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
+
+        rm -rf sdsl-lite
         git clone https://github.com/simongog/sdsl-lite.git
         cd sdsl-lite
         git checkout v2.1.1
@@ -2712,7 +2718,7 @@ rule install_ratatosk:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
-        rm -r Ratatosk
+        rm -rf Ratatosk
         git clone --recursive https://github.com/GuillaumeHolley/Ratatosk.git
         cd Ratatosk
         git checkout --recurse-submodules 74ca617afb20a7c24d73d20f2dcdf223db303496
@@ -2733,6 +2739,7 @@ rule download_wtdbg2:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
+        rm -rf wtdbg2
         git clone https://github.com/sebschmi/wtdbg2.git
         cd wtdbg2
         git checkout 78c3077b713aaee48b6c0835105ce6c666f6e796
@@ -2943,6 +2950,7 @@ rule download_homopolymer_compress_rs:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
+        rm -rf homopolymer-compress-rs
         git clone https://github.com/sebschmi/homopolymer-compress-rs.git
         cd homopolymer-compress-rs
         git checkout d94145fb8fa2868876bccb46dd80c12d3b17c724
@@ -2975,6 +2983,7 @@ rule download_wtdbg2_homopolymer_decompression:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
+        rm -rf wtdbg2-homopolymer-decompression
         git clone https://github.com/sebschmi/wtdbg2-homopolymer-decompression.git
         cd wtdbg2-homopolymer-decompression
         git checkout 3bec6c0b751a70d53312b359171b9a576f67ebb6
@@ -3007,6 +3016,7 @@ rule download_hisim:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
+        rm -rf HI.SIM
         git clone https://github.com/sebschmi/HI.SIM.git
         cd HI.SIM
         git checkout b5e8ce542d56b90fb7062e10f1e4e2f27b4d5266
@@ -3039,6 +3049,7 @@ rule download_fastk:
         mkdir -p '{params.external_software_dir}'
         cd '{params.external_software_dir}'
 
+        rm -rf FASTK
         git clone https://github.com/thegenemyers/FASTK.git
         cd FASTK
         git checkout 4604bfcdfd9251d05b27fbd5aef38187e9a9c9ad
