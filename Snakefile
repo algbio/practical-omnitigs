@@ -2041,6 +2041,16 @@ def hisim_sim_params(wildcards):
             return ""
         elif wildcards.read_source == "hisim_human_haploid":
             return ""
+        elif wildcards.read_source == "hisim_test_x0":
+            return "-x0"
+        elif wildcards.read_source == "hisim_test_x1000":
+            return "-x1000"
+        elif wildcards.read_source == "hisim_test_x2000":
+            return "-x2000"
+        elif wildcards.read_source == "hisim_test_x3000":
+            return "-x3000"
+        elif wildcards.read_source == "hisim_test_x4000":
+            return "-x4000"
         else:
             raise Exception(f"Unknown read source: {wildcards.read_source}")
     except:
@@ -2054,6 +2064,8 @@ def hisim_ploidy_tree(wildcards):
         elif wildcards.read_source == "hisim_human":
             return "0.2,0.0"
         elif wildcards.read_source == "hisim_human_haploid":
+            return "0.0"
+        elif wildcards.read_source.startswith("hisim_test_x"):
             return "0.0"
         else:
             raise Exception(f"Unknown read source: {wildcards.read_source}")
