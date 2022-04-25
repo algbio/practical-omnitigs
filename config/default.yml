@@ -681,6 +681,7 @@ reports:
   "D.melanogaster_HiFi":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
+      read_source: ["real", "hisim_0_2", "hisim_haploid"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns
 
@@ -694,6 +695,7 @@ reports:
   "D.melanogaster_HiFi_hodeco_simple":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
+      read_source: ["real", "hisim_0_2", "hisim_haploid"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns
 
