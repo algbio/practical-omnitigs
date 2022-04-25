@@ -2093,7 +2093,7 @@ rule hisim_sim:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 1_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 1_000),
     shell:  """
-        '{input.binary}' -v '{input.reference}' '{input.model}' -o'{params.output_prefix}' {params.sim_params} -fh -r3541529 -U 2>&1 | tee '{log}'
+        '{input.binary}' -v '{input.reference}' '{input.model}' -o'{params.output_prefix}' {params.sim_params} -p{params.ploidy_tree} -fh -r3541529 -U 2>&1 | tee '{log}'
         ln -sr -T '{params.output_prefix}.fasta' '{output.reads}'
         """
 
