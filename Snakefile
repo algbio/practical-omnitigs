@@ -2041,7 +2041,9 @@ def hisim_sim_params(wildcards):
             return ""
         elif wildcards.read_source == "hisim_human_haploid":
             return ""
-        elif wildcards.read_source == "hisim_0_2":
+        elif wildcards.read_source == "hisim_0_66":
+            return ""
+        elif wildcards.read_source == "hisim_0_7":
             return ""
         elif wildcards.read_source == "hisim_haploid":
             return ""
@@ -2066,11 +2068,13 @@ def hisim_ploidy_tree(wildcards):
         if wildcards.read_source == "hisim_test":
             return "0.2,0.0"
         elif wildcards.read_source == "hisim_human":
-            return "0.2,0.0"
+            return "0.66,0.0"
         elif wildcards.read_source == "hisim_human_haploid":
             return "0.0"
-        elif wildcards.read_source == "hisim_0_2":
-            return "0.2,0.0"
+        elif wildcards.read_source == "hisim_0_66":
+            return "0.66,0.0"
+        elif wildcards.read_source == "hisim_0_7":
+            return "0.7,0.0"
         elif wildcards.read_source == "hisim_haploid":
             return "0.0"
         elif wildcards.read_source.startswith("hisim_test_x"):
