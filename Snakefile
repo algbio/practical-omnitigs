@@ -2246,7 +2246,7 @@ def get_quast_references_from_wildcards(wildcards):
 
             files = []
             for haplotype_index in range(1, ploidy_count + 1):
-                files.append(safe_format(HISIM_HAPLOTYPE, haplotype_index = haplotype_index).format(**wildcards))
+                files.append(safe_format(HISIM_HAPLOTYPE, haplotype_index = haplotype_index, uniquify_ids = "no").format(**wildcards))
 
             return "-r '" + "' -r '".join(files) + "'"
     except Exception:
