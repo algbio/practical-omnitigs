@@ -848,6 +848,10 @@ genomes:
     genome_arguments:
       quast_mode: "hicanu"
       filter_nw: "yes"
+      fastk_k: 51
+      himodel_kmer_threshold: 1
+      himodel_min_valid: 1
+      himodel_max_valid: 1
     assembly_time_factor: 2
     assembly_mem_factor: 1
 

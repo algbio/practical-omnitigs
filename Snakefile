@@ -172,6 +172,7 @@ HIMODEL_OUTPUT_DIR = os.path.join(SIMULATION_ROOTDIR, "himodel", GENOME_READS_SU
 HIMODEL_INPUT_SYMMETRIC_TABLE = os.path.join(HIMODEL_OUTPUT_DIR, "reads.ktab")
 HIMODEL_INPUT_PROFILE = os.path.join(HIMODEL_OUTPUT_DIR, "reads.prof")
 HIMODEL_MODEL = os.path.join(HIMODEL_OUTPUT_DIR, "reads.model")
+HISIM_HAPLOTYPE = os.path.join(GENOME_READS_DIR, "reads.hap{haplotype_index}.fasta")
 
 # Assemblies
 
@@ -2041,8 +2042,6 @@ def hisim_sim_params(wildcards):
             return ""
         elif wildcards.read_source == "hisim_human_haploid":
             return ""
-        elif wildcards.read_source == "hisim_0_66":
-            return ""
         elif wildcards.read_source == "hisim_0_7":
             return ""
         elif wildcards.read_source == "hisim_haploid":
@@ -2066,15 +2065,13 @@ def hisim_sim_params(wildcards):
 def hisim_ploidy_tree(wildcards):
     try:
         if wildcards.read_source == "hisim_test":
-            return "0.2,0.0"
+            return "0.0,0.2"
         elif wildcards.read_source == "hisim_human":
-            return "0.66,0.0"
+            return "0.0,0.66"
         elif wildcards.read_source == "hisim_human_haploid":
             return "0.0"
-        elif wildcards.read_source == "hisim_0_66":
-            return "0.66,0.0"
         elif wildcards.read_source == "hisim_0_7":
-            return "0.7,0.0"
+            return "0.0,0.7"
         elif wildcards.read_source == "hisim_haploid":
             return "0.0"
         elif wildcards.read_source.startswith("hisim_test_x"):
@@ -2090,6 +2087,7 @@ rule hisim_sim:
             model = hisim_sim_model,
             binary = HISIM_SIM_BINARY,
     output: reads = GENOME_READS,
+            haplotype = safe_format(HISIM_HAPLOTYPE, haplotype_index = "1"),
     params: sim_params = hisim_sim_params,
             output_prefix = lambda wildcards, output: os.path.join(os.path.dirname(output.reads), os.path.basename(output.reads).replace(".fa", "")),
             ploidy_tree = hisim_ploidy_tree,
@@ -2238,13 +2236,32 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
         traceback.print_exc()
         sys.exit("Catched exception")
 
+def get_quast_references_from_wildcards(wildcards):
+    try:
+        if wildcards.read_source == "real":
+            return GENOME_REFERENCE.format(**wildcards)
+        else:
+            ploidy_tree = hisim_ploidy_tree(wildcards)
+            ploidy_count = len(ploidy_tree.split(","))
+
+            files = []
+            for haplotype_index in range(1, ploidy_count + 1):
+                files.append(safe_format(HISIM_HAPLOTYPE, haplotype_index = haplotype_index).format(**wildcards))
+
+            return "-r '" + "' -r '".join(files) + "'"
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 rule run_quast:
     input:  contigs = ASSEMBLED_CONTIGS,
             reference = GENOME_REFERENCE,
+            hisim_haplotype = lambda wildcards: [] if wildcards.read_source == "real" else safe_format(HISIM_HAPLOTYPE, haplotype_index = "1", uniquify_ids = "no"),
             script = QUAST_BINARY,
     output: directory = directory(QUAST_OUTPUT_DIR),
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     params: extra_arguments = get_quast_extra_arguments_from_wildcards,
+            references = get_quast_references_from_wildcards,
     conda: "config/conda-quast-env.yml"
     threads: 14,
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50_000),
@@ -2252,7 +2269,7 @@ rule run_quast:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 120, 50_000),
-    shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' -r '{input.reference}' '{input.contigs}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' {params.references} '{input.contigs}'"
 
 ##################################
 ###### Resources evaluation ######
