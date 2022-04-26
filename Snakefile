@@ -2239,7 +2239,7 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
 def get_quast_references_from_wildcards(wildcards):
     try:
         if wildcards.read_source == "real":
-            return GENOME_REFERENCE.format(**wildcards)
+            return "-r '" + GENOME_REFERENCE.format(**wildcards) + "'"
         else:
             ploidy_tree = hisim_ploidy_tree(wildcards)
             ploidy_count = len(ploidy_tree.split(","))
