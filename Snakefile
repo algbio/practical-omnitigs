@@ -1140,11 +1140,11 @@ rule flye:
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
-    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 75_000),
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 150_000),
                cpus = MAX_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 75_000),
-               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 75_000),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 150_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 150_000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
