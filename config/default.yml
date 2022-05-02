@@ -681,7 +681,7 @@ reports:
   "D.melanogaster_HiFi":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      read_source: ["real", "hisim_haploid", "hisim_0_7"]
+      read_source: ["real", "hisim_haploid_medium", "hisim_0_7_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns
 
@@ -695,7 +695,7 @@ reports:
   "D.melanogaster_HiFi_hodeco_simple":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
-      read_source: ["real", "hisim_haploid", "hisim_0_7"]
+      read_source: ["real", "hisim_haploid_medium", "hisim_0_7_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns
 
@@ -716,14 +716,14 @@ reports:
   "E.coli_HiFi_simulated":
     argument_matrix:
       genome: "E.coli_hifi"
-      read_source: "hisim_test"
+      read_source: "hisim_test_medium"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_ecoli
 
   "E.coli_HiFi_simulated_hodeco_simple":
     argument_matrix:
       genome: "E.coli_hifi"
-      read_source: "hisim_test"
+      read_source: "hisim_test_medium"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns_ecoli
 
@@ -732,56 +732,56 @@ reports:
   "CHM13_HiFi_30x":
     argument_matrix:
       genome: "CHM13_HiFi_30x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_hg002
 
   "CHM13_HiFi_30x_hodeco_simple":
     argument_matrix:
       genome: "CHM13_HiFi_30x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns_hg002
 
   "HG002_HiFi_20kb_16x":
     argument_matrix:
       genome: "HG002_HiFi_20kb_16x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_hg002
 
   "HG002_HiFi_20kb_16x_hodeco_simple":
     argument_matrix:
       genome: "HG002_HiFi_20kb_16x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns_hg002
 
   "HG002_HiFi_15kb_37x":
     argument_matrix:
       genome: "HG002_HiFi_15kb_37x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_hg002
 
   "HG002_HiFi_15kb_37x_hodeco_simple":
     argument_matrix:
       genome: "HG002_HiFi_15kb_37x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns_hg002
 
   "HG002_HiFi_13.5kb_29x":
     argument_matrix:
       genome: "HG002_HiFi_13.5kb_29x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_overview_columns_hg002
 
   "HG002_HiFi_13.5kb_29x_hodeco_simple":
     argument_matrix:
       genome: "HG002_HiFi_13.5kb_29x"
-      read_source: ["real", "hisim_human", "hisim_human_haploid"]
+      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"]
     columns: *hifi_hodeco_simple_overview_columns_hg002
 
@@ -815,7 +815,9 @@ genomes:
       fastk_k: 40
       himodel_kmer_threshold: 10
       himodel_min_valid: 60
-      himodel_max_valid: 500
+      himodel_max_valid_low: 380
+      himodel_max_valid_medium: 500
+      himodel_max_valid_high: 1000000
       filter_plasmids: "yes"
 
   "C.elegans":
@@ -851,7 +853,9 @@ genomes:
       fastk_k: 51
       himodel_kmer_threshold: 3
       himodel_min_valid: 30
-      himodel_max_valid: 1000
+      himodel_max_valid_low: 115
+      himodel_max_valid_medium: 1000
+      himodel_max_valid_high: 1000000
     assembly_time_factor: 2
     assembly_mem_factor: 1
 
@@ -875,7 +879,9 @@ genomes:
       fastk_k: 51
       himodel_kmer_threshold: 4
       himodel_min_valid: 10
-      himodel_max_valid: 1000
+      himodel_max_valid_low: 200
+      himodel_max_valid_medium: 1000
+      himodel_max_valid_high: 1000000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11292120/SRR11292120.2"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11292121/SRR11292121.2"
@@ -897,7 +903,9 @@ genomes:
       fastk_k: 51
       himodel_kmer_threshold: 3
       himodel_min_valid: 5
-      himodel_max_valid: 1000
+      himodel_max_valid_low: 80
+      himodel_max_valid_medium: 1000
+      himodel_max_valid_high: 1000000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382244/SRR10382244.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"
@@ -917,7 +925,9 @@ genomes:
       fastk_k: 51
       himodel_kmer_threshold: 6
       himodel_min_valid: 10
-      himodel_max_valid: 1000
+      himodel_max_valid_low: 100
+      himodel_max_valid_medium: 1000
+      himodel_max_valid_high: 1000000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382246/SRR10382246.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382247/SRR10382247.1"
@@ -938,7 +948,9 @@ genomes:
       fastk_k: 51
       himodel_kmer_threshold: 4
       himodel_min_valid: 8
-      himodel_max_valid: 1000
+      himodel_max_valid_low: 100
+      himodel_max_valid_medium: 1000
+      himodel_max_valid_high: 1000000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"

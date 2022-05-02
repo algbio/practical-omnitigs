@@ -2021,16 +2021,32 @@ def hisim_sim_genome_reference(wildcards):
 
 def hisim_sim_model(wildcards):
     try:
+        read_source = wildcards.read_source
         read_simulation_model_source = wildcards.read_simulation_model_source
         if read_simulation_model_source == "none":
             read_simulation_model_source = wildcards.genome
 
         genome = genomes[read_simulation_model_source]
         genome_arguments = genome.setdefault("genome_arguments", {})
+        assert "fastk_k" in genome_arguments, f"genome_arguments of '{genome}' misses 'fastk_k'"
+        assert "himodel_kmer_threshold" in genome_arguments, f"genome_arguments of '{genome}' misses 'himodel_kmer_threshold'"
+        assert "himodel_min_valid" in genome_arguments, f"genome_arguments of '{genome}' misses 'himodel_min_valid'"
+        assert "himodel_max_valid_low" in genome_arguments, f"genome_arguments of '{genome}' misses 'himodel_max_valid_low'"
+        assert "himodel_max_valid_medium" in genome_arguments, f"genome_arguments of '{genome}' misses 'himodel_max_valid_medium'"
+        assert "himodel_max_valid_high" in genome_arguments, f"genome_arguments of '{genome}' misses 'himodel_max_valid_high'"
+
         fastk_k = genome_arguments["fastk_k"]
         himodel_kmer_threshold = genome_arguments["himodel_kmer_threshold"]
         himodel_min_valid = genome_arguments["himodel_min_valid"]
-        himodel_max_valid = genome_arguments["himodel_max_valid"]
+
+        if read_source.endswith("_low"):
+            himodel_max_valid = genome_arguments["himodel_max_valid_low"]
+        elif read_source.endswith("_medium"):
+            himodel_max_valid = genome_arguments["himodel_max_valid_medium"]
+        elif read_source.endswith("_high"):
+            himodel_max_valid = genome_arguments["himodel_max_valid_high"]
+        else:
+            raise Exception(f"read_source does not end with an identifier for the upper bound to use '{read_source}'")
 
         return safe_format(HIMODEL_MODEL, genome = read_simulation_model_source, read_source = "real", read_simulation_model_source = "none", read_downsampling_factor = "none", uniquify_ids = "no", fastk_k = fastk_k, himodel_kmer_threshold = himodel_kmer_threshold, himodel_min_valid = himodel_min_valid, himodel_max_valid = himodel_max_valid)
     except:
@@ -2039,48 +2055,64 @@ def hisim_sim_model(wildcards):
 
 def hisim_sim_params(wildcards):
     try:
-        if wildcards.read_source == "hisim_test":
+        clean_read_source = wildcards.read_source
+        if clean_read_source.endswith("_low"):
+            clean_read_source = clean_read_source[:-4]
+        elif clean_read_source.endswith("_medium"):
+            clean_read_source = clean_read_source[:-7]
+        elif clean_read_source.endswith("_high"):
+            clean_read_source = clean_read_source[:-5]
+
+        if clean_read_source == "hisim_test":
             return "-c40.0"
-        elif wildcards.read_source == "hisim_human":
+        elif clean_read_source == "hisim_human":
             return ""
-        elif wildcards.read_source == "hisim_human_haploid":
+        elif clean_read_source == "hisim_human_haploid":
             return ""
-        elif wildcards.read_source == "hisim_0_7":
+        elif clean_read_source == "hisim_0_7":
             return ""
-        elif wildcards.read_source == "hisim_haploid":
+        elif clean_read_source == "hisim_haploid":
             return ""
-        elif wildcards.read_source == "hisim_test_x0":
+        elif clean_read_source == "hisim_test_x0":
             return "-x0"
-        elif wildcards.read_source == "hisim_test_x1000":
+        elif clean_read_source == "hisim_test_x1000":
             return "-x1000"
-        elif wildcards.read_source == "hisim_test_x2000":
+        elif clean_read_source == "hisim_test_x2000":
             return "-x2000"
-        elif wildcards.read_source == "hisim_test_x3000":
+        elif clean_read_source == "hisim_test_x3000":
             return "-x3000"
-        elif wildcards.read_source == "hisim_test_x4000":
+        elif clean_read_source == "hisim_test_x4000":
             return "-x4000"
         else:
-            raise Exception(f"Unknown read source: {wildcards.read_source}")
+            raise Exception(f"Unknown read source: {wildcards.read_source} (clean: {clean_read_source})")
     except:
         traceback.print_exc()
         sys.exit("Catched exception")
 
 def hisim_ploidy_tree(wildcards):
     try:
-        if wildcards.read_source == "hisim_test":
+        clean_read_source = wildcards.read_source
+        if clean_read_source.endswith("_low"):
+            clean_read_source = clean_read_source[:-4]
+        elif clean_read_source.endswith("_medium"):
+            clean_read_source = clean_read_source[:-7]
+        elif clean_read_source.endswith("_high"):
+            clean_read_source = clean_read_source[:-5]
+
+        if clean_read_source == "hisim_test":
             return "0.0,0.2"
-        elif wildcards.read_source == "hisim_human":
+        elif clean_read_source == "hisim_human":
             return "0.0,0.66"
-        elif wildcards.read_source == "hisim_human_haploid":
+        elif clean_read_source == "hisim_human_haploid":
             return "0.0"
-        elif wildcards.read_source == "hisim_0_7":
+        elif clean_read_source == "hisim_0_7":
             return "0.0,0.7"
-        elif wildcards.read_source == "hisim_haploid":
+        elif clean_read_source == "hisim_haploid":
             return "0.0"
-        elif wildcards.read_source.startswith("hisim_test_x"):
+        elif clean_read_source.startswith("hisim_test_x"):
             return "0.0"
         else:
-            raise Exception(f"Unknown read source: {wildcards.read_source}")
+            raise Exception(f"Unknown read source: {wildcards.read_source} (clean: {clean_read_source})")
     except:
         traceback.print_exc()
         sys.exit("Catched exception")
