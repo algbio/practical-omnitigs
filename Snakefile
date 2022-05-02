@@ -836,7 +836,10 @@ def compute_genome_time_min_from_wildcards(wildcards, base_time_min):
         genome_properties = get_source_genome_properties_from_wildcards(wildcards)
 
         if "assembly_time_factor" in genome_properties:
-            return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
+            if hasattr(wildcards, "read_source") and wildcards.read_source.startswith("hisim_"):
+                return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min)) * 2
+            else:
+                return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
         else:
             return base_time_min
     except Exception:
