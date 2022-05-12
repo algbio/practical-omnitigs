@@ -817,7 +817,7 @@ genomes:
       himodel_min_valid: 60
       himodel_max_valid_low: 380
       himodel_max_valid_medium: 500
-      himodel_max_valid_high: 1000000
+      himodel_max_valid_high: 32000
       filter_plasmids: "yes"
 
   "C.elegans":
@@ -855,7 +855,7 @@ genomes:
       himodel_min_valid: 30
       himodel_max_valid_low: 115
       himodel_max_valid_medium: 1000
-      himodel_max_valid_high: 1000000
+      himodel_max_valid_high: 32000
     assembly_time_factor: 2
     assembly_mem_factor: 1
 
@@ -881,7 +881,7 @@ genomes:
       himodel_min_valid: 10
       himodel_max_valid_low: 200
       himodel_max_valid_medium: 1000
-      himodel_max_valid_high: 1000000
+      himodel_max_valid_high: 32000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11292120/SRR11292120.2"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11292121/SRR11292121.2"
@@ -905,7 +905,7 @@ genomes:
       himodel_min_valid: 5
       himodel_max_valid_low: 80
       himodel_max_valid_medium: 1000
-      himodel_max_valid_high: 1000000
+      himodel_max_valid_high: 32000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382244/SRR10382244.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"
@@ -927,7 +927,7 @@ genomes:
       himodel_min_valid: 10
       himodel_max_valid_low: 100
       himodel_max_valid_medium: 1000
-      himodel_max_valid_high: 1000000
+      himodel_max_valid_high: 32000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382246/SRR10382246.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382247/SRR10382247.1"
@@ -950,7 +950,7 @@ genomes:
       himodel_min_valid: 8
       himodel_max_valid_low: 100
       himodel_max_valid_medium: 1000
-      himodel_max_valid_high: 1000000
+      himodel_max_valid_high: 32000
     reads:
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
       - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"
