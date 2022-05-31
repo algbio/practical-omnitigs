@@ -2265,6 +2265,16 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
             return "--min-alignment 20000 --extensive-mis-size 100000 --min-identity 90"
         elif wildcards.quast_mode == "normal":
             return "--fragmented"
+        if wildcards.quast_mode == "hicanu_hoco":
+            return "-s -H"
+        elif wildcards.quast_mode == "hicanu_alignments_hoco":
+            return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000 -H"
+        elif wildcards.quast_mode == "hicanu_misassemblies_hoco":
+            return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 -H"
+        elif wildcards.quast_mode == "hicanu_misassemblies_strict_hoco":
+            return "--min-alignment 20000 --extensive-mis-size 100000 --min-identity 90 -H"
+        elif wildcards.quast_mode == "normal_hoco":
+            return "--fragmented -H"
         else:
             raise Exception(f"Unknown quast_mode: {wildcards.quast_mode}")
     except Exception:
@@ -2764,7 +2774,7 @@ rule install_quast:
         rm -rf quast
         git clone https://github.com/sebschmi/quast
         cd quast
-        git checkout c7c90bdb1570f000541086150c6f3707bc2711ac
+        git checkout cf1461f48e937488928b094946bb591cd5b325a3
     """
 
 localrules: install_sdsl
