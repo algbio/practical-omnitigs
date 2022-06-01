@@ -2266,15 +2266,15 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
         elif wildcards.quast_mode == "normal":
             return "--fragmented"
         if wildcards.quast_mode == "hicanu_hoco":
-            return "-s -H"
+            return "-s --minimap-hoco"
         elif wildcards.quast_mode == "hicanu_alignments_hoco":
-            return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000 -H"
+            return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000 --minimap-hoco"
         elif wildcards.quast_mode == "hicanu_misassemblies_hoco":
-            return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 -H"
+            return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 --minimap-hoco"
         elif wildcards.quast_mode == "hicanu_misassemblies_strict_hoco":
-            return "--min-alignment 20000 --extensive-mis-size 100000 --min-identity 90 -H"
+            return "--min-alignment 20000 --extensive-mis-size 100000 --min-identity 90 --minimap-hoco"
         elif wildcards.quast_mode == "normal_hoco":
-            return "--fragmented -H"
+            return "--fragmented --minimap-hoco"
         else:
             raise Exception(f"Unknown quast_mode: {wildcards.quast_mode}")
     except Exception:
