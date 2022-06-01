@@ -663,7 +663,7 @@ def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
         elif "trivial_omnitigs" == injection:
             return "compute-trivial-omnitigs --non-scc"
         elif "omnitigs" == injection:
-            return "compute-omnitigs"
+            return "compute-omnitigs --linear-reduction"
         else:
             raise Exception(f"Wrong injection command in assembler arguments: {wildcards}")
     except Exception:
@@ -693,7 +693,7 @@ def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
         elif "trivial_omnitigs" == injection:
             return "compute-trivial-omnitigs --non-scc"
         elif "omnitigs" == injection:
-            return "compute-omnitigs"
+            return "compute-omnitigs --linear-reduction"
         else:
             raise Exception("Wrong injection command in assembler arguments: {wildcards}")
     except Exception:
