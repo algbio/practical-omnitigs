@@ -1,10 +1,12 @@
-use crate::CliOptions;
+use crate::{CliOptions, ErrorKind};
 use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
 use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
+use genome_graph::bigraph::interface::dynamic_bigraph::DynamicBigraph;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::Omnitigs;
-use omnitigs::traitgraph::interface::GraphBase;
+use omnitigs::traitgraph::interface::{GraphBase, ImmutableGraphContainer, StaticGraph};
+use omnitigs::traitgraph::walks::VecEdgeWalk;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use traitgraph_algo::components::{decompose_strongly_connected_components, is_strongly_connected};
@@ -49,6 +51,12 @@ pub struct ComputeOmnitigsCommand {
         help = "Instead of outputting unitigs as .ctg.lay file, output them as sequences of node ids"
     )]
     pub output_as_wtdbg2_node_ids: bool,
+
+    #[clap(
+        long,
+        help = "Connect all sources and sinks to a global node to make the graph strongly connected. Then compute omnitigs and split them if they contain the global node. If the graph does not become strongly connected, abort."
+    )]
+    pub linear_reduction: bool,
 }
 
 fn print_omnitigs_statistics<Graph: GraphBase>(
@@ -153,6 +161,53 @@ fn print_omnitigs_statistics<Graph: GraphBase>(
     Ok(())
 }
 
+fn perform_linear_reduction<Graph: DynamicBigraph>(graph: &mut Graph) -> crate::Result<()>
+where
+    Graph::NodeData: Default,
+    Graph::EdgeData: Default,
+{
+    let global_node = graph.add_node(Default::default());
+    graph.set_mirror_nodes(global_node, global_node);
+
+    for node in graph.node_indices().rev().skip(1).rev() {
+        if graph.out_degree(node) == 0 {
+            graph.add_edge(node, global_node, Default::default());
+        }
+        if graph.in_degree(node) == 0 {
+            graph.add_edge(global_node, node, Default::default());
+        }
+    }
+
+    if !is_strongly_connected(graph) {
+        error!("Graph is not strongly connected after linear reduction");
+        return Err(ErrorKind::LinearReductionNotStronglyConnected.into());
+    }
+
+    Ok(())
+}
+
+fn split_walks_at_node<Graph: StaticGraph>(
+    walks: &mut Vec<VecEdgeWalk<Graph>>,
+    node: Graph::NodeIndex,
+    graph: &Graph,
+) -> crate::Result<()> {
+    // also check the newly added walks, because they might contain another instance of node
+    for index in 0..walks.len() {
+        let walk = &mut walks[index];
+        if let Some((walk_index, _)) = walk
+            .iter()
+            .enumerate()
+            .skip(1)
+            .find(|(_, &edge_index)| graph.edge_endpoints(edge_index).from_node == node)
+        {
+            let right_half = walk.split_off(walk_index);
+            walks.push(right_half);
+        }
+    }
+
+    Ok(())
+}
+
 pub(crate) fn compute_omnitigs(
     _options: &CliOptions,
     subcommand: &ComputeOmnitigsCommand,
@@ -188,19 +243,30 @@ pub(crate) fn compute_omnitigs(
                 "Reading bigraph from '{}' with kmer size {}",
                 input, kmer_size
             );
-            let genome_graph: PetBCalm2EdgeGraph<_> =
+            let mut genome_graph: PetBCalm2EdgeGraph<_> =
                 genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
                     &input,
                     &mut sequence_store,
                     kmer_size,
                 )?;
+            if subcommand.linear_reduction {
+                perform_linear_reduction(&mut genome_graph)?;
+            }
+            let genome_graph = genome_graph;
 
             info!("Computing maximal omnitigs");
-            let mut maximal_omnitigs = Omnitigs::compute(&genome_graph);
+            let mut omnitigs = Omnitigs::compute(&genome_graph);
             info!("Removing reverse complements");
-            maximal_omnitigs.remove_reverse_complements(&genome_graph);
-
-            print_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
+            omnitigs.remove_reverse_complements(&genome_graph);
+            print_omnitigs_statistics(&omnitigs, &mut latex_file)?;
+            let mut omnitigs: Vec<_> = omnitigs.into_iter().map(Into::into).collect();
+            if subcommand.linear_reduction {
+                split_walks_at_node(
+                    &mut omnitigs,
+                    genome_graph.node_indices().last().unwrap(),
+                    &genome_graph,
+                )?;
+            }
 
             info!(
                 "Storing maximal omnitigs as fasta to '{}'",
@@ -210,7 +276,7 @@ pub(crate) fn compute_omnitigs(
                 &genome_graph,
                 &sequence_store,
                 kmer_size,
-                maximal_omnitigs.iter(),
+                omnitigs.iter(),
                 &subcommand.output,
             )?;
         }
@@ -245,10 +311,14 @@ pub(crate) fn compute_omnitigs(
                 nodes_file, reads_file, dot_file, raw_reads_file
             );
 
-            let genome_graph: PetWtdbg2Graph =
+            let mut genome_graph: PetWtdbg2Graph =
                 genome_graph::io::wtdbg2::read_graph_from_wtdbg2_from_files(
                     nodes_file, reads_file, dot_file,
                 )?;
+            if subcommand.linear_reduction {
+                perform_linear_reduction(&mut genome_graph)?;
+            }
+            let genome_graph = genome_graph;
 
             if !is_strongly_connected(&genome_graph) {
                 warn!("Genome graph is not strongly connected!");
@@ -262,8 +332,15 @@ pub(crate) fn compute_omnitigs(
             let mut omnitigs = Omnitigs::compute(&genome_graph);
             info!("Removing reverse complements");
             omnitigs.remove_reverse_complements(&genome_graph);
-
             print_omnitigs_statistics(&omnitigs, &mut latex_file)?;
+            let mut omnitigs: Vec<_> = omnitigs.into_iter().map(Into::into).collect();
+            if subcommand.linear_reduction {
+                split_walks_at_node(
+                    &mut omnitigs,
+                    genome_graph.node_indices().last().unwrap(),
+                    &genome_graph,
+                )?;
+            }
 
             if subcommand.output_as_wtdbg2_node_ids {
                 info!("Storing omnitigs as node ids to '{}'", subcommand.output);
@@ -292,15 +369,26 @@ pub(crate) fn compute_omnitigs(
             };
             info!("Reading bigraph from '{}'", dot_file);
 
-            let genome_graph: PetWtdbg2DotGraph =
+            let mut genome_graph: PetWtdbg2DotGraph =
                 genome_graph::io::wtdbg2::dot::read_graph_from_wtdbg2_dot_from_file(dot_file)?;
+            if subcommand.linear_reduction {
+                perform_linear_reduction(&mut genome_graph)?;
+            }
+            let genome_graph = genome_graph;
 
             info!("Computing maximal omnitigs");
             let mut omnitigs = Omnitigs::compute(&genome_graph);
             info!("Removing reverse complements");
             omnitigs.remove_reverse_complements(&genome_graph);
-
             print_omnitigs_statistics(&omnitigs, &mut latex_file)?;
+            let mut omnitigs: Vec<_> = omnitigs.into_iter().map(Into::into).collect();
+            if subcommand.linear_reduction {
+                split_walks_at_node(
+                    &mut omnitigs,
+                    genome_graph.node_indices().last().unwrap(),
+                    &genome_graph,
+                )?;
+            }
 
             info!("Storing omnitigs as node ids to '{}'", subcommand.output);
             genome_graph::io::wtdbg2::dot::write_dot_contigs_as_wtdbg2_node_ids_to_file(

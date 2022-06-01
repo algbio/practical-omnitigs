@@ -35,6 +35,11 @@ error_chain! {
             description("a parameter was missing, superfluous or had an illegal value, see the log for more details")
             display("a parameter was missing, superfluous or had an illegal value, see the log for more details")
         }
+
+        LinearReductionNotStronglyConnected {
+            description("the result of the linear reduction is not strongly connected")
+            display("the result of the linear reduction is not strongly connected")
+        }
     }
 }
 
