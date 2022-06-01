@@ -381,6 +381,23 @@ column_templates:
           wtdbg2_mode: "ccs"
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
+    - shortname: "w2 omni sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+    - shortname: "w2 omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+    - shortname: "w2 frg omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "omnitigs"
+          frg_injection_stage: "ctg"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -400,6 +417,18 @@ column_templates:
       select_assembler:
         hifiasm:
           contig_algorithm: "trivial_omnitigs_p_utg"
+    - shortname: "hifiasm omni r"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "omnitigs_r_utg"
+    - shortname: "hifiasm omni rbp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "omnitigs_bubpop.r_utg"
+    - shortname: "hifiasm omni p"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "omnitigs_p_utg"
     - shortname: "mdbg"
       select_assembler:
         mdbg:
@@ -447,6 +476,26 @@ column_templates:
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
+    - shortname: "w2 omni sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -466,6 +515,18 @@ column_templates:
       select_assembler:
         hifiasm:
           contig_algorithm: "trivial_omnitigs_p_utg"
+    - shortname: "hifiasm omni r"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "omnitigs_r_utg"
+    - shortname: "hifiasm omni rbp"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "omnitigs_bubpop.r_utg"
+    - shortname: "hifiasm omni p"
+      select_assembler:
+        hifiasm:
+          contig_algorithm: "omnitigs_p_utg"
     - shortname: "mdbg"
       select_assembler:
         mdbg:
@@ -502,6 +563,23 @@ column_templates:
         wtdbg2:
           wtdbg2_mode: "ccs"
           frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+    - shortname: "w2 omni sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+    - shortname: "w2 omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+    - shortname: "w2 frg omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "omnitigs"
           frg_injection_stage: "ctg"
     - shortname: "flye"
       select_assembler:
@@ -558,6 +636,26 @@ column_templates:
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
+    - shortname: "w2 omni sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -602,6 +700,23 @@ column_templates:
         wtdbg2:
           wtdbg2_mode: "ccs"
           frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+    - shortname: "w2 omni sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+    - shortname: "w2 omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+    - shortname: "w2 frg omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "omnitigs"
           frg_injection_stage: "ctg"
     - shortname: "flye"
       select_assembler:
@@ -656,6 +771,26 @@ column_templates:
         wtdbg2:
           wtdbg2_mode: "ccs"
           frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+    - shortname: "w2 omni sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg omni"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
     - shortname: "flye"

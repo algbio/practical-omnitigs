@@ -1216,6 +1216,16 @@ rule hifiasm_trivial_omnitigs:
     log:    log = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"),
     shell: "${{CONDA_PREFIX}}/bin/time -v '{input.rust_binary}' compute-trivial-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --non-scc 2>&1 | tee '{log.log}'"
 
+rule hifiasm_omnitigs:
+    input:  unitigs = lambda wildcards: safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "hifiasm", "assembly.{graph_variant}.gfa"), contig_algorithm = "builtin", graph_variant = wildcards.contig_algorithm[len("omnitigs_"):]),
+            rust_binary = RUST_BINARY,
+    output: contigs = HIFIASM_ASSEMBLED_CONTIGS,
+            latex = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.tex"),
+    wildcard_constraints:
+            contig_algorithm = r"omnitigs_[a-z_\.]+",
+    log:    log = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"),
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.rust_binary}' compute-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --linear-reduction 2>&1 | tee '{log.log}'"
+
 ##################
 ###### mdbg ######
 ##################
