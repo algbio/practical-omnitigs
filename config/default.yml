@@ -878,47 +878,47 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
     columns: *hifi_hodeco_simple_overview_columns_hg002
 
-  "HG002_HiFi_20kb_16x":
-    argument_matrix:
-      genome: "HG002_HiFi_20kb_16x"
-      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
-    columns: *hifi_overview_columns_hg002
+  # "HG002_HiFi_20kb_16x":
+  #   argument_matrix:
+  #     genome: "HG002_HiFi_20kb_16x"
+  #     read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
+  #     quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
+  #   columns: *hifi_overview_columns_hg002
 
-  "HG002_HiFi_20kb_16x_hodeco_simple":
-    argument_matrix:
-      genome: "HG002_HiFi_20kb_16x"
-      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
-    columns: *hifi_hodeco_simple_overview_columns_hg002
+  # "HG002_HiFi_20kb_16x_hodeco_simple":
+  #   argument_matrix:
+  #     genome: "HG002_HiFi_20kb_16x"
+  #     read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
+  #     quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
+  #   columns: *hifi_hodeco_simple_overview_columns_hg002
 
-  "HG002_HiFi_15kb_37x":
-    argument_matrix:
-      genome: "HG002_HiFi_15kb_37x"
-      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
-    columns: *hifi_overview_columns_hg002
+  # "HG002_HiFi_15kb_37x":
+  #   argument_matrix:
+  #     genome: "HG002_HiFi_15kb_37x"
+  #     read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
+  #     quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
+  #   columns: *hifi_overview_columns_hg002
 
-  "HG002_HiFi_15kb_37x_hodeco_simple":
-    argument_matrix:
-      genome: "HG002_HiFi_15kb_37x"
-      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
-    columns: *hifi_hodeco_simple_overview_columns_hg002
+  # "HG002_HiFi_15kb_37x_hodeco_simple":
+  #   argument_matrix:
+  #     genome: "HG002_HiFi_15kb_37x"
+  #     read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
+  #     quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
+  #   columns: *hifi_hodeco_simple_overview_columns_hg002
 
-  "HG002_HiFi_13.5kb_29x":
-    argument_matrix:
-      genome: "HG002_HiFi_13.5kb_29x"
-      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
-    columns: *hifi_overview_columns_hg002
+  # "HG002_HiFi_13.5kb_29x":
+  #   argument_matrix:
+  #     genome: "HG002_HiFi_13.5kb_29x"
+  #     read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
+  #     quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
+  #   columns: *hifi_overview_columns_hg002
 
-  "HG002_HiFi_13.5kb_29x_hodeco_simple":
-    argument_matrix:
-      genome: "HG002_HiFi_13.5kb_29x"
-      read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
-    columns: *hifi_hodeco_simple_overview_columns_hg002
+  # "HG002_HiFi_13.5kb_29x_hodeco_simple":
+  #   argument_matrix:
+  #     genome: "HG002_HiFi_13.5kb_29x"
+  #     read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
+  #     quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
+  #   columns: *hifi_hodeco_simple_overview_columns_hg002
 
   # Rice
 
