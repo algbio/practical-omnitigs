@@ -68,25 +68,68 @@ fn print_omnitigs_statistics<Graph: GraphBase>(
     info!(" === Omnitig Statistics === ");
     info!("");
 
-    let min_omnitigs_per_macrotig = maximal_omnitigs
-        .omnitigs_per_macrotig()
-        .iter()
-        .min()
-        .unwrap();
-    let max_omnitigs_per_macrotig = maximal_omnitigs
-        .omnitigs_per_macrotig()
-        .iter()
-        .max()
-        .unwrap();
-    let median_omnitigs_per_macrotig =
-        statistical::median(maximal_omnitigs.omnitigs_per_macrotig());
-    let mean_omnitigs_per_macrotig = statistical::mean(
-        &maximal_omnitigs
+    if !maximal_omnitigs.omnitigs_per_macrotig().is_empty() {
+        let min_omnitigs_per_macrotig = maximal_omnitigs
             .omnitigs_per_macrotig()
             .iter()
-            .map(|i| *i as f64)
-            .collect::<Vec<_>>(),
-    );
+            .min()
+            .unwrap();
+        let max_omnitigs_per_macrotig = maximal_omnitigs
+            .omnitigs_per_macrotig()
+            .iter()
+            .max()
+            .unwrap();
+        let median_omnitigs_per_macrotig =
+            statistical::median(maximal_omnitigs.omnitigs_per_macrotig());
+        let mean_omnitigs_per_macrotig = statistical::mean(
+            &maximal_omnitigs
+                .omnitigs_per_macrotig()
+                .iter()
+                .map(|i| *i as f64)
+                .collect::<Vec<_>>(),
+        );
+
+        info!(
+            "Minimum non-trivial omnitigs per macrotig: {}",
+            min_omnitigs_per_macrotig
+        );
+        info!(
+            "Maximum non-trivial omnitigs per macrotig: {}",
+            max_omnitigs_per_macrotig
+        );
+        info!(
+            "Median non-trivial omnitigs per macrotig: {}",
+            median_omnitigs_per_macrotig
+        );
+        info!(
+            "Mean non-trivial omnitigs per macrotig: {:.1}",
+            mean_omnitigs_per_macrotig
+        );
+
+        if let Some(latex_file) = latex_file.as_mut() {
+            writeln!(
+                latex_file,
+                "min non-trivial omnitigs per macrotig & {} \\\\",
+                min_omnitigs_per_macrotig
+            )?;
+            writeln!(
+                latex_file,
+                "max non-trivial omnitigs per macrotig & {} \\\\",
+                max_omnitigs_per_macrotig
+            )?;
+            writeln!(
+                latex_file,
+                "median non-trivial omnitigs per macrotig & {} \\\\",
+                median_omnitigs_per_macrotig
+            )?;
+            writeln!(
+                latex_file,
+                "mean non-trivial omnitigs per macrotig & {:.1} \\\\",
+                mean_omnitigs_per_macrotig
+            )?;
+        }
+    }
+
     let min_omnitig_len = maximal_omnitigs.iter().map(Sequence::len).min().unwrap();
     let max_omnitig_len = maximal_omnitigs.iter().map(Sequence::len).max().unwrap();
     let median_omnitigs_len = statistical::median(
@@ -101,49 +144,12 @@ fn print_omnitigs_statistics<Graph: GraphBase>(
             .map(|o| o.len() as f64)
             .collect::<Vec<_>>(),
     );
-
-    info!(
-        "Minimum non-trivial omnitigs per macrotig: {}",
-        min_omnitigs_per_macrotig
-    );
-    info!(
-        "Maximum non-trivial omnitigs per macrotig: {}",
-        max_omnitigs_per_macrotig
-    );
-    info!(
-        "Median non-trivial omnitigs per macrotig: {}",
-        median_omnitigs_per_macrotig
-    );
-    info!(
-        "Mean non-trivial omnitigs per macrotig: {:.1}",
-        mean_omnitigs_per_macrotig
-    );
     info!("Minimum edge length: {}", min_omnitig_len);
     info!("Maximum edge length: {}", max_omnitig_len);
     info!("Median edge length: {}", median_omnitigs_len);
     info!("Mean edge length: {:.1}", mean_omnitig_len);
 
     if let Some(latex_file) = latex_file.as_mut() {
-        writeln!(
-            latex_file,
-            "min non-trivial omnitigs per macrotig & {} \\\\",
-            min_omnitigs_per_macrotig
-        )?;
-        writeln!(
-            latex_file,
-            "max non-trivial omnitigs per macrotig & {} \\\\",
-            max_omnitigs_per_macrotig
-        )?;
-        writeln!(
-            latex_file,
-            "median non-trivial omnitigs per macrotig & {} \\\\",
-            median_omnitigs_per_macrotig
-        )?;
-        writeln!(
-            latex_file,
-            "mean non-trivial omnitigs per macrotig & {:.1} \\\\",
-            mean_omnitigs_per_macrotig
-        )?;
         writeln!(latex_file, "min edge length & {} \\\\", min_omnitig_len)?;
         writeln!(latex_file, "max edge length & {} \\\\", max_omnitig_len)?;
         writeln!(
