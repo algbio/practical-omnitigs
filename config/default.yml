@@ -416,19 +416,19 @@ column_templates:
     - shortname: "hifiasm YVp"
       select_assembler:
         hifiasm:
-          contig_algorithm: "trivial_omnitigs_p_utg"
-    - shortname: "hifiasm omni r"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "omnitigs_r_utg"
-    - shortname: "hifiasm omni rbp"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "omnitigs_bubpop.r_utg"
-    - shortname: "hifiasm omni p"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "omnitigs_p_utg"
+    #       contig_algorithm: "trivial_omnitigs_p_utg"
+    # - shortname: "hifiasm omni r"
+    #   select_assembler:
+    #     hifiasm:
+    #       contig_algorithm: "omnitigs_r_utg"
+    # - shortname: "hifiasm omni rbp"
+    #   select_assembler:
+    #     hifiasm:
+    #       contig_algorithm: "omnitigs_bubpop.r_utg"
+    # - shortname: "hifiasm omni p"
+    #   select_assembler:
+    #     hifiasm:
+    #       contig_algorithm: "omnitigs_p_utg"
     - shortname: "mdbg"
       select_assembler:
         mdbg:
@@ -515,18 +515,18 @@ column_templates:
       select_assembler:
         hifiasm:
           contig_algorithm: "trivial_omnitigs_p_utg"
-    - shortname: "hifiasm omni r"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "omnitigs_r_utg"
-    - shortname: "hifiasm omni rbp"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "omnitigs_bubpop.r_utg"
-    - shortname: "hifiasm omni p"
-      select_assembler:
-        hifiasm:
-          contig_algorithm: "omnitigs_p_utg"
+    # - shortname: "hifiasm omni r"
+    #   select_assembler:
+    #     hifiasm:
+    #       contig_algorithm: "omnitigs_r_utg"
+    # - shortname: "hifiasm omni rbp"
+    #   select_assembler:
+    #     hifiasm:
+    #       contig_algorithm: "omnitigs_bubpop.r_utg"
+    # - shortname: "hifiasm omni p"
+    #   select_assembler:
+    #     hifiasm:
+    #       contig_algorithm: "omnitigs_p_utg"
     - shortname: "mdbg"
       select_assembler:
         mdbg:

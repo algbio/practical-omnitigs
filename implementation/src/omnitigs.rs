@@ -339,6 +339,62 @@ pub(crate) fn compute_omnitigs(
             )?;
         }
 
+        /*"hifiasm" => {
+            if subcommand.output_as_wtdbg2_node_ids {
+                bail!("Output as wtdbg2 node ids not supported for hifiasm format");
+            }
+
+            let input = if let Some(input) = subcommand.input.first() {
+                input
+            } else {
+                bail!("No input file given")
+            };
+            info!("Reading bigraph from '{}'", input);
+            let (mut genome_graph, _): (
+                PetGfaGraph<(), (), DefaultSequenceStoreHandle<DnaAlphabet>>,
+                _,
+            ) = genome_graph::io::gfa::read_gfa_as_edge_centric_bigraph_from_file(
+                input,
+                &mut sequence_store,
+                true,
+            )?;
+
+            info!(
+                "Graph has {} nodes and {} edges",
+                genome_graph.node_count(),
+                genome_graph.edge_count()
+            );
+
+            if subcommand.linear_reduction {
+                perform_linear_reduction(&mut genome_graph)?;
+            }
+            let genome_graph = genome_graph;
+
+            info!("Computing maximal omnitigs");
+            let mut omnitigs = Omnitigs::compute(&genome_graph);
+            omnitigs.remove_reverse_complements(&genome_graph);
+            print_omnitigs_statistics(&omnitigs, &mut latex_file)?;
+            let mut omnitigs: Vec<_> = omnitigs.into_iter().map(Into::into).collect();
+            if subcommand.linear_reduction {
+                split_walks_at_node(
+                    &mut omnitigs,
+                    genome_graph.node_indices().last().unwrap(),
+                    &genome_graph,
+                )?;
+                remove_subwalks_and_reverse_complements_from_walks(&mut omnitigs, &genome_graph);
+            }
+
+            info!(
+                "Storing maximal omnitigs as fasta to '{}'",
+                subcommand.output
+            );
+            genome_graph::io::fasta::write_node_centric_walks_with_variable_overlaps_as_fasta_file(
+                &genome_graph,
+                &sequence_store,
+                omnitigs.iter().map(|edge_walk| edge_walk.clone_as_node_walk(&genome_graph).unwrap()),
+                &subcommand.output,
+            )?;
+        }*/
         "wtdbg2" => {
             let nodes_file =
                 if let Some(file) = subcommand.input.iter().find(|f| f.ends_with(".3.nodes")) {
