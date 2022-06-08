@@ -3,3 +3,4 @@ channels:
         - bioconda
 dependencies:
         - bbmap==38.90
+        - time == 1.8

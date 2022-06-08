@@ -8,46 +8,58 @@ import errno
 import shutil
 
 def silentremove(filename):
+    print(f"Removing {filename}")
     try:
         if isfile(filename):
             os.remove(filename)
         else:
             shutil.rmtree(filename)
         print("Removed {}".format(filename))
-    except OSError as e: # this would be "except OSError, e:" before Python 2.6
+    except OSError as e:
         if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
             raise # re-raise exception if a different error occurred
 log_path = "logs/latest"
 
 if len(sys.argv) >= 2:
-	log_path = sys.argv[1]
+    log_path = sys.argv[1]
 
 try:
-	log_files = [join(log_path, f) for f in listdir(log_path) if isfile(join(log_path, f))]
+    try:
+        log_files = [join(log_path, f) for f in listdir(log_path) if isfile(join(log_path, f))]
+    except OSError as e:
+        if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+            raise
+        sys.exit(0)
 except Exception as e:
-	print("Could not list log files")
-	print(e)
-	sys.exit(0)
+    print(e)
+    sys.exit("Could not list log files")
 
 for log_file in log_files:
-	if "practical-omnitigs" not in log_file:
-		continue
+    if "practical-omnitigs" not in log_file:
+        continue
 
-	with open(log_file, 'r') as f:
-		alllines = '\n'.join(f.readlines())
-		has_outfiles = False
+    with open(log_file, 'r') as f:
+        has_outfiles_state = 0
+        outfiles = []
 
-		try:
-			outfiles = alllines.split("Select jobs to execute...")[1]
-			outfiles = outfiles.split("output:")[1]
-			outfiles = outfiles.split("jobid:")[0].strip()
-			outfiles = outfiles.split(", ")
-			has_outfiles = True
-		except IndexError:
-			# Apparently, this job did not even get to output its metadata, so it surely produced no output files.
-			pass
+        try:
+            for line in f:
+                if "1 of 1 steps (100%) done" in line:
+                    has_outfiles_state = -1
+                if has_outfiles_state == 0 and "Select jobs to execute..." in line:
+                    has_outfiles_state = 1
+                    line = line.split("Select jobs to execute...")[1]
+                if has_outfiles_state == 1 and "output:" in line:
+                    has_outfiles_state = 2
+                    line = line.split("output:")[1]
+                    outfiles = line.strip().split(", ")
+                if has_outfiles_state == 2 and "jobid:" in line:
+                    has_outfiles_state = 3
+        except IndexError:
+            # Apparently, this job did not even get to output its metadata, so it surely produced no output files.
+            pass
 
-		if has_outfiles and "1 of 1 steps (100%) done" not in alllines:
-			for out_file in outfiles:
-				silentremove(out_file)
+        if has_outfiles_state == 3:
+            for out_file in outfiles:
+                silentremove(os.path.dirname(out_file.strip()))
 

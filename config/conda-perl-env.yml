@@ -2,3 +2,4 @@ channels:
         - conda-forge
 dependencies:
         - perl == 5.32.0
+        - time == 1.8

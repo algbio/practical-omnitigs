@@ -1,4 +1,6 @@
 channels:
+        - conda-forge
         - bioconda
 dependencies:
         - bcalm==2.2.3
+        - time == 1.8

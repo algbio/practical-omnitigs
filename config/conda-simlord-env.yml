@@ -4,3 +4,4 @@ channels:
         - bioconda
 dependencies:
         - simlord==1.0.4
+        - time == 1.8

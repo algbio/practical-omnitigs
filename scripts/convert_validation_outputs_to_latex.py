@@ -5,7 +5,7 @@ Convert the output of the different validation tools into a LaTeX file.
 Arguments: <genome name> <cli verify LaTeX results> <bandage png> <output file> [<label> <experiment prefix> ...] 
 """
 
-import sys, subprocess, hashlib, os, pathlib
+import sys, subprocess, hashlib, os, pathlib, json
 import traceback
 
 hashdir = os.path.abspath(sys.argv[1])
@@ -17,12 +17,12 @@ output_file_name = sys.argv[6]
 
 experiments = []
 
-for i in range(7, len(sys.argv), 2):
-	if i + 1 >= len(sys.argv):
-		print("Uneven number of experiment parameters. Each parameter must be a pair of <label> and <experiment prefix>")
-		exit(1)
+for i in range(7, len(sys.argv), 5):
+	if i + 4 >= len(sys.argv):
+		exit("Number of experiment parameters not divisible by 5")
 
-	experiments.append((sys.argv[i], sys.argv[i + 1]))
+	# shortname, omnitig algo file, QUAST dir, ContigValidator file
+	experiments.append((sys.argv[i], sys.argv[i + 1], sys.argv[i + 2], sys.argv[i + 3], sys.argv[i + 4]))
 
 def append_latex_table_second_column(table, appendix):
 	if len(table) == 0:
@@ -92,34 +92,34 @@ def append_latex_table_second_column(table, appendix):
 
 name_file = open(genome_name_file_name, 'r')
 name_lines = name_file.readlines()
-name_lines = [x.replace("_", "\\_") for x in name_lines]
+name_lines = [x.replace("_", "\\_").replace("{", "").replace("}", "") for x in name_lines]
 
 ###############################
 ### Process algorithm files ###
 ###############################
 
-def read_algorithm_file(prefix):
-	try:
-		algorithm_file = open(os.path.join(prefix, "compute_injectable_contigs.tex"))
-		algorithm_lines = algorithm_file.readlines()
-		return algorithm_lines
-	except:
-		print("Did not find algorithm file for '" + prefix + "'")
-		return []
+# def read_algorithm_file(prefix):
+# 	try:
+# 		algorithm_file = open(os.path.join(prefix, "compute_injectable_contigs.tex"))
+# 		algorithm_lines = algorithm_file.readlines()
+# 		return algorithm_lines
+# 	except:
+# 		print("Did not find algorithm file for '" + prefix + "'")
+# 		return []
 
 headline = "Parameter"
 algorithm_table = []
-for label, prefix in experiments:
-	headline += " & " + label
-	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
-	algorithm_table = append_latex_table_second_column(algorithm_table, table)
+# for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
+# 	headline += " & " + label
+# 	table = read_algorithm_file(os.path.join(prefix, "injectable_contigs"))
+# 	algorithm_table = append_latex_table_second_column(algorithm_table, table)
 
 algorithm_table = [headline + "\\\\ \\hline"] + algorithm_table
 
 
-##########################
+###########################
 ### Process QUAST files ###
-##########################
+###########################
 
 def read_quast_file(filename):
 	try:
@@ -136,47 +136,47 @@ def read_quast_file(filename):
 
 headline = "Parameter"
 quast_table = []
-for (label, prefix) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix + "quast/report.tex")
+	table = read_quast_file(os.path.join(quast_directory, "report.tex"))
 	quast_table = append_latex_table_second_column(quast_table, table)
 
 quast_table = [headline + "\\\\ \\hline"] + quast_table
 
 headline = "Parameter"
 quast_misassemblies_table = []
-for (label, prefix) in experiments:
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
 	headline += " & " + label
-	table = read_quast_file(prefix + "quast/contigs_reports/misassemblies_report.tex")
+	table = read_quast_file(os.path.join(quast_directory, "contigs_reports", "misassemblies_report.tex"))
 	quast_misassemblies_table = append_latex_table_second_column(quast_misassemblies_table, table)
 
 quast_misassemblies_table = [headline + "\\\\ \\hline"] + quast_misassemblies_table
 
 
-####################################
+#####################################
 ### Process ContigValidator files ###
-####################################
+#####################################
 
-def read_contig_validator_file(prefix):
-	try:
-		contig_validator_file = open(prefix + ".contigvalidator", 'r')
-		contig_validator_lines = contig_validator_file.readlines()
-		contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
-		contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
-		contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
-		contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
-		contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
-		return contig_validator_lines
-	except:
-		print("Did not find contig validator file for '" + prefix + "'")
-		return []
+# def read_contig_validator_file(prefix):
+# 	try:
+# 		contig_validator_file = open(prefix + ".contigvalidator", 'r')
+# 		contig_validator_lines = contig_validator_file.readlines()
+# 		contig_validator_lines = contig_validator_lines[1].split()[1:] # Remove header and file name column
+# 		contig_validator_lines[0] = "\\%exact & " + contig_validator_lines[0] + "\\%\\\\"
+# 		contig_validator_lines[1] = "\\%align & " + contig_validator_lines[1].replace("%", "\\%") + "\\\\"
+# 		contig_validator_lines[2] = "recall & " + contig_validator_lines[2].replace("%", "\\%") + "\\\\"
+# 		contig_validator_lines[3] = "precision & " + contig_validator_lines[3].replace("%", "\\%") + "\\\\"
+# 		return contig_validator_lines
+# 	except:
+# 		print("Did not find contig validator file for '" + prefix + "'")
+# 		return []
 
 headline = "Parameter"
 contig_validator_table = []
-for (label, prefix) in experiments:
-	headline += " & " + label
-	table = read_contig_validator_file(prefix)
-	contig_validator_table = append_latex_table_second_column(contig_validator_table, table)
+# for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
+# 	headline += " & " + label
+# 	table = read_contig_validator_file(prefix)
+# 	contig_validator_table = append_latex_table_second_column(contig_validator_table, table)
 
 contig_validator_table = [headline + "\\\\ \\hline"] + contig_validator_table
 
@@ -191,6 +191,37 @@ try:
 except:
 	print("Did not find graph statistics file '" + graph_statistics_file_name + "'")
 	graph_statistics_table = []
+
+#########################################
+### Process resources evaluation file ###
+#########################################
+
+headline = "Parameter"
+resources_table = []
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
+	headline += " & " + label
+	try:
+		with open(resources_evaluation_name, 'r') as resources_evaluation_file:
+			resources_evaluation = json.load(resources_evaluation_file)
+			time = resources_evaluation["total"]["time"]
+			mem = resources_evaluation["total"]["mem"] / (1024**2)
+			subtable = [f"time [s] & {time:.2f} \\\\", f"mem [GiB] & {mem:.2f} \\\\"]
+
+			for key, values in resources_evaluation.items():
+				if key == "total":
+					continue
+				key = key.replace("_", "\\_")
+				time = values["time"]
+				mem = values["mem"] / (1024**2)
+				subtable.append(f"{key} time & {time:.2f} \\\\")
+				subtable.append(f"{key} mem & {mem:.2f} \\\\")
+
+			resources_table = append_latex_table_second_column(resources_table, subtable)
+	except:
+		print("Error processing resources evaluation file")
+		raise
+
+resources_table = [headline + "\\\\ \\hline"] + resources_table
 
 ########################
 ### Build LaTeX file ###
@@ -223,10 +254,35 @@ table_footer = """\\hline
 	\\end{table}
 	"""
 
-def write_table(output_file, caption, column_count, rows):
+def format_row_numbers(row):
+	row = row.strip()
+	row = row.rstrip('\\')
+	result = []
+
+	for column in row.split('&'):
+		column = column.strip()
+		if column.isdigit():
+			column = int(column)
+			column = f"{column:,}"
+		else:
+			try:
+				column = float(column)
+				column = f"{column:,.2f}"
+			except ValueError:
+				pass
+		result.append(column)
+
+	return " & ".join(result) + "\\\\"
+
+def write_table(output_file, caption, column_count, rows, midrules = []):
+	midrules = set(midrules)
 	output_file.write(table_header(caption, column_count))
-	for row in rows:
-		output_file.write(row + '\n')
+	for index, row in enumerate(rows):
+		row = format_row_numbers(row)
+		output_file.write(row)
+		if index in midrules:
+			output_file.write("\\hline")
+		output_file.write('\n')
 	output_file.write(table_footer)
 
 def write_image(output_file, caption, file, natwidth, natheight):
@@ -291,9 +347,11 @@ write_table(output_file, "ContigValidator", len(experiments), contig_validator_t
 
 write_table(output_file, "QUAST: \\# of contigs", len(experiments), quast_table[0:7])
 write_table(output_file, "QUAST: total length of contigs", len(experiments), [quast_table[0]] + quast_table[7:13])
-write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[13:28])
-write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[28:])
+write_table(output_file, "QUAST: statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[13:30])
+write_table(output_file, "QUAST: alignment statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), [quast_table[0]] + quast_table[30:], midrules = [12, 21])
 write_table(output_file, "QUAST: misassembly statistics for contigs $\\geq$ 500bp (or 3000bp for QUAST-LG)", len(experiments), quast_misassemblies_table)
+
+write_table(output_file, "Resource usage", len(experiments), resources_table)
 
 
 from os import path
@@ -303,16 +361,16 @@ if combined_eaxmax_plot_name != 'none':
     write_image(output_file, "EAxmax", combined_eaxmax_plot_name, 1000, 1000)
 
 output_file.write("\\newpage")
-for label, prefix in experiments:
-	plot_file_path = prefix + "quast/aligned_stats/EAxmax_plot.pdf"
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
+	plot_file_path = os.path.join(quast_directory, "aligned_stats", "EAxmax_plot.pdf")
 	if path.isfile(plot_file_path):
 		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST EAxmax graph for " + label, quast_png_name, 1000, 1000)
 	else:
 		print("Did not find '" + plot_file_path + "'")
 
-for label, prefix in experiments:
-	plot_file_path = prefix + "quast/aligned_stats/NGAx_plot.pdf"
+for (label, tig_algo_file, quast_directory, contig_validator_name, resources_evaluation_name) in experiments:
+	plot_file_path = os.path.join(quast_directory, "aligned_stats", "NGAx_plot.pdf")
 	if path.isfile(plot_file_path):
 		quast_png_name = plot_file_path
 		write_image(output_file, "QUAST NGAx graph for " + label, quast_png_name, 1000, 1000)

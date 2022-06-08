@@ -1,7 +1,6 @@
 # Practical [Omnitigs](https://www.liebertpub.com/doi/full/10.1089/cmb.2016.0141)
 
 ![](https://github.com/algbio/practical-omnitigs/workflows/Tests%20%26%20Lints/badge.svg?branch=master)
-[![Coverage Status](https://coveralls.io/repos/github/algbio/practical-omnitigs/badge.svg?branch=master)](https://coveralls.io/github/algbio/practical-omnitigs?branch=master)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4334939.svg)](https://doi.org/10.5281/zenodo.4335367)
 
 This is a repository to conduct experiments with omnitig-related models in the context of genome assembly.
@@ -65,7 +64,7 @@ If that does not solve your issue, do not hesitate to [file a bug report](https:
  * `config`: All config files related to the experiments, including conda environments and experiment declarations.
  * `data`: Data used and produced by the experiments.
  * `external-software`: Location to install external software required by the experiment pipeline.
- * `implementation`: The algorithms that we are testing. Everything is written in Rust, so the folder contains a Rust workspace. 
+ * `implementation`: The algorithms that we are testing. Everything is written in Rust. 
 
 ### Implementation
 
@@ -74,27 +73,6 @@ We split the implementation into multiple library crates to increase the reusabi
 On top of that, the `cli` crate provides all implemented functionality via a command line interface.
 Refer to [its documentation][cli crate] for more information.
 
-This project contains the following crates.
-
- * [bigraph](https://github.com/algbio/practical-omnitigs/tree/master/implementation/bigraph)
-   [![](http://meritbadge.herokuapp.com/bigraph)](https://crates.io/crates/bigraph)
-   [![](https://docs.rs/bigraph/badge.svg)](https://docs.rs/bigraph)
-   Representation of and operations on bigraphs.
- * [cli][cli crate]
-   The command line interface of our implementation.
- * [compact-genome](https://github.com/algbio/practical-omnitigs/tree/master/implementation/compact-genome)
-   [![](http://meritbadge.herokuapp.com/compact-genome)](https://crates.io/crates/compact-genome)
-   [![](https://docs.rs/compact-genome/badge.svg)](https://docs.rs/compact-genome)
-   Representation of and operations on genome strings.
- * [genome-graph](https://github.com/algbio/practical-omnitigs/tree/master/implementation/genome-graph)
-   [![](http://meritbadge.herokuapp.com/genome-graph)](https://crates.io/crates/genome-graph)
-   [![](https://docs.rs/genome-graph/badge.svg)](https://docs.rs/genome-graph)
-   Representation of and operations on genome graphs.
- * [traitgraph](https://github.com/algbio/practical-omnitigs/tree/master/implementation/traitgraph)
-   [![](http://meritbadge.herokuapp.com/traitgraph)](https://crates.io/crates/traitgraph)
-   [![](https://docs.rs/traitgraph/badge.svg)](https://docs.rs/traitgraph)
-   Abstract algorithms on graphs, independent of the graph representation.
-
 Except for `cli`, all crates are published on `crates.io`.
 
 ## License
@@ -102,7 +80,7 @@ Except for `cli`, all crates are published on `crates.io`.
 This project is licensed under the terms of the BSD 2-Clause license.
 See `LICENSE.md` for more information.
 
-[cli crate]: https://github.com/algbio/practical-omnitigs/tree/master/implementation/cli
+[cli crate]: https://github.com/algbio/practical-omnitigs/tree/master/implementation
 
 ## How to Cite
 

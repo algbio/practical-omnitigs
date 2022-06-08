@@ -143,7 +143,7 @@ output_file.write(
 )
 
 for source_report in source_reports:
-	output_file.write("\\item " + source_report.replace("_", "\\_") + '\n')
+	output_file.write("\\item " + source_report.replace("_", "\\_").replace(",", "\\linebreak") + '\n')
 output_file.write("\\end{itemize}\n")
 
 #####################

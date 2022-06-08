@@ -3,3 +3,4 @@ channels:
   - bioconda
 dependencies:
   - bandage==0.8.1
+  - time == 1.8
