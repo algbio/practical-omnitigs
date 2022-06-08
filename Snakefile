@@ -663,7 +663,7 @@ def get_injectable_contigs_rust_cli_command_from_wildcards(wildcards):
         elif "trivial_omnitigs" == injection:
             return "compute-trivial-omnitigs --non-scc"
         elif "omnitigs" == injection:
-            return "compute-omnitigs --linear-reduction"
+            return "compute-omnitigs --linear-reduction --linear-reduction-use-scc"
         else:
             raise Exception(f"Wrong injection command in assembler arguments: {wildcards}")
     except Exception:
@@ -693,7 +693,7 @@ def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
         elif "trivial_omnitigs" == injection:
             return "compute-trivial-omnitigs --non-scc"
         elif "omnitigs" == injection:
-            return "compute-omnitigs --linear-reduction"
+            return "compute-omnitigs --linear-reduction --linear-reduction-use-scc"
         else:
             raise Exception("Wrong injection command in assembler arguments: {wildcards}")
     except Exception:
@@ -1224,7 +1224,7 @@ rule hifiasm_omnitigs:
     wildcard_constraints:
             contig_algorithm = r"omnitigs_[a-z_\.]+",
     log:    log = os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"),
-    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.rust_binary}' compute-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --linear-reduction 2>&1 | tee '{log.log}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.rust_binary}' compute-omnitigs --file-format hifiasm --input '{input.unitigs}' --output '{output.contigs}' --latex '{output.latex}' --linear-reduction --linear-reduction-use-scc 2>&1 | tee '{log.log}'"
 
 ##################
 ###### mdbg ######

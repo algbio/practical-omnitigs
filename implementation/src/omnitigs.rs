@@ -58,6 +58,12 @@ pub struct ComputeOmnitigsCommand {
         help = "Connect all sources and sinks to a global node to make the graph strongly connected. Then compute omnitigs and split them if they contain the global node. If the graph does not become strongly connected, abort."
     )]
     pub linear_reduction: bool,
+
+    #[clap(
+        long,
+        help = "When performing the linear reduction, report walks only on the SCC that contains the dummy node."
+    )]
+    pub linear_reduction_use_scc: bool,
 }
 
 fn print_omnitigs_statistics<Graph: GraphBase>(
@@ -168,12 +174,20 @@ fn print_omnitigs_statistics<Graph: GraphBase>(
     Ok(())
 }
 
-fn perform_linear_reduction<Graph: DynamicBigraph>(graph: &mut Graph) -> crate::Result<()>
+fn perform_linear_reduction<Graph: DynamicBigraph + Default>(
+    graph: &mut Graph,
+    force_sc: bool,
+) -> crate::Result<()>
 where
-    Graph::NodeData: Default,
-    Graph::EdgeData: Default,
+    Graph::NodeData: Default + Clone + Eq,
+    Graph::EdgeData: Default + Clone,
 {
     info!("Performing linear reduction");
+    if is_strongly_connected(graph) {
+        info!("Skipping linear reduction, since the graph is strongly connected already");
+        return Ok(());
+    }
+
     let global_node = graph.add_node(Default::default());
     graph.set_mirror_nodes(global_node, global_node);
     let mut inserted_edge_count = 0usize;
@@ -195,9 +209,28 @@ where
 
     info!("Linear reduction inserted {} edges", inserted_edge_count);
 
-    if !is_strongly_connected(graph) {
+    let strongly_connected = is_strongly_connected(graph);
+    if !strongly_connected && !force_sc {
         error!("Graph is not strongly connected after linear reduction");
         return Err(ErrorKind::LinearReductionNotStronglyConnected.into());
+    } else if !strongly_connected && force_sc {
+        info!("Graph is not strongly connected after linear reduction, taking only SCC containing the global node");
+
+        let scc_indices = decompose_strongly_connected_components(graph);
+        let nodes_to_delete = scc_indices
+            .iter()
+            .enumerate()
+            .rev()
+            .filter_map(|(index, scc)| {
+                if scc == scc_indices.last().unwrap() {
+                    Some(index)
+                } else {
+                    None
+                }
+            });
+        for node_index in nodes_to_delete {
+            graph.remove_node(node_index.into());
+        }
     }
 
     Ok(())
@@ -308,7 +341,7 @@ pub(crate) fn compute_omnitigs(
             );
 
             if subcommand.linear_reduction {
-                perform_linear_reduction(&mut genome_graph)?;
+                perform_linear_reduction(&mut genome_graph, subcommand.linear_reduction_use_scc)?;
             }
             let genome_graph = genome_graph;
 
@@ -436,7 +469,7 @@ pub(crate) fn compute_omnitigs(
             );
 
             if subcommand.linear_reduction {
-                perform_linear_reduction(&mut genome_graph)?;
+                perform_linear_reduction(&mut genome_graph, subcommand.linear_reduction_use_scc)?;
             }
             let genome_graph = genome_graph;
 
@@ -499,7 +532,7 @@ pub(crate) fn compute_omnitigs(
             );
 
             if subcommand.linear_reduction {
-                perform_linear_reduction(&mut genome_graph)?;
+                perform_linear_reduction(&mut genome_graph, subcommand.linear_reduction_use_scc)?;
             }
             let genome_graph = genome_graph;
 
