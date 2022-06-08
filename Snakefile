@@ -2076,9 +2076,9 @@ def hisim_sim_params(wildcards):
         if clean_read_source == "hisim_test":
             return "-c40.0"
         elif clean_read_source == "hisim_human":
-            return ""
+            return "-c25.0"
         elif clean_read_source == "hisim_human_haploid":
-            return ""
+            return "-c25.0"
         elif clean_read_source == "hisim_0_7":
             return ""
         elif clean_read_source == "hisim_haploid":
