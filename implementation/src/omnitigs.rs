@@ -1,20 +1,21 @@
-use std::fmt::Debug;
 use crate::{CliOptions, ErrorKind};
 use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
 use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use genome_graph::bigraph::interface::dynamic_bigraph::DynamicBigraph;
+use genome_graph::bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
+use genome_graph::bigraph::interface::BidirectedData;
+use genome_graph::bigraph::traitgraph::interface::Edge;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use omnitigs::omnitigs::remove_subwalks_and_reverse_complements_from_walks;
 use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::index::GraphIndex;
+use omnitigs::traitgraph::index::OptionalGraphIndex;
 use omnitigs::traitgraph::interface::{GraphBase, ImmutableGraphContainer, StaticGraph};
 use omnitigs::traitgraph::walks::VecEdgeWalk;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use genome_graph::bigraph::interface::BidirectedData;
-use genome_graph::bigraph::interface::static_bigraph::StaticEdgeCentricBigraph;
-use genome_graph::bigraph::traitgraph::interface::Edge;
 use traitgraph_algo::components::{decompose_strongly_connected_components, is_strongly_connected};
 use traitsequence::interface::Sequence;
 
@@ -179,10 +180,10 @@ fn print_omnitigs_statistics<Graph: GraphBase>(
     Ok(())
 }
 
-fn perform_linear_reduction<Graph: DynamicBigraph + StaticEdgeCentricBigraph + Default>(
-    graph: &mut Graph,
+fn perform_linear_reduction<Graph: DynamicBigraph + StaticEdgeCentricBigraph + Default + Clone>(
+    graph: &Graph,
     force_sc: bool,
-) -> crate::Result<Vec<Graph::NodeIndex>>
+) -> crate::Result<(Graph, Vec<Graph::EdgeIndex>)>
 where
     Graph::NodeData: Default + Clone + Eq,
     Graph::EdgeData: Default + Clone + BidirectedData + Eq,
@@ -190,80 +191,85 @@ where
     info!("Performing linear reduction");
     if is_strongly_connected(graph) {
         info!("Skipping linear reduction, since the graph is strongly connected already");
-        return Ok(graph.node_indices().collect());
+        return Ok((graph.clone(), graph.edge_indices().collect()));
     }
 
-    let global_node = graph.add_node(Default::default());
-    graph.set_mirror_nodes(global_node, global_node);
+    let mut reduced = graph.clone();
+    let global_node = reduced.add_node(Default::default());
+    reduced.set_mirror_nodes(global_node, global_node);
     let mut inserted_edge_count = 0usize;
 
-    for node in graph.node_indices().rev().skip(1).rev() {
-        if graph.out_degree(node) == 0 {
-            graph.add_edge(node, global_node, Default::default());
+    for node in reduced.node_indices().rev().skip(1).rev() {
+        if reduced.out_degree(node) == 0 {
+            reduced.add_edge(node, global_node, Default::default());
             inserted_edge_count += 1;
         }
-        if graph.in_degree(node) == 0 {
-            graph.add_edge(global_node, node, Default::default());
+        if reduced.in_degree(node) == 0 {
+            reduced.add_edge(global_node, node, Default::default());
             inserted_edge_count += 1;
         }
     }
 
     if inserted_edge_count == 0 {
-        graph.remove_node(global_node);
+        reduced.remove_node(global_node);
     }
 
     info!("Linear reduction inserted {} edges", inserted_edge_count);
 
-    let strongly_connected = is_strongly_connected(graph);
+    let strongly_connected = is_strongly_connected(&reduced);
     Ok(if !strongly_connected && !force_sc {
         error!("Graph is not strongly connected after linear reduction");
         return Err(ErrorKind::LinearReductionNotStronglyConnected.into());
     } else if !strongly_connected && force_sc {
         info!("Graph is not strongly connected after linear reduction, taking only SCC containing the global node");
 
-        // debug_assert!(graph.verify_edge_mirror_property());
-        let scc_indices = decompose_strongly_connected_components(graph);
-        let nodes_to_delete: Vec<_> = scc_indices
-            .iter()
-            .enumerate()
-            .filter_map(|(index, scc)| {
-                if scc != scc_indices.last().unwrap() {
-                    Some(index.into())
-                } else {
-                    None
-                }
-            })
-            .collect();
+        debug_assert!(reduced.verify_edge_mirror_property());
+        let scc_indices = decompose_strongly_connected_components(&reduced);
+        let nodes_to_retain = scc_indices.iter().enumerate().filter_map(|(index, scc)| {
+            if scc == scc_indices.last().unwrap() {
+                Some(Graph::NodeIndex::from(index))
+            } else {
+                None
+            }
+        });
 
-        info!("Deleting nodes outside of global node's SCC");
-        graph.remove_nodes_sorted_slice(&nodes_to_delete);
-        let mut unreduce_map = Vec::new();
-        for (delete_index, node_index) in
-            nodes_to_delete
-                .iter()
-                .copied()
-                .chain(std::iter::once(
-                    graph.node_count().into()
-                )).enumerate()
-        {
-            let node_index = node_index.as_usize();
-            while unreduce_map.len() < node_index - delete_index {
-                unreduce_map.push((unreduce_map.len() - delete_index).into());
+        info!("Copying SCC into new graph");
+        let mut scc = Graph::default();
+        let mut inverted_node_map =
+            vec![Graph::OptionalNodeIndex::new_none(); reduced.node_count()];
+        for node in nodes_to_retain {
+            let scc_node = scc.add_node(reduced.node_data(node).clone());
+            inverted_node_map[node.as_usize()] = Some(scc_node).into();
+
+            if let Some(mirror_node) = reduced.mirror_node(node) {
+                if let Some(scc_mirror_node) = inverted_node_map[mirror_node.as_usize()].into() {
+                    scc.set_mirror_nodes(scc_node, scc_mirror_node);
+                }
             }
         }
-        info!("Deletion done");
 
-        if graph.node_count() == 1 {
-            warn!("SCC contains only the global node and nothing else, producing empty graph");
-            graph.clear();
+        let mut edge_map = Vec::new();
+        for edge in reduced.edge_indices() {
+            let Edge { from_node, to_node } = reduced.edge_endpoints(edge);
+            if let (Some(from_node), Some(to_node)) = (
+                inverted_node_map[from_node.as_usize()].into(),
+                inverted_node_map[to_node.as_usize()].into(),
+            ) {
+                scc.add_edge(from_node, to_node, reduced.edge_data(edge).clone());
+                edge_map.push(edge);
+            }
         }
 
-        assert!(is_strongly_connected(graph));
-        // graph might not be properly bidirected anymore
-        // debug_assert!(graph.verify_edge_mirror_property());
-        unreduce_map
+        if scc.node_count() == 1 {
+            warn!("SCC contains only the global node and nothing else, producing empty graph");
+            scc.clear();
+        }
+
+        assert!(is_strongly_connected(&scc));
+        debug_assert!(scc.verify_edge_mirror_property());
+        (scc, edge_map)
     } else {
-        graph.node_indices().collect()
+        (reduced, graph.edge_indices().collect())
     })
 }
 
@@ -324,20 +330,26 @@ fn split_walks_at_node<Graph: StaticGraph>(
     Ok(())
 }
 
-fn compute_omnitigs_from_graph<Graph: DynamicBigraph + Clone + Default + StaticEdgeCentricBigraph>(genome_graph: &Graph, compute_omnitigs_command: &ComputeOmnitigsCommand, latex_file: &mut Option<BufWriter<File>>) -> crate::Result<Vec<VecEdgeWalk<Graph>>>
-    where
-        Graph::NodeData: Default + Clone + Eq + Debug,
-        Graph::EdgeData: Default + Clone + BidirectedData + Eq, {
+fn compute_omnitigs_from_graph<Graph: DynamicBigraph + Clone + Default + StaticEdgeCentricBigraph>(
+    genome_graph: &Graph,
+    compute_omnitigs_command: &ComputeOmnitigsCommand,
+    latex_file: &mut Option<BufWriter<File>>,
+) -> crate::Result<Vec<VecEdgeWalk<Graph>>>
+where
+    Graph::NodeData: Default + Clone + Eq + Debug,
+    Graph::EdgeData: Default + Clone + BidirectedData + Eq,
+{
     debug_assert!(genome_graph.verify_edge_mirror_property());
 
     Ok(if compute_omnitigs_command.linear_reduction {
-        let mut omnitig_graph = genome_graph.clone();
-        let unreduce_map = perform_linear_reduction(&mut omnitig_graph, compute_omnitigs_command.linear_reduction_use_scc)?;
+        let (omnitig_graph, unreduce_map) = perform_linear_reduction(
+            genome_graph,
+            compute_omnitigs_command.linear_reduction_use_scc,
+        )?;
 
         info!("Computing maximal omnitigs");
-        let omnitigs = Omnitigs::compute(&omnitig_graph);
-        // can't do this because our graph is not properly bidirected anymore
-        // omnitigs.remove_reverse_complements(&omnitig_graph);
+        let mut omnitigs = Omnitigs::compute(&omnitig_graph);
+        omnitigs.remove_reverse_complements(&omnitig_graph);
         print_omnitigs_statistics(&omnitigs, latex_file)?;
         let mut omnitigs: Vec<_> = omnitigs.into_iter().map(Into::into).collect();
         split_walks_at_node(
@@ -353,10 +365,7 @@ fn compute_omnitigs_from_graph<Graph: DynamicBigraph + Clone + Default + StaticE
         info!("Merging tigs");
         for omnitig in &mut omnitigs {
             for edge in omnitig {
-                let Edge { from_node, to_node } = omnitig_graph.edge_endpoints(*edge);
-                let from_node = unreduce_map[from_node.as_usize()];
-                let to_node = unreduce_map[to_node.as_usize()];
-                *edge = genome_graph.edges_between(from_node, to_node).next().unwrap();
+                *edge = unreduce_map[edge.as_usize()];
             }
         }
         omnitigs.extend(trivial_omnitigs.into_iter().map(Into::into));
@@ -418,7 +427,7 @@ pub(crate) fn compute_omnitigs(
                 genome_graph.edge_count()
             );
 
-            let omnitigs =compute_omnitigs_from_graph(&genome_graph, subcommand, &mut latex_file)?;
+            let omnitigs = compute_omnitigs_from_graph(&genome_graph, subcommand, &mut latex_file)?;
 
             info!(
                 "Storing maximal omnitigs as fasta to '{}'",
@@ -529,7 +538,7 @@ pub(crate) fn compute_omnitigs(
                 genome_graph.edge_count()
             );
 
-            let omnitigs =compute_omnitigs_from_graph(&genome_graph, subcommand, &mut latex_file)?;
+            let omnitigs = compute_omnitigs_from_graph(&genome_graph, subcommand, &mut latex_file)?;
 
             if subcommand.output_as_wtdbg2_node_ids {
                 info!("Storing omnitigs as node ids to '{}'", subcommand.output);
@@ -567,7 +576,7 @@ pub(crate) fn compute_omnitigs(
                 genome_graph.edge_count()
             );
 
-            let omnitigs =compute_omnitigs_from_graph(&genome_graph, subcommand, &mut latex_file)?;
+            let omnitigs = compute_omnitigs_from_graph(&genome_graph, subcommand, &mut latex_file)?;
 
             info!("Storing omnitigs as node ids to '{}'", subcommand.output);
             genome_graph::io::wtdbg2::dot::write_dot_contigs_as_wtdbg2_node_ids_to_file(
