@@ -3,10 +3,10 @@ use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
 use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use genome_graph::bigraph::implementation::node_bigraph_wrapper::NodeBigraphWrapper;
-use genome_graph::bigraph::traitgraph::implementation::petgraph_impl::petgraph::graph::DiGraph;
 use genome_graph::bigraph::traitgraph::interface::GraphBase;
 use genome_graph::io::wtdbg2::build_wtdbg2_unitigs_graph;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
+use omnitigs::traitgraph::implementation::petgraph_impl::PetGraph;
 use omnitigs::unitigs::EdgeUnitigs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -244,7 +244,7 @@ pub(crate) fn compute_unitigs(
                 info!(" ==============================");
                 info!(" === Analysing unitig graph ===");
                 info!(" ==============================");
-                let unitig_graph: NodeBigraphWrapper<DiGraph<_, _, _>> =
+                let unitig_graph: NodeBigraphWrapper<PetGraph<_, _>> =
                     build_wtdbg2_unitigs_graph(&wtdbg2_unitigs);
                 drop(wtdbg2_unitigs);
 

@@ -1,6 +1,6 @@
 use crate::CliOptions;
 use clap::Parser;
-use genome_graph::bigraph::traitgraph::implementation::petgraph_impl;
+use genome_graph::bigraph::traitgraph::implementation::petgraph_impl::PetGraph;
 use omnitigs::hamiltonian::preprocess_hamiltonian_circuit;
 use omnitigs::macrotigs::macrotigs::Macrotigs;
 use omnitigs::node_covering_node_visible_one_circular_safe::compute_maximal_node_covering_node_visible_one_circular_safe_walks;
@@ -42,7 +42,7 @@ pub(crate) fn hamcircuit(
     _options: &CliOptions,
     subcommand: &HamCircuitCommand,
 ) -> crate::Result<()> {
-    let mut graph = petgraph_impl::new::<(), ()>();
+    let mut graph = PetGraph::<(), ()>::new();
 
     if let Some(random) = &subcommand.random {
         let (node_count, c_value) = scan_fmt!(random, "n{d}+c{f}", usize, f64).expect("Could not parse argument of random. Make sure it fulfills the format in the help message.");
