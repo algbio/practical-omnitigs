@@ -520,6 +520,8 @@ rule create_single_report_tex:
             report_name = "[^/]+",
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
+    resources:
+            queue = "short,medium,bigmem,aurinko",
     shell: """
         mkdir -p '{params.hashdir}'
         echo '{wildcards.report_name} {params.genome_name} {wildcards.report_file_name}' > '{params.name_file}'
@@ -585,6 +587,8 @@ rule create_aggregated_report_tex:
             report_name = "[^/]+",
     conda: "config/conda-latex-gen-env.yml"
     threads: 1
+    resources:
+            queue = "short,medium,bigmem,aurinko",
     shell: """
         python3 '{input.script}' --source-reports '{params.source_reports_arg}' --source-report-names '{params.source_report_names_arg}' --output '{output.file}'
         """
@@ -598,6 +602,8 @@ rule create_combined_eaxmax_graph:
             report_name = "[^/]+",
     conda:  "config/conda-seaborn-env.yml"
     threads: 1
+    resources:
+            queue = "short,medium,bigmem,aurinko",
     shell: """
         mkdir -p "$(dirname '{output}')"
         python3 '{input.script}' '{params.input_quast_csvs}' '{output}'
@@ -608,6 +614,8 @@ rule png_to_pdf:
     output: "{file}.image.pdf"
     conda: "config/conda-imagemagick-env.yml"
     threads: 1
+    resources:
+            queue = "short,medium,bigmem,aurinko",
     shell: "convert {input} {output}"
 
 rule latex:
@@ -615,6 +623,8 @@ rule latex:
     output: "{subpath}report.pdf"
     conda: "config/conda-latex-env.yml"
     threads: 1
+    resources:
+            queue = "short,medium,bigmem,aurinko",
     shell: """
         tectonic '{input}'
         """
