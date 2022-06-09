@@ -681,7 +681,9 @@ rule compute_injectable_contigs_wtdbg2:
     log:    log = os.path.join(WTDBG2_INJECTABLE_CONTIG_DIR, "compute_injectable_contigs.log"),
     params: command = get_injectable_contigs_rust_cli_command_from_wildcards,
     threads: 1
-    resources: mem_mb = 48000
+    resources:
+            mem_mb = 48000,
+            queue = "short,medium,aurinko,bigmem",
     shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
@@ -708,7 +710,9 @@ rule compute_injectable_fragment_contigs_wtdbg2:
     log:    log = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "compute_injectable_contigs.log"),
     params: command = get_injectable_fragment_contigs_rust_cli_command_from_wildcards,
     threads: 1
-    resources: mem_mb = 48000
+    resources:
+            mem_mb = 48000,
+            queue = "short,medium,aurinko,bigmem",
     shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 #################################
