@@ -16,7 +16,7 @@ use omnitigs::traitgraph::walks::VecEdgeWalk;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use traitgraph_algo::components::{decompose_strongly_connected_components, is_strongly_connected};
+use traitgraph_algo::components::{decompose_strongly_connected_components, decompose_weakly_connected_components, is_strongly_connected};
 use traitsequence::interface::Sequence;
 
 #[derive(Parser)]
@@ -333,6 +333,23 @@ fn split_walks_at_node<Graph: StaticGraph>(
     }
 
     Ok(())
+}
+
+fn compute_omnitigs_from_graph_per_wcc<Graph: DynamicBigraph + Clone + Default + StaticEdgeCentricBigraph>(
+    genome_graph: &Graph,
+    compute_omnitigs_command: &ComputeOmnitigsCommand,
+    latex_file: &mut Option<BufWriter<File>>,
+) -> crate::Result<Vec<VecEdgeWalk<Graph>>>
+    where
+        Graph::NodeData: Default + Clone + Eq + Debug,
+        Graph::EdgeData: Default + Clone + BidirectedData + Eq,
+{
+    // TODO needs this to be a vector mapping from node to wcc index
+    let wcc_indices = decompose_weakly_connected_components(genome_graph);
+    let mut all_indices = wcc_indices.clone();
+    // all_indices.sort();
+
+    todo!()
 }
 
 fn compute_omnitigs_from_graph<Graph: DynamicBigraph + Clone + Default + StaticEdgeCentricBigraph>(
