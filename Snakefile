@@ -2329,6 +2329,7 @@ rule run_quast:
             script = QUAST_BINARY,
     output: directory = directory(QUAST_OUTPUT_DIR),
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
+    log:    minimap = os.path.join(QUAST_OUTPUT_DIR, "contigs_reports", "contigs_report_contigs.stderr")
     params: extra_arguments = get_quast_extra_arguments_from_wildcards,
             references = get_quast_references_from_wildcards,
     conda: "config/conda-quast-env.yml"
@@ -2798,7 +2799,7 @@ rule install_quast:
         rm -rf quast
         git clone https://github.com/sebschmi/quast
         cd quast
-        git checkout cf1461f48e937488928b094946bb591cd5b325a3
+        git checkout 7b932dccbf9a07c9327a57c706588c6dd9a82b63
     """
 
 localrules: install_sdsl
