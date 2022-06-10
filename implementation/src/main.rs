@@ -48,6 +48,13 @@ error_chain! {
 struct CliOptions {
     #[clap(subcommand)]
     pub subcommand: Command,
+
+    #[clap(
+        long,
+        default_value = "Info",
+        help = "The log level to use, one of Error, Warn, Info, Debug, Trace"
+    )]
+    pub log_level: LevelFilter,
 }
 
 #[derive(Parser)]
@@ -89,13 +96,9 @@ fn main() {
     });
 }
 
-fn initialise_logging() {
+fn initialise_logging(level_filter: LevelFilter) {
     CombinedLogger::init(vec![TermLogger::new(
-        if cfg!(debug_assertions) {
-            LevelFilter::Trace
-        } else {
-            LevelFilter::Info
-        },
+        level_filter,
         Config::default(),
         TerminalMode::Mixed,
         ColorChoice::Auto,
@@ -107,7 +110,7 @@ fn initialise_logging() {
 
 fn run() -> Result<()> {
     let options = &CliOptions::parse();
-    initialise_logging();
+    initialise_logging(options.log_level);
 
     info!("Hello");
 

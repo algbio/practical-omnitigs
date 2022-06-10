@@ -267,6 +267,11 @@ where
 
         assert!(is_strongly_connected(&scc));
         debug_assert!(scc.verify_edge_mirror_property());
+        info!(
+            "SCC contains {} nodes and {} edges",
+            scc.node_count(),
+            scc.edge_count()
+        );
         (scc, edge_map)
     } else {
         (reduced, graph.edge_indices().collect())
