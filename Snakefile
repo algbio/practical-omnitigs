@@ -310,6 +310,121 @@ FASTK_HISTEX_BINARY = os.path.join(FASTK_DIR, "Histex")
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
 
+################################
+###### Cluster properties ######
+################################
+
+def get_source_genome_properties_from_wildcards(wildcards):
+    try:
+        if hasattr(wildcards, "genome"):
+            genome_name = wildcards.genome
+        elif hasattr(wildcards, "corrected_genome"):
+            genome_name = wildcards.corrected_genome
+        elif hasattr(wildcards, "arguments"):
+            arguments = Arguments.from_str(wildcards.arguments)
+            genome_name = arguments.genome()
+
+            if genome_name is None:
+                raise Exception("Arguments has no 'genome' attribute: {}".format(arguments))
+        else:
+            raise Exception("Wildcards has no 'genome', 'corrected_genome' or 'arguments' attribute")
+
+        if genome_name in genomes:
+            pass
+        elif corrected_genomes is not None and genome_name in corrected_genomes:
+            genome_name = corrected_genomes[genome_name]["source_genome"]
+        else:
+            raise Exception("Genome name not found: " + str(genome_name))
+        return genomes[genome_name]
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb):
+    try:
+        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
+
+        if "assembly_mem_factor" in genome_properties:
+            return int(float(genome_properties["assembly_mem_factor"]) * float(base_mem_mb))
+        else:
+            return base_mem_mb
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def compute_genome_time_min_from_wildcards(wildcards, base_time_min):
+    try:
+        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
+
+        if "assembly_time_factor" in genome_properties:
+            if hasattr(wildcards, "read_source") and wildcards.read_source.startswith("hisim_"):
+                return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min)) * 2
+            else:
+                return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
+        else:
+            return base_time_min
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 0):
+    try:
+        time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
+        mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
+        cluster = compute_genome_cluster_from_wildcards(wildcards, base_time_min, base_mem_mb)
+
+        if cluster == "ukko":
+            if mem >= 250_000:
+                if time <= 1440 * 3:
+                    return "bigmem,aurinko"
+                else:
+                    return "aurinko"
+            elif time <= 60 * 8:
+                return "short,medium,bigmem,aurinko"
+            elif time <= 1440 * 2:
+                return "medium,bigmem,aurinko"
+            elif time <= 1440 * 3:
+                return "bigmem,aurinko"
+            else:
+                return "aurinko" # aurinko can handle anything
+            #else:
+            #    sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+        elif cluster == "kale":
+            raise Exception("kale disabled")
+
+            if mem >= 380_000:
+                return "bigmem"
+            elif time <= 1440:
+                return "short,medium,long,bigmem"
+            elif time <= 1440 * 7:
+                return "medium,long,bigmem"
+            elif time <= 1440 * 14:
+                return "long,bigmem"
+            else:
+                sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+        else:
+            sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+def compute_genome_cluster_from_wildcards(wildcards, base_time_min, base_mem_mb = 0):
+    try:
+        time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
+        mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
+
+        #if time <= 1440 * 2:
+        #    return "ukko"
+        #elif time <= 1440 * 14:
+        #    return "kale"
+        #else:
+        #    sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
+
+        return "ukko" # run everything on ukko for now, using aurinko for long jobs
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
 #################################
 ###### Global report rules ######
 #################################
@@ -691,9 +806,11 @@ rule compute_injectable_contigs_wtdbg2:
     log:    log = os.path.join(WTDBG2_INJECTABLE_CONTIG_DIR, "compute_injectable_contigs.log"),
     params: command = get_injectable_contigs_rust_cli_command_from_wildcards,
     threads: 1
-    resources:
-            mem_mb = 48000,
-            queue = "short,medium,aurinko,bigmem",
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48_000),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 48_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 48_000),
     shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
@@ -720,9 +837,11 @@ rule compute_injectable_fragment_contigs_wtdbg2:
     log:    log = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "compute_injectable_contigs.log"),
     params: command = get_injectable_fragment_contigs_rust_cli_command_from_wildcards,
     threads: 1
-    resources:
-            mem_mb = 48000,
-            queue = "short,medium,aurinko,bigmem",
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 48_000),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 48_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 48_000),
     shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 #################################
@@ -806,117 +925,6 @@ rule request_assembly_postprocessing:
     output: assembly = ALGORITHM_PREFIX_FORMAT + "assembly.fa"
     threads: 1
     shell: "ln -sr '{input}' '{output}'"
-
-def get_source_genome_properties_from_wildcards(wildcards):
-    try:
-        if hasattr(wildcards, "genome"):
-            genome_name = wildcards.genome
-        elif hasattr(wildcards, "corrected_genome"):
-            genome_name = wildcards.corrected_genome
-        elif hasattr(wildcards, "arguments"):
-            arguments = Arguments.from_str(wildcards.arguments)
-            genome_name = arguments.genome()
-
-            if genome_name is None:
-                raise Exception("Arguments has no 'genome' attribute: {}".format(arguments))
-        else:
-            raise Exception("Wildcards has no 'genome', 'corrected_genome' or 'arguments' attribute")
-
-        if genome_name in genomes:
-            pass
-        elif corrected_genomes is not None and genome_name in corrected_genomes:
-            genome_name = corrected_genomes[genome_name]["source_genome"]
-        else:
-            raise Exception("Genome name not found: " + str(genome_name))
-        return genomes[genome_name]
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb):
-    try:
-        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
-
-        if "assembly_mem_factor" in genome_properties:
-            return int(float(genome_properties["assembly_mem_factor"]) * float(base_mem_mb))
-        else:
-            return base_mem_mb
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def compute_genome_time_min_from_wildcards(wildcards, base_time_min):
-    try:
-        genome_properties = get_source_genome_properties_from_wildcards(wildcards)
-
-        if "assembly_time_factor" in genome_properties:
-            if hasattr(wildcards, "read_source") and wildcards.read_source.startswith("hisim_"):
-                return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min)) * 2
-            else:
-                return int(float(genome_properties["assembly_time_factor"]) * float(base_time_min))
-        else:
-            return base_time_min
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def compute_genome_queue_from_wildcards(wildcards, base_time_min, base_mem_mb = 0):
-    try:
-        time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
-        mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
-        cluster = compute_genome_cluster_from_wildcards(wildcards, base_time_min, base_mem_mb)
-
-        if cluster == "ukko":
-            if mem >= 250_000:
-                if time <= 1440 * 3:
-                    return "bigmem,aurinko"
-                else:
-                    return "aurinko"
-            elif time <= 60 * 8:
-                return "short,medium,bigmem,aurinko"
-            elif time <= 1440 * 2:
-                return "medium,bigmem,aurinko"
-            elif time <= 1440 * 3:
-                return "bigmem,aurinko"
-            else:
-                return "aurinko" # aurinko can handle anything
-            #else:
-            #    sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
-        elif cluster == "kale":
-            raise Exception("kale disabled")
-
-            if mem >= 380_000:
-                return "bigmem"
-            elif time <= 1440:
-                return "short,medium,long,bigmem"
-            elif time <= 1440 * 7:
-                return "medium,long,bigmem"
-            elif time <= 1440 * 14:
-                return "long,bigmem"
-            else:
-                sys.exit("No applicable queue for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
-        else:
-            sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
-
-def compute_genome_cluster_from_wildcards(wildcards, base_time_min, base_mem_mb = 0):
-    try:
-        time = compute_genome_time_min_from_wildcards(wildcards, base_time_min)
-        mem = compute_genome_mem_mb_from_wildcards(wildcards, base_mem_mb)
-
-        #if time <= 1440 * 2:
-        #    return "ukko"
-        #elif time <= 1440 * 14:
-        #    return "kale"
-        #else:
-        #    sys.exit("No applicable cluster for runtime " + str(time) + " (wildcards: " + str(wildcards) + ")")
-
-        return "ukko" # run everything on ukko for now, using aurinko for long jobs
-    except Exception:
-        traceback.print_exc()
-        sys.exit("Catched exception")
 
 rule run_contigbreaker:
     input:  contigs = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa",
