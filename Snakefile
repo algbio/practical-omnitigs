@@ -811,7 +811,7 @@ rule compute_injectable_contigs_wtdbg2:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 48_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 48_000),
-    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --log-level Trace {params.command} --output-as-wtdbg2-node-ids --file-format wtdbg2 --input '{input.nodes}' --input '{input.reads}' --input '{input.raw_reads}' --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
     try:
@@ -842,7 +842,7 @@ rule compute_injectable_fragment_contigs_wtdbg2:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 48_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 48_000),
-    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --log-level Trace {params.command} --file-format dot --input '{input.dot}' --output '{output.file}' --latex '{output.latex}' 2>&1 | tee '{log.log}'"
 
 #################################
 ###### Postprocess Contigs ######
