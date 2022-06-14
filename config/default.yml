@@ -822,6 +822,7 @@ reports:
   "refasm":
     argument_matrix:
       assembler: "refasm"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
     columns: *refasm_verification_columns
 
   "D.melanogaster_HiFi":
