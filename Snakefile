@@ -71,9 +71,10 @@ for report_name, report_definition in reports.items():
     #     print(entry)
 
     for arguments in argument_matrix:
-        genome_arguments = Arguments.from_dict(genomes[arguments["genome"]].setdefault("genome_arguments", {}))
-        genome_arguments.update(arguments)
-        arguments = genome_arguments # update method works in-place
+        if "genome" in arguments:
+            genome_arguments = Arguments.from_dict(genomes[arguments["genome"]].setdefault("genome_arguments", {}))
+            genome_arguments.update(arguments)
+            arguments = genome_arguments # update method works in-place
 
         arguments.setdefault("read_source", "real")
         arguments.setdefault("read_simulation_model_source", "none")
@@ -145,7 +146,9 @@ GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
 GENOME_REFERENCE_ARGUMENT_STRING = "reference-n{filter_nw}-c{retain_cm}-p{filter_plasmids}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
 GENOME_REFERENCE = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
+UNFILTERED_GENOME_REFERENCE = safe_format(GENOME_REFERENCE, filter_nw = "no", retain_cm = "no", filter_plasmids = "no")
 GENOME_REFERENCE_LENGTH = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference_length.txt")
+UNFILTERED_GENOME_REFERENCE_LENGTH = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no")
 GENOME_READS_ARGUMENT_STRING = "reads-s{read_source}-m{read_simulation_model_source}-r{read_downsampling_factor}-u{uniquify_ids}"
 GENOME_READS_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING)
 GENOME_READS_DIR = os.path.join(GENOME_ROOTDIR, GENOME_READS_SUBDIR)
@@ -234,6 +237,14 @@ CANU_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, CANU_SUBDIR)
 CANU_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "canu")
 CANU_LOG = os.path.join(CANU_OUTPUT_DIR, "assembly.log")
 CANU_ASSEMBLED_CONTIGS = os.path.join(CANU_OUTPUT_DIR, "contigs.fa")
+
+REFASM_ARGUMENT_STRING = "none"
+ASSEMBLER_ARGUMENT_STRINGS["refasm"] = REFASM_ARGUMENT_STRING
+REFASM_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "refasm", assembler_arguments = REFASM_ARGUMENT_STRING)
+REFASM_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, REFASM_SUBDIR)
+REFASM_OUTPUT_DIR_PACKED = safe_format(os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR), assembler = "refasm")
+REFASM_LOG = os.path.join(REFASM_OUTPUT_DIR, "assembly.log")
+REFASM_ASSEMBLED_CONTIGS = os.path.join(REFASM_OUTPUT_DIR, "contigs.fa")
 
 # Evaluations
 
@@ -962,7 +973,7 @@ rule run_gfa_trivial_omnitigs:
 
 rule wtdbg2:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -994,7 +1005,7 @@ rule wtdbg2:
 
 rule wtdbg2_skip_fragment_assembly:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             binary = WTDBG2_BINARY,
     output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
             nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
@@ -1030,7 +1041,7 @@ rule wtdbg2_with_injected_contigs:
             cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), tig_injection = "none", fragment_correction_steps = "all"),
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), tig_injection = "none", fragment_correction_steps = "all"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), tig_injection = "none", fragment_correction_steps = "all"),
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             edge_cov = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.edge-cov"), tig_injection = "none", fragment_correction_steps = "all"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
@@ -1060,7 +1071,7 @@ rule wtdbg2_with_injected_fragment_contigs:
             cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), frg_injection = "none", frg_injection_stage = "none"),
             cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), frg_injection = "none", frg_injection_stage = "none"),
             cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), frg_injection = "none", frg_injection_stage = "none"),
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             edge_cov = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.edge-cov"), frg_injection = "none", frg_injection_stage = "none"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
@@ -1157,7 +1168,7 @@ rule wtdbg2_find_edge_cov:
 
 rule flye:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
@@ -1349,7 +1360,7 @@ rule lja:
 
 rule hicanu:
     input:  reads = GENOME_READS,
-            reference_length = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
     output: contigs = CANU_ASSEMBLED_CONTIGS,
     params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
             original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
@@ -1366,6 +1377,25 @@ rule hicanu:
         mkdir -p '{params.output_dir}'
         ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' 2>&1 | tee '{log.log}'
         ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        """
+
+####################
+###### RefAsm ######
+####################
+
+localrules: refasm
+rule refasm:
+    input:  reference = UNFILTERED_GENOME_REFERENCE,
+    output: contigs = REFASM_ASSEMBLED_CONTIGS,
+    log:    log = REFASM_LOG,
+    threads: 1,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 10),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 10, 100),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 10, 100),
+    shell:  """
+        ln -sr -T '{input.reference}' '{output.contigs}'
         """
 
 #############################

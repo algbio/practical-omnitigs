@@ -811,7 +811,18 @@ column_templates:
       select_assembler:
         canu:
 
+  refasm_verification_columns: &refasm_verification_columns
+    - shortname: "D.melanogaster"
+      select_genome: "D.melanogaster_A4xISO1_HiFi24kb"
+    - shortname: "CHM13"
+      select_genome: "CHM13_HiFi_30x"
+
 reports:
+
+  "refasm":
+    argument_matrix:
+      assembler: "refasm"
+    columns: *refasm_verification_columns
 
   "D.melanogaster_HiFi":
     argument_matrix:

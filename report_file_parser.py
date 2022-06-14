@@ -140,6 +140,9 @@ class Arguments(dict):
             return None
 
         result = self[name]
+        if type(result) is str:
+            self[name] = Arguments.from_dict({result: Arguments.from_dict({})})
+            result = self[name]
         if type(result) is not Arguments:
             sys.exit(f"ERROR: found {result}, expected arguments object")
 
