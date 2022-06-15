@@ -825,6 +825,13 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
     columns: *refasm_verification_columns
 
+  "refasm_hoco":
+    argument_matrix:
+      assembler: "refasm"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict", "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco"]
+      homopolymer_compression: "yes"
+    columns: *refasm_verification_columns
+
   "D.melanogaster_HiFi":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
