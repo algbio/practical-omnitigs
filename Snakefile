@@ -2428,6 +2428,8 @@ def get_evaluate_resources_inputs(wildcards):
             # injections
             if assembler_arguments["contig_algorithm"].startswith("trivial_omnitigs_"):
                 result["trivial_omnitigs"] = safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"), **assembler_arguments).format(**wildcards)
+        elif wildcards.assembler == "refasm":
+            pass
         else:
             # assembly
             result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
@@ -2461,7 +2463,7 @@ rule evaluate_resources:
         result = {}
         for key, input_file_name in params.file_map.items():
             with open(input_file_name, 'r') as input_file:
-                values = {}
+                values = {"time": 0, "mem": 0}
                 for line in input_file:
                     if "Elapsed (wall clock) time (h:mm:ss or m:ss):" in line:
                         line = line.replace("Elapsed (wall clock) time (h:mm:ss or m:ss):", "").strip()
