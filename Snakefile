@@ -2318,7 +2318,7 @@ rule filter_genome:
 def get_quast_extra_arguments_from_wildcards(wildcards):
     try:
         if wildcards.quast_mode == "hicanu":
-            return "-s"
+            return ""
         elif wildcards.quast_mode == "hicanu_alignments":
             return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000"
         elif wildcards.quast_mode == "hicanu_misassemblies":
@@ -2328,7 +2328,7 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
         elif wildcards.quast_mode == "normal":
             return "--fragmented"
         if wildcards.quast_mode == "hicanu_hoco":
-            return "-s --minimap-hoco"
+            return "--minimap-hoco"
         elif wildcards.quast_mode == "hicanu_alignments_hoco":
             return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000 --minimap-hoco"
         elif wildcards.quast_mode == "hicanu_misassemblies_hoco":
