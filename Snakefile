@@ -2428,8 +2428,6 @@ def get_evaluate_resources_inputs(wildcards):
             # injections
             if assembler_arguments["contig_algorithm"].startswith("trivial_omnitigs_"):
                 result["trivial_omnitigs"] = safe_format(os.path.join(HIFIASM_OUTPUT_DIR, "compute_injectable_contigs.log"), **assembler_arguments).format(**wildcards)
-        elif wildcards.assembler == "refasm":
-            pass
         else:
             # assembly
             result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
@@ -2467,9 +2465,9 @@ rule evaluate_resources:
                 for line in input_file:
                     if "Elapsed (wall clock) time (h:mm:ss or m:ss):" in line:
                         line = line.replace("Elapsed (wall clock) time (h:mm:ss or m:ss):", "").strip()
-                        values["time"] = decode_time(line) + values.setdefault("time", 0)
+                        values["time"] = decode_time(line) + values["time"]
                     elif "Maximum resident set size" in line:
-                        values["mem"] = max(int(line.split(':')[1].strip()), values.setdefault("mem", 0))
+                        values["mem"] = max(int(line.split(':')[1].strip()), values["mem"])
 
                 assert "time" in values, f"No time found in {input_file_name}"
                 assert "mem" in values, f"No mem found in {input_file_name}"
