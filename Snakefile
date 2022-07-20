@@ -2837,7 +2837,7 @@ rule install_quast:
         rm -rf quast
         git clone https://github.com/sebschmi/quast
         cd quast
-        git checkout 7b932dccbf9a07c9327a57c706588c6dd9a82b63
+        git checkout a7f78781540b692f0a2865e8f7e3e118fbd5a128
     """
 
 localrules: install_sdsl
