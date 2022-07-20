@@ -309,6 +309,8 @@ HOMOPOLYMER_COMPRESS_RS_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "homopolym
 HOMOPOLYMER_COMPRESS_RS_BINARY = os.path.join(HOMOPOLYMER_COMPRESS_RS_DIR, "target", "release", "homopolymer-compress")
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "wtdbg2-homopolymer-decompression")
 WTDBG2_HOMOPOLYMER_DECOMPRESSION_BINARY = os.path.join(WTDBG2_HOMOPOLYMER_DECOMPRESSION_DIR, "target", "release", "wtdbg2-homopolymer-decompression")
+MINIMAP2_HOMOPOLYMER_DECOMPRESSION_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "minimap2-homopolymer-decompression")
+MINIMAP2_HOMOPOLYMER_DECOMPRESSION_BINARY = os.path.join(MINIMAP2_HOMOPOLYMER_DECOMPRESSION_DIR, "target", "release", "minimap2-homopolymer-decompression")
 HISIM_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "HI.SIM")
 HISIM_MODEL_BINARY = os.path.join(HISIM_DIR, "HImodel")
 HISIM_SIM_BINARY = os.path.join(HISIM_DIR, "HIsim")
@@ -2375,6 +2377,8 @@ rule run_quast:
             reference = GENOME_REFERENCE,
             hisim_haplotype = lambda wildcards: [] if wildcards.read_source == "real" else safe_format(HISIM_HAPLOTYPE, haplotype_index = "1", uniquify_ids = "no"),
             script = QUAST_BINARY,
+            homopolymer_compress_rs_binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
+            minimap2_homopolymer_decompression_binary = MINIMAP2_HOMOPOLYMER_DECOMPRESSION_BINARY,
     output: directory = directory(QUAST_OUTPUT_DIR),
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     log:    minimap = os.path.join(QUAST_OUTPUT_DIR, "contigs_reports", "contigs_report_contigs.stderr")
@@ -2387,7 +2391,7 @@ rule run_quast:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 120, 50_000),
-    shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --no-html --large -o '{output.directory}' {params.references} '{input.contigs}'"
+    shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --hoco-binary '{input.homopolymer_compress_rs_binary}' --hodeco-binary '{input.minimap2_homopolymer_decompression_binary}' --no-html --large -o '{output.directory}' {params.references} '{input.contigs}'"
 
 ##################################
 ###### Resources evaluation ######
@@ -3112,7 +3116,7 @@ rule download_homopolymer_compress_rs:
         rm -rf homopolymer-compress-rs
         git clone https://github.com/sebschmi/homopolymer-compress-rs.git
         cd homopolymer-compress-rs
-        git checkout d94145fb8fa2868876bccb46dd80c12d3b17c724
+        git checkout 9a979197d2c762f03442a5d584d8c849c9f5ea8e
 
         cargo fetch
         """
@@ -3161,6 +3165,39 @@ rule build_wtdbg2_homopolymer_decompression:
         cpus = BUILD_THREADS,
     shell:  """
         cd '{params.wtdbg2_homopolymer_decompression_dir}'
+        cargo build --offline --release -j {threads}
+        """
+
+localrules: download_minimap2_homopolymer_decompression
+rule download_minimap2_homopolymer_decompression:
+    output: cargo_toml = os.path.join(MINIMAP2_HOMOPOLYMER_DECOMPRESSION_DIR, "Cargo.toml"),
+    log:    log = os.path.join(MINIMAP2_HOMOPOLYMER_DECOMPRESSION_DIR, "download.log"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
+    conda:  "config/conda-rust-env.yml"
+    threads: 1
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        rm -rf minimap2-homopolymer-decompression
+        git clone https://github.com/sebschmi/minimap2-homopolymer-decompression.git
+        cd minimap2-homopolymer-decompression
+        git checkout 1fcfc9581333981117043854aa041d684d87fac0
+
+        cargo fetch
+        """
+
+rule build_minimap2_homopolymer_decompression:
+    input:  cargo_toml = os.path.join(MINIMAP2_HOMOPOLYMER_DECOMPRESSION_DIR, "Cargo.toml"),
+    output: binary = MINIMAP2_HOMOPOLYMER_DECOMPRESSION_BINARY
+    log:    log = os.path.join(MINIMAP2_HOMOPOLYMER_DECOMPRESSION_DIR, "build.log"),
+    params: minimap2_homopolymer_decompression_dir = MINIMAP2_HOMOPOLYMER_DECOMPRESSION_DIR,
+    conda:  "config/conda-rust-env.yml"
+    threads: BUILD_THREADS
+    resources:
+        cpus = BUILD_THREADS,
+    shell:  """
+        cd '{params.minimap2_homopolymer_decompression_dir}'
         cargo build --offline --release -j {threads}
         """
 
