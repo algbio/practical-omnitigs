@@ -3182,7 +3182,7 @@ rule download_minimap2_homopolymer_decompression:
         rm -rf minimap2-homopolymer-decompression
         git clone https://github.com/sebschmi/minimap2-homopolymer-decompression.git
         cd minimap2-homopolymer-decompression
-        git checkout 1fcfc9581333981117043854aa041d684d87fac0
+        git checkout d9c0b1e1bdf514d519d25b78f9bb6dda9560e375
 
         cargo fetch
         """
