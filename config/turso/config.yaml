@@ -24,7 +24,7 @@ default-resources:
   - cpus=1
   - time_min=60
   - mem_mb=100
-  - queue="short,medium,long,aurinko"
+  - queue="short,medium,aurinko"
   - mail_type=FAIL
   - cluster=ukko
   - cluster_constraint=intel
