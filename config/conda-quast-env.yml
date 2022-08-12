@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.8.6
   - matplotlib=3.3.3
-  - minimap2=2.17
+  - minimap2=2.24
   - time == 1.8
   - font-ttf-dejavu-sans-mono == 2.37
   - font-ttf-ubuntu == 0.83
