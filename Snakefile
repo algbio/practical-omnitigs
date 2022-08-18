@@ -178,6 +178,8 @@ HIMODEL_INPUT_SYMMETRIC_TABLE = os.path.join(HIMODEL_OUTPUT_DIR, "reads.ktab")
 HIMODEL_INPUT_PROFILE = os.path.join(HIMODEL_OUTPUT_DIR, "reads.prof")
 HIMODEL_MODEL = os.path.join(HIMODEL_OUTPUT_DIR, "reads.model")
 HISIM_HAPLOTYPE = os.path.join(GENOME_READS_DIR, "reads.hap{haplotype_index}.fasta")
+HISIM_HAPLOTYPE_HOCO = os.path.join(GENOME_READS_DIR, "reads.hap{haplotype_index}.hoco.fasta")
+HISIM_HAPLOTYPE_HOCO_LOG = os.path.join(GENOME_READS_DIR, "reads.hap{haplotype_index}.hoco.log")
 
 # Assemblies
 
@@ -1878,7 +1880,7 @@ rule homopolymer_compress_reads:
     params: threads = HOCO_COMPUTE_THREADS,
     wildcard_constraints:
             homopolymer_compression = "yes",
-    conda:  "config/conda-biopython-env.yml"
+    conda:  "config/conda-time-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = HOCO_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
@@ -1896,7 +1898,7 @@ rule homopolymer_compress_reference:
     params: threads = HOCO_COMPUTE_THREADS,
     wildcard_constraints:
             homopolymer_compression = "yes",
-    conda:  "config/conda-biopython-env.yml"
+    conda:  "config/conda-time-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = HOCO_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
@@ -1906,16 +1908,13 @@ rule homopolymer_compress_reference:
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}' 2>&1 | tee '{log}'"
 
-
 rule homopolymer_compress_contigs:
     input:  contigs = ASSEMBLED_CONTIGS,
             binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
     output: contigs = ASSEMBLED_CONTIGS_HOCO,
     log:    ASSEMBLED_CONTIGS_HOCO_LOG,
     params: threads = HOCO_COMPUTE_THREADS,
-    wildcard_constraints:
-            homopolymer_compression = "yes",
-    conda:  "config/conda-biopython-env.yml"
+    conda:  "config/conda-time-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = HOCO_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
@@ -1924,6 +1923,22 @@ rule homopolymer_compress_contigs:
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.contigs}' '{output.contigs}' 2>&1 | tee '{log}'"
+
+rule homopolymer_compress_hisim_haplotype:
+    input:  reference = HISIM_HAPLOTYPE,
+            binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
+    output: reference = HISIM_HAPLOTYPE_HOCO,
+    log:    HISIM_HAPLOTYPE_HOCO_LOG,
+    params: threads = HOCO_COMPUTE_THREADS,
+    conda:  "config/conda-time-env.yml"
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = HOCO_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
+    # Use two threads, since the program uses two extra threads for IO.
+    # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}' 2>&1 | tee '{log}'"
 
 #############################
 ###### Read simulation ######
@@ -2389,7 +2404,8 @@ def get_quast_references_from_wildcards(wildcards):
         if wildcards.read_source == "real":
             return "-r '" + reference_file.format(**wildcards) + "'"
         else:
-            assert wildcards.run_quast_on_hoco == "no", "Running quast on hoco with simulated reads is not supported"
+            hisim_haplotype = HISIM_HAPLOTYPE_HOCO if wildcards.run_quast_on_hoco == "yes" else HISIM_HAPLOTYPE
+
             ploidy_tree = hisim_ploidy_tree(wildcards)
             ploidy_count = len(ploidy_tree.split(","))
 
@@ -2405,7 +2421,7 @@ def get_quast_references_from_wildcards(wildcards):
 rule run_quast:
     input:  contigs = lambda wildcards: ASSEMBLED_CONTIGS_HOCO if wildcards.run_quast_on_hoco == "yes" else ASSEMBLED_CONTIGS,
             reference = lambda wildcards: GENOME_REFERENCE_HOCO if wildcards.run_quast_on_hoco == "yes" else GENOME_REFERENCE,
-            hisim_haplotype = lambda wildcards: [] if wildcards.read_source == "real" else safe_format(HISIM_HAPLOTYPE, haplotype_index = "1", uniquify_ids = "no"),
+            hisim_haplotype = lambda wildcards: [] if wildcards.read_source == "real" else (safe_format(HISIM_HAPLOTYPE_HOCO, haplotype_index = "1", uniquify_ids = "no") if wildcards.run_quast_on_hoco == "yes" else safe_format(HISIM_HAPLOTYPE, haplotype_index = "1", uniquify_ids = "no")),
             script = QUAST_BINARY,
             homopolymer_compress_rs_binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
             minimap2_homopolymer_decompression_binary = MINIMAP2_HOMOPOLYMER_DECOMPRESSION_BINARY,
