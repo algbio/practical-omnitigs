@@ -87,6 +87,7 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("filter_nw", "no")
         arguments.setdefault("retain_cm", "no")
         arguments.setdefault("filter_plasmids", "no")
+        arguments.setdefault("run_quast_on_hoco", "no")
 
         # hisim produces reads with duplicate ids, so we always need to uniquify those
         if arguments["read_source"].startswith("hisim_"):
@@ -146,6 +147,7 @@ GENOME_ARGUMENT_STRING = "g{genome}-h{homopolymer_compression}"
 GENOME_REFERENCE_ARGUMENT_STRING = "reference-n{filter_nw}-c{retain_cm}-p{filter_plasmids}"
 GENOME_REFERENCE_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING)
 GENOME_REFERENCE = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference.fa")
+GENOME_REFERENCE_HOCO = safe_format(GENOME_REFERENCE, homopolymer_compression = "yes")
 UNFILTERED_GENOME_REFERENCE = safe_format(GENOME_REFERENCE, filter_nw = "no", retain_cm = "no", filter_plasmids = "no")
 GENOME_REFERENCE_LENGTH = os.path.join(GENOME_ROOTDIR, GENOME_REFERENCE_SUBDIR, "reference_length.txt")
 UNFILTERED_GENOME_REFERENCE_LENGTH = safe_format(GENOME_REFERENCE_LENGTH, filter_nw = "no", retain_cm = "no", filter_plasmids = "no")
@@ -183,6 +185,8 @@ ASSEMBLY_ARGUMENT_STRING = "a{assembler}--{assembler_arguments}-"
 ASSEMBLY_SUBDIR = os.path.join(GENOME_READS_SUBDIR, ASSEMBLY_ARGUMENT_STRING)
 ASSEMBLY_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, ASSEMBLY_SUBDIR)
 ASSEMBLED_CONTIGS = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.fa")
+ASSEMBLED_CONTIGS_HOCO = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.hoco.fa")
+ASSEMBLED_CONTIGS_HOCO_LOG = os.path.join(ASSEMBLY_OUTPUT_DIR, "contigs.hoco.log")
 ASSEMBLY_LOG = os.path.join(ASSEMBLY_OUTPUT_DIR, "assembly.log")
 ASSEMBLER_ARGUMENT_STRINGS = {}
 
@@ -248,7 +252,7 @@ REFASM_ASSEMBLED_CONTIGS = os.path.join(REFASM_OUTPUT_DIR, "contigs.fa")
 
 # Evaluations
 
-QUAST_ROOTDIR = os.path.join(EVALUATION_ROOTDIR, "quast-m{quast_mode}")
+QUAST_ROOTDIR = os.path.join(EVALUATION_ROOTDIR, "quast-m{quast_mode}-h{run_quast_on_hoco}")
 QUAST_SUBDIR = os.path.join(GENOME_ARGUMENT_STRING, GENOME_REFERENCE_ARGUMENT_STRING, GENOME_READS_ARGUMENT_STRING, ASSEMBLY_ARGUMENT_STRING)
 QUAST_OUTPUT_DIR = os.path.join(QUAST_ROOTDIR, QUAST_SUBDIR)
 
@@ -1862,17 +1866,21 @@ rule refasm:
 ###### Homopolymer compression ######
 #####################################
 
+HOCO_COMPUTE_THREADS = 2
+# Two extra threads for IO
+HOCO_THREADS = HOCO_COMPUTE_THREADS + 2
+
 rule homopolymer_compress_reads:
     input:  reads = safe_format(GENOME_READS, homopolymer_compression = "none"),
             binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
     output: reads = GENOME_READS,
     log:    HOCO_READS_LOG,
-    params: threads = str(MAX_THREADS - 2),
+    params: threads = HOCO_COMPUTE_THREADS,
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
-               cpus = MAX_THREADS,
+               cpus = HOCO_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
@@ -1885,18 +1893,37 @@ rule homopolymer_compress_reference:
             binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
     output: reference = GENOME_REFERENCE,
     log:    HOCO_REFERENCE_LOG,
-    params: threads = str(MAX_THREADS - 2),
+    params: threads = HOCO_COMPUTE_THREADS,
     wildcard_constraints:
             homopolymer_compression = "yes",
     conda:  "config/conda-biopython-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
-               cpus = MAX_THREADS,
+               cpus = HOCO_THREADS,
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
     # Use two threads, since the program uses two extra threads for IO.
     # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
     shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.reference}' '{output.reference}' 2>&1 | tee '{log}'"
+
+
+rule homopolymer_compress_contigs:
+    input:  contigs = ASSEMBLED_CONTIGS,
+            binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
+    output: contigs = ASSEMBLED_CONTIGS_HOCO,
+    log:    ASSEMBLED_CONTIGS_HOCO_LOG,
+    params: threads = HOCO_COMPUTE_THREADS,
+    wildcard_constraints:
+            homopolymer_compression = "yes",
+    conda:  "config/conda-biopython-env.yml"
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
+               cpus = HOCO_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 600),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 600, 1_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 600, 1_000),
+    # Use two threads, since the program uses two extra threads for IO.
+    # More than two threads will likely not yield any speedup, as the application then becomes IO-bound.
+    shell:  "${{CONDA_PREFIX}}/bin/time -v '{input.binary}' --threads {params.threads} '{input.contigs}' '{output.contigs}' 2>&1 | tee '{log}'"
 
 #############################
 ###### Read simulation ######
@@ -2357,9 +2384,12 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
 
 def get_quast_references_from_wildcards(wildcards):
     try:
+        reference_file = GENOME_REFERENCE_HOCO if wildcards.run_quast_on_hoco == "yes" else GENOME_REFERENCE
+
         if wildcards.read_source == "real":
-            return "-r '" + GENOME_REFERENCE.format(**wildcards) + "'"
+            return "-r '" + reference_file.format(**wildcards) + "'"
         else:
+            assert wildcards.run_quast_on_hoco == "no", "Running quast on hoco with simulated reads is not supported"
             ploidy_tree = hisim_ploidy_tree(wildcards)
             ploidy_count = len(ploidy_tree.split(","))
 
@@ -2373,8 +2403,8 @@ def get_quast_references_from_wildcards(wildcards):
         sys.exit("Catched exception")
 
 rule run_quast:
-    input:  contigs = ASSEMBLED_CONTIGS,
-            reference = GENOME_REFERENCE,
+    input:  contigs = lambda wildcards: ASSEMBLED_CONTIGS_HOCO if wildcards.run_quast_on_hoco == "yes" else ASSEMBLED_CONTIGS,
+            reference = lambda wildcards: GENOME_REFERENCE_HOCO if wildcards.run_quast_on_hoco == "yes" else GENOME_REFERENCE,
             hisim_haplotype = lambda wildcards: [] if wildcards.read_source == "real" else safe_format(HISIM_HAPLOTYPE, haplotype_index = "1", uniquify_ids = "no"),
             script = QUAST_BINARY,
             homopolymer_compress_rs_binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
@@ -3182,7 +3212,7 @@ rule download_minimap2_homopolymer_decompression:
         rm -rf minimap2-homopolymer-decompression
         git clone https://github.com/sebschmi/minimap2-homopolymer-decompression.git
         cd minimap2-homopolymer-decompression
-        git checkout 381719ae471ec5f06d76bfb94f608cfcc7864cb2
+        git checkout 7a52990930d48283fac578756950e3ae9b57293a
 
         cargo fetch
         """
