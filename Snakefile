@@ -894,7 +894,7 @@ rule select_assembler:
     input:  raw_assembly_from_assembler = get_raw_assembly_file_from_wildcards,
     output: raw_assembly = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa",
     threads: 1
-    shell: "ln -sr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
+    shell: "ln -fsr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
 
 def get_raw_gfa_assembly_file_from_wildcards(wildcards):
     try:
@@ -917,7 +917,7 @@ rule select_gfa_assembler:
     input:  raw_assembly_from_assembler = get_raw_gfa_assembly_file_from_wildcards,
     output: raw_assembly = ALGORITHM_PREFIX_FORMAT + "raw_assembly.gfa",
     threads: 1
-    shell: "ln -sr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
+    shell: "ln -fsr '{input.raw_assembly_from_assembler}' '{output.raw_assembly}'"
 
 def get_assembly_postprocessing_target_file_from_wildcards(wildcards):
     try:
@@ -943,7 +943,7 @@ rule request_assembly_postprocessing:
     input: get_assembly_postprocessing_target_file_from_wildcards
     output: assembly = ALGORITHM_PREFIX_FORMAT + "assembly.fa"
     threads: 1
-    shell: "ln -sr '{input}' '{output}'"
+    shell: "ln -fsr '{input}' '{output}'"
 
 rule run_contigbreaker:
     input:  contigs = ALGORITHM_PREFIX_FORMAT + "raw_assembly.fa",
@@ -1161,7 +1161,7 @@ rule link_wtdbg2_contigs:
     output: contigs = ASSEMBLED_CONTIGS,
     wildcard_constraints:
             assembler = "wtdbg2",
-    shell:  "ln -sr -T '{input.contigs}' '{output.contigs}'"
+    shell:  "ln -fsr -T '{input.contigs}' '{output.contigs}'"
 
 rule wtdbg2_find_edge_cov:
     input:  WTDBG2_LOG,
@@ -1200,7 +1200,7 @@ rule link_flye_contigs:
     output: contigs = ASSEMBLED_CONTIGS,
     wildcard_constraints:
             assembler = "flye",
-    shell:  "ln -sr -T '{input.contigs}' '{output.contigs}'"
+    shell:  "ln -fsr -T '{input.contigs}' '{output.contigs}'"
 
 #####################
 ###### Hifiasm ######
@@ -1290,7 +1290,7 @@ rule mdbg_multik:
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 100_000),
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.script}' '{input.reads}' '{params.output_prefix}' {threads} 2>&1 | tee '{log.log}'
-        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        ln -fsr -T '{params.original_contigs}' '{output.contigs}'
         """
 
 rule mdbg_D_melanogaster:
@@ -1313,7 +1313,7 @@ rule mdbg_D_melanogaster:
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 35 -l 12 --density 0.002 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee -a '{log.log}'
-        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        ln -fsr -T '{params.original_contigs}' '{output.contigs}'
         """
 
 rule mdbg_HG002:
@@ -1336,7 +1336,7 @@ rule mdbg_HG002:
     shell:  """
         RUST_BACKTRACE=full ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' '{input.reads}' -k 21 -l 14 --density 0.003 --threads {threads} --prefix '{params.output_prefix}' 2>&1 | tee '{log.log}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.simplify_script}' '{params.output_prefix}' 2>&1 | tee -a '{log.log}'
-        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        ln -fsr -T '{params.original_contigs}' '{output.contigs}'
         """
 
 #################
@@ -1359,7 +1359,7 @@ rule lja:
     shell:  """
         mkdir -p '{params.output_dir}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -t {threads} -o '{params.output_dir}' --reads '{input.reads}' 2>&1 | tee '{log.log}'
-        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        ln -fsr -T '{params.original_contigs}' '{output.contigs}'
         """
 
 ####################
@@ -1384,7 +1384,7 @@ rule hicanu:
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
         ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' 2>&1 | tee '{log.log}'
-        ln -sr -T '{params.original_contigs}' '{output.contigs}'
+        ln -fsr -T '{params.original_contigs}' '{output.contigs}'
         """
 
 ####################
@@ -1403,7 +1403,7 @@ rule refasm:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 10, 100),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 10, 100),
     shell:  """
-        ln -sr -T '{input.reference}' '{output.contigs}'
+        ln -fsr -T '{input.reference}' '{output.contigs}'
         """
 
 #############################
@@ -1547,7 +1547,7 @@ rule refasm:
 
 #         mkdir -p '{params.output_prefix}'
 #         perl '{input.script}' -c '{params.config_file}' -o '{params.output_prefix}' 2>&1 | tee '{log.log}'
-#         ln -sr -T '{params.output_prefix}/Nanopore_Test.fasta' '{output.simulated_reads}'
+#         ln -fsr -T '{params.output_prefix}/Nanopore_Test.fasta' '{output.simulated_reads}'
 #     """
 
 
@@ -1661,7 +1661,7 @@ rule refasm:
 #         elif [ '{params.file_format}' == 'sra' ]; then
 #             fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
 #         else
-#             ln -sr -T '{input.file}' '{output.file}'
+#             ln -fsr -T '{input.file}' '{output.file}'
 #         fi
 #         """
 
@@ -1699,7 +1699,7 @@ rule refasm:
 #     wildcard_constraints:
 #         genome = "((?!downloads).)*",
 #     threads: 1
-#     shell: "ln -sr -T '{input.file}' '{output.file}'"
+#     shell: "ln -fsr -T '{input.file}' '{output.file}'"
 
 # localrules: download_reference_raw
 # rule download_reference_raw:
@@ -1754,7 +1754,7 @@ rule refasm:
 #     threads: 1
 #     shell: """
 #         mkdir -p "$(dirname '{output.file}')"
-#         ln -sr -T '{input.file}' '{output.file}'
+#         ln -fsr -T '{input.file}' '{output.file}'
 #        """
 
 #############################
@@ -1820,7 +1820,7 @@ rule refasm:
 #         elif [ '{params.file_format}' == 'sra' ]; then
 #             fastq-dump --stdout --fasta default '{input.file}' > '{output.file}'
 #         else
-#             ln -sr -T '{input.file}' '{output.file}'
+#             ln -fsr -T '{input.file}' '{output.file}'
 #         fi
 #         """
 
@@ -1862,7 +1862,7 @@ rule refasm:
 #     wildcard_constraints:
 #         corrected_genome = "((?!/ratatosk).)*",
 #     threads: 1
-#     shell: "ln -sr '{input.corrected_reads_from_read_corrector}' '{output.corrected_reads}'"
+#     shell: "ln -fsr '{input.corrected_reads_from_read_corrector}' '{output.corrected_reads}'"
 
 #####################################
 ###### Homopolymer compression ######
@@ -1950,7 +1950,7 @@ localrules: link_fastk_reads
 rule link_fastk_reads:
     input:  reads = GENOME_READS,
     output: reads = FASTK_INPUT_READS,
-    shell: "ln -sr -T '{input.reads}' '{output.reads}'"
+    shell: "ln -fsr -T '{input.reads}' '{output.reads}'"
 
 rule fastk_build_table_and_prof:
     input:  reads = FASTK_INPUT_READS,
@@ -2028,13 +2028,13 @@ rule link_himodel_symmetric_table:
             output_filename = lambda wildcards, output: os.path.basename(output.table),
             output_dirname = lambda wildcards, output: os.path.dirname(output.table),
     shell:  """
-        ln -sr -T '{input.table}' '{output.table}'
+        ln -fsr -T '{input.table}' '{output.table}'
         
         for INPUT_FILE_NAME in $(ls '{params.input_dirname}/.{params.input_filename}.'* | xargs -n 1 basename); do
             INPUT_FILE='{params.input_dirname}'/"${{INPUT_FILE_NAME}}"
             OUTPUT_FILE_NAME=${{INPUT_FILE_NAME/{params.input_filename}/{params.output_filename}}}
             OUTPUT_FILE='{params.output_dirname}'/"${{OUTPUT_FILE_NAME}}"
-            ln -sr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
+            ln -fsr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
         done
         """
 
@@ -2051,19 +2051,19 @@ rule link_himodel_profile:
             output_filename_pidx = lambda wildcards, output: os.path.basename(output.profile)[:-4] + "pidx",
             output_dirname = lambda wildcards, output: os.path.dirname(output.profile),
     shell:  """
-        ln -sr -T '{input.profile}' '{output.profile}'
+        ln -fsr -T '{input.profile}' '{output.profile}'
         
         for INPUT_FILE_NAME in $(ls '{params.input_dirname}/.{params.input_filename}.'* | xargs -n 1 basename); do
             INPUT_FILE='{params.input_dirname}'/"${{INPUT_FILE_NAME}}"
             OUTPUT_FILE_NAME=${{INPUT_FILE_NAME/{params.input_filename}/{params.output_filename}}}
             OUTPUT_FILE='{params.output_dirname}'/"${{OUTPUT_FILE_NAME}}"
-            ln -sr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
+            ln -fsr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
         done
         for INPUT_FILE_NAME in $(ls '{params.input_dirname}/.{params.input_filename_pidx}.'* | xargs -n 1 basename); do
             INPUT_FILE='{params.input_dirname}'/"${{INPUT_FILE_NAME}}"
             OUTPUT_FILE_NAME=${{INPUT_FILE_NAME/{params.input_filename_pidx}/{params.output_filename_pidx}}}
             OUTPUT_FILE='{params.output_dirname}'/"${{OUTPUT_FILE_NAME}}"
-            ln -sr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
+            ln -fsr -T "${{INPUT_FILE}}" "${{OUTPUT_FILE}}"
         done
         """
 
@@ -2245,7 +2245,7 @@ rule hisim_sim:
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 1_000),
     shell:  """
         '{input.binary}' -v '{input.reference}' '{input.model}' -o'{params.output_prefix}' {params.sim_params} -p{params.ploidy_tree} -fh -r3541529 -U 2>&1 | tee '{log}'
-        ln -sr -T '{params.output_prefix}.fasta' '{output.reads}'
+        ln -fsr -T '{params.output_prefix}.fasta' '{output.reads}'
         """
 
 ###############################
@@ -2781,7 +2781,7 @@ rule download_reference_genome:
             homopolymer_compression = "none",
             filter_nw = "no",
             retain_cm = "no",
-    shell: "ln -sr -T '{input.file}' '{output.file}'"
+    shell: "ln -fsr -T '{input.file}' '{output.file}'"
 
 rule download_genome_reads:
     input:  files = lambda wildcards: [os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
