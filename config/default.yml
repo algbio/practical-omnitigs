@@ -968,14 +968,14 @@ reports:
 
 genomes:
   "E.coli":
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11317948/SRR11317948.1"]
+    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11317948/SRR11317948"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/865/GCF_000008865.2_ASM886v2/GCF_000008865.2_ASM886v2_genomic.fna.gz"
 
   # Reads from E.coli K-12 MG1655
   # Reference from E.coli K-12 MG1655
   "E.coli_hifi":
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10971019/SRR10971019.1"]
+    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10971019/SRR10971019"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz"
     genome_arguments:
@@ -998,19 +998,19 @@ genomes:
     #genome_length: 125000000
 
   "D.melanogaster_A4":
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-7/SRR5439404/SRR5439404.1"]
+    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR5439404/SRR5439404"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/002/300/595/GCA_002300595.1_Dmel_A4_1.0/GCA_002300595.1_Dmel_A4_1.0_genomic.fna.gz"
     #genome_length: 144000000
 
   "D.melanogaster_ISO1":
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-13/SRR6702603/SRR6702603.2"]
+    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR6702603/SRR6702603"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
     #genome_length: 144000000
 
   "D.melanogaster_A4xISO1_HiFi24kb":
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-17/SRR1023860/SRR10238607.1"]
+    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR1023860/SRR1023860"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
     #genome_length: 143726002
@@ -1027,7 +1027,7 @@ genomes:
     assembly_mem_factor: 1
 
   "Minghui63":  
-    reads: ["https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1018837/SRR10188372.1"]
+    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10188372/SRR10188372"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/001/623/365/GCA_001623365.2_MH63RS2/GCA_001623365.2_MH63RS2_genomic.fna.gz"
     #genome_length: 387000000
@@ -1050,10 +1050,10 @@ genomes:
       himodel_max_valid_medium: 1000
       himodel_max_valid_high: 32000
     reads:
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR11292120/SRR11292120.2"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11292121/SRR11292121.2"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11292122/SRR11292122.2"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR11292123/SRR11292123.2"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11292120/SRR11292120"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11292121/SRR11292121"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11292122/SRR11292122"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11292123/SRR11292123"
 
   # Reads and reference both from HG002
   # Reads are from PacBio company
@@ -1074,8 +1074,8 @@ genomes:
       himodel_max_valid_medium: 1000
       himodel_max_valid_high: 32000
     reads:
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382244/SRR10382244.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR10382245/SRR10382245.1"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382244/SRR10382244"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382245/SRR10382245"
 
   # Reads and reference both from HG002
   # Reads are from PacBio company
@@ -1096,10 +1096,10 @@ genomes:
       himodel_max_valid_medium: 1000
       himodel_max_valid_high: 32000
     reads:
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382246/SRR10382246.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR10382247/SRR10382247.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR1038224/SRR10382248.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR10382249/SRR10382249.1"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382246/SRR10382246"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382247/SRR10382247"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382248/SRR10382248"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382249/SRR10382249"
 
   # Reads and reference both from HG002
   # Reads from https://www.nature.com/articles/s41587-019-0217-9
@@ -1119,45 +1119,45 @@ genomes:
       himodel_max_valid_medium: 1000
       himodel_max_valid_high: 32000
     reads:
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858434/SRR8858434.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858435/SRR8858435.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858436/SRR8858436.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858437/SRR8858437.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858438/SRR8858438.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858439/SRR8858439.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858440/SRR8858440.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858442/SRR8858442.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858443/SRR8858443.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858444/SRR8858444.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858445/SRR8858445.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858446/SRR8858446.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858447/SRR8858447.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858448/SRR8858448.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858449/SRR8858449.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858450/SRR8858450.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858451/SRR8858451.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858452/SRR8858452.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858453/SRR8858453.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858454/SRR8858454.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858455/SRR8858455.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858456/SRR8858456.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858457/SRR8858457.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858458/SRR8858458.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858459/SRR8858459.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858460/SRR8858460.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR8858461/SRR8858461.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858462/SRR8858462.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858463/SRR8858463.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858464/SRR8858464.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858465/SRR8858465.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR8858466/SRR8858466.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858467/SRR8858467.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858468/SRR8858468.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858469/SRR8858469.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858470/SRR8858470.1"
-      - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8859679/SRR8859679.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858434/SRR8858434.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858435/SRR8858435.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858436/SRR8858436.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858437/SRR8858437.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858438/SRR8858438.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858439/SRR8858439.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858440/SRR8858440.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858442/SRR8858442.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858443/SRR8858443.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858444/SRR8858444.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858445/SRR8858445.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858446/SRR8858446.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858447/SRR8858447.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858448/SRR8858448.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858449/SRR8858449.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858450/SRR8858450.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858451/SRR8858451.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858452/SRR8858452.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858453/SRR8858453.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858454/SRR8858454.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858455/SRR8858455.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858456/SRR8858456.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858457/SRR8858457.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858458/SRR8858458.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858459/SRR8858459.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858460/SRR8858460.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR8858461/SRR8858461.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858462/SRR8858462.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858463/SRR8858463.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-19/SRR8858464/SRR8858464.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858465/SRR8858465.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-21/SRR8858466/SRR8858466.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos3/sra-pub-run-20/SRR8858467/SRR8858467.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858468/SRR8858468.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858469/SRR8858469.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858470/SRR8858470.1"
+      # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8859679/SRR8859679.1"
 
   "HG002":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
