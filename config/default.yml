@@ -1010,7 +1010,7 @@ genomes:
     #genome_length: 144000000
 
   "D.melanogaster_A4xISO1_HiFi24kb":
-    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR1023860/SRR1023860"]
+    reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10238607/SRR10238607"]
     format: "sra"
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz"
     #genome_length: 143726002
