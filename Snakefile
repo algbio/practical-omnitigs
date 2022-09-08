@@ -2401,7 +2401,7 @@ def get_quast_references_from_wildcards(wildcards):
     try:
         if wildcards.read_source == "real":
             reference_file = GENOME_REFERENCE_HOCO if wildcards.run_quast_on_hoco == "yes" else GENOME_REFERENCE
-            return "-r '" + reference_file.format(**wildcards) + "'"
+            return [reference_file.format(**wildcards)]
         else:
             hisim_haplotype = HISIM_HAPLOTYPE_HOCO if wildcards.run_quast_on_hoco == "yes" else HISIM_HAPLOTYPE
 
@@ -2412,15 +2412,15 @@ def get_quast_references_from_wildcards(wildcards):
             for haplotype_index in range(1, ploidy_count + 1):
                 files.append(safe_format(hisim_haplotype, haplotype_index = haplotype_index, uniquify_ids = "no").format(**wildcards))
 
-            return "-r '" + "' -r '".join(files) + "'"
+            return files
+            "-r '" + "' -r '".join(files) + "'"
     except Exception:
         traceback.print_exc()
         sys.exit("Catched exception")
 
 rule run_quast:
     input:  contigs = lambda wildcards: ASSEMBLED_CONTIGS_HOCO if wildcards.run_quast_on_hoco == "yes" else ASSEMBLED_CONTIGS,
-            reference = lambda wildcards: GENOME_REFERENCE_HOCO if wildcards.run_quast_on_hoco == "yes" else GENOME_REFERENCE,
-            hisim_haplotype = lambda wildcards: [] if wildcards.read_source == "real" else (safe_format(HISIM_HAPLOTYPE_HOCO, haplotype_index = "1", uniquify_ids = "no") if wildcards.run_quast_on_hoco == "yes" else safe_format(HISIM_HAPLOTYPE, haplotype_index = "1", uniquify_ids = "no")),
+            references = get_quast_references_from_wildcards,
             script = QUAST_BINARY,
             homopolymer_compress_rs_binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
             minimap2_homopolymer_decompression_binary = MINIMAP2_HOMOPOLYMER_DECOMPRESSION_BINARY,
@@ -2428,7 +2428,7 @@ rule run_quast:
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     log:    minimap = os.path.join(QUAST_OUTPUT_DIR, "contigs_reports", "contigs_report_contigs.stderr")
     params: extra_arguments = get_quast_extra_arguments_from_wildcards,
-            references = get_quast_references_from_wildcards,
+            references = lambda wildcards, input: "-r '" + "' -r '".join(input.references) + "'",
     conda: "config/conda-quast-env.yml"
     threads: 14,
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 50_000),
