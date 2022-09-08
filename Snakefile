@@ -2399,9 +2399,8 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
 
 def get_quast_references_from_wildcards(wildcards):
     try:
-        reference_file = GENOME_REFERENCE_HOCO if wildcards.run_quast_on_hoco == "yes" else GENOME_REFERENCE
-
         if wildcards.read_source == "real":
+            reference_file = GENOME_REFERENCE_HOCO if wildcards.run_quast_on_hoco == "yes" else GENOME_REFERENCE
             return "-r '" + reference_file.format(**wildcards) + "'"
         else:
             hisim_haplotype = HISIM_HAPLOTYPE_HOCO if wildcards.run_quast_on_hoco == "yes" else HISIM_HAPLOTYPE
@@ -2411,7 +2410,7 @@ def get_quast_references_from_wildcards(wildcards):
 
             files = []
             for haplotype_index in range(1, ploidy_count + 1):
-                files.append(safe_format(HISIM_HAPLOTYPE, haplotype_index = haplotype_index, uniquify_ids = "no").format(**wildcards))
+                files.append(safe_format(hisim_haplotype, haplotype_index = haplotype_index, uniquify_ids = "no").format(**wildcards))
 
             return "-r '" + "' -r '".join(files) + "'"
     except Exception:
