@@ -912,7 +912,7 @@ reports:
     argument_matrix:
       genome: "CHM13_HiFi_30x"
       read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_human", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_overview_columns_hg002
 
@@ -920,7 +920,7 @@ reports:
     argument_matrix:
       genome: "CHM13_HiFi_30x"
       read_source: ["real", "hisim_human_medium", "hisim_human_haploid_medium"]
-      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_human", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_hodeco_simple_overview_columns_hg002
 

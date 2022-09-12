@@ -2366,6 +2366,8 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
             return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000"
         elif wildcards.quast_mode == "hicanu_misassemblies":
             return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90"
+        elif wildcards.quast_mode == "hicanu_misassemblies_human":
+            return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 --min-contig 50000"
         elif wildcards.quast_mode == "hicanu_misassemblies_strict":
             return "--min-alignment 20000 --extensive-mis-size 100000 --min-identity 90"
         elif wildcards.quast_mode == "normal":
@@ -2376,6 +2378,8 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
             return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000 --minimap-hoco"
         elif wildcards.quast_mode == "hicanu_misassemblies_hoco":
             return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 --minimap-hoco"
+        elif wildcards.quast_mode == "hicanu_misassemblies_human_hoco":
+            return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 --minimap-hoco --min-contig 50000"
         elif wildcards.quast_mode == "hicanu_misassemblies_strict_hoco":
             return "--min-alignment 20000 --extensive-mis-size 100000 --min-identity 90 --minimap-hoco"
         elif wildcards.quast_mode == "normal_hoco":
@@ -2386,6 +2390,8 @@ def get_quast_extra_arguments_from_wildcards(wildcards):
             return "--skip-unaligned-mis-contigs --min-alignment 10000 --min-identity 98.0 --extensive-mis-size 5000 --min-contig 50000 --minimap-hoco-wrapped"
         elif wildcards.quast_mode == "hicanu_misassemblies_wrapped_hoco":
             return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 --minimap-hoco-wrapped"
+        elif wildcards.quast_mode == "hicanu_misassemblies_human_wrapped_hoco":
+            return "--min-alignment 20000 --extensive-mis-size 500000 --min-identity 90 --minimap-hoco-wrapped --min-contig 50000"
         elif wildcards.quast_mode == "hicanu_misassemblies_strict_wrapped_hoco":
             return "--min-alignment 20000 --extensive-mis-size 100000 --min-identity 90 --minimap-hoco-wrapped"
         elif wildcards.quast_mode == "normal_wrapped_hoco":
