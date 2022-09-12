@@ -58,6 +58,12 @@ pub struct ComputeTrivialOmnitigsCommand {
         help = "Set to use algorithms that handle not strongly connected graphs, but are slower"
     )]
     pub non_scc: bool,
+
+    #[clap(
+        long,
+        help = "Do not remove reverse complements from the resulting trivial omnitigs"
+    )]
+    pub keep_reverse_complements: bool,
 }
 
 fn print_trivial_omnitigs_statistics<Graph: GraphBase>(
@@ -191,8 +197,10 @@ pub(crate) fn compute_trivial_omnitigs(
                 ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
                 Omnitigs::compute_trivial_only(&genome_graph)
             };
-            info!("Removing reverse complements");
-            maximal_omnitigs.remove_reverse_complements(&genome_graph);
+            if !subcommand.keep_reverse_complements {
+                info!("Removing reverse complements");
+                maximal_omnitigs.remove_reverse_complements(&genome_graph);
+            }
             assert!(!maximal_omnitigs.is_empty(), "Found no trivial omnitigs");
 
             print_trivial_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
@@ -244,8 +252,10 @@ pub(crate) fn compute_trivial_omnitigs(
                 ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
                 Vec::compute_trivial_node_centric_omnitigs(&genome_graph)
             };
-            info!("Removing reverse complements");
-            maximal_omnitigs.remove_reverse_complements(&genome_graph);
+            if !subcommand.keep_reverse_complements {
+                info!("Removing reverse complements");
+                maximal_omnitigs.remove_reverse_complements(&genome_graph);
+            }
 
             //print_trivial_node_centric_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
 
@@ -303,8 +313,10 @@ pub(crate) fn compute_trivial_omnitigs(
                 ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
                 Omnitigs::compute_trivial_only(&genome_graph)
             };
-            info!("Removing reverse complements");
-            trivial_omnitigs.remove_reverse_complements(&genome_graph);
+            if !subcommand.keep_reverse_complements {
+                info!("Removing reverse complements");
+                trivial_omnitigs.remove_reverse_complements(&genome_graph);
+            }
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
 
@@ -351,8 +363,10 @@ pub(crate) fn compute_trivial_omnitigs(
                 ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
                 Omnitigs::compute_trivial_only(&genome_graph)
             };
-            info!("Removing reverse complements");
-            trivial_omnitigs.remove_reverse_complements(&genome_graph);
+            if !subcommand.keep_reverse_complements {
+                info!("Removing reverse complements");
+                trivial_omnitigs.remove_reverse_complements(&genome_graph);
+            }
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
 
