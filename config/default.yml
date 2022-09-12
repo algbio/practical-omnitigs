@@ -402,11 +402,22 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
     - shortname: "flye YV"
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
           tig_injection: "trivial_omnitigs"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -505,11 +516,22 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
     - shortname: "flye YV"
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
           tig_injection: "trivial_omnitigs"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -595,11 +617,22 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
     - shortname: "flye YV"
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
           tig_injection: "trivial_omnitigs"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -683,11 +716,22 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
     - shortname: "flye YV"
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
           tig_injection: "trivial_omnitigs"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -750,11 +794,22 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
     - shortname: "flye YV"
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
           tig_injection: "trivial_omnitigs"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -838,11 +893,22 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
     - shortname: "flye YV"
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
           tig_injection: "trivial_omnitigs"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:

@@ -60,6 +60,7 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
     },
     "flye": {
         "tig_injection": "none",
+        "stop_after_contigger": "no",
     },
 }
 
@@ -207,7 +208,7 @@ WTDBG2_EXTRACT_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "extract.{subfile}.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
 WTDBG2_ASSEMBLED_CONTIGS = os.path.join(WTDBG2_OUTPUT_DIR, "contigs.fa")
 
-FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}-t{tig_injection}"
+FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}-t{tig_injection}-s{stop_after_contigger}"
 ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
@@ -1202,6 +1203,7 @@ rule flye:
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
             tig_injection = "none",
+            stop_after_contigger = "no",
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
@@ -1225,6 +1227,7 @@ rule flye_injected_tigs:
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
             tig_injection = "trivial_omnitigs",
+            stop_after_contigger = "no",
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
@@ -1237,6 +1240,19 @@ rule flye_injected_tigs:
         cp -r '{input.directory}' '{output.directory}'
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --omnitigs --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        """
+
+localrules: flye_sac
+rule flye_sac:
+    input:  directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, stop_after_contigger = "no"), "flye"),
+    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
+    log:    log = FLYE_LOG,
+    wildcard_constraints:
+            stop_after_contigger = "yes",
+    #conda: "config/conda-flye-env.yml"
+    threads: 1
+    shell:  """
+        ln -sr -T '{input.directory}/30-contigger/contigs.fasta' '{output.contigs}'
         """
 
 localrules: link_flye_contigs
@@ -3073,7 +3089,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout e2f3e11e6b92f96c28ad6aa7a1ed74a767d49357
+        git checkout 7e9d3f933df003f2922209a6d6dee20630a3b678
 
         mv bin/flye bin/flye.disabled # rename such that snakemake does not delete it
         """
