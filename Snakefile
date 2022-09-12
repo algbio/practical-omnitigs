@@ -2327,7 +2327,7 @@ rule hisim_sim_dynamic_haplotypes:
         if [ -f '{params.real_input}' ]; then
             cp '{params.real_input}' '{output.haplotype_n}'
         else
-            echo "Error, haplotype '{params.real_input}' does not exist!"
+            echo "Haplotype '{params.real_input}' does not exist!"
             exit 1
         fi
         """
