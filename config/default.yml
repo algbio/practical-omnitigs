@@ -1216,21 +1216,21 @@ genomes:
   # Reads and reference both from HG002
   # Reads from https://www.nature.com/articles/s41587-019-0217-9
   # Reference from https://www.ncbi.nlm.nih.gov/grc
-  "HG002_HiFi_13.5kb_29x":
-    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.29_GRCh38.p14/GCA_000001405.29_GRCh38.p14_genomic.fna.gz"
-    assembly_time_factor: 4
-    assembly_mem_factor: 4
-    format: "sra"
-    genome_arguments:
-      retain_cm: "yes"
-      uniquify_ids: "yes"
-      fastk_k: 51
-      himodel_kmer_threshold: 4
-      himodel_min_valid: 8
-      himodel_max_valid_low: 100
-      himodel_max_valid_medium: 1000
-      himodel_max_valid_high: 32000
-    reads:
+  # "HG002_HiFi_13.5kb_29x":
+  #   reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.29_GRCh38.p14/GCA_000001405.29_GRCh38.p14_genomic.fna.gz"
+  #   assembly_time_factor: 4
+  #   assembly_mem_factor: 4
+  #   format: "sra"
+  #   genome_arguments:
+  #     retain_cm: "yes"
+  #     uniquify_ids: "yes"
+  #     fastk_k: 51
+  #     himodel_kmer_threshold: 4
+  #     himodel_min_valid: 8
+  #     himodel_max_valid_low: 100
+  #     himodel_max_valid_medium: 1000
+  #     himodel_max_valid_high: 32000
+  #   reads:
       # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858432/SRR8858432.1"
       # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos2/sra-pub-run-15/SRR8858433/SRR8858433.1"
       # - "https://sra-downloadb.be-md.ncbi.nlm.nih.gov/sos1/sra-pub-run-2/SRR8858434/SRR8858434.1"

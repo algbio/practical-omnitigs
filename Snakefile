@@ -479,7 +479,7 @@ def get_all_report_files():
                 continue
 
             fastk_k = genome_properties["genome_arguments"]["fastk_k"]
-            read_downsampling_factor = None
+            read_downsampling_factor = "none"
             if "read_downsampling_factor" in genome_properties["genome_arguments"]:
                 read_downsampling_factor = genome_properties["genome_arguments"]["read_downsampling_factor"]
 
@@ -3393,7 +3393,7 @@ rule download_fastk:
 
 rule build_fastk:
     input:  makefile = os.path.join(FASTK_DIR, "Makefile"),
-    output: binaries = [FASTK_BINARY, FASTK_SYMMEX_BINARY],
+    output: binaries = [FASTK_BINARY, FASTK_SYMMEX_BINARY, FASTK_HISTEX_BINARY],
     log:    os.path.join(FASTK_DIR, "build.log"),
     params: fastk_dir = FASTK_DIR,
     conda:  "config/conda-install-fastk-env.yml"
