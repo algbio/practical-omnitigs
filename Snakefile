@@ -1221,6 +1221,7 @@ rule flye_injected_tigs:
             directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, tig_injection = "none"), "flye"),
             reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             script = FLYE_BINARY,
+            rust = RUST_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
     log:    log = FLYE_LOG,
@@ -1239,7 +1240,7 @@ rule flye_injected_tigs:
         rm -rf '{output.directory}'
         cp -r '{input.directory}' '{output.directory}'
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --omnitigs --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --omnitigs '{input.rust}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
 localrules: flye_sac
@@ -3089,7 +3090,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout 7e9d3f933df003f2922209a6d6dee20630a3b678
+        git checkout b1fc18257e95264b58e20540f7973bfefec7f543
 
         mv bin/flye bin/flye.disabled # rename such that snakemake does not delete it
         """
@@ -3117,8 +3118,7 @@ rule build_flye:
 
         /usr/bin/env python3 setup.py install
 
-        mv bin/flye.disabled bin/flye # was renamed such that snakemake does not delete it
-        ln -sr -T '{input.practical_omnitigs}' ./practical-omnitigs
+        cp bin/flye.disabled bin/flye # was renamed such that snakemake does not delete it
         """
 
 localrules: download_mdbg
