@@ -58,6 +58,9 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
     "hifiasm": {
         "contig_algorithm": "builtin",
     },
+    "flye": {
+        "tig_injection": "none",
+    },
 }
 
 for report_name, report_definition in reports.items():
@@ -204,7 +207,7 @@ WTDBG2_EXTRACT_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "extract.{subfile}.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
 WTDBG2_ASSEMBLED_CONTIGS = os.path.join(WTDBG2_OUTPUT_DIR, "contigs.fa")
 
-FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}"
+FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}-t{tig_injection}"
 ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
@@ -1197,6 +1200,8 @@ rule flye:
             directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
     log:    log = FLYE_LOG,
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
+    wildcard_constraints:
+            tig_injection = "none",
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
@@ -1207,6 +1212,31 @@ rule flye:
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        """
+
+rule flye_injected_tigs:
+    input:  reads = GENOME_READS,
+            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, tig_injection = "none"), "flye"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
+            script = FLYE_BINARY,
+    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
+            directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
+    log:    log = FLYE_LOG,
+    params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
+    wildcard_constraints:
+            tig_injection = "trivial_omnitigs",
+    #conda: "config/conda-flye-env.yml"
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 250_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
+    shell:  """
+        rm -rf '{output.directory}'
+        cp -r '{input.directory}' '{output.directory}'
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --omnitigs --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
 localrules: link_flye_contigs
@@ -2247,6 +2277,8 @@ rule hisim_sim:
     params: sim_params = hisim_sim_params,
             output_prefix = lambda wildcards, output: os.path.join(os.path.dirname(output.reads), os.path.basename(output.reads).replace(".fa", "")),
             ploidy_tree = hisim_ploidy_tree,
+            output_dir = lambda wildcards, output: os.path.dirname(output.reads),
+            output_basename = lambda wildcards, output: os.path.basename(output.reads).replace(".fa", ""),
     log:    os.path.join(GENOME_READS_DIR, "hisim.log"),
     wildcard_constraints:
         read_source = "hisim_.*",
@@ -2261,6 +2293,26 @@ rule hisim_sim:
     shell:  """
         '{input.binary}' -v '{input.reference}' '{input.model}' -o'{params.output_prefix}' {params.sim_params} -p{params.ploidy_tree} -fh -r3541529 -U 2>&1 | tee '{log}'
         ln -fsr -T '{params.output_prefix}.fasta' '{output.reads}'
+
+        cd '{params.output_dir}'
+        mkdir haplotypes
+        mv {params.output_basename}.hap*.fasta haplotypes/
+        mv haplotypes{params.output_basename}.hap1.fasta .
+        """
+
+rule hisim_sim_dynamic_haplotypes:
+    input:  haplotype_1 = safe_format(HISIM_HAPLOTYPE, haplotype_index = "1"),
+    output: haplotype_n = HISIM_HAPLOTYPE,
+    params: real_input = lambda wildcards, output: os.path.join(os.path.dirname(output.haplotype_n), "haplotypes", os.path.basename(output.haplotype_n)),
+    wildcard_constraints:
+        haplotype_index = "([1-9][0-9]+|[2-9])",
+    shell:  """
+        if [ -f '{params.real_input}' ]; then
+            cp '{params.real_input}' '{output.haplotype_n}'
+        else
+            echo "Error, haplotype '{params.real_input}' does not exist!"
+            exit 1
+        fi
         """
 
 ###############################
@@ -3021,7 +3073,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout 38921327d6c5e57a59e71a7181995f2f0c04be75
+        git checkout e2f3e11e6b92f96c28ad6aa7a1ed74a767d49357
 
         mv bin/flye bin/flye.disabled # rename such that snakemake does not delete it
         """
@@ -3030,6 +3082,7 @@ rule download_flye:
 # Otherwise, the compiler might generate unsupported instructions.
 rule build_flye:
     input:  flye_marker = os.path.join(FLYE_DIR, ".git", "HEAD"),
+            practical_omnitigs = RUST_BINARY,
     params: flye_directory = FLYE_DIR,
     output: script = FLYE_BINARY,
     conda:  "config/conda-install-flye-env.yml"
@@ -3049,6 +3102,7 @@ rule build_flye:
         /usr/bin/env python3 setup.py install
 
         mv bin/flye.disabled bin/flye # was renamed such that snakemake does not delete it
+        ln -sr -T '{input.practical_omnitigs}' ./practical-omnitigs
         """
 
 localrules: download_mdbg

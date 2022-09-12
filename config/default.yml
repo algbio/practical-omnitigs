@@ -402,6 +402,11 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye YV"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -500,6 +505,11 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye YV"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -585,6 +595,11 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye YV"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -668,6 +683,11 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye YV"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -730,6 +750,11 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye YV"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
@@ -813,6 +838,11 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+    - shortname: "flye YV"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
