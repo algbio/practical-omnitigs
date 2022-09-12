@@ -3090,7 +3090,7 @@ rule download_flye:
         rm -rf Flye
         git clone https://github.com/sebschmi/Flye
         cd Flye
-        git checkout b1fc18257e95264b58e20540f7973bfefec7f543
+        git checkout 32d98707344424a3e9caf90053c81e1c967d04e2
 
         mv bin/flye bin/flye.disabled # rename such that snakemake does not delete it
         """
