@@ -1076,11 +1076,11 @@ rule wtdbg2_with_injected_contigs:
 rule wtdbg2_with_injected_fragment_contigs:
     input:  reads = GENOME_READS,
             fragment_contigs = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "contigwalks.ssv"),
-            cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), frg_injection = "none", frg_injection_stage = "none"),
-            cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), frg_injection = "none", frg_injection_stage = "none"),
-            cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), frg_injection = "none", frg_injection_stage = "none"),
+            cached_nodes = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"), frg_injection = "none", frg_injection_stage = "none", fragment_correction_steps = "all"),
+            cached_clips = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"), frg_injection = "none", frg_injection_stage = "none", fragment_correction_steps = "all"),
+            cached_kbm = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"), frg_injection = "none", frg_injection_stage = "none", fragment_correction_steps = "all"),
             reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
-            edge_cov = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.edge-cov"), frg_injection = "none", frg_injection_stage = "none"),
+            edge_cov = safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.edge-cov"), frg_injection = "none", frg_injection_stage = "none", fragment_correction_steps = "all"),
             binary = WTDBG2_BINARY,
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
@@ -1090,7 +1090,6 @@ rule wtdbg2_with_injected_fragment_contigs:
             frg_injection = "((?!none).)*",
             frg_injection_stage = "((?!none).)*",
             skip_fragment_assembly = "no",
-            fragment_correction_steps = "all",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
                cpus = MAX_THREADS,

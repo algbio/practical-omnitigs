@@ -636,6 +636,14 @@ column_templates:
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
+    - shortname: "w2 frg YV fcs=2"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          fragment_correction_steps: 2
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
     # - shortname: "w2 omni sfa"
     #   select_assembler:
     #     wtdbg2:
@@ -770,6 +778,14 @@ column_templates:
       select_assembler:
         wtdbg2:
           wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg YV fcs=2"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          fragment_correction_steps: 2
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
