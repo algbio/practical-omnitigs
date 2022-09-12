@@ -2314,7 +2314,7 @@ rule hisim_sim:
         cd '{params.output_dir}'
         mkdir haplotypes
         mv {params.output_basename}.hap*.fasta haplotypes/
-        mv haplotypes{params.output_basename}.hap1.fasta .
+        mv haplotypes/{params.output_basename}.hap1.fasta .
         """
 
 rule hisim_sim_dynamic_haplotypes:
