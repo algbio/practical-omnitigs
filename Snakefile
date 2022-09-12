@@ -465,6 +465,22 @@ def get_all_report_files():
 
         for aggregated_report_name in aggregated_reports.keys():
             result.append(AGGREGATED_REPORT_PDF.format(aggregated_report_name = aggregated_report_name))
+
+        # add genome histexes
+        for genome, genome_properties in genomes.items():
+            if "genome_arguments" not in genome_properties:
+                continue
+
+            if "fastk_k" not in genome_properties["genome_arguments"]:
+                continue
+
+            fastk_k = genome_properties["genome_arguments"]["fastk_k"]
+            read_downsampling_factor = None
+            if "read_downsampling_factor" in genome_properties["genome_arguments"]:
+                read_downsampling_factor = genome_properties["genome_arguments"]["read_downsampling_factor"]
+
+            result.append(FASTK_HISTEX_EVALUATION.format(genome = genome, homopolymer_compression = "none", read_source = "real", read_simulation_model_source = "none", read_downsampling_factor = read_downsampling_factor, uniquify_ids = "no", fastk_k = fastk_k))
+
         return result
     except Exception:
         traceback.print_exc()
