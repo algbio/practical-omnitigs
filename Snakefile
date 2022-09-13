@@ -1011,7 +1011,7 @@ rule wtdbg2:
             clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
             kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
             ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
-            frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
+            #frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
     log:    log = WTDBG2_LOG,
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
