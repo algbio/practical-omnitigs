@@ -1105,6 +1105,7 @@ rule wtdbg2_with_injected_fragment_contigs:
     output: ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
+            fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
     wildcard_constraints:
             tig_injection = "none",
             frg_injection = "((?!none).)*",
@@ -1119,7 +1120,7 @@ rule wtdbg2_with_injected_fragment_contigs:
     shell: """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         read -r EDGE_COV < '{input.edge_cov}'
-        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -e $EDGE_COV -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -e $EDGE_COV -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --load-nodes '{input.cached_nodes}' --load-clips '{input.cached_clips}' --load-kbm '{input.cached_kbm}' --inject-fragment-unitigs '{input.fragment_contigs}' {params.fragment_correction_steps} 2>&1 | tee '{log.log}'
     """
 
 rule wtdbg2_extract:
