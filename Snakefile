@@ -869,7 +869,7 @@ def get_injectable_fragment_contigs_rust_cli_command_from_wildcards(wildcards):
         sys.exit("Catched exception")
 
 rule compute_injectable_fragment_contigs_wtdbg2:
-    input:  dot = lambda wildcards: safe_format(os.path.join(WTDBG2_OUTPUT_DIR, f"wtdbg2.{wildcards.frg_injection_stage}.dot"), frg_injection = "none", frg_injection_stage = "none"),
+    input:  dot = lambda wildcards: safe_format(os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.dot" if wildcards.frg_injection_stage == "ctg" else f"wtdbg2.{wildcards.frg_injection_stage}.frg.dot"), frg_injection = "none", frg_injection_stage = "none", fragment_correction_steps = "all"),
             binary = RUST_BINARY,
     output: file = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "contigwalks.ssv"),
             latex = os.path.join(WTDBG2_INJECTABLE_FRAGMENT_CONTIG_DIR, "compute_injectable_contigs.tex"),
@@ -1011,7 +1011,38 @@ rule wtdbg2:
             clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
             kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
             ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
-            #frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
+            frg_dot = [os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.{}.frg.dot.gz".format(i)) for i in range(1, 11)],
+    log:    log = WTDBG2_LOG,
+    params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
+    wildcard_constraints:
+            tig_injection = "none",
+            frg_injection = "none",
+            frg_injection_stage = "none",
+            skip_fragment_assembly = "no",
+            fragment_correction_steps = "all",
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 720),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 720, 100_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
+    shell: """
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.binary}' -x {wildcards.wtdbg2_mode} -g $REFERENCE_LENGTH -i '{input.reads}' -t {threads} -fo '{params.output_prefix}' --dump-kbm '{output.kbm}' 2>&1 | tee '{log.log}'
+    """
+
+rule wtdbg2_fragment_correction_steps:
+    input:  reads = GENOME_READS,
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
+            binary = WTDBG2_BINARY,
+    output: original_nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.1.nodes"),
+            nodes = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.nodes"),
+            reads = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.reads"),
+            dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.3.dot.gz"),
+            ctg_dot = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.dot.gz"),
+            clips = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.clps"),
+            kbm = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.kbm"),
+            ctg_lay = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2.ctg.lay.gz"),
     log:    log = WTDBG2_LOG,
     params: output_prefix = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2"),
             fragment_correction_steps = lambda wildcards: f"--fragment-correction-steps {wildcards.fragment_correction_steps}" if wildcards.fragment_correction_steps != "all" else "",
@@ -1020,6 +1051,7 @@ rule wtdbg2:
             frg_injection = "none",
             frg_injection_stage = "none",
             skip_fragment_assembly = "no",
+            fragment_correction_steps = "((?!all).)*",
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100_000),
                cpus = MAX_THREADS,
@@ -1131,6 +1163,7 @@ rule wtdbg2_extract:
             abslog = lambda wildcards: os.path.abspath(WTDBG2_EXTRACT_LOG.format(**wildcards)),
     wildcard_constraints:
             hodeco_consensus = "none",
+            subfile = "((.{0,2})|(.*[^\.][^g][^z]))",
     conda:  "config/conda-extract-env.yml"
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 1_000),
                cpus = 1,
