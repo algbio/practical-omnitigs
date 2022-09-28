@@ -2563,16 +2563,23 @@ rule run_quast:
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 120, 50_000),
     shell:  """
-        set +e
         ${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --hoco-binary '{input.homopolymer_compress_rs_binary}' --hodeco-binary '{input.minimap2_homopolymer_decompression_binary}' --no-html --large -o '{output.directory}' {params.references} '{input.contigs}'
-        set -e
 
-        if [ $? -ne 0 ] 
+        mkdir -p '{output.directory}'
+        if [ ! -f '{output.directory}/report.tex' ] 
         then
-            mkdir -p '{output.directory}/contigs_reports'
-            mkdir -p '{output.directory}/aligned_stats'
             cp '{input.error_report}' '{output.directory}/report.tex'
+        fi
+
+        mkdir -p '{output.directory}/contigs_reports'
+        if [ ! -f '{output.directory}/contigs_reports/misassemblies_report.tex' ]
+        then
             cp '{input.error_misassemblies_report}' '{output.directory}/contigs_reports/misassemblies_report.tex'
+        fi
+
+        mkdir -p '{output.directory}/aligned_stats'
+        if [ ! -f '{output.directory}/aligned_stats/EAxmax_plot.csv' ]
+        then
             touch '{output.directory}/aligned_stats/EAxmax_plot.csv'
         fi
     """
