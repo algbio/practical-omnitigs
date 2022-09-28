@@ -2568,18 +2568,21 @@ rule run_quast:
         mkdir -p '{output.directory}'
         if [ ! -f '{output.directory}/report.tex' ] 
         then
+            echo "report.tex is missing, using error template"
             cp '{input.error_report}' '{output.directory}/report.tex'
         fi
 
         mkdir -p '{output.directory}/contigs_reports'
         if [ ! -f '{output.directory}/contigs_reports/misassemblies_report.tex' ]
         then
+            echo "misassemblies_report.tex is missing, using error template"
             cp '{input.error_misassemblies_report}' '{output.directory}/contigs_reports/misassemblies_report.tex'
         fi
 
         mkdir -p '{output.directory}/aligned_stats'
         if [ ! -f '{output.directory}/aligned_stats/EAxmax_plot.csv' ]
         then
+            echo "EAxmax_plot.csv is missing, using empty file"
             touch '{output.directory}/aligned_stats/EAxmax_plot.csv'
         fi
     """
