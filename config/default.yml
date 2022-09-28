@@ -969,6 +969,7 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_hodeco_simple_overview_columns
+    manual_report: "yes"
 
   "E.coli_HiFi":
     argument_matrix:
@@ -1019,6 +1020,7 @@ reports:
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_human", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_hodeco_simple_overview_columns_hg002
+    manual_report: "yes"
 
   # "HG002_HiFi_20kb_16x":
   #   argument_matrix:

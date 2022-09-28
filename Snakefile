@@ -67,6 +67,7 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
 for report_name, report_definition in reports.items():
     argument_matrix = ArgumentMatrix(report_definition.setdefault("argument_matrix", {}))
     report_definition["argument_matrix"] = argument_matrix # use correct type
+    manual_report = report_definition.setdefault("manual_report", "no")
 
     # print("Matrix of {} has length {}".format(report_name, len(argument_matrix)))
     # entries = list(iter(argument_matrix))
@@ -92,6 +93,7 @@ for report_name, report_definition in reports.items():
         arguments.setdefault("retain_cm", "no")
         arguments.setdefault("filter_plasmids", "no")
         arguments.setdefault("run_quast_on_hoco", "no")
+        arguments.setdefault("manual_report", "no")
 
         # hisim produces reads with duplicate ids, so we always need to uniquify those
         if arguments["read_source"].startswith("hisim_"):
@@ -269,12 +271,17 @@ RESOURCES_EVALUATION = os.path.join(RESOURCES_OUTPUT_DIR, "resources.json")
 
 # Reports
 
-REPORT_SUBDIR = os.path.join(REPORT_ROOTDIR, "{report_name}", "{report_file_name}")
+REPORT_DIR = os.path.join(REPORT_ROOTDIR, "{report_name}")
+REPORT_SUBDIR = os.path.join(REPORT_DIR, "{report_file_name}")
 REPORT_TEX = os.path.join(REPORT_SUBDIR, "report.tex")
 REPORT_COMBINED_EAXMAX_PLOT = os.path.join(REPORT_SUBDIR, "combined_eaxmax_plot.pdf")
 REPORT_NAME_FILE = os.path.join(REPORT_SUBDIR, "name.txt")
 REPORT_HASHDIR = os.path.join(REPORT_ROOTDIR, "hashdir")
 REPORT_PDF = os.path.join(REPORT_SUBDIR, "report.pdf")
+
+REPORT_MANUAL_DIR = os.path.join(REPORT_ROOTDIR, "{report_name}", "manual")
+REPORT_MANUAL_TEX = os.path.join(REPORT_MANUAL_DIR, "all.tex")
+REPORT_MANUAL_PDF = os.path.join(REPORT_MANUAL_DIR, "all.pdf")
 
 AGGREGATED_REPORT_SUBDIR = os.path.join(REPORT_ROOTDIR, "{aggregated_report_name}")
 AGGREGATED_REPORT_PDF = os.path.join(AGGREGATED_REPORT_SUBDIR, "aggregated_report.pdf")
@@ -329,6 +336,7 @@ FASTK_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "FASTK")
 FASTK_BINARY = os.path.join(FASTK_DIR, "FastK")
 FASTK_SYMMEX_BINARY = os.path.join(FASTK_DIR, "Symmex")
 FASTK_HISTEX_BINARY = os.path.join(FASTK_DIR, "Histex")
+MANUAL_REPORTS_SCRIPT = os.path.join("scripts", "manual_reports.py3")
 
 # TODO remove
 ALGORITHM_PREFIX_FORMAT = os.path.join(DATADIR, "algorithms", "{arguments}")
@@ -465,6 +473,9 @@ def get_all_report_files():
                 #print(f"report_name: {report_name}")
                 #print(f"report_file_arguments: {report_file_arguments}", flush = True)
                 result.append(REPORT_PDF.format(report_name = report_name, report_file_name = str(report_file_arguments)))
+
+            if report_definition["manual_report"] == "yes":
+                result.append(REPORT_MANUAL_PDF.format(report_name = report_name))
 
 
         for aggregated_report_name in aggregated_reports.keys():
@@ -682,6 +693,40 @@ rule create_single_report_tex:
         python3 '{input.script}' '{params.hashdir}' '{params.name_file}' 'none' 'none' '{input.combined_eaxmax_plot}' '{output}' {params.script_column_arguments}
         """
 
+def get_manual_report_source_reports(wildcards):
+    try:
+        report_name = wildcards.report_name
+        report_definition = reports[report_name]
+        assert report_definition["manual_report"] == "yes"
+        result = []
+
+        for report_file_name, report_file_definition in report_definition["report_files"].items():
+            report_file_arguments = report_file_definition.arguments
+            #print(f"report_name: {report_name}")
+            #print(f"report_file_arguments: {report_file_arguments}", flush = True)
+            result.append(REPORT_PDF.format(report_name = report_name, report_file_name = str(report_file_arguments)))
+
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+rule create_manual_report_tex:
+    input:  source_reports = get_manual_report_source_reports,
+            script = MANUAL_REPORTS_SCRIPT,
+    output: report = REPORT_MANUAL_TEX,
+    params: directory = REPORT_DIR,
+    wildcard_constraints:
+            report_name = "[^/]+",
+    conda: "config/conda-latex-gen-env.yml"
+    threads: 1
+    resources:
+            queue = "short,medium,bigmem,aurinko",
+    shell: """
+        python3 '{input.script}' '{params.directory}'
+        """
+
+
 ### Create aggregated report ###
 
 def get_aggregated_report_file_maps(aggregated_report_name):
@@ -773,8 +818,10 @@ rule png_to_pdf:
     shell: "convert {input} {output}"
 
 rule latex:
-    input: "{subpath}report.tex"
-    output: "{subpath}report.pdf"
+    input: "{subpath}{file_suffix}.tex"
+    output: "{subpath}{file_suffix}.pdf"
+    wildcard_constraints:
+        file_suffix = "((report)|(all))",
     conda: "config/conda-latex-env.yml"
     threads: 1
     resources:
