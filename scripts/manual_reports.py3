@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, json, pathlib
+import os, sys, json, pathlib, shutil
 
 base_dir = sys.argv[1]
 
@@ -30,7 +30,7 @@ for subdir, dirs, files in os.walk(base_dir):
         existing_key_value_pairs.setdefault(key, set()).add(value)
 
 keys_with_multiple_values = dict([(key, value) for key, value in existing_key_value_pairs.items() if len(value) >= 2])
-keys_with_single_value = dict([(key, value) for key, value in existing_key_value_pairs.items() if len(value) == 1])
+keys_with_single_value = dict([(key, list(value)[0]) for key, value in existing_key_value_pairs.items() if len(value) == 1])
 print(keys_with_multiple_values)
 
 def parse_report(report_file, data):
@@ -127,21 +127,30 @@ ASSEMBLERS = {
     "HiCanu": "hicanu",
 }
 
+manual_dir = os.path.join(base_dir, "manual")
+shutil.rmtree(manual_dir, ignore_errors=True)
+
 for subdir, data in datas.items():
     report_data = generate_report(subdir, data)
 
-    compressed_variant_dir = {}
+    compressed_variant_dir_dict = {}
     for key in keys_with_multiple_values:
-        compressed_variant_dir[key] = data[key]
-    compressed_variant_dir = json.dumps(compressed_variant_dir, separators = (',', ':'))
+        compressed_variant_dir_dict[key] = data[key]
+    compressed_variant_dir = json.dumps(compressed_variant_dir_dict, separators = (',', ':'))
     compressed_variant_dir = encode_dir(compressed_variant_dir)
 
-    manual_subdir = os.path.join(base_dir, "manual", compressed_variant_dir)
+    manual_subdir = os.path.join(manual_dir, compressed_variant_dir)
     manual_file = os.path.join(manual_subdir, "report.tex")
     print(f"Generating {manual_file}")
     pathlib.Path(manual_subdir).mkdir(parents=True, exist_ok=True)
 
     with open(manual_file, 'w') as output:
+        caption = ", ".join([f"{key}={value}" for key, value in compressed_variant_dir_dict.items()])
+
+        output.write("\\begin{table}\n")
+        output.write("\\centering\n")
+        output.write(f"\\caption{{{caption}}}\n")
+
         output.write("\\begin{tabular}{l")
         for i in range(len(ASSEMBLERS)):
             output.write("r")
@@ -149,14 +158,38 @@ for subdir, data in datas.items():
 
         output.write(" & ")
         output.write(" & ".join(ASSEMBLERS.values()))
-        output.write("\\\\\\hline")
+        output.write("\\\\\\hline\n")
 
         for parameter_key, parameter_name in PARAMETERS.items():
             output.write(parameter_name)
             for assembler_key, assembler_name in ASSEMBLERS.items():
                 output.write(" & ")
                 output.write(report_data[assembler_key][parameter_key])
-            output.write("\\\\")
+            output.write("\\\\\n")
 
-        output.write("\\end{tabular}")
+        output.write("\\end{tabular}\n")
+        output.write("\\end{table}\n")
 
+combined_output_file = os.path.join(manual_dir, "all.tex")
+print(f"Generating {combined_output_file}")
+
+with open(combined_output_file, 'w') as output:
+    output.write("\\documentclass[12pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\\usepackage[T1]{fontenc}\\usepackage{graphicx}\n")
+    output.write("\\begin{document}\n\n")
+
+    output.write("\\textbf{Global parameters}\n")
+    output.write("\\begin{itemize}\n")
+    for key, value in keys_with_single_value.items():
+        output.write(f"\\item {key}={value}\n")
+    output.write("\n")
+
+    for subdir, dirs, files in os.walk(manual_dir):
+        if "report.tex" not in files:
+            continue
+
+        output.write("\n")
+        with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
+            for line in report_file.readlines():
+                output.write(line)
+
+    output.write("\n\\end{document}\n")

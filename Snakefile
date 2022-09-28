@@ -2548,6 +2548,8 @@ rule run_quast:
             script = QUAST_BINARY,
             homopolymer_compress_rs_binary = HOMOPOLYMER_COMPRESS_RS_BINARY,
             minimap2_homopolymer_decompression_binary = MINIMAP2_HOMOPOLYMER_DECOMPRESSION_BINARY,
+            error_report = "config/quast_error_report.tex",
+            error_misassemblies_report = "config/quast_error_misassemblies_report.tex"
     output: directory = directory(QUAST_OUTPUT_DIR),
             eaxmax_csv = os.path.join(QUAST_OUTPUT_DIR, "aligned_stats/EAxmax_plot.csv"),
     log:    minimap = os.path.join(QUAST_OUTPUT_DIR, "contigs_reports", "contigs_report_contigs.stderr")
@@ -2560,7 +2562,20 @@ rule run_quast:
                time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 120),
                queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 120, 50_000),
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 120, 50_000),
-    shell: "${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --hoco-binary '{input.homopolymer_compress_rs_binary}' --hodeco-binary '{input.minimap2_homopolymer_decompression_binary}' --no-html --large -o '{output.directory}' {params.references} '{input.contigs}'"
+    shell:  """
+        set +e
+        ${{CONDA_PREFIX}}/bin/time -v {input.script} {params.extra_arguments} -t {threads} --hoco-binary '{input.homopolymer_compress_rs_binary}' --hodeco-binary '{input.minimap2_homopolymer_decompression_binary}' --no-html --large -o '{output.directory}' {params.references} '{input.contigs}'
+        set -e
+
+        if [ $? -ne 0 ] 
+        then
+            mkdir -p '{output.directory}/contigs_reports'
+            mkdir -p '{output.directory}/aligned_stats'
+            cp '{input.error_report}' '{output.directory}/report.tex'
+            cp '{input.error_misassemblies_report}' '{output.directory}/contigs_reports/misassemblies_report.tex'
+            touch '{output.directory}/aligned_stats/EAxmax_plot.csv'
+        fi
+    """
 
 ##################################
 ###### Resources evaluation ######
