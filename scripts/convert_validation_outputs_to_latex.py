@@ -25,66 +25,71 @@ for i in range(7, len(sys.argv), 5):
 	experiments.append((sys.argv[i], sys.argv[i + 1], sys.argv[i + 2], sys.argv[i + 3], sys.argv[i + 4]))
 
 def append_latex_table_second_column(table, appendix):
-	if len(table) == 0:
-		return appendix
+	try:
+		if len(table) == 0:
+			return appendix
 
-	table_keys = set([line[:line.index("&")].strip() for line in table])
-	appendix_keys = set([line[:line.index("&")].strip() for line in appendix])
-	table_value_column_count = table[0].count("&")
+		table_keys = set([line[:line.index("&")].strip() for line in table])
+		appendix_keys = set([line[:line.index("&")].strip() for line in appendix])
+		table_value_column_count = table[0].count("&")
 
-	table_index = 0
-	appendix_index = 0
-	result = []
+		table_index = 0
+		appendix_index = 0
+		result = []
 
-	def append_rows(row, appendix):
-		row = row.strip()
-		if row[-2:] == "\\\\":
-			row = row[:-2] # Remove trailing new line backslashes
-		appendix = appendix[appendix.index("&"):].strip()
-		return row + appendix
+		def append_rows(row, appendix):
+			row = row.strip()
+			if row[-2:] == "\\\\":
+				row = row[:-2] # Remove trailing new line backslashes
+			appendix = appendix[appendix.index("&"):].strip()
+			return row + appendix
 
-	def new_row(appendix):
-		return appendix[:appendix.index("&")] + (" & " * table_value_column_count) + appendix[appendix.index("&"):]
+		def new_row(appendix):
+			return appendix[:appendix.index("&")] + (" & " * table_value_column_count) + appendix[appendix.index("&"):]
 
-	def append_none(row):
-		row = row.strip()
-		if row[-2:] == "\\\\":
-			row = row[:-2] # Remove trailing new line backslashes
-		return row + " & N/A \\\\"
+		def append_none(row):
+			row = row.strip()
+			if row[-2:] == "\\\\":
+				row = row[:-2] # Remove trailing new line backslashes
+			return row + " & N/A \\\\"
 
-	while table_index < len(table) or appendix_index < len(appendix):
-		if table_index < len(table) and appendix_index < len(appendix):
-			table_line = table[table_index]
-			table_key = table_line[:table_line.index("&")].strip()
-			appendix_line = appendix[appendix_index]
-			appendix_key = appendix_line[:appendix_line.index("&")].strip()
+		while table_index < len(table) or appendix_index < len(appendix):
+			if table_index < len(table) and appendix_index < len(appendix):
+				table_line = table[table_index]
+				table_key = table_line[:table_line.index("&")].strip()
+				appendix_line = appendix[appendix_index]
+				appendix_key = appendix_line[:appendix_line.index("&")].strip()
 
-			if table_key == appendix_key:
-				result.append(append_rows(table_line, appendix_line))
-				table_index += 1
-				appendix_index += 1
-			elif table_key in appendix_keys:
-				# Appendix contains something extra
-				result.append(new_row(appendix_line))
-				appendix_index += 1
-			elif appendix_key in table_keys:
+				if table_key == appendix_key:
+					result.append(append_rows(table_line, appendix_line))
+					table_index += 1
+					appendix_index += 1
+				elif table_key in appendix_keys:
+					# Appendix contains something extra
+					result.append(new_row(appendix_line))
+					appendix_index += 1
+				elif appendix_key in table_keys:
+					# Appendix misses something
+					result.append(append_none(table_line))
+					table_index += 1
+				else:
+					sys.exit("Found completely mismatching keys: {} and {}".format(table_key, appendix_key))
+			elif table_index < len(table):
 				# Appendix misses something
-				result.append(append_none(table_line))
+				result.append(append_none(table[table_index]))
 				table_index += 1
+			elif appendix_index < len(appendix):
+				# Appendix contains something extra
+				result.append(new_row(appendix[appendix_index]))
+				appendix_index += 1
 			else:
-				sys.exit("Found completely mismatching keys: {} and {}".format(table_key, appendix_key))
-		elif table_index < len(table):
-			# Appendix misses something
-			result.append(append_none(table[table_index]))
-			table_index += 1
-		elif appendix_index < len(appendix):
-			# Appendix contains something extra
-			result.append(new_row(appendix[appendix_index]))
-			appendix_index += 1
-		else:
-			assert False
+				assert False
 
-	return result
+		return result
+	except Exception:
+		print(f"Cannot append to table\ntable:\n{'\n'.join(table)}\nappendix:\n{'\n'.join(appendix)}")
+
+		raise
 
 #########################
 ### Process name file ###
