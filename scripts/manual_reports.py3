@@ -198,3 +198,36 @@ with open(combined_output_file, 'w') as output:
             output.write("\nsome text to hopefully make tex compile\n")
 
     output.write("\n\\end{landscape}\n\\end{document}\n")
+
+combined_output_file = os.path.join(manual_dir, "reduced.tex")
+print(f"Generating {combined_output_file}")
+
+with open(combined_output_file, 'w') as output:
+    output.write("\\documentclass[10pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\n\\usepackage[T1]{fontenc}\n\\usepackage{graphicx}\n\\usepackage{pdflscape}\n")
+    output.write("\\begin{document}\n\\begin{landscape}\n\n")
+
+    output.write("\\textbf{Global parameters}\n")
+    output.write("\\begin{itemize}\n")
+    for key, value in keys_with_single_value.items():
+        if isinstance(key, str):
+            key = key.replace("_", "\\_")
+        if isinstance(value, str):
+            value = value.replace("_", "\\_")
+        output.write(f"\\item {key}={value}\n")
+    output.write("\\end{itemize}\n")
+
+    for subdir, dirs, files in os.walk(manual_dir):
+        if "report.tex" not in files:
+            continue
+
+        data = datas[subdir]
+        if data["read_source"].startswith("hisim") and (data["read_source"].endswith("low") or data["read_source"].endswith("high")):
+            continue
+
+        output.write("\n")
+        with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
+            for line in report_file.readlines():
+                output.write(line.replace("_", "\\_"))
+            output.write("\nsome text to hopefully make tex compile\n")
+
+    output.write("\n\\end{landscape}\n\\end{document}\n")

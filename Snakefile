@@ -282,6 +282,8 @@ REPORT_PDF = os.path.join(REPORT_SUBDIR, "report.pdf")
 REPORT_MANUAL_DIR = os.path.join(REPORT_ROOTDIR, "{report_name}", "manual")
 REPORT_MANUAL_TEX = os.path.join(REPORT_MANUAL_DIR, "all.tex")
 REPORT_MANUAL_PDF = os.path.join(REPORT_MANUAL_DIR, "all.pdf")
+REPORT_MANUAL_REDUCED_TEX = os.path.join(REPORT_MANUAL_DIR, "all.tex")
+REPORT_MANUAL_REDUCED_PDF = os.path.join(REPORT_MANUAL_DIR, "all.pdf")
 
 AGGREGATED_REPORT_SUBDIR = os.path.join(REPORT_ROOTDIR, "{aggregated_report_name}")
 AGGREGATED_REPORT_PDF = os.path.join(AGGREGATED_REPORT_SUBDIR, "aggregated_report.pdf")
@@ -476,6 +478,7 @@ def get_all_report_files():
 
             if report_definition["manual_report"] == "yes":
                 result.append(REPORT_MANUAL_PDF.format(report_name = report_name))
+                result.append(REPORT_MANUAL_REDUCED_PDF.format(report_name = report_name))
 
 
         for aggregated_report_name in aggregated_reports.keys():
@@ -715,6 +718,7 @@ rule create_manual_report_tex:
     input:  source_reports = get_manual_report_source_reports,
             script = MANUAL_REPORTS_SCRIPT,
     output: report = REPORT_MANUAL_TEX,
+            report_reduced = REPORT_MANUAL_REDUCED_TEX,
     params: directory = REPORT_DIR,
     wildcard_constraints:
             report_name = "[^/]+",
@@ -821,7 +825,7 @@ rule latex:
     input: "{subpath}{file_suffix}.tex"
     output: "{subpath}{file_suffix}.pdf"
     wildcard_constraints:
-        file_suffix = "((report)|(all))",
+        file_suffix = "((report)|(all)|(reduced))",
     conda: "config/conda-latex-env.yml"
     threads: 1
     resources:
