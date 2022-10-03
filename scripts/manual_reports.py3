@@ -174,7 +174,7 @@ combined_output_file = os.path.join(manual_dir, "all.tex")
 print(f"Generating {combined_output_file}")
 
 with open(combined_output_file, 'w') as output:
-    output.write("\\documentclass[12pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\n\\usepackage[T1]{fontenc}\n\\usepackage{graphicx}\n")
+    output.write("\\documentclass[10pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\n\\usepackage[T1]{fontenc}\n\\usepackage{graphicx}\n")
     output.write("\\begin{document}\n\n")
 
     output.write("\\textbf{Global parameters}\n")
