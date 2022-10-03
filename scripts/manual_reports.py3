@@ -174,8 +174,8 @@ combined_output_file = os.path.join(manual_dir, "all.tex")
 print(f"Generating {combined_output_file}")
 
 with open(combined_output_file, 'w') as output:
-    output.write("\\documentclass[10pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\n\\usepackage[T1]{fontenc}\n\\usepackage{graphicx}\n")
-    output.write("\\begin{document}\n\n")
+    output.write("\\documentclass[10pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\n\\usepackage[T1]{fontenc}\n\\usepackage{graphicx}\n\\usepackage{pdflscape}\n")
+    output.write("\\begin{document}\n\\begin{landscape}\n\n")
 
     output.write("\\textbf{Global parameters}\n")
     output.write("\\begin{itemize}\n")
@@ -196,4 +196,4 @@ with open(combined_output_file, 'w') as output:
             for line in report_file.readlines():
                 output.write(line.replace("_", "\\_"))
 
-    output.write("\n\\end{document}\n")
+    output.write("\n\\end{landscape}\n\\end{document}\n")
