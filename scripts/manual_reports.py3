@@ -97,6 +97,9 @@ def encode_dir(plain):
             encoded.append(plain[index:])
     return "/_/".join(encoded)
 
+def decode_dir(encoded):
+    return encoded.replace("/_/", "")
+
 PARAMETERS = {
     "\\# contigs": "\\# contigs",
     "\\# unique misassemblies": "\\# unique misassemblies",
@@ -220,9 +223,14 @@ with open(combined_output_file, 'w') as output:
         if "report.tex" not in files:
             continue
 
-        data = datas[subdir]
-        if data["read_source"].startswith("hisim") and (data["read_source"].endswith("low") or data["read_source"].endswith("high")):
-            continue
+        try:
+            data = json.loads(decode_dir(subdir))
+            if "read_source" in data:
+                if data["read_source"].startswith("hisim") and (data["read_source"].endswith("low") or data["read_source"].endswith("high")):
+                    continue
+        except Exception:
+            print(f"Error for subdir {subdir}")
+            raise
 
         output.write("\n")
         with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
