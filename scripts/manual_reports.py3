@@ -224,7 +224,7 @@ with open(combined_output_file, 'w') as output:
             continue
 
         try:
-            data = json.loads(decode_dir(subdir))
+            data = json.loads(decode_dir(os.path.relpath(subdir, manual_dir)))
             if "read_source" in data:
                 if data["read_source"].startswith("hisim") and (data["read_source"].endswith("low") or data["read_source"].endswith("high")):
                     continue
