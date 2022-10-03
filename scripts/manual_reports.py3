@@ -98,7 +98,7 @@ def encode_dir(plain):
     return "/_/".join(encoded)
 
 PARAMETERS = {
-    "\\# contigs": "\\#contigs",
+    "\\# contigs": "\\# contigs",
     "\\# unique misassemblies": "\\# unique misassemblies",
     "Genome fraction (\\%)": "Genome fraction (\\%)",
     "Duplication ratio": "Duplication ratio",
