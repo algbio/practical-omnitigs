@@ -149,6 +149,7 @@ for subdir, data in datas.items():
 
     with open(manual_file, 'w') as output:
         caption = ", ".join([f"{key}={value}" for key, value in compressed_variant_dir_dict.items()])
+        caption = caption.replace("_", "\\_")
 
         output.write("\\begin{table}[htb]\n")
         output.write("\\centering\n")
@@ -160,14 +161,14 @@ for subdir, data in datas.items():
         output.write("}\n")
 
         output.write(" & ")
-        output.write(" & ".join(ASSEMBLERS.values()))
+        output.write((" & ".join(ASSEMBLERS.values())).replace("_", "\\_"))
         output.write("\\\\\\hline\n")
 
         for parameter_key, parameter_name in PARAMETERS.items():
-            output.write(parameter_name)
+            output.write(parameter_name.replace("_", "\\_"))
             for assembler_key, assembler_name in ASSEMBLERS.items():
                 output.write(" & ")
-                output.write(report_data[assembler_key][parameter_key])
+                output.write(str(report_data[assembler_key][parameter_key]).replace("_", "\\_"))
             output.write("\\\\\n")
 
         output.write("\\end{tabular}\n")
@@ -197,7 +198,7 @@ with open(combined_output_file, 'w') as output:
         output.write("\n")
         with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
             for line in report_file.readlines():
-                output.write(line.replace("_", "\\_"))
+                output.write(line)
             output.write("\nsome text to hopefully make tex compile\n")
 
     output.write("\n\\end{landscape}\n\\end{document}\n")
@@ -235,7 +236,7 @@ with open(combined_output_file, 'w') as output:
         output.write("\n")
         with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
             for line in report_file.readlines():
-                output.write(line.replace("_", "\\_"))
+                output.write(line)
             output.write("\nsome text to hopefully make tex compile\n")
 
     output.write("\n\\end{landscape}\n\\end{document}\n")
