@@ -174,14 +174,14 @@ combined_output_file = os.path.join(manual_dir, "all.tex")
 print(f"Generating {combined_output_file}")
 
 with open(combined_output_file, 'w') as output:
-    output.write("\\documentclass[12pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\\usepackage[T1]{fontenc}\\usepackage{graphicx}\n")
+    output.write("\\documentclass[12pt,a4paper]{article}\n\\usepackage[margin=0pt]{geometry}\n\\usepackage{lmodern}\n\\usepackage[T1]{fontenc}\n\\usepackage{graphicx}\n")
     output.write("\\begin{document}\n\n")
 
     output.write("\\textbf{Global parameters}\n")
     output.write("\\begin{itemize}\n")
     for key, value in keys_with_single_value.items():
         output.write(f"\\item {key}={value}\n")
-    output.write("\n")
+    output.write("\\end{itemize}\n")
 
     for subdir, dirs, files in os.walk(manual_dir):
         if "report.tex" not in files:
