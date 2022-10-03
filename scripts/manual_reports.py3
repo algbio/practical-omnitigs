@@ -180,6 +180,8 @@ with open(combined_output_file, 'w') as output:
     output.write("\\textbf{Global parameters}\n")
     output.write("\\begin{itemize}\n")
     for key, value in keys_with_single_value.items():
+        key = key.replace("_", "\\_")
+        value = value.replace("_", "\\_")
         output.write(f"\\item {key}={value}\n")
     output.write("\\end{itemize}\n")
 
