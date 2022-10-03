@@ -54,16 +54,17 @@ def append_latex_table_second_column(table, appendix):
 			return row + " & N/A \\\\"
 
 		while table_index < len(table) or appendix_index < len(appendix):
+			if '&' not in table[table_index]:
+				table_index += 1
+				continue
+			if '&' not in appendix[appendix_index]:
+				appendix_index += 1
+				continue
+
 			if table_index < len(table) and appendix_index < len(appendix):
 				table_line = table[table_index]
-				if '&' not in table_line:
-					table_index += 1
-					continue
 				table_key = table_line[:table_line.index("&")].strip()
 				appendix_line = appendix[appendix_index]
-				if '&' not in appendix_line:
-					appendix_index += 1
-					continue
 				appendix_key = appendix_line[:appendix_line.index("&")].strip()
 
 				if table_key == appendix_key:
