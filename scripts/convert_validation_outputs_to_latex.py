@@ -87,7 +87,7 @@ def append_latex_table_second_column(table, appendix):
 
 		return result
 	except Exception:
-		print(f"Cannot append to table\ntable:\n{'\n'.join(table)}\nappendix:\n{'\n'.join(appendix)}")
+		print("Cannot append to table\ntable:\n{}\nappendix:\n{}".format('\n'.join(table), '\n'.join(appendix)))
 
 		raise
 
