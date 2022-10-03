@@ -115,7 +115,7 @@ PARAMETERS = {
 
 #w2 noho & w2 & w2 sfa & w2 YV sfa & w2 YV & w2 frg YV & w2 frg YV fcs=2 & flye & flye sac & flye YV & flye YV sac & hifiasm & mdbg & lja & HiCanu
 ASSEMBLERS = {
-    "w2": "wtdbg2",
+    "w2 noho": "wtdbg2",
     "w2": "wtdbg2 hoco",
     "w2 frg YV": "wtdbg2 hoco YV",
     "flye": "flye",
@@ -195,5 +195,6 @@ with open(combined_output_file, 'w') as output:
         with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
             for line in report_file.readlines():
                 output.write(line.replace("_", "\\_"))
+            output.write("\nsome text to hopefully make tex compile\n")
 
     output.write("\n\\end{landscape}\n\\end{document}\n")
