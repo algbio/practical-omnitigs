@@ -194,6 +194,6 @@ with open(combined_output_file, 'w') as output:
         output.write("\n")
         with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
             for line in report_file.readlines():
-                output.write(line)
+                output.write(line.replace("_", "\\_"))
 
     output.write("\n\\end{document}\n")
