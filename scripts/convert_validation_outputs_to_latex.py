@@ -29,8 +29,8 @@ def append_latex_table_second_column(table, appendix):
 		if len(table) == 0:
 			return appendix
 
-		table_keys = set([line[:line.index("&")].strip() for line in table])
-		appendix_keys = set([line[:line.index("&")].strip() for line in appendix])
+		table_keys = set([line[:line.index("&")].strip() for line in table if '&' in line])
+		appendix_keys = set([line[:line.index("&")].strip() for line in appendix if '&' in line])
 		table_value_column_count = table[0].count("&")
 
 		table_index = 0
