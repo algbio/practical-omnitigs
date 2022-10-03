@@ -147,7 +147,7 @@ for subdir, data in datas.items():
     with open(manual_file, 'w') as output:
         caption = ", ".join([f"{key}={value}" for key, value in compressed_variant_dir_dict.items()])
 
-        output.write("\\begin{table}\n")
+        output.write("\\begin{table}[htb]\n")
         output.write("\\centering\n")
         output.write(f"\\caption{{{caption}}}\n")
 
