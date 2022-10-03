@@ -119,11 +119,11 @@ PARAMETERS = {
 #w2 noho & w2 & w2 sfa & w2 YV sfa & w2 YV & w2 frg YV & w2 frg YV fcs=2 & flye & flye sac & flye YV & flye YV sac & hifiasm & mdbg & lja & HiCanu
 ASSEMBLERS = {
     "w2 noho": "wtdbg2",
-    "w2": "wtdbg2 hoco",
-    "w2 frg YV": "wtdbg2 hoco YV",
+    "w2": "wtdbg2 H",
+    "w2 frg YV": "wtdbg2 YV",
     "flye": "flye",
-    "flye sac": "flye sac",
-    "flye YV sac": "flye sac YV",
+    "flye sac": "flye SAC",
+    "flye YV sac": "flye YV",
     "hifiasm": "hifiasm",
     "mdbg": "mdbg",
     "lja": "lja",
@@ -199,6 +199,9 @@ with open(combined_output_file, 'w') as output:
         with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
             for line in report_file.readlines():
                 output.write(line)
+                if "\\begin{table}" in line:
+                    output.write("\\fontsize{6pt}{7pt}\\selectfont\n")
+                    
             output.write("\nsome text to hopefully make tex compile\n")
 
     output.write("\n\\end{landscape}\n\\end{document}\n")
@@ -237,6 +240,9 @@ with open(combined_output_file, 'w') as output:
         with open(os.path.join(subdir, "report.tex"), 'r') as report_file:
             for line in report_file.readlines():
                 output.write(line)
+                if "\\begin{table}" in line:
+                    output.write("\\fontsize{6pt}{7pt}\\selectfont\n")
+                    
             output.write("\nsome text to hopefully make tex compile\n")
 
     output.write("\n\\end{landscape}\n\\end{document}\n")
