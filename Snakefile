@@ -1517,8 +1517,8 @@ rule hicanu:
     input:  reads = GENOME_READS,
             reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
     output: contigs = CANU_ASSEMBLED_CONTIGS,
-    params: output_dir = os.path.join(CANU_OUTPUT_DIR, "output"),
-            original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
+            directory = directory(os.path.join(CANU_OUTPUT_DIR, "output")),
+    params: original_contigs = os.path.join(CANU_OUTPUT_DIR, "output", "assembly.contigs.fasta"),
     log:    log = CANU_LOG,
     threads: MAX_THREADS,
     conda:  "config/conda-canu-env.yml"
@@ -1530,7 +1530,7 @@ rule hicanu:
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         mkdir -p '{params.output_dir}'
-        ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{params.output_dir}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{output.directory}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' 2>&1 | tee '{log.log}'
         ln -fsr -T '{params.original_contigs}' '{output.contigs}'
         """
 
