@@ -1529,7 +1529,7 @@ rule hicanu:
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 720, 100_000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        mkdir -p '{params.output_dir}'
+        mkdir -p '{output.directory}'
         ${{CONDA_PREFIX}}/bin/time -v canu -assemble -p assembly -d '{output.directory}' genomeSize=$REFERENCE_LENGTH useGrid=false -pacbio-hifi '{input.reads}' 2>&1 | tee '{log.log}'
         ln -fsr -T '{params.original_contigs}' '{output.contigs}'
         """
