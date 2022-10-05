@@ -2687,6 +2687,13 @@ def get_evaluate_resources_inputs(wildcards):
 
             # consensus
             result["wtdbg2_consensus"] = safe_format(WTDBG2_CONSENSUS_LOG, **assembler_arguments).format(**wildcards)
+        elif wildcards.assembler == "flye":
+            # injections
+            if assembler_arguments["tig_injection"] != "none":
+                result["assembly"] = safe_format(safe_format(FLYE_LOG, tig_injection = "none"), **assembler_arguments).format(**wildcards)
+                result["tig_injection"] = ASSEMBLY_LOG.format(**wildcards)
+            else:
+                result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
         elif wildcards.assembler == "hifiasm":
             # assembly
             result["assembly"] = safe_format(safe_format(HIFIASM_LOG, contig_algorithm = "builtin")).format(**wildcards)
