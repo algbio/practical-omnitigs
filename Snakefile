@@ -1331,6 +1331,7 @@ rule flye_injected_tigs:
 localrules: flye_sac
 rule flye_sac:
     input:  directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, stop_after_contigger = "no"), "flye"),
+            log = safe_format(FLYE_LOG, stop_after_contigger = "no"),
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
     log:    log = FLYE_LOG,
     wildcard_constraints:
@@ -1339,6 +1340,7 @@ rule flye_sac:
     threads: 1
     shell:  """
         ln -sr -T '{input.directory}/30-contigger/contigs.fasta' '{output.contigs}'
+        ln -sr -T '{input.log}' '{log.log}'
         """
 
 localrules: link_flye_contigs
