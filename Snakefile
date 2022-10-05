@@ -1328,6 +1328,22 @@ rule flye_injected_tigs:
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --omnitigs '{input.rust}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
+localrules: flye_sac
+rule flye_sac:
+    input:  directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, stop_after_contigger = "no"), "flye"),
+            log = safe_format(FLYE_LOG, stop_after_contigger = "no"),
+    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
+    log:    log = FLYE_LOG,
+    wildcard_constraints:
+            tig_injection = "none",
+            stop_after_contigger = "yes",
+    #conda: "config/conda-flye-env.yml"
+    threads: 1
+    shell:  """
+        ln -sr -T '{input.directory}/30-contigger/contigs.fasta' '{output.contigs}'
+        ln -sr -T '{input.log}' '{log.log}'
+        """
+
 localrules: link_flye_contigs
 rule link_flye_contigs:
     input:  contigs = os.path.join(FLYE_OUTPUT_DIR_PACKED, "flye", "assembly.fasta"),
