@@ -153,7 +153,6 @@ for subdir, data in datas.items():
 
         output.write("\\begin{table}[htb]\n")
         output.write("\\centering\n")
-        output.write(f"\\caption{{{caption}}}\n")
 
         output.write("\\begin{tabular}{l")
         for i in range(len(ASSEMBLERS)):
@@ -172,6 +171,7 @@ for subdir, data in datas.items():
             output.write("\\\\\n")
 
         output.write("\\end{tabular}\n")
+        output.write(f"\\caption{{{caption}}}\n")
         output.write("\\end{table}\n")
 
 combined_output_file = os.path.join(manual_dir, "all.tex")
