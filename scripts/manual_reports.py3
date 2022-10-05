@@ -109,11 +109,11 @@ PARAMETERS = {
     "EA75max": "EA75max",
     "time [s]": "time [s]",
     "mem [GiB]": "mem [GiB]",
-    "hoco time": "hoco time [s]",
-    "hodeco time": "hodeco time [s]",
-    "hodeco mem": "hodeco mem [GiB]",
-    "trivial\\_omnitigs time": "YV time [s]",
-    "trivial\\_omnitigs mem": "YV mem [GiB]",
+    #"hoco time": "hoco time [s]",
+    #"hodeco time": "hodeco time [s]",
+    #"hodeco mem": "hodeco mem [GiB]",
+    #"trivial\\_omnitigs time": "YV time [s]",
+    #"trivial\\_omnitigs mem": "YV mem [GiB]",
 }
 
 #w2 noho & w2 & w2 sfa & w2 YV sfa & w2 YV & w2 frg YV & w2 frg YV fcs=2 & flye & flye sac & flye YV & flye YV sac & hifiasm & mdbg & lja & HiCanu
