@@ -1303,7 +1303,7 @@ rule flye:
 
 rule flye_injected_tigs:
     input:  reads = GENOME_READS,
-            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, tig_injection = "none"), "flye"),
+            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, tig_injection = "none", stop_after_contigger = "no"), "flye"),
             reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             script = FLYE_BINARY,
             rust = RUST_BINARY,
@@ -1313,7 +1313,7 @@ rule flye_injected_tigs:
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
             tig_injection = "trivial_omnitigs",
-            stop_after_contigger = "no",
+            stop_after_contigger = "yes",
     #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
@@ -1326,21 +1326,6 @@ rule flye_injected_tigs:
         cp -r '{input.directory}' '{output.directory}'
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --omnitigs '{input.rust}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
-        """
-
-localrules: flye_sac
-rule flye_sac:
-    input:  directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, stop_after_contigger = "no"), "flye"),
-            log = safe_format(FLYE_LOG, stop_after_contigger = "no"),
-    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
-    log:    log = FLYE_LOG,
-    wildcard_constraints:
-            stop_after_contigger = "yes",
-    #conda: "config/conda-flye-env.yml"
-    threads: 1
-    shell:  """
-        ln -sr -T '{input.directory}/30-contigger/contigs.fasta' '{output.contigs}'
-        ln -sr -T '{input.log}' '{log.log}'
         """
 
 localrules: link_flye_contigs
