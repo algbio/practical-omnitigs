@@ -82,7 +82,10 @@ def append_latex_table_second_column(table, appendix):
 					result.append(append_none(table_line))
 					table_index += 1
 				else:
-					sys.exit("Found completely mismatching keys: {} and {}".format(table_key, appendix_key))
+					row = appendix_key + (" & " * table_value_column_count) + "\\\\"
+					result.append(append_none(row))
+					appendix_index += 1:
+					#sys.exit("Found completely mismatching keys: {} and {}".format(table_key, appendix_key))
 			elif table_index < len(table):
 				# Appendix misses something
 				result.append(append_none(table[table_index]))
