@@ -81,6 +81,9 @@ def parse_report(report_file, data):
             for assembler, entry in zip(assemblers, entries):
                 report_data.setdefault(assembler, dict())[line_key] = entry
 
+                if line_key == "time [s]":
+                    report_data.setdefault(assembler, dict())["time [min]"] = float(entry) / 60
+
     return report_data
 
 def generate_report(subdir, data):
@@ -107,7 +110,7 @@ PARAMETERS = {
     "Duplication ratio": "Duplication ratio",
     "EA50max": "EA50max",
     "EA75max": "EA75max",
-    "time [s]": "time [s]",
+    "time [min]": "time [min]",
     "mem [GiB]": "mem [GiB]",
     #"hoco time": "hoco time [s]",
     #"hodeco time": "hodeco time [s]",
@@ -125,7 +128,6 @@ ASSEMBLERS = {
     "flye sac": "flye SAC",
     "flye YV sac": "flye YV",
     "hifiasm": "hifiasm",
-    "mdbg": "mdbg",
     "lja": "lja",
     "HiCanu": "hicanu",
 }
@@ -167,7 +169,12 @@ for subdir, data in datas.items():
             output.write(parameter_name.replace("_", "\\_"))
             for assembler_key, assembler_name in ASSEMBLERS.items():
                 output.write(" & ")
-                output.write(str(report_data[assembler_key][parameter_key]).replace("_", "\\_"))
+
+                if parameter_key.startswith("time") or parameter_key.startswith("mem"):
+                    output.write(f"{:.0f}", float(report_data[assembler_key][parameter_key]))
+                else:
+                    output.write(str(report_data[assembler_key][parameter_key]).replace("_", "\\_"))
+
             output.write("\\\\\n")
 
         output.write("\\end{tabular}\n")
