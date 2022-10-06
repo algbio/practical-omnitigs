@@ -123,10 +123,10 @@ PARAMETERS = {
 ASSEMBLERS = {
     "w2 noho": "wtdbg2",
     "w2": "wtdbg2 H",
-    "w2 frg YV": "wtdbg2 YV",
+    "w2 frg YV": "wtdbg2 SO",
     "flye": "flye",
     "flye sac": "flye SAC",
-    "flye YV sac": "flye YV",
+    "flye YV sac": "flye SO",
     "hifiasm": "hifiasm",
     "lja": "lja",
     "HiCanu": "hicanu",
