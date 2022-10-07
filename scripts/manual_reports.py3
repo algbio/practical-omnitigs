@@ -82,7 +82,7 @@ def parse_report(report_file, data):
                 report_data.setdefault(assembler, dict())[line_key] = entry
 
                 if line_key == "time [s]":
-                    report_data.setdefault(assembler, dict())["time [min]"] = float(entry) / 60
+                    report_data.setdefault(assembler, dict())["time [min]"] = float(entry.replace(",", "")) / 60
 
     return report_data
 
