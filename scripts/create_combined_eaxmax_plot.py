@@ -21,6 +21,8 @@ df["EAxmax [million bp]"] = df["EAxmax"] / 1000000
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
 ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.0f}'.format(y)))
 plt.savefig(output_file)
