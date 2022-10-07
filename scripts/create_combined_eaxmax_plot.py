@@ -17,7 +17,9 @@ for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
     frame["Assembler"] = shortname
     df = df.append(frame)
 
+df["EAxmax [million bp]"] = df["EAxmax"] * 1000000
+
 import seaborn as sns
 import matplotlib.pyplot as plt
-plot = sns.lineplot(data=df, x="x", y="EAxmax", hue="Assembler")
+plot = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
 plt.savefig(output_file)
