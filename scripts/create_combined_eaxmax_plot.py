@@ -11,11 +11,8 @@ from os import path
 
 import pandas
 df = pandas.DataFrame(columns = ["Assembler", "x", "EAxmax"])
-legend_visible = True
 
 for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
-    if "D.melanogaster_plot" in quast_csv:
-        skip_legend = False
 
     frame = pandas.read_csv(quast_csv, names=["x", "EAxmax"])
     frame["Assembler"] = shortname
@@ -26,6 +23,8 @@ df["EAxmax [million bp]"] = df["EAxmax"] / 1000000
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+
+legend_visible = "D.melanogaster_plot" not in output_file
 
 fig = plt.figure(figsize = (4, 4))
 ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
