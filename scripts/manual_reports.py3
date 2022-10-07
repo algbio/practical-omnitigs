@@ -170,10 +170,11 @@ for subdir, data in datas.items():
             for assembler_key, assembler_name in ASSEMBLERS.items():
                 output.write(" & ")
 
-                if parameter_key.startswith("time") or parameter_key.startswith("mem"):
-                    output.write("{:.0f}".format(float(report_data[assembler_key][parameter_key])))
-                else:
-                    output.write(str(report_data[assembler_key][parameter_key]).replace("_", "\\_"))
+                if assembler_key in report_data:
+                    if parameter_key.startswith("time") or parameter_key.startswith("mem"):
+                        output.write("{:.0f}".format(float(report_data[assembler_key][parameter_key])))
+                    else:
+                        output.write(str(report_data[assembler_key][parameter_key]).replace("_", "\\_"))
 
             output.write("\\\\\n")
 
