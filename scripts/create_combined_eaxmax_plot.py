@@ -10,14 +10,14 @@ from os import path
 
 
 import pandas
-df = pandas.DataFrame(columns = ["experiment", "x", "EAxmax"])
+df = pandas.DataFrame(columns = ["Assembler", "x", "EAxmax"])
 
 for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
     frame = pandas.read_csv(quast_csv, names=["x", "EAxmax"])
-    frame["experiment"] = shortname
+    frame["Assembler"] = shortname
     df = df.append(frame)
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-plot = sns.lineplot(data=df, x="x", y="EAxmax", hue="experiment")
+plot = sns.lineplot(data=df, x="x", y="EAxmax", hue="Assembler")
 plt.savefig(output_file)
