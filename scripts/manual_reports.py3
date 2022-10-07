@@ -171,7 +171,7 @@ for subdir, data in datas.items():
                 output.write(" & ")
 
                 if parameter_key.startswith("time") or parameter_key.startswith("mem"):
-                    output.write(f"{:.0f}", float(report_data[assembler_key][parameter_key]))
+                    output.write("{:.0f}", float(report_data[assembler_key][parameter_key]))
                 else:
                     output.write(str(report_data[assembler_key][parameter_key]).replace("_", "\\_"))
 
