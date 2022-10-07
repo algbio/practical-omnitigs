@@ -121,12 +121,12 @@ PARAMETERS = {
 
 #w2 noho & w2 & w2 sfa & w2 YV sfa & w2 YV & w2 frg YV & w2 frg YV fcs=2 & flye & flye sac & flye YV & flye YV sac & hifiasm & mdbg & lja & HiCanu
 ASSEMBLERS = {
-    "w2 noho": "wtdbg2",
-    "w2": "wtdbg2 H",
-    "w2 frg YV": "wtdbg2 SO",
-    "flye": "flye",
-    "flye sac": "flye SAC",
-    "flye YV sac": "flye SO",
+    "w2 noho": "W",
+    "w2": "W-int",
+    "w2 frg YV": "W-so",
+    "flye": "F",
+    "flye sac": "F-int",
+    "flye YV sac": "F-so",
     "hifiasm": "hifiasm",
     "lja": "lja",
     "HiCanu": "hicanu",
