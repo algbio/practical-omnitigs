@@ -984,7 +984,7 @@ reports:
           wtdbg2:
             wtdbg2_mode: "ccs"
             hodeco_consensus: "none"
-      - shortname: "W-SO"
+      - shortname: "W-so"
         select_assembler:
           wtdbg2:
             wtdbg2_mode: "ccs"
@@ -995,7 +995,7 @@ reports:
         select_assembler:
           flye:
             flye_mode: "pacbio-hifi"
-      - shortname: "F-SO"
+      - shortname: "F-so"
         select_assembler:
           flye:
             flye_mode: "pacbio-hifi"
@@ -1024,7 +1024,7 @@ reports:
           wtdbg2:
             wtdbg2_mode: "ccs"
             hodeco_consensus: "none"
-      - shortname: "W-SO"
+      - shortname: "W-so"
         select_assembler:
           wtdbg2:
             wtdbg2_mode: "ccs"
@@ -1035,7 +1035,7 @@ reports:
         select_assembler:
           flye:
             flye_mode: "pacbio-hifi"
-      - shortname: "F-SO"
+      - shortname: "F-so"
         select_assembler:
           flye:
             flye_mode: "pacbio-hifi"
