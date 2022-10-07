@@ -26,7 +26,7 @@ import matplotlib.ticker as ticker
 
 legend_visible = "D.melanogaster_plot" not in output_file
 
-fig = plt.figure(figsize = (5, 3))
+fig = plt.figure(figsize = (5, 3.5))
 ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.0f}'.format(y)))
 ax.get_legend().set_visible(legend_visible)
