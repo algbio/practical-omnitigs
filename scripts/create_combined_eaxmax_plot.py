@@ -24,7 +24,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-legend_visible = "D.melanogaster_plot" not in output_file
+legend_visible = True # "D.melanogaster_plot" not in output_file
 
 fig = plt.figure(figsize = (5, 3.5))
 ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
