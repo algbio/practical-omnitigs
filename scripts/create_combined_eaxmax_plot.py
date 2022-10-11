@@ -13,7 +13,6 @@ import pandas
 df = pandas.DataFrame(columns = ["Assembler", "x", "EAxmax"])
 
 for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
-
     frame = pandas.read_csv(quast_csv, names=["x", "EAxmax"])
     frame["Assembler"] = shortname
     df = df.append(frame)
