@@ -19,6 +19,7 @@ for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
     df = df.append(frame)
 
 df["EAxmax [million bp]"] = df["EAxmax"] / 1000000
+print(df.to_string())
 
 import seaborn as sns
 import matplotlib.pyplot as plt
