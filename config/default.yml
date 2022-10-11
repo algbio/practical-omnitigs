@@ -1001,15 +1001,15 @@ reports:
             flye_mode: "pacbio-hifi"
             tig_injection: "trivial_omnitigs"
             stop_after_contigger: "yes"
-      - shortname: "hifiasm"
-        select_assembler:
-          hifiasm:
-      - shortname: "lja"
-        select_assembler:
-          lja:
-      - shortname: "HiCanu"
-        select_assembler:
-          canu:
+      # - shortname: "hifiasm"
+      #   select_assembler:
+      #     hifiasm:
+      # - shortname: "lja"
+      #   select_assembler:
+      #     lja:
+      # - shortname: "HiCanu"
+      #   select_assembler:
+      #     canu:
 
   "CHM13_HiFi_30x_plot":
     argument_matrix:
@@ -1041,15 +1041,15 @@ reports:
             flye_mode: "pacbio-hifi"
             tig_injection: "trivial_omnitigs"
             stop_after_contigger: "yes"
-      - shortname: "hifiasm"
-        select_assembler:
-          hifiasm:
-      - shortname: "lja"
-        select_assembler:
-          lja:
-      - shortname: "HiCanu"
-        select_assembler:
-          canu:
+      # - shortname: "hifiasm"
+      #   select_assembler:
+      #     hifiasm:
+      # - shortname: "lja"
+      #   select_assembler:
+      #     lja:
+      # - shortname: "HiCanu"
+      #   select_assembler:
+      #     canu:
 
 
   "E.coli_HiFi":
