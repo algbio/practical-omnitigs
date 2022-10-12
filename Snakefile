@@ -59,6 +59,7 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
         "contig_algorithm": "builtin",
     },
     "flye": {
+        "original_flye": "no",
         "tig_injection": "none",
         "stop_after_repeat": "no",
         "stop_after_contigger": "no",
@@ -211,7 +212,7 @@ WTDBG2_EXTRACT_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "extract.{subfile}.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
 WTDBG2_ASSEMBLED_CONTIGS = os.path.join(WTDBG2_OUTPUT_DIR, "contigs.fa")
 
-FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}-t{tig_injection}-r{stop_after_repeat}-c{stop_after_contigger}"
+FLYE_ARGUMENT_STRING = "m{flye_mode}-o{original_flye}-c{retain_cm}-t{tig_injection}-r{stop_after_repeat}-c{stop_after_contigger}"
 ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
@@ -311,6 +312,8 @@ WTDBG2_BINARY = os.path.join(WTDBG2_DIR, "wtdbg2")
 WTDBG2_CONSENSUS_BINARY = os.path.join(WTDBG2_DIR, "wtpoa-cns")
 FLYE_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "Flye")
 FLYE_BINARY = os.path.join(FLYE_DIR, "bin", "flye")
+ORIGINAL_FLYE_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "original-flye")
+ORIGINAL_FLYE_BINARY = os.path.join(ORIGINAL_FLYE_DIR, "bin", "flye")
 SIM_IT_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "sim-it", "sim-it.pl")
 RATATOSK_BINARY = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "Ratatosk", "build", "src", "Ratatosk")
 CONTIG_VALIDATOR_DIR = os.path.join(EXTERNAL_SOFTWARE_ROOTDIR, "ContigValidator")
@@ -1287,6 +1290,7 @@ rule flye_sar:
     log:    log = FLYE_LOG,
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
+            original_flye = "no",
             tig_injection = "none",
             stop_after_repeat = "yes",
             stop_after_contigger = "yes",
@@ -1311,6 +1315,7 @@ rule flye_sac:
     log:    log = FLYE_LOG,
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
+            original_flye = "no",
             tig_injection = "none",
             stop_after_repeat = "no",
             stop_after_contigger = "yes",
@@ -1340,6 +1345,7 @@ rule flye_injected_tigs:
     log:    log = FLYE_LOG,
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
+            original_flye = "no",
             tig_injection = "trivial_omnitigs",
             stop_after_repeat = "no",
             stop_after_contigger = "yes",
@@ -1367,6 +1373,7 @@ rule flye:
     log:    log = FLYE_LOG,
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
+            original_flye = "no",
             tig_injection = "none",
             stop_after_repeat = "no",
             stop_after_contigger = "no",
@@ -1381,6 +1388,30 @@ rule flye:
         cp -r '{input.directory}' '{output.directory}'
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        """
+
+rule original_flye:
+    input:  reads = GENOME_READS,
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
+            script = ORIGINAL_FLYE_BINARY,
+    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
+            directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
+    log:    log = FLYE_LOG,
+    params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
+    wildcard_constraints:
+            original_flye = "yes",
+            tig_injection = "none",
+            stop_after_repeat = "no",
+            stop_after_contigger = "no",
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 250_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
+    shell:  """
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --stop-after repeat --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
 localrules: link_flye_contigs
@@ -3269,6 +3300,48 @@ rule build_flye:
             practical_omnitigs = RUST_BINARY,
     params: flye_directory = FLYE_DIR,
     output: script = FLYE_BINARY,
+    conda:  "config/conda-install-flye-env.yml"
+    threads: BUILD_THREADS
+    resources:
+        cpus = BUILD_THREADS,
+    shell:  """
+        cd '{params.flye_directory}'
+
+        export CXX=x86_64-conda-linux-gnu-g++
+        export CC=x86_64-conda-linux-gnu-gcc
+        # export INCLUDES=-I/usr/include/ # Somehow this is not seen by minimap's Makefile, so we had to change it in our custom version of Flye
+        # The following also doesn't seem to work when building minimap, so again we had to modify minimap's Makefile
+        # export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:${{LD_LIBRARY_PATH:=''}} # Redirect library path to include conda libraries
+        # make # This does not create the python script anymore
+
+        /usr/bin/env python3 setup.py install
+
+        cp bin/flye.disabled bin/flye # was renamed such that snakemake does not delete it
+        """
+
+localrules: download_original_flye
+rule download_original_flye:
+    output: flye_marker = os.path.join(ORIGINAL_FLYE_DIR, ".git", "HEAD"),
+    params: external_software_dir = EXTERNAL_SOFTWARE_ROOTDIR,
+    shell:  """
+        mkdir -p '{params.external_software_dir}'
+        cd '{params.external_software_dir}'
+
+        rm -rf original-flye
+        git clone https://github.com/sebschmi/Flye original-flye
+        cd original-flye
+        git checkout 593a527881d4bcfa503d5b9c495cb55721c95063
+
+        mv bin/flye bin/flye.disabled # rename such that snakemake does not delete it
+        """
+
+# Do not make localrule, ensure it is compiled on the correct CPU.
+# Otherwise, the compiler might generate unsupported instructions.
+rule build_original_flye:
+    input:  flye_marker = os.path.join(ORIGINAL_FLYE_DIR, ".git", "HEAD"),
+            practical_omnitigs = RUST_BINARY,
+    params: flye_directory = ORIGINAL_FLYE_DIR,
+    output: script = ORIGINAL_FLYE_BINARY,
     conda:  "config/conda-install-flye-env.yml"
     threads: BUILD_THREADS
     resources:

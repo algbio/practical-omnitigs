@@ -402,6 +402,7 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+          original_flye: "yes"
     - shortname: "flye sac"
       select_assembler:
         flye:
@@ -516,6 +517,7 @@ column_templates:
       select_assembler:
         flye:
           flye_mode: "pacbio-hifi"
+          original_flye: "yes"
     - shortname: "flye sac"
       select_assembler:
         flye:
@@ -616,6 +618,7 @@ column_templates:
     - shortname: "flye"
       select_assembler:
         flye:
+          original_flye: "yes"
           flye_mode: "pacbio-hifi"
     - shortname: "flye sac"
       select_assembler:
@@ -715,6 +718,7 @@ column_templates:
     - shortname: "flye"
       select_assembler:
         flye:
+          original_flye: "yes"
           flye_mode: "pacbio-hifi"
     - shortname: "flye sac"
       select_assembler:
@@ -793,6 +797,7 @@ column_templates:
     - shortname: "flye"
       select_assembler:
         flye:
+          original_flye: "yes"
           flye_mode: "pacbio-hifi"
     - shortname: "flye sac"
       select_assembler:
@@ -892,6 +897,7 @@ column_templates:
     - shortname: "flye"
       select_assembler:
         flye:
+          original_flye: "yes"
           flye_mode: "pacbio-hifi"
     - shortname: "flye sac"
       select_assembler:
@@ -994,6 +1000,7 @@ reports:
       - shortname: "F"
         select_assembler:
           flye:
+            original_flye: "yes"
             flye_mode: "pacbio-hifi"
       - shortname: "F-so"
         select_assembler:
@@ -1034,6 +1041,7 @@ reports:
       - shortname: "F"
         select_assembler:
           flye:
+            original_flye: "yes"
             flye_mode: "pacbio-hifi"
       - shortname: "F-so"
         select_assembler:
