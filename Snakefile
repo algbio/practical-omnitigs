@@ -1297,9 +1297,9 @@ rule flye_sar:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 250_000),
-               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1080),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1080, 250_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1080, 250_000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --stop-after repeat --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
@@ -1322,9 +1322,9 @@ rule flye_sac:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 250_000),
-               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1080),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1080, 250_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1080, 250_000),
     shell:  """
         rm -rf '{output.directory}'
         cp -r '{input.directory}' '{output.directory}'
@@ -1352,9 +1352,9 @@ rule flye_injected_tigs:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 250_000),
-               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1080),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1080, 250_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1080, 250_000),
     shell:  """
         rm -rf '{output.directory}'
         cp -r '{input.directory}' '{output.directory}'
@@ -1380,9 +1380,9 @@ rule flye:
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
                cpus = MAX_THREADS,
-               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
-               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 250_000),
-               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1080),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1080, 250_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1080, 250_000),
     shell:  """
         rm -rf '{output.directory}'
         cp -r '{input.directory}' '{output.directory}'
