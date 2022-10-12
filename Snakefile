@@ -60,6 +60,7 @@ DEFAULT_ASSEMBLER_ARGUMENTS = {
     },
     "flye": {
         "tig_injection": "none",
+        "stop_after_repeat": "no",
         "stop_after_contigger": "no",
     },
 }
@@ -210,7 +211,7 @@ WTDBG2_EXTRACT_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "extract.{subfile}.log")
 WTDBG2_CONSENSUS_LOG = os.path.join(WTDBG2_OUTPUT_DIR, "wtdbg2_consensus.log")
 WTDBG2_ASSEMBLED_CONTIGS = os.path.join(WTDBG2_OUTPUT_DIR, "contigs.fa")
 
-FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}-t{tig_injection}-s{stop_after_contigger}"
+FLYE_ARGUMENT_STRING = "m{flye_mode}-c{retain_cm}-t{tig_injection}-r{stop_after_repeat}-c{stop_after_contigger}"
 ASSEMBLER_ARGUMENT_STRINGS["flye"] = FLYE_ARGUMENT_STRING
 FLYE_SUBDIR = safe_format(ASSEMBLY_SUBDIR, assembler = "flye", assembler_arguments = FLYE_ARGUMENT_STRING)
 FLYE_OUTPUT_DIR = os.path.join(ASSEMBLY_ROOTDIR, FLYE_SUBDIR)
@@ -1278,18 +1279,17 @@ rule wtdbg2_find_edge_cov:
 ###### Flye ######
 ##################
 
-rule flye_sac:
+rule flye_sar:
     input:  reads = GENOME_READS,
             reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             script = FLYE_BINARY,
-    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
-            directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
+    output: directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
     log:    log = FLYE_LOG,
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
             tig_injection = "none",
+            stop_after_repeat = "yes",
             stop_after_contigger = "yes",
-    #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
                cpus = MAX_THREADS,
@@ -1301,9 +1301,37 @@ rule flye_sac:
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --stop-after repeat --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
+rule flye_sac:
+    input:  reads = GENOME_READS,
+            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, stop_after_repeat = "yes"), "flye"),
+            reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
+            script = FLYE_BINARY,
+    output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
+            directory = directory(os.path.join(FLYE_OUTPUT_DIR, "flye")),
+    log:    log = FLYE_LOG,
+    params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
+    wildcard_constraints:
+            tig_injection = "none",
+            stop_after_repeat = "no",
+            stop_after_contigger = "yes",
+    threads: MAX_THREADS
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
+               cpus = MAX_THREADS,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 1440),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 1440, 250_000),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
+    shell:  """
+        rm -rf '{output.directory}'
+        cp -r '{input.directory}' '{output.directory}'
+        rm '{output.contigs}'
+        read -r REFERENCE_LENGTH < '{input.reference_length}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        ln -sr -T '{output.directory}/30-contigger/contigs.fasta' '{output.contigs}'
+        """
+
 rule flye_injected_tigs:
     input:  reads = GENOME_READS,
-            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, tig_injection = "none", stop_after_contigger = "yes"), "flye"),
+            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, tig_injection = "none", stop_after_repeat = "yes"), "flye"),
             reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             script = FLYE_BINARY,
             rust = RUST_BINARY,
@@ -1313,8 +1341,8 @@ rule flye_injected_tigs:
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
             tig_injection = "trivial_omnitigs",
+            stop_after_repeat = "no",
             stop_after_contigger = "yes",
-    #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
                cpus = MAX_THREADS,
@@ -1326,11 +1354,12 @@ rule flye_injected_tigs:
         cp -r '{input.directory}' '{output.directory}'
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --omnitigs '{input.rust}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        ln -sr -T '{output.directory}/30-contigger/contigs.fasta' '{output.contigs}'
         """
 
 rule flye:
     input:  reads = GENOME_READS,
-            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, tig_injection = "none", stop_after_contigger = "yes"), "flye"),
+            directory = os.path.join(safe_format(FLYE_OUTPUT_DIR, stop_after_contigger = "yes"), "flye"),
             reference_length = UNFILTERED_GENOME_REFERENCE_LENGTH,
             script = FLYE_BINARY,
     output: contigs = os.path.join(FLYE_OUTPUT_DIR, "flye", "assembly.fasta"),
@@ -1339,8 +1368,8 @@ rule flye:
     params: output_directory = os.path.join(FLYE_OUTPUT_DIR, "flye"),
     wildcard_constraints:
             tig_injection = "none",
+            stop_after_repeat = "no",
             stop_after_contigger = "no",
-    #conda: "config/conda-flye-env.yml"
     threads: MAX_THREADS
     resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 250_000),
                cpus = MAX_THREADS,
@@ -2698,12 +2727,16 @@ def get_evaluate_resources_inputs(wildcards):
             # consensus
             result["wtdbg2_consensus"] = safe_format(WTDBG2_CONSENSUS_LOG, **assembler_arguments).format(**wildcards)
         elif wildcards.assembler == "flye":
-            # injections
-            if assembler_arguments["tig_injection"] != "none":
-                result["assembly"] = safe_format(safe_format(FLYE_LOG, tig_injection = "none"), **assembler_arguments).format(**wildcards)
-                result["tig_injection"] = ASSEMBLY_LOG.format(**wildcards)
-            else:
-                result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
+            result["assembly_sar"] = safe_format(safe_format(FLYE_LOG, tig_injection = "none", stop_after_repeat = "yes", stop_after_contigger = "yes"), **assembler_arguments).format(**wildcards)
+
+            if assembler_arguments["stop_after_repeat"] == "no":
+                if assembler_arguments["tig_injection"] != "none":
+                    assert assembler_arguments["stop_after_contigger"] == "yes"
+                    result["assembly_tigs"] = ASSEMBLY_LOG.format(**wildcards)
+                else:
+                    result["assembly_sac"] = safe_format(safe_format(FLYE_LOG, stop_after_repeat = "no", stop_after_contigger = "yes"), **assembler_arguments).format(**wildcards)
+                    if assembler_arguments["stop_after_contigger"] == "no":
+                        result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
         elif wildcards.assembler == "hifiasm":
             # assembly
             result["assembly"] = safe_format(safe_format(HIFIASM_LOG, contig_algorithm = "builtin")).format(**wildcards)
