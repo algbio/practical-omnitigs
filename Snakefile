@@ -2833,6 +2833,8 @@ rule evaluate_resources:
     output: file = RESOURCES_EVALUATION,
     params: file_map = get_evaluate_resources_inputs,
     threads: 1,
+    resources:
+        queue = "short,medium,bigmem,aurinko",
     run:
         result = {}
         for key, input_file_name in params.file_map.items():
