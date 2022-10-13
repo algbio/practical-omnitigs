@@ -1328,7 +1328,7 @@ rule flye_sac:
     shell:  """
         rm -rf '{output.directory}'
         cp -r '{input.directory}' '{output.directory}'
-        rm '{output.contigs}'
+        rm -f '{output.contigs}'
         read -r REFERENCE_LENGTH < '{input.reference_length}'
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --resume-from contigger --stop-after contigger --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         ln -sr -T '{output.directory}/30-contigger/contigs.fasta' '{output.contigs}'
