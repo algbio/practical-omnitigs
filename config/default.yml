@@ -977,7 +977,7 @@ reports:
     columns: *hifi_hodeco_simple_overview_columns
     manual_report: "yes"
 
-  "D.melanogaster_plot":
+  "D.melanogaster_plot_original":
     argument_matrix:
       genome: "D.melanogaster_A4xISO1_HiFi24kb"
       read_source: "real"
@@ -1008,17 +1008,39 @@ reports:
             flye_mode: "pacbio-hifi"
             tig_injection: "trivial_omnitigs"
             stop_after_contigger: "yes"
-      # - shortname: "hifiasm"
-      #   select_assembler:
-      #     hifiasm:
-      # - shortname: "lja"
-      #   select_assembler:
-      #     lja:
-      # - shortname: "HiCanu"
-      #   select_assembler:
-      #     canu:
 
-  "CHM13_HiFi_30x_plot":
+  "D.melanogaster_plot":
+    argument_matrix:
+      genome: "D.melanogaster_A4xISO1_HiFi24kb"
+      read_source: "real"
+      quast_mode: "hicanu_misassemblies"
+      run_quast_on_hoco: "yes"
+    manual_report: "yes"
+    columns:
+      - shortname: "W"
+        select_assembler: 
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            hodeco_consensus: "none"
+      - shortname: "W-so"
+        select_assembler:
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            frg_injection: "trivial_omnitigs"
+            frg_injection_stage: "ctg"
+            hodeco_consensus: "simple"
+      - shortname: "F"
+        select_assembler:
+          flye:
+            flye_mode: "pacbio-hifi"
+      - shortname: "F-so"
+        select_assembler:
+          flye:
+            flye_mode: "pacbio-hifi"
+            tig_injection: "trivial_omnitigs"
+            stop_after_contigger: "yes"
+
+  "CHM13_HiFi_30x_plot_original":
     argument_matrix:
       genome: "CHM13_HiFi_30x"
       read_source: "real"
@@ -1049,16 +1071,37 @@ reports:
             flye_mode: "pacbio-hifi"
             tig_injection: "trivial_omnitigs"
             stop_after_contigger: "yes"
-      # - shortname: "hifiasm"
-      #   select_assembler:
-      #     hifiasm:
-      # - shortname: "lja"
-      #   select_assembler:
-      #     lja:
-      # - shortname: "HiCanu"
-      #   select_assembler:
-      #     canu:
 
+  "CHM13_HiFi_30x_plot":
+    argument_matrix:
+      genome: "CHM13_HiFi_30x"
+      read_source: "real"
+      quast_mode: "hicanu"
+      run_quast_on_hoco: "yes"
+    manual_report: "yes"
+    columns:
+      - shortname: "W"
+        select_assembler: 
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            hodeco_consensus: "none"
+      - shortname: "W-so"
+        select_assembler:
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            frg_injection: "trivial_omnitigs"
+            frg_injection_stage: "ctg"
+            hodeco_consensus: "simple"
+      - shortname: "F"
+        select_assembler:
+          flye:
+            flye_mode: "pacbio-hifi"
+      - shortname: "F-so"
+        select_assembler:
+          flye:
+            flye_mode: "pacbio-hifi"
+            tig_injection: "trivial_omnitigs"
+            stop_after_contigger: "yes"
 
   "E.coli_HiFi":
     argument_matrix:
