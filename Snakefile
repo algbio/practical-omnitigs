@@ -2784,16 +2784,19 @@ def get_evaluate_resources_inputs(wildcards):
             # consensus
             result["wtdbg2_consensus"] = safe_format(WTDBG2_CONSENSUS_LOG, **assembler_arguments).format(**wildcards)
         elif wildcards.assembler == "flye":
-            result["assembly_sar"] = safe_format(safe_format(FLYE_LOG, tig_injection = "none", stop_after_repeat = "yes", stop_after_contigger = "yes"), **assembler_arguments).format(**wildcards)
+            if assembler_arguments["original_flye"] == "yes":
+                result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
+            else:
+                result["assembly_sar"] = safe_format(safe_format(FLYE_LOG, tig_injection = "none", stop_after_repeat = "yes", stop_after_contigger = "yes"), **assembler_arguments).format(**wildcards)
 
-            if assembler_arguments["stop_after_repeat"] == "no":
-                if assembler_arguments["tig_injection"] != "none":
-                    assert assembler_arguments["stop_after_contigger"] == "yes"
-                    result["assembly_tigs"] = ASSEMBLY_LOG.format(**wildcards)
-                else:
-                    result["assembly_sac"] = safe_format(safe_format(FLYE_LOG, stop_after_repeat = "no", stop_after_contigger = "yes"), **assembler_arguments).format(**wildcards)
-                    if assembler_arguments["stop_after_contigger"] == "no":
-                        result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
+                if assembler_arguments["stop_after_repeat"] == "no":
+                    if assembler_arguments["tig_injection"] != "none":
+                        assert assembler_arguments["stop_after_contigger"] == "yes"
+                        result["assembly_tigs"] = ASSEMBLY_LOG.format(**wildcards)
+                    else:
+                        result["assembly_sac"] = safe_format(safe_format(FLYE_LOG, stop_after_repeat = "no", stop_after_contigger = "yes"), **assembler_arguments).format(**wildcards)
+                        if assembler_arguments["stop_after_contigger"] == "no":
+                            result["assembly"] = ASSEMBLY_LOG.format(**wildcards)
         elif wildcards.assembler == "hifiasm":
             # assembly
             result["assembly"] = safe_format(safe_format(HIFIASM_LOG, contig_algorithm = "builtin")).format(**wildcards)
