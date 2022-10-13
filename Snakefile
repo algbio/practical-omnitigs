@@ -1411,7 +1411,7 @@ rule original_flye:
                cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 1440, 250_000),
     shell:  """
         read -r REFERENCE_LENGTH < '{input.reference_length}'
-        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --stop-after repeat --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
+        ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
 localrules: link_flye_contigs
