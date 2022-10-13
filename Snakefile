@@ -514,6 +514,32 @@ rule report_all:
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
 
+def get_eaxmax_report_files():
+    try:
+        result = []
+        for report_name, report_definition in reports.items():
+            if not "plot" in report_name:
+                continue
+
+            for report_file_name, report_file_definition in report_definition["report_files"].items():
+                report_file_arguments = report_file_definition.arguments
+                #print(f"report_file_arguments: {report_file_arguments}", flush = True)
+                result.append(REPORT_PDF.format(report_name = report_name, report_file_name = str(report_file_arguments)))
+
+
+        for aggregated_report_name in aggregated_reports.keys():
+            result.append(AGGREGATED_REPORT_PDF.format(aggregated_report_name = aggregated_report_name))
+        return result
+    except Exception:
+        traceback.print_exc()
+        sys.exit("Catched exception")
+
+localrules: report_eaxmax_plots
+rule report_eaxmax_plots:
+    input:  get_eaxmax_report_files(),
+    threads: 1
+    resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
 def get_test_report_files():
     try:
         result = []
