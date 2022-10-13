@@ -27,7 +27,25 @@ import matplotlib.ticker as ticker
 legend_visible = True # "D.melanogaster_plot" not in output_file
 
 fig = plt.figure(figsize = (5, 3.5))
-ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
+
+SPECIAL_INPUT_SHORTNAMES = set(["F", "F-so", "W", "W-so"])
+if set(input_shortnames) == SPECIAL_INPUT_SHORTNAMES:
+    palette = {
+        "W": "black",
+        "W-so": "black",
+        "F": "orange",
+        "F-so": "orange",
+    }
+    dashes = {
+        "W": "",
+        "W-so": (1, 1),
+        "F": "",
+        "F-so": (1, 1),
+    }
+    ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler", palette=palette, style="Assembler", dashes=dashes)
+else:
+    ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
+
 ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.0f}'.format(y)))
 ax.get_legend().set_visible(legend_visible)
 
