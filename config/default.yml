@@ -1230,6 +1230,22 @@ reports:
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_hodeco_simple_overview_columns
 
+  # Rat
+
+  "R.norvegicus":
+    argument_matrix:
+      genome: "R.norvegicus_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "R.norvegicus_hodeco_simple":
+    argument_matrix:
+      genome: "R.norvegicus_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
   # Thale cress
 
   "A.thaliana":
@@ -1300,6 +1316,22 @@ reports:
   "C.elegans_ALT2_Bristol_ref_hodeco_simple":
     argument_matrix:
       genome: "C.elegans_ALT2_Bristol_ref_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
+  # Fission yeast
+
+  "S.pombe":
+    argument_matrix:
+      genome: "S.pombe_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "S.pombe_hodeco_simple":
+    argument_matrix:
+      genome: "S.pombe_HiFi"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_hodeco_simple_overview_columns
@@ -1490,13 +1522,16 @@ genomes:
     format: "sra"
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11606871/SRR11606871"
 
-  # Reference from genome reference consortium
+  # Reference from genome reference consortium strain BN/NHsdMcwi
+  # Reads from ncbi, just something but same strain
   "R.norvegicus_HiFi":
-    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/015/227/675/GCA_015227675.2_mRatBN7.2"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/015/227/675/GCA_015227675.2_mRatBN7.2/GCA_015227675.2_mRatBN7.2_genomic.fna.gz"
     assembly_time_factor: 4
     assembly_mem_factor: 4
     format: "sra"
-    reads: ""
+    reads:
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/ERR5310327/ERR5310327"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/ERR5310326/ERR5310326"
 
   # Reference from TAIR
   # Reads from ncbi, just something
@@ -1542,6 +1577,33 @@ genomes:
     assembly_mem_factor: 1
     format: "sra"
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR22137522/SRR22137522"
+
+  # Reference is official latest ref of Tuebingen strain
+  # Reads are from ncbi, unknown strain
+  # READS NOT YET RELEASED
+  "D.rerio_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/002/035/GCF_000002035.6_GRCz11/GCF_000002035.6_GRCz11_genomic.fna.gz"
+    assembly_time_factor: 3
+    assembly_mem_factor: 3
+    format: "sra"
+    reads:
+      - "ERX9258657"
+      - "ERX9258658"
+      - "ERX9258659"
+
+  # Reference is official latest ref of 972h- strain
+  # Reads are some ncbi reads of unknown strains
+  "S.pombe_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/002/945/GCA_000002945.2_ASM294v2/GCA_000002945.2_ASM294v2_genomic.fna.gz"
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
+    format: "sra"
+    reads:
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR17345024/SRR17345024"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR17345025/SRR17345025"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR17345026/SRR17345026"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR17345027/SRR17345027"
+      - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR17345028/SRR17345028"
 
   # Reads and reference both from HG002
   # Reads from https://www.nature.com/articles/s41587-019-0217-9

@@ -3027,7 +3027,7 @@ rule download_sra_file:
     output: file = os.path.join(DOWNLOAD_ROOTDIR, "file", "{url}", "file.sra"),
     params: url = lambda wildcards: unescape_dirname(wildcards.url),
     wildcard_constraints:
-            url = "http.*(((S|D)/?R/?R)|((S|D)/?R/?A))[0-9/\.]+"
+            url = "http.*(([SDE]/?R/?R)|([SD]/?R/?A))[0-9/\.]+"
     shell:  """
         wget --progress=dot:mega -O '{output.file}' '{params.url}'
     """
