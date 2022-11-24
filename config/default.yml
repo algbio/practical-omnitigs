@@ -408,11 +408,6 @@ column_templates:
         flye:
           flye_mode: "pacbio-hifi"
           stop_after_contigger: "yes"
-    - shortname: "flye YV"
-      select_assembler:
-        flye:
-          flye_mode: "pacbio-hifi"
-          tig_injection: "trivial_omnitigs"
     - shortname: "flye YV sac"
       select_assembler:
         flye:
@@ -523,11 +518,6 @@ column_templates:
         flye:
           flye_mode: "pacbio-hifi"
           stop_after_contigger: "yes"
-    - shortname: "flye YV"
-      select_assembler:
-        flye:
-          flye_mode: "pacbio-hifi"
-          tig_injection: "trivial_omnitigs"
     - shortname: "flye YV sac"
       select_assembler:
         flye:
@@ -625,11 +615,6 @@ column_templates:
         flye:
           flye_mode: "pacbio-hifi"
           stop_after_contigger: "yes"
-    - shortname: "flye YV"
-      select_assembler:
-        flye:
-          flye_mode: "pacbio-hifi"
-          tig_injection: "trivial_omnitigs"
     - shortname: "flye YV sac"
       select_assembler:
         flye:
@@ -725,11 +710,6 @@ column_templates:
         flye:
           flye_mode: "pacbio-hifi"
           stop_after_contigger: "yes"
-    - shortname: "flye YV"
-      select_assembler:
-        flye:
-          flye_mode: "pacbio-hifi"
-          tig_injection: "trivial_omnitigs"
     - shortname: "flye YV sac"
       select_assembler:
         flye:
@@ -804,11 +784,6 @@ column_templates:
         flye:
           flye_mode: "pacbio-hifi"
           stop_after_contigger: "yes"
-    - shortname: "flye YV"
-      select_assembler:
-        flye:
-          flye_mode: "pacbio-hifi"
-          tig_injection: "trivial_omnitigs"
     - shortname: "flye YV sac"
       select_assembler:
         flye:
@@ -904,11 +879,6 @@ column_templates:
         flye:
           flye_mode: "pacbio-hifi"
           stop_after_contigger: "yes"
-    - shortname: "flye YV"
-      select_assembler:
-        flye:
-          flye_mode: "pacbio-hifi"
-          tig_injection: "trivial_omnitigs"
     - shortname: "flye YV sac"
       select_assembler:
         flye:
@@ -1212,6 +1182,54 @@ reports:
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_hodeco_simple_overview_columns
 
+  # Mouse
+
+  "M.musculus":
+    argument_matrix:
+      genome: "M.musculus_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "M.musculus_hodeco_simple":
+    argument_matrix:
+      genome: "M.musculus_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
+  # Corn
+
+  "Z.mays":
+    argument_matrix:
+      genome: "Z.mays_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "Z.mays_hodeco_simple":
+    argument_matrix:
+      genome: "Z.mays_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
+  # MockMeta
+
+  "MockMeta":
+    argument_matrix:
+      genome: "MockMeta_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "MockMeta_hodeco_simple":
+    argument_matrix:
+      genome: "MockMeta_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
 genomes:
   "E.coli":
     reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11317948/SRR11317948"]
@@ -1346,6 +1364,57 @@ genomes:
       - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382247/SRR10382247"
       - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382248/SRR10382248"
       - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR10382249/SRR10382249"
+
+  # Reference https://www.ncbi.nlm.nih.gov/grc/mouse (more recent variant than the article one)
+  # Reads from source paper
+  # Source https://www.nature.com/articles/s41597-020-00743-4
+  "M.musculus_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/635/GCA_000001635.9_GRCm39/GCA_000001635.9_GRCm39_genomic.fna.gz"
+    assembly_time_factor: 4
+    assembly_mem_factor: 4
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11606870/SRR11606870"
+
+  # Reference from source paper
+  # Reads from source paper
+  # Source https://www.nature.com/articles/s41597-020-00743-4
+  "Z.mays_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/902/167/145/GCA_902167145.1_Zm-B73-REFERENCE-NAM-5.0/GCA_902167145.1_Zm-B73-REFERENCE-NAM-5.0_genomic.fna.gz"
+    assembly_time_factor: 3
+    assembly_mem_factor: 3
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11606869/SRR11606869"
+
+  # Reference from source paper, but CP000577 replaced with GCA_012647365.1 and PDLX01000000, DS264585 and DS264586 removed
+  # Reads from source paper
+  # Source https://www.nature.com/articles/s41597-020-00743-4
+  "MockMeta_HiFi":
+    reference:
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/015/425/GCA_000015425.1_ASM1542v1/GCA_000015425.1_ASM1542v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/008/005/GCA_000008005.1_ASM800v1/GCA_000008005.1_ASM800v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/012/825/GCA_000012825.1_ASM1282v1/GCA_000012825.1_ASM1282v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/010/425/GCA_000010425.1_ASM1042v1/GCA_000010425.1_ASM1042v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/767/745/GCA_000767745.1_ASM76774v1/GCA_000767745.1_ASM76774v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/231/215/GCA_000231215.1_ASM23121v1/GCA_000231215.1_ASM23121v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/008/565/GCA_000008565.1_ASM856v1/GCA_000008565.1_ASM856v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/172/575/GCA_000172575.2_ASM17257v2/GCA_000172575.2_ASM17257v2_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/005/845/GCA_000005845.2_ASM584v2/GCA_000005845.2_ASM584v2_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/008/525/GCA_000008525.1_ASM852v1/GCA_000008525.1_ASM852v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/014/425/GCA_000014425.1_ASM1442v1/GCA_000014425.1_ASM1442v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/008/805/GCA_000008805.1_ASM880v1/GCA_000008805.1_ASM880v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/010/505/GCA_000010505.1_ASM1050v1/GCA_000010505.1_ASM1050v1_genomic.fna.gz"
+      #- "PDLX01000000"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/012/647/365/GCA_012647365.1_ASM1264736v1/GCA_012647365.1_ASM1264736v1_genomic.fna.gz"
+      #- "DS264586"
+      #- "DS264585"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/013/465/GCA_000013465.1_ASM1346v1/GCA_000013465.1_ASM1346v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/645/GCA_000007645.1_ASM764v1/GCA_000007645.1_ASM764v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/265/GCA_000007265.1_ASM726v1/GCA_000007265.1_ASM726v1_genomic.fna.gz"
+      - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/465/GCA_000007465.2_ASM746v2/GCA_000007465.2_ASM746v2_genomic.fna.gz"
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11606871/SRR11606871"
 
   # Reads and reference both from HG002
   # Reads from https://www.nature.com/articles/s41587-019-0217-9
@@ -2002,7 +2071,6 @@ corrected_genomes:
     correction_short_reads: ["https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/HG002_NA24385_son/NIST_HiSeq_HG002_Homogeneity-10953946/NHGRI_Illumina300X_AJtrio_novoalign_bams/HG002.GRCh38.300x.bam"]
     source_genome: "HG002"
     correction_type: "ratatosk"
-
 
 aggregated_reports:
 #   "aggregated":

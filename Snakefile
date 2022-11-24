@@ -1440,6 +1440,9 @@ rule original_flye:
         ${{CONDA_PREFIX}}/bin/time -v '{input.script}' -g $REFERENCE_LENGTH -t {threads} -o '{params.output_directory}' --{wildcards.flye_mode} '{input.reads}' 2>&1 | tee '{log.log}'
         """
 
+# Debugging
+# "m{flye_mode}-o{original_flye}-c{retain_cm}-t{tig_injection}-r{stop_after_repeat}-c{stop_after_contigger}"
+# mpacbio-hifi-ono-cno-ttrivial_omnitigs-rno-cno
 localrules: link_flye_contigs
 rule link_flye_contigs:
     input:  contigs = os.path.join(FLYE_OUTPUT_DIR_PACKED, "flye", "assembly.fasta"),
@@ -3065,6 +3068,9 @@ def get_genome_url(wildcards):
             raise Exception("Did not find genome url")
         else:
             assert result != "None", "result is textual None."
+            if not isinstance(result, list):
+                result = [result]
+
             return result
     except Exception:
         traceback.print_exc()
@@ -3093,13 +3099,20 @@ def get_genome_reads_urls(wildcards):
 
 localrules: download_reference_genome
 rule download_reference_genome:
-    input:  file = lambda wildcards: os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(get_genome_url(wildcards)), "file.fa"),
+    input:  files = lambda wildcards: [os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(url), "file.fa") for url in get_genome_url(wildcards)],
     output: file = GENOME_REFERENCE,
+    params: input_files = lambda wildcards, input: "'" + "' '".join(input.files) + "'"
     wildcard_constraints:
             homopolymer_compression = "none",
             filter_nw = "no",
             retain_cm = "no",
-    shell: "ln -fsr -T '{input.file}' '{output.file}'"
+    threads: 1,
+    resources: mem_mb = lambda wildcards: compute_genome_mem_mb_from_wildcards(wildcards, 100),
+               cpus = 1,
+               time_min = lambda wildcards: compute_genome_time_min_from_wildcards(wildcards, 60),
+               queue = lambda wildcards: compute_genome_queue_from_wildcards(wildcards, 60, 100),
+               cluster = lambda wildcards: compute_genome_cluster_from_wildcards(wildcards, 60, 100),
+    shell: "cat {params.input_files} > '{output.file}'"
 
 rule download_genome_reads:
     input:  files = lambda wildcards: [os.path.join(DOWNLOAD_ROOTDIR, "file", escape_dirname(url), "file.fa") for url in get_genome_reads_urls(wildcards)],
