@@ -441,9 +441,9 @@ column_templates:
     #   select_assembler:
     #     hifiasm:
     #       contig_algorithm: "omnitigs_p_utg"
-    - shortname: "mdbg"
-      select_assembler:
-        mdbg:
+    # - shortname: "mdbg"
+    #   select_assembler:
+    #     mdbg:
     - shortname: "lja"
       select_assembler:
         lja:
@@ -551,9 +551,9 @@ column_templates:
     #   select_assembler:
     #     hifiasm:
     #       contig_algorithm: "omnitigs_p_utg"
-    - shortname: "mdbg"
-      select_assembler:
-        mdbg:
+    # - shortname: "mdbg"
+    #   select_assembler:
+    #     mdbg:
     - shortname: "lja"
       select_assembler:
         lja:
@@ -624,10 +624,10 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    - shortname: "mdbg"
-      select_assembler:
-        mdbg:
-          mdbg_mode: "D_melanogaster"
+    # - shortname: "mdbg"
+    #   select_assembler:
+    #     mdbg:
+    #       mdbg_mode: "D_melanogaster"
     - shortname: "lja"
       select_assembler:
         lja:
@@ -719,10 +719,10 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    - shortname: "mdbg"
-      select_assembler:
-        mdbg:
-          mdbg_mode: "D_melanogaster"
+    # - shortname: "mdbg"
+    #   select_assembler:
+    #     mdbg:
+    #       mdbg_mode: "D_melanogaster"
     - shortname: "lja"
       select_assembler:
         lja:
@@ -793,10 +793,10 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    - shortname: "mdbg"
-      select_assembler:
-        mdbg:
-          mdbg_mode: "HG002"
+    # - shortname: "mdbg"
+    #   select_assembler:
+    #     mdbg:
+    #       mdbg_mode: "HG002"
     - shortname: "lja"
       select_assembler:
         lja:
@@ -888,10 +888,10 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    - shortname: "mdbg"
-      select_assembler:
-        mdbg:
-          mdbg_mode: "HG002"
+    # - shortname: "mdbg"
+    #   select_assembler:
+    #     mdbg:
+    #       mdbg_mode: "HG002"
     - shortname: "lja"
       select_assembler:
         lja:
