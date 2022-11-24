@@ -1230,6 +1230,80 @@ reports:
       run_quast_on_hoco: ["yes", "no"]
     columns: *hifi_hodeco_simple_overview_columns
 
+  # Thale cress
+
+  "A.thaliana":
+    argument_matrix:
+      genome: "A.thaliana_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "A.thaliana_hodeco_simple":
+    argument_matrix:
+      genome: "A.thaliana_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
+  # Worm
+
+  "C.elegans_ALT1":
+    argument_matrix:
+      genome: "C.elegans_ALT1_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "C.elegans_ALT1_hodeco_simple":
+    argument_matrix:
+      genome: "C.elegans_ALT1_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
+  "C.elegans_ALT2":
+    argument_matrix:
+      genome: "C.elegans_ALT2_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "C.elegans_ALT2_hodeco_simple":
+    argument_matrix:
+      genome: "C.elegans_ALT2_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
+  "C.elegans_ALT1_Bristol_ref":
+    argument_matrix:
+      genome: "C.elegans_ALT1_Bristol_ref_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "C.elegans_ALT1_Bristol_ref_hodeco_simple":
+    argument_matrix:
+      genome: "C.elegans_ALT1_Bristol_ref_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
+  "C.elegans_ALT2_Bristol_ref":
+    argument_matrix:
+      genome: "C.elegans_ALT2_Bristol_ref_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_overview_columns
+
+  "C.elegans_ALT2_Bristol_ref_hodeco_simple":
+    argument_matrix:
+      genome: "C.elegans_ALT2_Bristol_ref_HiFi"
+      quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
+      run_quast_on_hoco: ["yes", "no"]
+    columns: *hifi_hodeco_simple_overview_columns
+
 genomes:
   "E.coli":
     reads: ["https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11317948/SRR11317948"]
@@ -1415,6 +1489,59 @@ genomes:
     assembly_mem_factor: 1
     format: "sra"
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11606871/SRR11606871"
+
+  # Reference from genome reference consortium
+  "R.norvegicus_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/015/227/675/GCA_015227675.2_mRatBN7.2"
+    assembly_time_factor: 4
+    assembly_mem_factor: 4
+    format: "sra"
+    reads: ""
+
+  # Reference from TAIR
+  # Reads from ncbi, just something
+  "A.thaliana_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/735/GCA_000001735.2_TAIR10.1/GCA_000001735.2_TAIR10.1_genomic.fna.gz"
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR14728885/SRR14728885"
+
+  # Reference some ALT1 reference
+  # Reads from ncbi, some ALT1 reads
+  "C.elegans_ALT1_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/018/136/875/GCA_018136875.1_ASM1813687v1/GCA_018136875.1_ASM1813687v1_genomic.fna.gz"
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR22137523/SRR22137523"
+
+  # Reference some ALT2 reference
+  # Reads from ncbi, some ALT2 reads
+  "C.elegans_ALT2_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/018/136/805/GCA_018136805.1_ASM1813680v1/GCA_018136805.1_ASM1813680v1_genomic.fna.gz"
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR22137522/SRR22137522"
+
+  # Reference is official latest ref of bristol strain
+  # Reads from ncbi, some ALT1 reads
+  "C.elegans_ALT1_Bristol_ref_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/002/985/GCA_000002985.3_WBcel235/GCA_000002985.3_WBcel235_genomic.fna.gz"
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR22137523/SRR22137523"
+
+  # Reference is official latest ref of bristol strain
+  # Reads from ncbi, some ALT2 reads
+  "C.elegans_ALT2_Bristol_ref_HiFi":
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/002/985/GCA_000002985.3_WBcel235/GCA_000002985.3_WBcel235_genomic.fna.gz"
+    assembly_time_factor: 1
+    assembly_mem_factor: 1
+    format: "sra"
+    reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR22137522/SRR22137522"
 
   # Reads and reference both from HG002
   # Reads from https://www.nature.com/articles/s41587-019-0217-9
