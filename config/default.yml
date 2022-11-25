@@ -1517,8 +1517,8 @@ genomes:
       - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/645/GCA_000007645.1_ASM764v1/GCA_000007645.1_ASM764v1_genomic.fna.gz"
       - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/265/GCA_000007265.1_ASM726v1/GCA_000007265.1_ASM726v1_genomic.fna.gz"
       - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/465/GCA_000007465.2_ASM746v2/GCA_000007465.2_ASM746v2_genomic.fna.gz"
-    assembly_time_factor: 1
-    assembly_mem_factor: 1
+    assembly_time_factor: 2
+    assembly_mem_factor: 2
     format: "sra"
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11606871/SRR11606871"
 
@@ -1527,8 +1527,10 @@ genomes:
   "R.norvegicus_HiFi":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/015/227/675/GCA_015227675.2_mRatBN7.2/GCA_015227675.2_mRatBN7.2_genomic.fna.gz"
     assembly_time_factor: 4
-    assembly_mem_factor: 4
+    assembly_mem_factor: 6
     format: "sra"
+    genome_arguments:
+      uniquify_ids: "yes"
     reads:
       - "https://sra-pub-run-odp.s3.amazonaws.com/sra/ERR5310327/ERR5310327"
       - "https://sra-pub-run-odp.s3.amazonaws.com/sra/ERR5310326/ERR5310326"
@@ -1537,8 +1539,8 @@ genomes:
   # Reads from ncbi, just something
   "A.thaliana_HiFi":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/735/GCA_000001735.2_TAIR10.1/GCA_000001735.2_TAIR10.1_genomic.fna.gz"
-    assembly_time_factor: 1
-    assembly_mem_factor: 1
+    assembly_time_factor: 2
+    assembly_mem_factor: 2
     format: "sra"
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR14728885/SRR14728885"
 
@@ -1586,6 +1588,8 @@ genomes:
     assembly_time_factor: 3
     assembly_mem_factor: 3
     format: "sra"
+    genome_arguments:
+      uniquify_ids: "yes"
     reads:
       - "ERX9258657"
       - "ERX9258658"
@@ -1598,6 +1602,8 @@ genomes:
     assembly_time_factor: 1
     assembly_mem_factor: 1
     format: "sra"
+    genome_arguments:
+      uniquify_ids: "yes"
     reads:
       - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR17345024/SRR17345024"
       - "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR17345025/SRR17345025"
