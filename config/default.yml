@@ -1518,7 +1518,7 @@ genomes:
       - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/265/GCA_000007265.1_ASM726v1/GCA_000007265.1_ASM726v1_genomic.fna.gz"
       - "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/007/465/GCA_000007465.2_ASM746v2/GCA_000007465.2_ASM746v2_genomic.fna.gz"
     assembly_time_factor: 2
-    assembly_mem_factor: 2
+    assembly_mem_factor: 4
     format: "sra"
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR11606871/SRR11606871"
 
