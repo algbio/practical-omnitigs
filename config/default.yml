@@ -1539,7 +1539,7 @@ genomes:
   # Reads from ncbi, just something
   "A.thaliana_HiFi":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/735/GCA_000001735.2_TAIR10.1/GCA_000001735.2_TAIR10.1_genomic.fna.gz"
-    assembly_time_factor: 2
+    assembly_time_factor: 4
     assembly_mem_factor: 2
     format: "sra"
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR14728885/SRR14728885"
