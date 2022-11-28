@@ -1524,6 +1524,7 @@ genomes:
 
   # Reference from genome reference consortium strain BN/NHsdMcwi
   # Reads from ncbi, just something but same strain
+  # LJA and Flye fail, LJA may also just be bug, but for Flye it seems that the data is not accurate enough
   "R.norvegicus_HiFi":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/015/227/675/GCA_015227675.2_mRatBN7.2/GCA_015227675.2_mRatBN7.2_genomic.fna.gz"
     assembly_time_factor: 4
