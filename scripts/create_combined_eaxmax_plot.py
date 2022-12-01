@@ -17,7 +17,8 @@ for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
     frame["Assembler"] = shortname
     df = df.append(frame)
 
-df["EAxmax [million bp]"] = df["EAxmax"] / 1000000
+df["EAxmax [million bp]"] = df["EAxmax"] / 1_000_000
+max_eaxmax = max(df[EAxmax])
 print(df.to_string())
 
 import seaborn as sns
@@ -46,7 +47,10 @@ if set(input_shortnames) == SPECIAL_INPUT_SHORTNAMES:
 else:
     ax = sns.lineplot(data=df, x="x", y="EAxmax [million bp]", hue="Assembler")
 
-ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.0f}'.format(y)))
+if max_eaxmax < 5_000_000:
+    ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.1f}'.format(y)))
+else:
+    ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.0f}'.format(y)))
 ax.get_legend().set_visible(legend_visible)
 
 fig.add_axes(ax)
