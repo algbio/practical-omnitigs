@@ -470,10 +470,14 @@ localrules: do_nothing
 rule do_nothing:
     shell:  "echo 'No target specified'"
 
-def get_all_report_files():
+def get_all_report_files(target_report_name=None):
     try:
         result = []
         for report_name, report_definition in reports.items():
+            if target_report_name is not None:
+                if report_name != target_report_name:
+                    continue
+
             for report_file_name, report_file_definition in report_definition["report_files"].items():
                 report_file_arguments = report_file_definition.arguments
                 #print(f"report_name: {report_name}")
@@ -486,6 +490,10 @@ def get_all_report_files():
 
 
         for aggregated_report_name in aggregated_reports.keys():
+            if target_report_name is not None:
+                if target_report_name != aggregated_report_name:
+                    continue
+
             result.append(AGGREGATED_REPORT_PDF.format(aggregated_report_name = aggregated_report_name))
 
         # add genome histexes
@@ -513,6 +521,13 @@ rule report_all:
     input:  get_all_report_files(),
     threads: 1
     resources: mail_type = "END,FAIL,INVALID_DEPEND,REQUEUE"
+
+localrules: report_directory
+rule report_directory:
+    input:  lambda wildcards: get_all_report_files(wildcards.report_name),
+    output: REPORT_DIR,
+    wildcard_constraints:
+            report_name = "[^/]+",
 
 def get_eaxmax_report_files():
     try:
