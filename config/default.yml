@@ -1073,6 +1073,69 @@ reports:
             tig_injection: "trivial_omnitigs"
             stop_after_contigger: "yes"
 
+  "C.elegans_plot_original":
+    argument_matrix:
+      genome: "C.elegans_ALT2_Bristol_ref_HiFi"
+      read_source: "real"
+      quast_mode: "hicanu_misassemblies"
+      run_quast_on_hoco: "yes"
+    manual_report: "yes"
+    columns:
+      - shortname: "W"
+        select_assembler: 
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            hodeco_consensus: "none"
+      - shortname: "W-so"
+        select_assembler:
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            frg_injection: "trivial_omnitigs"
+            frg_injection_stage: "ctg"
+            hodeco_consensus: "simple"
+      - shortname: "F"
+        select_assembler:
+          flye:
+            original_flye: "yes"
+            flye_mode: "pacbio-hifi"
+      - shortname: "F-so"
+        select_assembler:
+          flye:
+            flye_mode: "pacbio-hifi"
+            tig_injection: "trivial_omnitigs"
+            stop_after_contigger: "yes"
+
+  "C.elegans_plot":
+    argument_matrix:
+      genome: "C.elegans_ALT2_Bristol_ref_HiFi"
+      read_source: "real"
+      quast_mode: "hicanu_misassemblies"
+      run_quast_on_hoco: "yes"
+    manual_report: "yes"
+    columns:
+      - shortname: "W"
+        select_assembler: 
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            hodeco_consensus: "none"
+      - shortname: "W-so"
+        select_assembler:
+          wtdbg2:
+            wtdbg2_mode: "ccs"
+            frg_injection: "trivial_omnitigs"
+            frg_injection_stage: "ctg"
+            hodeco_consensus: "simple"
+      - shortname: "F"
+        select_assembler:
+          flye:
+            flye_mode: "pacbio-hifi"
+      - shortname: "F-so"
+        select_assembler:
+          flye:
+            flye_mode: "pacbio-hifi"
+            tig_injection: "trivial_omnitigs"
+            stop_after_contigger: "yes"
+
   "E.coli_HiFi":
     argument_matrix:
       genome: "E.coli_hifi"
