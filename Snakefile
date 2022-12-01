@@ -525,7 +525,7 @@ rule report_all:
 localrules: report_directory
 rule report_directory:
     input:  lambda wildcards: get_all_report_files(wildcards.report_name),
-    output: REPORT_DIR,
+    output: touch(os.path.join(REPORT_DIR, "report_complete.marker")),
     wildcard_constraints:
             report_name = "[^/]+",
 
