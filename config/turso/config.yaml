@@ -12,7 +12,6 @@ cluster: >-
   --constraint="{resources.cluster_constraint}"
   --mail-type={resources.mail_type}
   --mail-user=sebastian.schmidt@helsinki.fi
-  --signal=SIGINT@300
   --nice=100000
   {resources.options}
 #  --hold
