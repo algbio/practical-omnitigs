@@ -54,7 +54,9 @@ if max_eaxmax < 5_000_000:
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.1f}'.format(y)))
 else:
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: '{:,.0f}'.format(y)))
-ax.get_legend().set_visible(legend_visible)
+
+if ax.get_legend() is not None:
+    ax.get_legend().set_visible(legend_visible)
 
 fig.add_axes(ax)
 plt.savefig(output_file, bbox_inches="tight")
