@@ -18,7 +18,10 @@ for shortname, quast_csv in zip(input_shortnames, input_quast_csvs):
     df = df.append(frame)
 
 df["EAxmax [million bp]"] = df["EAxmax"] / 1_000_000
-max_eaxmax = max(df["EAxmax"])
+try:
+    max_eaxmax = max(df["EAxmax"])
+except ValueError:
+    max_eaxmax = 0
 print(df.to_string())
 
 import seaborn as sns
