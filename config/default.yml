@@ -110,23 +110,6 @@ column_templates:
           wtdbg2_mode: "ccs"
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
-    # - shortname: "w2 omni sfa"
-    #   select_assembler:
-    #     wtdbg2:
-    #       skip_fragment_assembly: "yes"
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    # - shortname: "w2 omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    # - shortname: "w2 frg omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       frg_injection: "omnitigs"
-    #       frg_injection_stage: "ctg"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -157,22 +140,6 @@ column_templates:
     - shortname: "hifiasm YVp"
       select_assembler:
         hifiasm:
-    #       contig_algorithm: "trivial_omnitigs_p_utg"
-    # - shortname: "hifiasm omni r"
-    #   select_assembler:
-    #     hifiasm:
-    #       contig_algorithm: "omnitigs_r_utg"
-    # - shortname: "hifiasm omni rbp"
-    #   select_assembler:
-    #     hifiasm:
-    #       contig_algorithm: "omnitigs_bubpop.r_utg"
-    # - shortname: "hifiasm omni p"
-    #   select_assembler:
-    #     hifiasm:
-    #       contig_algorithm: "omnitigs_p_utg"
-    # - shortname: "mdbg"
-    #   select_assembler:
-    #     mdbg:
     - shortname: "lja"
       select_assembler:
         lja:
@@ -217,26 +184,6 @@ column_templates:
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
-    # - shortname: "w2 omni sfa"
-    #   select_assembler:
-    #     wtdbg2:
-    #       skip_fragment_assembly: "yes"
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    #       hodeco_consensus: "simple"
-    # - shortname: "w2 omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    #       hodeco_consensus: "simple"
-    # - shortname: "w2 frg omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       frg_injection: "omnitigs"
-    #       frg_injection_stage: "ctg"
-    #       hodeco_consensus: "simple"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -268,21 +215,6 @@ column_templates:
       select_assembler:
         hifiasm:
           contig_algorithm: "trivial_omnitigs_p_utg"
-    # - shortname: "hifiasm omni r"
-    #   select_assembler:
-    #     hifiasm:
-    #       contig_algorithm: "omnitigs_r_utg"
-    # - shortname: "hifiasm omni rbp"
-    #   select_assembler:
-    #     hifiasm:
-    #       contig_algorithm: "omnitigs_bubpop.r_utg"
-    # - shortname: "hifiasm omni p"
-    #   select_assembler:
-    #     hifiasm:
-    #       contig_algorithm: "omnitigs_p_utg"
-    # - shortname: "mdbg"
-    #   select_assembler:
-    #     mdbg:
     - shortname: "lja"
       select_assembler:
         lja:
@@ -317,23 +249,6 @@ column_templates:
           wtdbg2_mode: "ccs"
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
-    # - shortname: "w2 omni sfa"
-    #   select_assembler:
-    #     wtdbg2:
-    #       skip_fragment_assembly: "yes"
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    # - shortname: "w2 omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    # - shortname: "w2 frg omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       frg_injection: "omnitigs"
-    #       frg_injection_stage: "ctg"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -353,10 +268,6 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    # - shortname: "mdbg"
-    #   select_assembler:
-    #     mdbg:
-    #       mdbg_mode: "D_melanogaster"
     - shortname: "lja"
       select_assembler:
         lja:
@@ -409,26 +320,6 @@ column_templates:
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
-    # - shortname: "w2 omni sfa"
-    #   select_assembler:
-    #     wtdbg2:
-    #       skip_fragment_assembly: "yes"
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    #       hodeco_consensus: "simple"
-    # - shortname: "w2 omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    #       hodeco_consensus: "simple"
-    # - shortname: "w2 frg omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       frg_injection: "omnitigs"
-    #       frg_injection_stage: "ctg"
-    #       hodeco_consensus: "simple"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -448,10 +339,6 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    # - shortname: "mdbg"
-    #   select_assembler:
-    #     mdbg:
-    #       mdbg_mode: "D_melanogaster"
     - shortname: "lja"
       select_assembler:
         lja:
@@ -486,23 +373,6 @@ column_templates:
           wtdbg2_mode: "ccs"
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
-    # - shortname: "w2 omni sfa"
-    #   select_assembler:
-    #     wtdbg2:
-    #       skip_fragment_assembly: "yes"
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    # - shortname: "w2 omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    # - shortname: "w2 frg omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       frg_injection: "omnitigs"
-    #       frg_injection_stage: "ctg"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -522,10 +392,6 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    # - shortname: "mdbg"
-    #   select_assembler:
-    #     mdbg:
-    #       mdbg_mode: "HG002"
     - shortname: "lja"
       select_assembler:
         lja:
@@ -578,26 +444,6 @@ column_templates:
           frg_injection: "trivial_omnitigs"
           frg_injection_stage: "ctg"
           hodeco_consensus: "simple"
-    # - shortname: "w2 omni sfa"
-    #   select_assembler:
-    #     wtdbg2:
-    #       skip_fragment_assembly: "yes"
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    #       hodeco_consensus: "simple"
-    # - shortname: "w2 omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       tig_injection: "omnitigs"
-    #       hodeco_consensus: "simple"
-    # - shortname: "w2 frg omni"
-    #   select_assembler:
-    #     wtdbg2:
-    #       wtdbg2_mode: "ccs"
-    #       frg_injection: "omnitigs"
-    #       frg_injection_stage: "ctg"
-    #       hodeco_consensus: "simple"
     - shortname: "flye"
       select_assembler:
         flye:
@@ -617,13 +463,195 @@ column_templates:
     - shortname: "hifiasm"
       select_assembler:
         hifiasm:
-    # - shortname: "mdbg"
-    #   select_assembler:
-    #     mdbg:
-    #       mdbg_mode: "HG002"
     - shortname: "lja"
       select_assembler:
         lja:
+    - shortname: "HiCanu"
+      select_assembler:
+        canu:
+
+  wtdbg2_overview_columns: &wtdbg2_overview_columns
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+
+  wtdbg2_hodeco_simple_overview_columns: &wtdbg2_hodeco_simple_overview_columns
+    - shortname: "w2 noho"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "none"
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg YV fcs=2"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          fragment_correction_steps: 2
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+
+  roscoffensis_overview_columns: &roscoffensis_overview_columns
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          original_flye: "yes"
+          flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
+    - shortname: "HiCanu"
+      select_assembler:
+        canu:
+
+  roscoffensis_hodeco_simple_overview_columns: &roscoffensis_hodeco_simple_overview_columns
+    - shortname: "w2 noho"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "none"
+    - shortname: "w2"
+      select_assembler: 
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV sfa"
+      select_assembler:
+        wtdbg2:
+          skip_fragment_assembly: "yes"
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          tig_injection: "trivial_omnitigs"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg YV"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+    - shortname: "w2 frg YV fcs=2"
+      select_assembler:
+        wtdbg2:
+          wtdbg2_mode: "ccs"
+          fragment_correction_steps: 2
+          frg_injection: "trivial_omnitigs"
+          frg_injection_stage: "ctg"
+          hodeco_consensus: "simple"
+    - shortname: "flye"
+      select_assembler:
+        flye:
+          original_flye: "yes"
+          flye_mode: "pacbio-hifi"
+    - shortname: "flye sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          stop_after_contigger: "yes"
+    - shortname: "flye YV sac"
+      select_assembler:
+        flye:
+          flye_mode: "pacbio-hifi"
+          tig_injection: "trivial_omnitigs"
+          stop_after_contigger: "yes"
     - shortname: "HiCanu"
       select_assembler:
         canu:
@@ -920,14 +948,14 @@ reports:
       genome: "MockMeta_HiFi"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
-    columns: *hifi_overview_columns
+    columns: *wtdbg2_overview_columns
 
   "MockMeta_hodeco_simple":
     argument_matrix:
       genome: "MockMeta_HiFi"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
-    columns: *hifi_hodeco_simple_overview_columns
+    columns: *wtdbg2_hodeco_simple_overview_columns
 
   # Rat
 
@@ -936,14 +964,14 @@ reports:
       genome: "R.norvegicus_HiFi"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
-    columns: *hifi_overview_columns
+    columns: *wtdbg2_overview_columns
 
   "R.norvegicus_hodeco_simple":
     argument_matrix:
       genome: "R.norvegicus_HiFi"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
-    columns: *hifi_hodeco_simple_overview_columns
+    columns: *wtdbg2_hodeco_simple_overview_columns
 
   # Thale cress
 
@@ -1090,14 +1118,14 @@ reports:
       genome: "S.roscoffensis_HiFi"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
-    columns: *hifi_overview_columns
+    columns: *roscoffensis_overview_columns
 
   "S.roscoffensis_hodeco_simple":
     argument_matrix:
       genome: "S.roscoffensis_HiFi"
       quast_mode: ["hicanu", "hicanu_alignments", "hicanu_misassemblies", "hicanu_misassemblies_strict"] #, "hicanu_hoco", "hicanu_alignments_hoco", "hicanu_misassemblies_hoco", "hicanu_misassemblies_strict_hoco", "hicanu_wrapped_hoco", "hicanu_alignments_wrapped_hoco", "hicanu_misassemblies_wrapped_hoco", "hicanu_misassemblies_strict_wrapped_hoco"]
       run_quast_on_hoco: ["yes", "no"]
-    columns: *hifi_hodeco_simple_overview_columns
+    columns: *roscoffensis_hodeco_simple_overview_columns
 
 genomes:
   "E.coli":
