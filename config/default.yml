@@ -1430,7 +1430,7 @@ genomes:
     reads: "https://sra-pub-run-odp.s3.amazonaws.com/sra/SRR16091675/SRR16091675"
 
   # Reference assembled from HiFi, but the dataset seems to be not linked, "representative genome"
-  # Reads are some Sequel II, hopefully HiFi
+  # Reads are definitely HiFi
   "N.vectensis_HiFi":
     reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/932/526/225/GCA_932526225.1_jaNemVect1.1/GCA_932526225.1_jaNemVect1.1_genomic.fna.gz"
     assembly_time_factor: 1
