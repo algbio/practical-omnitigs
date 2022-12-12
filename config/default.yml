@@ -1198,7 +1198,7 @@ genomes:
   # Reads and reference from CHM13, from T2T
   # https://github.com/marbl/CHM13
   "CHM13_HiFi_30x":
-    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/914/755/GCA_009914755.3_CHM13_T2T_v1.1/GCA_009914755.3_CHM13_T2T_v1.1_genomic.fna.gz"
+    reference: "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/914/755/GCA_009914755.4_T2T-CHM13v2.0/GCA_009914755.4_T2T-CHM13v2.0_genomic.fna.gz"
     assembly_time_factor: 4
     assembly_mem_factor: 4
     format: "sra"
