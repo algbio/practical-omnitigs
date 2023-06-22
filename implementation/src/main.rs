@@ -1,18 +1,13 @@
 #![recursion_limit = "1024"]
-#[macro_use]
-extern crate error_chain;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate scan_fmt;
 
 use clap::Parser;
-use error_chain::{ChainedError, ExitCode};
+use error_chain::{error_chain, ChainedError, ExitCode};
+use log::{error, info};
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod circularise_records;
 mod filter;
-mod hamcircuit;
+mod multi_safe_walks;
 mod omnitigs;
 mod trivial_omnitigs;
 mod unitigs;
@@ -79,8 +74,8 @@ enum Command {
     ComputeTrivialOmnitigs(trivial_omnitigs::ComputeTrivialOmnitigsCommand),
     #[clap(about = "Computes the maximal unitigs of the input graph.")]
     ComputeUnitigs(unitigs::ComputeUnitigsCommand),
-    #[clap(about = "Preprocesses instances of the hamiltonian circuit problem.")]
-    HamCircuit(hamcircuit::HamCircuitCommand),
+    /// Computes the maximal multi-safe walks of the input graph.
+    ComputeMultiSafeWalks(multi_safe_walks::ComputeMultiSafeWalksCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -127,7 +122,9 @@ fn run() -> Result<()> {
             trivial_omnitigs::compute_trivial_omnitigs(options, subcommand)
         }
         Command::ComputeUnitigs(subcommand) => unitigs::compute_unitigs(options, subcommand),
-        Command::HamCircuit(subcommand) => hamcircuit::hamcircuit(options, subcommand),
+        Command::ComputeMultiSafeWalks(subcommand) => {
+            multi_safe_walks::compute_omnitigs(options, subcommand)
+        }
     }?;
 
     info!("Goodbye");

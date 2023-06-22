@@ -2,8 +2,10 @@ use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::{DefaultSequenceStore, DefaultSequenceStoreHandle};
 use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
+use error_chain::{bail, ensure};
 use genome_graph::io::gfa::PetGfaGraph;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
+use log::{info, warn};
 use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs};
 use omnitigs::traitgraph::interface::GraphBase;
 use omnitigs::traitgraph::interface::ImmutableGraphContainer;
@@ -185,7 +187,7 @@ pub(crate) fn compute_trivial_omnitigs(
             );
             let genome_graph: PetBCalm2EdgeGraph<_> =
                 genome_graph::io::bcalm2::read_bigraph_from_bcalm2_as_edge_centric_from_file(
-                    &input,
+                    input,
                     &mut sequence_store,
                     kmer_size,
                 )?;

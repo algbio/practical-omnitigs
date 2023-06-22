@@ -3,6 +3,8 @@ use clap::Parser;
 use compact_genome::implementation::DefaultGenome;
 use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
 use compact_genome::interface::sequence::OwnedGenomeSequence;
+use error_chain::error_chain;
+use log::{error, info};
 use traitsequence::interface::Sequence;
 
 #[derive(Parser)]

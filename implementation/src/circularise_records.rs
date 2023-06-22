@@ -1,6 +1,8 @@
 use crate::CliOptions;
 use bio::io::fasta::Record;
 use clap::Parser;
+use error_chain::bail;
+use log::{error, info, warn};
 
 #[derive(Parser)]
 pub struct CirculariseGenomeCommand {

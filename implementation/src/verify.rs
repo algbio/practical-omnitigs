@@ -17,6 +17,8 @@ use omnitigs::macrotigs::macrotigs::MaximalMacrotigsAlgorithm;
 use traitsequence::interface::Sequence;
 use compact_genome::implementation::DefaultSequenceStore;
 use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
+use genome_graph::bigraph::traitgraph::interface::subgraph::SubgraphBase;
+use log::{info, warn};
 
 #[derive(Parser)]
 pub struct VerifyEdgeCentricCommand {
@@ -149,7 +151,10 @@ where
     Ok(())
 }
 
-fn examine_macrotigs<Graph: Default + DynamicGraph, OutputWriter: std::io::Write>(
+fn examine_macrotigs<
+    Graph: Default + DynamicGraph + SubgraphBase<RootGraph = Graph>,
+    OutputWriter: std::io::Write,
+>(
     genome_graph: &Graph,
     latex_file: &mut Option<OutputWriter>,
 ) -> crate::Result<()> {

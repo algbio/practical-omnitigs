@@ -1,5 +1,6 @@
 use crate::CliOptions;
 use clap::Parser;
+use log::{error, info, warn};
 use std::io::Write;
 
 #[derive(Parser)]
