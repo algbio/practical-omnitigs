@@ -123,7 +123,7 @@ fn run() -> Result<()> {
         }
         Command::ComputeUnitigs(subcommand) => unitigs::compute_unitigs(options, subcommand),
         Command::ComputeMultiSafeWalks(subcommand) => {
-            multi_safe_walks::compute_omnitigs(options, subcommand)
+            multi_safe_walks::compute_multi_safe_walks(options, subcommand)
         }
     }?;
 

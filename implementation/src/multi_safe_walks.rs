@@ -210,7 +210,7 @@ where
         )?;
 
         info!("Computing maximal multi-safe walks");
-        let mut omnitigs = Omnitigs::compute(&omnitig_graph);
+        let mut omnitigs = Omnitigs::compute_multi_safe(&omnitig_graph);
         omnitigs.remove_reverse_complements(&omnitig_graph);
         print_multi_safe_walks_statistics(&omnitigs, latex_file)?;
         let mut omnitigs: Vec<_> = omnitigs.into_iter().map(Into::into).collect();
@@ -235,14 +235,14 @@ where
         omnitigs
     } else {
         info!("Computing maximal multi-safe walks");
-        let mut omnitigs = Omnitigs::compute(genome_graph);
+        let mut omnitigs = Omnitigs::compute_multi_safe(genome_graph);
         omnitigs.remove_reverse_complements(genome_graph);
         print_multi_safe_walks_statistics(&omnitigs, latex_file)?;
         omnitigs.into_iter().map(Into::into).collect()
     })
 }
 
-pub(crate) fn compute_omnitigs(
+pub(crate) fn compute_multi_safe_walks(
     _options: &CliOptions,
     subcommand: &ComputeMultiSafeWalksCommand,
 ) -> crate::Result<()> {
