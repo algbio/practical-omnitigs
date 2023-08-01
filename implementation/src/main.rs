@@ -6,6 +6,7 @@ use log::{error, info};
 use simplelog::{ColorChoice, CombinedLogger, Config, LevelFilter, TermLogger, TerminalMode};
 
 mod circularise_records;
+mod compare_tigs;
 mod filter;
 mod multi_safe_walks;
 mod omnitigs;
@@ -18,6 +19,7 @@ error_chain! {
     foreign_links {
         Io(std::io::Error);
         Anyhow(anyhow::Error);
+        Alphabet(compact_genome::interface::alphabet::AlphabetError);
     }
 
     links {
@@ -76,6 +78,8 @@ enum Command {
     ComputeUnitigs(unitigs::ComputeUnitigsCommand),
     /// Computes the maximal multi-safe walks of the input graph.
     ComputeMultiSafeWalks(multi_safe_walks::ComputeMultiSafeWalksCommand),
+    /// Compares the two given tig files.
+    CompareTigs(compare_tigs::CompareTigsCommand),
 }
 
 // The main is unpacked from an error-chain macro.
@@ -125,6 +129,7 @@ fn run() -> Result<()> {
         Command::ComputeMultiSafeWalks(subcommand) => {
             multi_safe_walks::compute_multi_safe_walks(options, subcommand)
         }
+        Command::CompareTigs(subcommand) => compare_tigs::compare_tigs(options, subcommand),
     }?;
 
     info!("Goodbye");
