@@ -15,9 +15,11 @@ use omnitigs::omnitigs::Omnitigs;
 use omnitigs::traitgraph::index::GraphIndex;
 use omnitigs::traitgraph::interface::{GraphBase, ImmutableGraphContainer};
 use omnitigs::traitgraph::walks::VecEdgeWalk;
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use std::mem;
 use traitgraph_algo::components::{
     decompose_weakly_connected_components_with_mappings, is_strongly_connected,
 };
@@ -251,18 +253,69 @@ where
                 }
             }
 
+            let mut used_original_nodes = vec![false; genome_graph.node_count()];
             genome_graph_components
                 .into_iter()
-                .flat_map(|(genome_graph_component, _, edge_mapping)| {
-                    let mut multi_safe_walks =
-                        Omnitigs::compute_multi_safe(&genome_graph_component);
-                    multi_safe_walks.remove_reverse_complements(&genome_graph_component);
-                    multi_safe_walks.into_iter().map(move |walk| {
-                        walk.into_iter()
-                            .map(|edge| edge_mapping[edge.as_usize()])
-                            .collect()
-                    })
-                })
+                .flat_map(
+                    move |(mut genome_graph_component, node_mapping, edge_mapping)| {
+                        for original_node in &node_mapping {
+                            used_original_nodes[original_node.as_usize()] = true;
+                        }
+
+                        // add mirror data to component which is required for removing reverse complements later
+                        let reverse_node_mapping: HashMap<_, _> = node_mapping
+                            .iter()
+                            .copied()
+                            .enumerate()
+                            .map(|(from, to)| (to, Graph::NodeIndex::from(from)))
+                            .collect();
+                        let mut mirror_pairs = HashMap::new();
+                        let mut remove_reverse_complements = false;
+                        let mut skip_completely = false;
+                        for mut node in genome_graph_component.node_indices() {
+                            let original_node = node_mapping[node.as_usize()];
+                            let original_mirror_node =
+                                genome_graph.mirror_node(original_node).unwrap();
+                            if let Some(mut mirror_node) =
+                                reverse_node_mapping.get(&original_mirror_node).copied()
+                            {
+                                remove_reverse_complements = true;
+                                if node.as_usize() > mirror_node.as_usize() {
+                                    mem::swap(&mut node, &mut mirror_node);
+                                }
+                                if let Some(old_mirror_node) =
+                                    mirror_pairs.insert(node, mirror_node)
+                                {
+                                    assert_eq!(mirror_node, old_mirror_node);
+                                }
+                            } else if used_original_nodes[original_mirror_node.as_usize()] {
+                                assert!(mirror_pairs.is_empty());
+                                skip_completely = true;
+                                break;
+                            }
+                        }
+                        for (n1, n2) in mirror_pairs {
+                            genome_graph_component.set_mirror_nodes(n1, n2);
+                        }
+                        if remove_reverse_complements {
+                            debug_assert!(genome_graph_component.verify_edge_mirror_property());
+                        }
+
+                        let mut multi_safe_walks = if skip_completely {
+                            Omnitigs::default()
+                        } else {
+                            Omnitigs::compute_multi_safe(&genome_graph_component)
+                        };
+                        if remove_reverse_complements {
+                            multi_safe_walks.remove_reverse_complements(&genome_graph_component);
+                        }
+                        multi_safe_walks.into_iter().map(move |walk| {
+                            walk.into_iter()
+                                .map(|edge| edge_mapping[edge.as_usize()])
+                                .collect()
+                        })
+                    },
+                )
                 .collect()
         } else {
             let mut multi_safe_walks = Omnitigs::compute_multi_safe(genome_graph);
