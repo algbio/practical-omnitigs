@@ -38,7 +38,7 @@ impl<AlphabetType: Alphabet, SequenceStoreType: SequenceStore<AlphabetType>>
         {
             match cf.cmp(&cr) {
                 Ordering::Less => self.forwards = true,
-                Ordering::Equal => {/* ignore */}
+                Ordering::Equal => { /* ignore */ }
                 Ordering::Greater => self.forwards = false,
             }
         }

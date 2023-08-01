@@ -18,6 +18,9 @@ use omnitigs::traitgraph::walks::VecEdgeWalk;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use traitgraph_algo::components::{
+    decompose_weakly_connected_components_with_mappings, is_strongly_connected,
+};
 use traitsequence::interface::Sequence;
 
 #[derive(Parser)]
@@ -210,10 +213,10 @@ where
         )?;
 
         info!("Computing maximal multi-safe walks");
-        let mut omnitigs = Omnitigs::compute_multi_safe(&omnitig_graph);
-        omnitigs.remove_reverse_complements(&omnitig_graph);
-        print_multi_safe_walks_statistics(&omnitigs, latex_file)?;
-        let mut omnitigs: Vec<_> = omnitigs.into_iter().map(Into::into).collect();
+        let mut multi_safe_walks = Omnitigs::compute_multi_safe(&omnitig_graph);
+        multi_safe_walks.remove_reverse_complements(&omnitig_graph);
+        print_multi_safe_walks_statistics(&multi_safe_walks, latex_file)?;
+        let mut omnitigs: Vec<_> = multi_safe_walks.into_iter().map(Into::into).collect();
         split_walks_at_node(
             &mut omnitigs,
             omnitig_graph.node_indices().last().unwrap(),
@@ -235,10 +238,38 @@ where
         omnitigs
     } else {
         info!("Computing maximal multi-safe walks");
-        let mut omnitigs = Omnitigs::compute_multi_safe(genome_graph);
-        omnitigs.remove_reverse_complements(genome_graph);
-        print_multi_safe_walks_statistics(&omnitigs, latex_file)?;
-        omnitigs.into_iter().map(Into::into).collect()
+
+        if !is_strongly_connected(genome_graph) {
+            info!("Graph is not strongly connected, computing maximal multi-safe walks for all weakly connected components separately");
+
+            let genome_graph_components =
+                decompose_weakly_connected_components_with_mappings(genome_graph);
+
+            for (genome_graph_component, _, _) in &genome_graph_components {
+                if !is_strongly_connected(genome_graph_component) {
+                    bail!("Found weakly connected component that is not strongly connected");
+                }
+            }
+
+            genome_graph_components
+                .into_iter()
+                .flat_map(|(genome_graph_component, _, edge_mapping)| {
+                    let mut multi_safe_walks =
+                        Omnitigs::compute_multi_safe(&genome_graph_component);
+                    multi_safe_walks.remove_reverse_complements(&genome_graph_component);
+                    multi_safe_walks.into_iter().map(move |walk| {
+                        walk.into_iter()
+                            .map(|edge| edge_mapping[edge.as_usize()])
+                            .collect()
+                    })
+                })
+                .collect()
+        } else {
+            let mut multi_safe_walks = Omnitigs::compute_multi_safe(genome_graph);
+            multi_safe_walks.remove_reverse_complements(genome_graph);
+            print_multi_safe_walks_statistics(&multi_safe_walks, latex_file)?;
+            multi_safe_walks.into_iter().map(Into::into).collect()
+        }
     })
 }
 
@@ -289,7 +320,7 @@ pub(crate) fn compute_multi_safe_walks(
                 genome_graph.edge_count()
             );
 
-            let omnitigs =
+            let multi_safe_walks =
                 compute_multi_safe_walks_from_graph(&genome_graph, subcommand, &mut latex_file)?;
 
             info!(
@@ -300,7 +331,7 @@ pub(crate) fn compute_multi_safe_walks(
                 &genome_graph,
                 &sequence_store,
                 kmer_size,
-                omnitigs.iter(),
+                multi_safe_walks.iter(),
                 &subcommand.output,
             )?;
         }

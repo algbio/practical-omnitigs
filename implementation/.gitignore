@@ -5,3 +5,4 @@
 *.tar.gz
 /data
 /.snakemake
+*.edges

@@ -907,9 +907,9 @@ dependencies = [
 
 [[package]]
 name = "omnitigs"
-version = "4.0.0"
+version = "4.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ea3dcc5ced166ddd1783d14db1abf7aefadded58507c6f2615e899dce99d914"
+checksum = "686d4a1abd76ee95b5e0a84682e92fbea5737fc7f2cbb9f534d5db7855ce6a73"
 dependencies = [
  "bigraph",
  "bitvector",
@@ -1460,9 +1460,9 @@ dependencies = [
 
 [[package]]
 name = "traitgraph-algo"
-version = "8.0.0"
+version = "8.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24bcaa2b738a49a4f789893d8ae758f31b5dfb0267aff858b3fb80ca0e84fbf9"
+checksum = "7b20270073caa8de64c3f37449b256ab8ada29787f73882f4d44f3fd4d7037d3"
 dependencies = [
  "hashbrown 0.14.0",
  "rand 0.8.5",
