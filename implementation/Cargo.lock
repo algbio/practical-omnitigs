@@ -907,9 +907,9 @@ dependencies = [
 
 [[package]]
 name = "omnitigs"
-version = "4.0.4"
+version = "4.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "686d4a1abd76ee95b5e0a84682e92fbea5737fc7f2cbb9f534d5db7855ce6a73"
+checksum = "5948299bc469657d49475f21e69e40ceeec1ab2a6ddeb166431fa28edf8eac9e"
 dependencies = [
  "bigraph",
  "bitvector",
