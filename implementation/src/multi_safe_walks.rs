@@ -10,8 +10,8 @@ use genome_graph::bigraph::interface::BidirectedData;
 use genome_graph::bigraph::traitgraph::interface::subgraph::SubgraphBase;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use log::info;
-use omnitigs::omnitigs::remove_subwalks_and_reverse_complements_from_walks;
 use omnitigs::omnitigs::Omnitigs;
+use omnitigs::omnitigs::{remove_subwalks_and_reverse_complements_from_walks, TruncationMode};
 use omnitigs::traitgraph::index::GraphIndex;
 use omnitigs::traitgraph::interface::{GraphBase, ImmutableGraphContainer};
 use omnitigs::traitgraph::walks::VecEdgeWalk;
@@ -217,10 +217,11 @@ where
         info!("Computing maximal multi-safe walks");
         let mut multi_safe_walks = Omnitigs::compute_multi_safe(&omnitig_graph);
         multi_safe_walks.remove_reverse_complements(&omnitig_graph);
+        multi_safe_walks.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
         print_multi_safe_walks_statistics(&multi_safe_walks, latex_file)?;
-        let mut omnitigs: Vec<_> = multi_safe_walks.into_iter().map(Into::into).collect();
+        let mut multi_safe_walks: Vec<_> = multi_safe_walks.into_iter().map(Into::into).collect();
         split_walks_at_node(
-            &mut omnitigs,
+            &mut multi_safe_walks,
             omnitig_graph.node_indices().last().unwrap(),
             &omnitig_graph,
         )?;
@@ -228,16 +229,17 @@ where
         info!("Computing additional trivial multi-safe walks");
         let mut trivial_omnitigs = Omnitigs::compute_trivial_only_non_scc(genome_graph);
         trivial_omnitigs.remove_reverse_complements(genome_graph);
+        trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
 
         info!("Merging tigs");
-        for omnitig in &mut omnitigs {
+        for omnitig in &mut multi_safe_walks {
             for edge in omnitig {
                 *edge = unreduce_map[edge.as_usize()];
             }
         }
-        omnitigs.extend(trivial_omnitigs.into_iter().map(Into::into));
-        remove_subwalks_and_reverse_complements_from_walks(&mut omnitigs, genome_graph);
-        omnitigs
+        multi_safe_walks.extend(trivial_omnitigs.into_iter().map(Into::into));
+        remove_subwalks_and_reverse_complements_from_walks(&mut multi_safe_walks, genome_graph);
+        multi_safe_walks
     } else {
         info!("Computing maximal multi-safe walks");
 
@@ -309,6 +311,8 @@ where
                         if remove_reverse_complements {
                             multi_safe_walks.remove_reverse_complements(&genome_graph_component);
                         }
+                        multi_safe_walks
+                            .transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
                         multi_safe_walks.into_iter().map(move |walk| {
                             walk.into_iter()
                                 .map(|edge| edge_mapping[edge.as_usize()])
@@ -320,6 +324,7 @@ where
         } else {
             let mut multi_safe_walks = Omnitigs::compute_multi_safe(genome_graph);
             multi_safe_walks.remove_reverse_complements(genome_graph);
+            multi_safe_walks.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
             print_multi_safe_walks_statistics(&multi_safe_walks, latex_file)?;
             multi_safe_walks.into_iter().map(Into::into).collect()
         }

@@ -6,7 +6,7 @@ use error_chain::{bail, ensure};
 use genome_graph::io::gfa::PetGfaGraph;
 use genome_graph::types::{PetBCalm2EdgeGraph, PetWtdbg2DotGraph, PetWtdbg2Graph};
 use log::{info, warn};
-use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs};
+use omnitigs::omnitigs::{NodeCentricOmnitigs, Omnitigs, TruncationMode};
 use omnitigs::traitgraph::interface::GraphBase;
 use omnitigs::traitgraph::interface::ImmutableGraphContainer;
 use std::fs::File;
@@ -57,9 +57,16 @@ pub struct ComputeTrivialOmnitigsCommand {
     #[clap(
         short,
         long,
-        help = "Set to use algorithms that handle not strongly connected graphs, but are slower"
+        help = "Use algorithms that handle not strongly connected graphs, but are slower"
     )]
     pub non_scc: bool,
+
+    #[clap(
+        short,
+        long,
+        help = "Truncate univocal extensions that are not multi-safe because they repeat edges"
+    )]
+    pub multi_safe: bool,
 
     #[clap(
         long,
@@ -193,7 +200,7 @@ pub(crate) fn compute_trivial_omnitigs(
                 )?;
 
             info!("Computing maximal trivial omnitigs");
-            let mut maximal_omnitigs = if subcommand.non_scc {
+            let mut trivial_omnitigs = if subcommand.non_scc {
                 Omnitigs::compute_trivial_only_non_scc(&genome_graph)
             } else {
                 ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
@@ -201,11 +208,15 @@ pub(crate) fn compute_trivial_omnitigs(
             };
             if !subcommand.keep_reverse_complements {
                 info!("Removing reverse complements");
-                maximal_omnitigs.remove_reverse_complements(&genome_graph);
+                trivial_omnitigs.remove_reverse_complements(&genome_graph);
             }
-            assert!(!maximal_omnitigs.is_empty(), "Found no trivial omnitigs");
+            assert!(!trivial_omnitigs.is_empty(), "Found no trivial omnitigs");
 
-            print_trivial_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
+            if subcommand.multi_safe {
+                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
+            }
+
+            print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
 
             info!(
                 "Storing maximal trivial omnitigs as fasta to '{}'",
@@ -215,7 +226,7 @@ pub(crate) fn compute_trivial_omnitigs(
                 &genome_graph,
                 &sequence_store,
                 kmer_size,
-                maximal_omnitigs.iter(),
+                trivial_omnitigs.iter(),
                 &subcommand.output,
             )?;
         }
@@ -223,6 +234,10 @@ pub(crate) fn compute_trivial_omnitigs(
         "hifiasm" => {
             if subcommand.output_as_wtdbg2_node_ids {
                 bail!("Output as wtdbg2 node ids not supported for hifiasm format");
+            }
+
+            if subcommand.multi_safe {
+                bail!("Input format hifiasm does not support multi-safe walks");
             }
 
             let input = if let Some(input) = subcommand.input.first() {
@@ -248,7 +263,7 @@ pub(crate) fn compute_trivial_omnitigs(
             );
 
             info!("Computing maximal trivial omnitigs");
-            let mut maximal_omnitigs = if subcommand.non_scc {
+            let mut trivial_omnitigs = if subcommand.non_scc {
                 Vec::compute_trivial_node_centric_omnitigs_non_scc(&genome_graph)
             } else {
                 ensure!(is_strongly_connected(&genome_graph), "The graph is not strongly connected, but algorithms for not strongly connected graphs were not selected. Use --non-scc.");
@@ -256,7 +271,7 @@ pub(crate) fn compute_trivial_omnitigs(
             };
             if !subcommand.keep_reverse_complements {
                 info!("Removing reverse complements");
-                maximal_omnitigs.remove_reverse_complements(&genome_graph);
+                trivial_omnitigs.remove_reverse_complements(&genome_graph);
             }
 
             //print_trivial_node_centric_omnitigs_statistics(&maximal_omnitigs, &mut latex_file)?;
@@ -268,7 +283,7 @@ pub(crate) fn compute_trivial_omnitigs(
             genome_graph::io::fasta::write_node_centric_walks_with_variable_overlaps_as_fasta_file(
                 &genome_graph,
                 &sequence_store,
-                maximal_omnitigs.iter(),
+                trivial_omnitigs.iter(),
                 &subcommand.output,
             )?;
         }
@@ -320,6 +335,10 @@ pub(crate) fn compute_trivial_omnitigs(
                 trivial_omnitigs.remove_reverse_complements(&genome_graph);
             }
 
+            if subcommand.multi_safe {
+                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
+            }
+
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
 
             if subcommand.output_as_wtdbg2_node_ids {
@@ -368,6 +387,10 @@ pub(crate) fn compute_trivial_omnitigs(
             if !subcommand.keep_reverse_complements {
                 info!("Removing reverse complements");
                 trivial_omnitigs.remove_reverse_complements(&genome_graph);
+            }
+
+            if subcommand.multi_safe {
+                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
             }
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
