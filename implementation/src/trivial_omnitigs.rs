@@ -213,7 +213,7 @@ pub(crate) fn compute_trivial_omnitigs(
             assert!(!trivial_omnitigs.is_empty(), "Found no trivial omnitigs");
 
             if subcommand.multi_safe {
-                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
+                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::All);
             }
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
@@ -336,7 +336,7 @@ pub(crate) fn compute_trivial_omnitigs(
             }
 
             if subcommand.multi_safe {
-                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
+                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::All);
             }
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
@@ -390,7 +390,7 @@ pub(crate) fn compute_trivial_omnitigs(
             }
 
             if subcommand.multi_safe {
-                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::FirstLast);
+                trivial_omnitigs.transform_to_multi_safe_strict_model(TruncationMode::All);
             }
 
             print_trivial_omnitigs_statistics(&trivial_omnitigs, &mut latex_file)?;
