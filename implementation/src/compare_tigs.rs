@@ -2,7 +2,7 @@ use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::bit_vec_sequence_store::BitVectorSequenceStore;
 use compact_genome::interface::alphabet::dna_alphabet::DnaAlphabet;
-use compact_genome::interface::alphabet::Alphabet;
+use compact_genome::interface::alphabet::{Alphabet, AlphabetCharacter};
 use compact_genome::interface::sequence::GenomeSequence;
 use compact_genome::interface::sequence_store::SequenceStore;
 use log::info;
@@ -12,6 +12,7 @@ use std::iter::{Enumerate, Peekable};
 use std::mem;
 use std::path::{Path, PathBuf};
 use std::slice::Iter;
+use suffix::SuffixTable;
 use traitsequence::interface::Sequence;
 
 #[derive(Parser)]
@@ -263,43 +264,121 @@ fn compare_sequences_by_substrings<
         });
     }
 
-    info!("Removing substrings within files");
-    for (file_index, sequences) in sequences.iter_mut().enumerate() {
+    info!("Building suffix array strings");
+    let mut concatenated_strings = [String::new(), String::new()];
+    let mut concatenated_string_offsets = [Vec::new(), Vec::new()];
+    let string_terminator = '$';
+    for index in 0..AlphabetType::CharacterType::ALPHABET_SIZE {
+        let character = AlphabetType::CharacterType::from_index(index).unwrap();
+        let character = AlphabetType::character_to_ascii(character);
+        let character = char::from(character);
+        assert_ne!(
+            character, string_terminator,
+            "Alphabet contains the string terminator {string_terminator:?}"
+        );
+    }
+
+    for ((concatenated_string, sequences), concatenated_string_offsets) in concatenated_strings
+        .iter_mut()
+        .zip(sequences.iter())
+        .zip(concatenated_string_offsets.iter_mut())
+    {
+        for sequence in sequences {
+            concatenated_string.extend(sequence.iter(sequence_store).map(|alphabet_character| {
+                char::from(AlphabetType::character_to_ascii(alphabet_character))
+            }));
+            concatenated_string.push(string_terminator);
+            concatenated_string_offsets.push(concatenated_string.len());
+        }
+    }
+
+    info!("Building suffix arrays");
+    let suffix_arrays = [
+        SuffixTable::new(&concatenated_strings[0]),
+        SuffixTable::new(&concatenated_strings[1]),
+    ];
+
+    for (file_index, (sequences, (suffix_array, concatenated_string_offsets))) in sequences
+        .iter_mut()
+        .zip(suffix_arrays.iter().zip(concatenated_string_offsets.iter()))
+        .enumerate()
+    {
         let file_index = file_index + 1;
+        info!("Searching for substrings within input{file_index}");
 
         let mut substrings = VecDeque::new();
         for (index1, sequence1) in sequences.iter().enumerate() {
-            let sequence1_vec: Vec<_> = sequence1.iter(sequence_store).collect();
-            let sequence1_vec_rc: Vec<_> =
-                sequence1.iter_reverse_complement(sequence_store).collect();
+            let sequence1_string: String = sequence1
+                .iter(sequence_store)
+                .map(|alphabet_character| {
+                    char::from(AlphabetType::character_to_ascii(alphabet_character))
+                })
+                .collect();
+            let sequence1_string_rc: String = sequence1
+                .iter_reverse_complement(sequence_store)
+                .map(|alphabet_character| {
+                    char::from(AlphabetType::character_to_ascii(alphabet_character))
+                })
+                .collect();
 
-            'inner_loop: for sequence2 in sequences.iter().skip(index1 + 1) {
-                if sequence1.len(sequence_store) == sequence2.len(sequence_store) {
-                    if sequence1.eq(sequence2, sequence_store) {
-                        substrings.push_back(index1);
-                        info!(
-                            "Input{}: sequence {} is equal to sequence {}",
-                            file_index, sequence1.id, sequence2.id
-                        );
-                        break 'inner_loop;
+            let mut positions: Vec<_> = suffix_array
+                .positions(&sequence1_string)
+                .iter()
+                .copied()
+                .map(|position| usize::try_from(position).unwrap())
+                .collect();
+            positions.extend(
+                suffix_array
+                    .positions(&sequence1_string_rc)
+                    .iter()
+                    .copied()
+                    .map(|position| usize::try_from(position).unwrap()),
+            );
+            positions.sort_unstable();
+            // println!("positions: {positions:?}");
+            // println!("concatenated_string_offsets: {concatenated_string_offsets:?}");
+            let mut indices2 = positions
+                .into_iter()
+                .map(|position| {
+                    concatenated_string_offsets.partition_point(|&offset| offset <= position)
+                })
+                .fold(VecDeque::new(), |mut indices, position| {
+                    if let Some(&back) = indices.back() {
+                        if back != position {
+                            indices.push_back(position);
+                        }
+                    } else {
+                        indices.push_back(position);
                     }
-                } else {
-                    let sequence2_vec: Vec<_> = sequence2.iter(sequence_store).collect();
+                    indices
+                });
+            // println!("{indices2:?}");
 
-                    if sequence1_vec.is_proper_subsequence_of(&sequence2_vec)
-                        || sequence1_vec_rc.is_proper_subsequence_of(&sequence2_vec)
-                    {
-                        substrings.push_back(index1);
-                        info!(
-                            "Input{}: sequence {} is substring of sequence {}",
-                            file_index, sequence1.id, sequence2.id
-                        );
-                        break 'inner_loop;
-                    }
-                }
+            // Since we match against the whole suffix array we need to remove matches with ourselves.
+            // Since we have sorted the sequences by length, the self-match is always the first.
+            assert_eq!(indices2.front().copied(), Some(index1), "indices2: {indices2:?}");
+            indices2.pop_front();
+            assert_ne!(indices2.front().copied(), Some(index1), "indices2: {indices2:?}");
+
+            if !indices2.is_empty() {
+                substrings.push_back(index1);
+            }
+
+            for &index2 in &indices2 {
+                assert!(
+                    index2 < sequences.len(),
+                    "indices2: {indices2:?}\nindex2: {index2}\nsequences.len(): {}",
+                    sequences.len()
+                );
+                let sequence2 = &sequences[index2];
+                info!(
+                    "Input{}: sequence {} is substring of sequence {}",
+                    file_index, sequence1.id, sequence2.id
+                );
             }
         }
 
+        info!("Removing substrings from input{file_index}");
         let old_sequences = mem::take(sequences);
         sequences.extend(
             old_sequences
@@ -320,53 +399,120 @@ fn compare_sequences_by_substrings<
         );
     }
 
-    info!("Comparing sequence files");
-    let sequences = sequences;
+    info!("Searching for sequences that are unique to one of the files");
+    let unique = sequences;
     let mut unique1 = Vec::new();
     let mut unique2 = Vec::new();
 
-    for (is_input2, index) in compare_sequence_files_by_equality(&sequences, sequence_store)? {
+    for (is_input2, index) in compare_sequence_files_by_equality(&unique, sequence_store)? {
         if !is_input2 {
-            unique1.push(&sequences[0][index]);
+            unique1.push(&unique[0][index]);
         } else {
-            unique2.push(&sequences[1][index]);
+            unique2.push(&unique[1][index]);
         }
     }
 
+    info!("Building suffix array strings for unique sequences");
+    let mut concatenated_strings = [String::new(), String::new()];
+    let mut concatenated_string_offsets = [Vec::new(), Vec::new()];
+
+    for ((concatenated_string, unique), concatenated_string_offsets) in concatenated_strings
+        .iter_mut()
+        .zip(unique.iter())
+        .zip(concatenated_string_offsets.iter_mut())
+    {
+        for sequence in unique {
+            concatenated_string.extend(sequence.iter(sequence_store).map(|alphabet_character| {
+                char::from(AlphabetType::character_to_ascii(alphabet_character))
+            }));
+            concatenated_string.push(string_terminator);
+            concatenated_string_offsets.push(concatenated_string.len());
+        }
+    }
+
+    info!("Building suffix arrays for unqiue sequences");
+    let suffix_arrays = [
+        SuffixTable::new(&concatenated_strings[0]),
+        SuffixTable::new(&concatenated_strings[1]),
+    ];
+
     for flipped in [false, true] {
-        let (unique1, unique2, input1, input2) = if !flipped {
+        let (unique1, _, input1, input2) = if !flipped {
             (&unique1, &unique2, &subcommand.input1, &subcommand.input2)
         } else {
             (&unique2, &unique1, &subcommand.input2, &subcommand.input1)
         };
 
+        info!(
+            "Searching for substrings of input{} in input{}",
+            if !flipped { 1 } else { 2 },
+            if !flipped { 2 } else { 1 }
+        );
         for sequence1 in unique1 {
-            let sequence1_vec: Vec<_> = sequence1.iter(sequence_store).collect();
-            let sequence1_vec_rc: Vec<_> =
-                sequence1.iter_reverse_complement(sequence_store).collect();
+            let sequence1_string: String = sequence1
+                .iter(sequence_store)
+                .map(|alphabet_character| {
+                    char::from(AlphabetType::character_to_ascii(alphabet_character))
+                })
+                .collect();
+            let sequence1_string_rc: String = sequence1
+                .iter_reverse_complement(sequence_store)
+                .map(|alphabet_character| {
+                    char::from(AlphabetType::character_to_ascii(alphabet_character))
+                })
+                .collect();
 
-            let unique2_offset = unique2.partition_point(|sequence| {
-                sequence1.len(sequence_store) <= sequence.len(sequence_store)
-            });
+            let (suffix_array, concatenated_string_offsets) = if !flipped {
+                (&suffix_arrays[1], &concatenated_string_offsets[1])
+            } else {
+                (&suffix_arrays[0], &concatenated_string_offsets[0])
+            };
 
-            'inner_loop: for sequence2 in unique2.iter().skip(unique2_offset) {
-                if sequence1.len(sequence_store) == sequence2.len(sequence_store) {
-                    if sequence1.eq(sequence2, sequence_store) {
-                        unreachable!("Equal sequences have been filtered before");
+            let mut positions: Vec<_> = suffix_array
+                .positions(&sequence1_string)
+                .iter()
+                .copied()
+                .map(|position| usize::try_from(position).unwrap())
+                .collect();
+            positions.extend(
+                suffix_array
+                    .positions(&sequence1_string_rc)
+                    .iter()
+                    .copied()
+                    .map(|position| usize::try_from(position).unwrap()),
+            );
+            positions.sort_unstable();
+            let indices2: Vec<_> = positions
+                .into_iter()
+                .map(|position| {
+                    concatenated_string_offsets.partition_point(|&offset| offset <= position)
+                })
+                .fold(Vec::new(), |mut positions, position| {
+                    if let Some(&last) = positions.last() {
+                        if last != position {
+                            positions.push(position);
+                        }
+                    } else {
+                        positions.push(position);
                     }
+                    positions
+                });
+
+            for index2 in indices2 {
+                let sequence2 = &if !flipped {
+                    &unique[1]
                 } else {
-                    let sequence2_vec: Vec<_> = sequence2.iter(sequence_store).collect();
-
-                    if sequence1_vec.is_proper_subsequence_of(&sequence2_vec)
-                        || sequence1_vec_rc.is_proper_subsequence_of(&sequence2_vec)
-                    {
-                        info!(
-                            "Sequence {} in input{} is substring of sequence {} in input{} ({:?}, {:?})",
-                            sequence1.id, if !flipped {1} else {2}, sequence2.id, if !flipped {2} else {1}, input1, input2
-                        );
-                        break 'inner_loop;
-                    }
-                }
+                    &unique[0]
+                }[index2];
+                info!(
+                    "Input{} sequence {} is substring of input{} sequence {} ({:?}, {:?})",
+                    if !flipped { 1 } else { 2 },
+                    sequence1.id,
+                    if !flipped { 2 } else { 1 },
+                    sequence2.id,
+                    input1,
+                    input2
+                );
             }
         }
     }
