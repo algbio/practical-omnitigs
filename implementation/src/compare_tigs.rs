@@ -229,7 +229,11 @@ fn compare_sequences_by_equality<
 
     info!("Comparing sequence files");
     let sequences = sequences;
-    for (is_input2, index) in compare_sequence_files_by_equality(&sequences, sequence_store)? {
+    for (is_input2, index) in compare_sequence_files_by_equality(
+        &sequences,
+        |s1, s2, sequence_store| s1.cmp(s2, sequence_store),
+        sequence_store,
+    )? {
         if !is_input2 {
             info!(
                 "Sequence {} is unique to input1 ({:?})",
@@ -448,13 +452,34 @@ fn compare_sequences_by_substrings<
     let mut unique1 = Vec::new();
     let mut unique2 = Vec::new();
 
-    for (is_input2, index) in compare_sequence_files_by_equality(&unique, sequence_store)? {
+    for (is_input2, index) in compare_sequence_files_by_equality(
+        &unique,
+        |s1, s2, sequence_store| match s1.len(sequence_store).cmp(&s2.len(sequence_store)) {
+            Ordering::Equal => s1.cmp(s2, sequence_store),
+            unequal => unequal,
+        },
+        sequence_store,
+    )? {
         if !is_input2 {
             unique1.push(&unique[0][index]);
         } else {
             unique2.push(&unique[1][index]);
         }
     }
+    /* println!(
+        "unique1: {:?}",
+        unique1
+            .iter()
+            .map(|sequence| &sequence.id)
+            .collect::<Vec<_>>()
+    );
+    println!(
+        "unique2: {:?}",
+        unique2
+            .iter()
+            .map(|sequence| &sequence.id)
+            .collect::<Vec<_>>()
+    ); */
     let unique = [unique1, unique2];
 
     info!("Building suffix array strings for unique sequences");
@@ -483,9 +508,19 @@ fn compare_sequences_by_substrings<
 
     for flipped in [false, true] {
         let (unique1, unique2, input1, input2) = if !flipped {
-            (&unique[0], &unique[1], &subcommand.input1, &subcommand.input2)
+            (
+                &unique[0],
+                &unique[1],
+                &subcommand.input1,
+                &subcommand.input2,
+            )
         } else {
-            (&unique[1], &unique[0], &subcommand.input2, &subcommand.input1)
+            (
+                &unique[1],
+                &unique[0],
+                &subcommand.input2,
+                &subcommand.input1,
+            )
         };
 
         info!(
@@ -575,14 +610,29 @@ struct CompareSortedSequencesByEquality<
     'a,
     AlphabetType: Alphabet,
     SequenceStoreType: SequenceStore<AlphabetType>,
+    CompareFn: Fn(
+        &DirectedSequence<AlphabetType, SequenceStoreType>,
+        &DirectedSequence<AlphabetType, SequenceStoreType>,
+        &SequenceStoreType,
+    ) -> Ordering,
 > {
     sequences1: Peekable<Enumerate<Iter<'a, DirectedSequence<AlphabetType, SequenceStoreType>>>>,
     sequences2: Peekable<Enumerate<Iter<'a, DirectedSequence<AlphabetType, SequenceStoreType>>>>,
+    compare_fn: CompareFn,
     sequence_store: &'a SequenceStoreType,
 }
 
-impl<'a, AlphabetType: Alphabet, SequenceStoreType: SequenceStore<AlphabetType>> Iterator
-    for CompareSortedSequencesByEquality<'a, AlphabetType, SequenceStoreType>
+impl<
+        'a,
+        AlphabetType: Alphabet,
+        SequenceStoreType: SequenceStore<AlphabetType>,
+        CompareFn: Fn(
+            &DirectedSequence<AlphabetType, SequenceStoreType>,
+            &DirectedSequence<AlphabetType, SequenceStoreType>,
+            &SequenceStoreType,
+        ) -> Ordering,
+    > Iterator
+    for CompareSortedSequencesByEquality<'a, AlphabetType, SequenceStoreType, CompareFn>
 {
     type Item = (bool, usize);
 
@@ -590,7 +640,7 @@ impl<'a, AlphabetType: Alphabet, SequenceStoreType: SequenceStore<AlphabetType>>
         while let (Some((i1, s1)), Some((i2, s2))) =
             (self.sequences1.peek(), self.sequences2.peek())
         {
-            match s1.cmp(s2, self.sequence_store) {
+            match (self.compare_fn)(s1, s2, self.sequence_store) {
                 Ordering::Less => {
                     let i1 = *i1;
                     self.sequences1.next().unwrap();
@@ -624,13 +674,21 @@ fn compare_sequence_files_by_equality<
     'a,
     AlphabetType: Alphabet,
     SequenceStoreType: SequenceStore<AlphabetType>,
+    CompareFn: 'a
+        + Fn(
+            &DirectedSequence<AlphabetType, SequenceStoreType>,
+            &DirectedSequence<AlphabetType, SequenceStoreType>,
+            &SequenceStoreType,
+        ) -> Ordering,
 >(
     sequences: &'a [Vec<DirectedSequence<AlphabetType, SequenceStoreType>>; 2],
+    compare_fn: CompareFn,
     sequence_store: &'a SequenceStoreType,
 ) -> crate::Result<impl 'a + Iterator<Item = (bool, usize)>> {
     Ok(CompareSortedSequencesByEquality {
         sequences1: sequences[0].iter().enumerate().peekable(),
         sequences2: sequences[1].iter().enumerate().peekable(),
+        compare_fn,
         sequence_store,
     })
 }
