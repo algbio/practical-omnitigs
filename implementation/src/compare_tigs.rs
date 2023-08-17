@@ -504,6 +504,9 @@ fn compare_sequences_by_substrings<
                 } else {
                     &unique[0]
                 }[index2];
+
+                assert!(sequence1.len(sequence_store) < sequence2.len(sequence_store));
+
                 info!(
                     "Input{} sequence {} is substring of input{} sequence {} ({:?}, {:?})",
                     if !flipped { 1 } else { 2 },
