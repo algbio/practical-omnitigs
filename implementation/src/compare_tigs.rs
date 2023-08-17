@@ -264,6 +264,42 @@ fn compare_sequences_by_substrings<
         });
     }
 
+    for (file_index, sequences) in sequences.iter_mut().enumerate() {
+        let file_index = file_index + 1;
+        info!("Searching for duplicates within input{file_index}");
+
+        let mut duplicates = VecDeque::new();
+        for (index, sequence_pair) in sequences.windows(2).enumerate() {
+            if sequence_pair[0].eq(&sequence_pair[1], sequence_store) {
+                duplicates.push_back(index + 1);
+                info!(
+                    "Input{}: sequence {} is equal to sequence {}",
+                    file_index, sequence_pair[0].id, sequence_pair[1].id
+                );
+            }
+        }
+
+        info!("Removing duplicates from input{file_index}");
+        let old_sequences = mem::take(sequences);
+        sequences.extend(
+            old_sequences
+                .into_iter()
+                .enumerate()
+                .filter_map(|(index, sequence)| {
+                    if let Some(first_duplicate) = duplicates.front().copied() {
+                        if index == first_duplicate {
+                            duplicates.pop_front();
+                            None
+                        } else {
+                            Some(sequence)
+                        }
+                    } else {
+                        Some(sequence)
+                    }
+                }),
+        );
+    }
+
     info!("Building suffix array strings");
     let mut concatenated_strings = [String::new(), String::new()];
     let mut concatenated_string_offsets = [Vec::new(), Vec::new()];
@@ -356,9 +392,17 @@ fn compare_sequences_by_substrings<
 
             // Since we match against the whole suffix array we need to remove matches with ourselves.
             // Since we have sorted the sequences by length, the self-match is always the first.
-            assert_eq!(indices2.front().copied(), Some(index1), "indices2: {indices2:?}");
+            assert_eq!(
+                indices2.front().copied(),
+                Some(index1),
+                "indices2: {indices2:?}"
+            );
             indices2.pop_front();
-            assert_ne!(indices2.front().copied(), Some(index1), "indices2: {indices2:?}");
+            assert_ne!(
+                indices2.front().copied(),
+                Some(index1),
+                "indices2: {indices2:?}"
+            );
 
             if !indices2.is_empty() {
                 substrings.push_back(index1);
@@ -411,6 +455,7 @@ fn compare_sequences_by_substrings<
             unique2.push(&unique[1][index]);
         }
     }
+    let unique = [unique1, unique2];
 
     info!("Building suffix array strings for unique sequences");
     let mut concatenated_strings = [String::new(), String::new()];
@@ -437,10 +482,10 @@ fn compare_sequences_by_substrings<
     ];
 
     for flipped in [false, true] {
-        let (unique1, _, input1, input2) = if !flipped {
-            (&unique1, &unique2, &subcommand.input1, &subcommand.input2)
+        let (unique1, unique2, input1, input2) = if !flipped {
+            (&unique[0], &unique[1], &subcommand.input1, &subcommand.input2)
         } else {
-            (&unique2, &unique1, &subcommand.input2, &subcommand.input1)
+            (&unique[1], &unique[0], &subcommand.input2, &subcommand.input1)
         };
 
         info!(
@@ -499,13 +544,16 @@ fn compare_sequences_by_substrings<
                 });
 
             for index2 in indices2 {
-                let sequence2 = &if !flipped {
-                    &unique[1]
-                } else {
-                    &unique[0]
-                }[index2];
+                let sequence2 = &unique2[index2];
 
-                assert!(sequence1.len(sequence_store) < sequence2.len(sequence_store));
+                assert!(
+                    sequence1.len(sequence_store) < sequence2.len(sequence_store),
+                    "sequence1 ({}) len: {}\n sequence2 ({}) len: {}",
+                    sequence1.id,
+                    sequence1.len(sequence_store),
+                    sequence2.id,
+                    sequence2.len(sequence_store)
+                );
 
                 info!(
                     "Input{} sequence {} is substring of input{} sequence {} ({:?}, {:?})",
