@@ -1,3 +1,4 @@
+use crate::util::{mean, median};
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::{DefaultSequenceStore, DefaultSequenceStoreHandle};
@@ -87,7 +88,7 @@ fn print_trivial_omnitigs_statistics<Graph: GraphBase>(
         warn!("Found no trivial omnitigs");
     }
 
-    let omnitig_lengths_usize = maximal_omnitigs
+    let mut omnitig_lengths_usize = maximal_omnitigs
         .iter()
         .map(Sequence::len)
         .collect::<Vec<_>>();
@@ -96,26 +97,10 @@ fn print_trivial_omnitigs_statistics<Graph: GraphBase>(
         .map(|o| o.len() as f64)
         .collect::<Vec<_>>();
 
-    let min_omnitig_len = maximal_omnitigs
-        .iter()
-        .map(Sequence::len)
-        .min()
-        .unwrap_or(0);
-    let max_omnitig_len = maximal_omnitigs
-        .iter()
-        .map(Sequence::len)
-        .max()
-        .unwrap_or(0);
-    let median_omnitigs_len = if omnitig_lengths_usize.is_empty() {
-        0
-    } else {
-        statistical::median(&omnitig_lengths_usize)
-    };
-    let mean_omnitig_len = if omnitig_lengths_f64.is_empty() {
-        0.0
-    } else {
-        statistical::mean(&omnitig_lengths_f64)
-    };
+    let min_omnitig_len = *omnitig_lengths_usize.iter().min().unwrap_or(&0);
+    let max_omnitig_len = *omnitig_lengths_usize.iter().max().unwrap_or(&0);
+    let median_omnitigs_len = *median(&mut omnitig_lengths_usize).unwrap_or(&mut 0);
+    let mean_omnitig_len = mean(&omnitig_lengths_f64).unwrap_or(0.0);
 
     info!("Minimum edge length: {}", min_omnitig_len);
     info!("Maximum edge length: {}", max_omnitig_len);

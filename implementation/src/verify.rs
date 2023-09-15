@@ -1,4 +1,5 @@
 use crate::CliOptions;
+use crate::util::{median, mean};
 use clap::Parser;
 use colored::*;
 use traitgraph_algo::components::{
@@ -138,12 +139,12 @@ where
             writeln!(
                 latex_file,
                 "median SCCs per WCC & {} \\\\",
-                statistical::median(&scc_amount_per_wcc_float)
+                *median(&mut scc_amount_per_wcc).unwrap_or(&mut 0)
             )?;
             writeln!(
                 latex_file,
                 "mean SCCs per WCC & {} \\\\",
-                statistical::mean(&scc_amount_per_wcc_float)
+                mean(&scc_amount_per_wcc_float).unwrap_or(0.0)
             )?;
         }
     }
@@ -210,18 +211,20 @@ fn examine_macrotigs<
     if !maximal_macrotigs.is_empty() {
         let max_macrotig_len = maximal_macrotigs.iter().map(|m| m.len()).max().unwrap();
         let min_macrotig_len = maximal_macrotigs.iter().map(|m| m.len()).min().unwrap();
-        let median_macrotig_len = statistical::median(
-            &maximal_macrotigs
+        let median_macrotig_len = *median(
+            &mut maximal_macrotigs
                 .iter()
                 .map(|m| m.len())
                 .collect::<Vec<_>>(),
-        );
-        let mean_macrotig_len = statistical::mean(
+        )
+        .unwrap_or(&mut 0);
+        let mean_macrotig_len = mean(
             &maximal_macrotigs
                 .iter()
                 .map(|m| m.len() as f64)
                 .collect::<Vec<_>>(),
-        );
+        )
+        .unwrap_or(0.0);
 
         info!("max macrotig edge length: {}", max_macrotig_len);
         info!("min macrotig edge length: {}", min_macrotig_len);

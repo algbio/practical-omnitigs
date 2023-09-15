@@ -12,6 +12,7 @@ mod multi_safe_walks;
 mod omnitigs;
 mod trivial_omnitigs;
 mod unitigs;
+mod util;
 mod verify;
 mod verify_genome;
 

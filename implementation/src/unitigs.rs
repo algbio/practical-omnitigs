@@ -1,3 +1,4 @@
+use crate::util::{mean, median};
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
@@ -73,12 +74,13 @@ fn print_unitig_statistics<Graph: GraphBase>(
     info!(" === Unitig Statistics === ");
     info!("");
 
-    let min_unitig_len = unitigs.iter().map(Sequence::len).min().unwrap();
-    let max_unitig_len = unitigs.iter().map(Sequence::len).max().unwrap();
-    let median_unitig_len =
-        statistical::median(&unitigs.iter().map(Sequence::len).collect::<Vec<_>>());
-    let mean_unitig_len =
-        statistical::mean(&unitigs.iter().map(|o| o.len() as f64).collect::<Vec<_>>());
+    let mut omnitig_lengths_usize = unitigs.iter().map(Sequence::len).collect::<Vec<_>>();
+    let omnitig_lengths_f64 = unitigs.iter().map(|o| o.len() as f64).collect::<Vec<_>>();
+
+    let min_unitig_len = *omnitig_lengths_usize.iter().min().unwrap_or(&0);
+    let max_unitig_len = *omnitig_lengths_usize.iter().max().unwrap_or(&0);
+    let median_unitig_len = *median(&mut omnitig_lengths_usize).unwrap_or(&mut 0);
+    let mean_unitig_len = mean(&omnitig_lengths_f64).unwrap_or(0.0);
 
     info!("Minimum edge length: {}", min_unitig_len);
     info!("Maximum edge length: {}", max_unitig_len);

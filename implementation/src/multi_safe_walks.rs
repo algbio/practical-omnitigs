@@ -1,4 +1,5 @@
 use crate::omnitigs::{perform_linear_reduction, split_walks_at_node};
+use crate::util::{mean, median};
 use crate::CliOptions;
 use clap::Parser;
 use compact_genome::implementation::DefaultSequenceStore;
@@ -98,14 +99,16 @@ fn print_multi_safe_walks_statistics<Graph: GraphBase>(
             .max()
             .unwrap();
         let median_omnitigs_per_macrotig =
-            statistical::median(maximal_multi_safe_walks.omnitigs_per_macrotig());
-        let mean_omnitigs_per_macrotig = statistical::mean(
+            *median(&mut maximal_multi_safe_walks.omnitigs_per_macrotig().to_vec())
+                .unwrap_or(&mut 0);
+        let mean_omnitigs_per_macrotig = mean(
             &maximal_multi_safe_walks
                 .omnitigs_per_macrotig()
                 .iter()
                 .map(|i| *i as f64)
                 .collect::<Vec<_>>(),
-        );
+        )
+        .unwrap_or(0.0);
 
         info!(
             "Minimum non-trivial multi-safe walks per macrotig: {}",
@@ -148,28 +151,20 @@ fn print_multi_safe_walks_statistics<Graph: GraphBase>(
         }
     }
 
-    let min_omnitig_len = maximal_multi_safe_walks
+    let mut omnitig_lengths_usize = maximal_multi_safe_walks
         .iter()
         .map(Sequence::len)
-        .min()
-        .unwrap();
-    let max_omnitig_len = maximal_multi_safe_walks
+        .collect::<Vec<_>>();
+    let omnitig_lengths_f64 = maximal_multi_safe_walks
         .iter()
-        .map(Sequence::len)
-        .max()
-        .unwrap();
-    let median_omnitigs_len = statistical::median(
-        &maximal_multi_safe_walks
-            .iter()
-            .map(Sequence::len)
-            .collect::<Vec<_>>(),
-    );
-    let mean_omnitig_len = statistical::mean(
-        &maximal_multi_safe_walks
-            .iter()
-            .map(|o| o.len() as f64)
-            .collect::<Vec<_>>(),
-    );
+        .map(|o| o.len() as f64)
+        .collect::<Vec<_>>();
+
+    let min_omnitig_len = *omnitig_lengths_usize.iter().min().unwrap_or(&0);
+    let max_omnitig_len = *omnitig_lengths_usize.iter().max().unwrap_or(&0);
+    let median_omnitigs_len = *median(&mut omnitig_lengths_usize).unwrap_or(&mut 0);
+    let mean_omnitig_len = mean(&omnitig_lengths_f64).unwrap_or(0.0);
+
     info!("Minimum edge length: {}", min_omnitig_len);
     info!("Maximum edge length: {}", max_omnitig_len);
     info!("Median edge length: {}", median_omnitigs_len);
