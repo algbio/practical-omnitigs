@@ -3,7 +3,8 @@ channels:
         - conda-forge
         - bioconda
 dependencies: 
-        - snakemake == 7.14.2
+        - snakemake == 9.*
         - mamba
         - time == 1.8
         - parse == 1.19.0
+        - python == 3.12
